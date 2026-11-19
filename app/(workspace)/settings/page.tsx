@@ -37,18 +37,23 @@ export default function SettingsPage() {
   const [dangerOpen, setDangerOpen] = useState(false);
   const [dangerText, setDangerText] = useState('');
   const [clearing, setClearing] = useState(false);
+  const [status, setStatus] = useState('');
+
+  const resetForm = useCallback((data: SettingsResponse | null) => {
+    setName(data?.profile.name ?? '');
+    setRole(data?.profile.role ?? '');
+    setActiveDataset(data?.activeDatasetId ?? '');
+    setStart(data?.dateRange.start ?? '');
+    setEnd(data?.dateRange.end ?? '');
+    setPreset(data?.dateRange.preset ?? 'bulan_ini');
+    setDenseTables(data?.preferences.denseTables ?? true);
+    setChartDefault(data?.preferences.chartDefault ?? 'bar');
+  }, []);
 
   useEffect(() => {
     if (!settings.data) return;
-    setName(settings.data.profile.name ?? '');
-    setRole(settings.data.profile.role ?? '');
-    setActiveDataset(settings.data.activeDatasetId ?? '');
-    setStart(settings.data.dateRange.start ?? '');
-    setEnd(settings.data.dateRange.end ?? '');
-    setPreset(settings.data.dateRange.preset ?? 'bulan_ini');
-    setDenseTables(settings.data.preferences.denseTables ?? true);
-    setChartDefault(settings.data.preferences.chartDefault ?? 'bar');
-  }, [settings.data]);
+    resetForm(settings.data);
+  }, [settings.data, resetForm]);
 
   const save = async () => {
     setSaving(true);
@@ -146,7 +151,7 @@ export default function SettingsPage() {
                   key={l}
                   type="button"
                   onClick={() => void changeLang(l)}
-                  className={`rounded-md px-3 py-1.5 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring focus-visible:outline-none ${
+                  className={`rounded-md px-3 py-1.5 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring ${
                     lang === l ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
                   }`}
                 >
@@ -243,9 +248,20 @@ export default function SettingsPage() {
       </Card>
 
       {/* Simpan */}
-      <div className="sticky bottom-4 flex justify-end gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest p-3 shadow-md">
-        <Button variant="ghost" onClick={settings.retry}>Batalkan</Button>
-        <Button variant="primary" loading={saving} onClick={() => void save()}>Simpan perubahan</Button>
+      <div className="sticky bottom-4 flex flex-col gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest p-3 shadow-md">
+        <p aria-live="polite" className="font-body text-body-sm text-on-surface-variant empty:hidden">{status}</p>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              resetForm(settings.data);
+              setStatus('Perubahan dibatalkan.');
+            }}
+          >
+            Batalkan
+          </Button>
+          <Button variant="primary" loading={saving} onClick={() => { setStatus(''); void save(); }}>Simpan perubahan</Button>
+        </div>
       </div>
 
       <Dialog

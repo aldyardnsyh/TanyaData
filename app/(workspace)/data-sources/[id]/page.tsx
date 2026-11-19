@@ -139,7 +139,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="mx-auto max-w-[1240px] space-y-6 px-6 py-8">
-      <Link href="/data-sources" className="inline-flex items-center gap-1.5 font-body text-label-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring focus-visible:outline-none">
+      <Link href="/data-sources" className="inline-flex items-center gap-1.5 font-body text-label-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring">
         <ArrowLeft className="h-4 w-4" />
         Kembali ke Sumber Data
       </Link>
@@ -184,7 +184,15 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="secondary" onClick={() => void reindex()}><RefreshCw className="h-3.5 w-3.5" />Reindex</Button>
-              <Button size="sm" variant="danger" onClick={() => setDeleteOpen(true)}><Trash2 className="h-3.5 w-3.5" />Hapus</Button>
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => setDeleteOpen(true)}
+                disabled={id === 'seed'}
+                title={id === 'seed' ? 'Sumber data bawaan tidak dapat dihapus.' : undefined}
+              >
+                <Trash2 className="h-3.5 w-3.5" />Hapus
+              </Button>
             </div>
           </div>
 
@@ -287,8 +295,8 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
       <Dialog
         open={deleteOpen}
         onOpenChange={(o) => !o && setDeleteOpen(false)}
-        title="Hapus sumber?"
-        description="Riwayat percakapan dan laporan tidak terhapus."
+        title={detail ? `Hapus “${detail.source.name}”?` : 'Hapus sumber?'}
+        description="Tindakan ini tidak dapat dibatalkan. Riwayat percakapan dan laporan tetap tersimpan."
       >
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setDeleteOpen(false)}>Batal</Button>

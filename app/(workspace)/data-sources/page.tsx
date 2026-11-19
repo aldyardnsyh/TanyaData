@@ -17,6 +17,7 @@ import { Tabs } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { InlineError } from '@/components/ui/inline-error';
 import { toast } from '@/components/ui/toaster';
 
 const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
@@ -49,7 +50,7 @@ export default function DataSourcesPage() {
   const [kindFilter, setKindFilter] = useState('all');
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ name: string; pct: number } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ name: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SourceListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -79,7 +80,7 @@ export default function DataSourcesPage() {
 
   const upload = useCallback(async (file: File, kind: 'dataset' | 'document') => {
     setUploading(true);
-    setUploadProgress({ name: file.name, pct: 10 });
+    setUploadProgress({ name: file.name });
     try {
       const form = new FormData();
       form.append('file', file);
@@ -90,10 +91,9 @@ export default function DataSourcesPage() {
         const code = (body?.error?.code ?? 'INTERNAL_ERROR') as ApiErrorCode;
         throw new Error(ERROR_MESSAGES[code] ?? body?.error?.message ?? 'Unggah gagal.');
       }
-      setUploadProgress({ name: file.name, pct: 100 });
       toast({ status: 'success', message: 'File ditambahkan. Pemrosesan dimulai.' });
       sources.retry();
-      setTimeout(() => setUploadProgress(null), 1200);
+      setUploadProgress(null);
     } catch (err) {
       setUploadProgress(null);
       toast({ status: 'error', message: err instanceof Error ? err.message : 'Unggah gagal.' });
@@ -222,7 +222,7 @@ export default function DataSourcesPage() {
             fileRef.current?.click();
           }
         }}
-        className={`flex min-h-36 flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-colors duration-[var(--motion-fast)] focus-ring focus-visible:outline-none ${
+        className={`flex min-h-36 flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-colors duration-[var(--motion-fast)] focus-ring ${
           dragging ? 'border-primary bg-surface' : 'border-outline-variant bg-surface-container-lowest'
         }`}
       >
@@ -237,11 +237,14 @@ export default function DataSourcesPage() {
       {uploadProgress && (
         <div className="rounded-md border border-outline-variant bg-surface-container-low p-3">
           <div className="mb-1 flex items-center justify-between font-body text-body-sm text-on-surface">
-            <span className="truncate">{uploadProgress.name}</span>
-            <span className="tabular">{uploadProgress.pct}%</span>
+            <span className="truncate">Mengunggah {uploadProgress.name}…</span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-surface-container-highest" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadProgress.pct}>
-            <div className="h-full rounded-full bg-primary transition-[width] duration-[var(--motion-base)]" style={{ width: `${uploadProgress.pct}%` }} />
+          <div
+            className="h-1.5 overflow-hidden rounded-full bg-surface-container-highest"
+            role="progressbar"
+            aria-valuetext={`Mengunggah ${uploadProgress.name}`}
+          >
+            <div className="h-full w-1/3 rounded-full bg-primary animate-indeterminate" />
           </div>
         </div>
       )}
@@ -263,7 +266,7 @@ export default function DataSourcesPage() {
                 key={k}
                 type="button"
                 onClick={() => setKindFilter(k)}
-                className={`rounded-md px-2 py-1 font-body text-label-sm transition-colors duration-[var(--motion-fast)] focus-ring focus-visible:outline-none ${
+                className={`rounded-md px-2 py-1 font-body text-label-sm transition-colors duration-[var(--motion-fast)] focus-ring ${
                   kindFilter === k ? 'bg-surface-container-high text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
@@ -280,9 +283,8 @@ export default function DataSourcesPage() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : sources.error ? (
-          <div className="p-6 text-center">
-            <p className="font-body text-body-md text-error">{sources.error}</p>
-            <Button size="sm" variant="secondary" className="mt-2" onClick={sources.retry}>Coba lagi</Button>
+          <div className="p-4">
+            <InlineError title="Gagal memuat daftar sumber" message={sources.error} onRetry={sources.retry} />
           </div>
         ) : filtered.length === 0 ? (
           <EmptyState
@@ -301,7 +303,7 @@ export default function DataSourcesPage() {
                     <FileText className="h-4 w-4 shrink-0 text-tertiary" aria-hidden="true" />
                   )}
                   <div className="min-w-0">
-                    <Link href={`/data-sources/${s.id}`} className="block truncate font-body text-label-md font-semibold text-on-surface hover:underline focus-ring focus-visible:outline-none">
+                    <Link href={`/data-sources/${s.id}`} className="block truncate font-body text-label-md font-semibold text-on-surface hover:underline focus-ring">
                       {s.name}
                     </Link>
                     <span className="block font-body text-body-sm text-on-surface-variant">
@@ -320,7 +322,14 @@ export default function DataSourcesPage() {
                       Reindex
                     </Button>
                   )}
-                  <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(s)} aria-label={`Hapus ${s.name}`}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setDeleteTarget(s)}
+                    disabled={s.id === 'seed'}
+                    title={s.id === 'seed' ? 'Sumber data bawaan tidak dapat dihapus.' : undefined}
+                    aria-label={`Hapus ${s.name}`}
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -333,8 +342,8 @@ export default function DataSourcesPage() {
       <Dialog
         open={!!deleteTarget}
         onOpenChange={(o) => !o && setDeleteTarget(null)}
-        title="Hapus sumber?"
-        description={deleteTarget ? `“${deleteTarget.name}” akan dihapus. Riwayat percakapan dan laporan tidak terhapus.` : undefined}
+        title={deleteTarget ? `Hapus “${deleteTarget.name}”?` : 'Hapus sumber?'}
+        description="Tindakan ini tidak dapat dibatalkan. Riwayat percakapan dan laporan tetap tersimpan."
       >
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Batal</Button>

@@ -4,6 +4,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Skeleton } from './skeleton';
+import { EmptyState } from './empty-state';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -30,6 +31,7 @@ export interface DataTableProps<T> {
   sortDirection?: SortDirection;
   emptyTitle?: string;
   emptyDescription?: string;
+  emptyAction?: React.ReactNode;
   className?: string;
 }
 
@@ -44,6 +46,7 @@ export function DataTable<T extends Record<string, any>>({
   sortDirection,
   emptyTitle = 'Belum ada data',
   emptyDescription,
+  emptyAction,
   className,
 }: DataTableProps<T>) {
   if (loading) {
@@ -83,7 +86,7 @@ export function DataTable<T extends Record<string, any>>({
           <button
             type="button"
             onClick={onRetry}
-            className="rounded-md bg-surface-container-lowest border border-outline-variant px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring focus-visible:outline-none"
+            className="rounded-md bg-surface-container-lowest border border-outline-variant px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
           >
             Coba lagi
           </button>
@@ -94,10 +97,12 @@ export function DataTable<T extends Record<string, any>>({
 
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 py-8 text-center">
-        <p className="font-display text-headline-sm font-semibold text-on-surface">{emptyTitle}</p>
-        {emptyDescription && <p className="font-body text-body-md text-on-surface-variant">{emptyDescription}</p>}
-      </div>
+      <EmptyState
+        title={emptyTitle}
+        description={emptyDescription}
+        action={emptyAction}
+        className={className}
+      />
     );
   }
 
@@ -133,7 +138,7 @@ export function DataTable<T extends Record<string, any>>({
                         onSort?.(col.key, sortDirection === 'asc' ? 'desc' : sortDirection === 'desc' ? null : 'asc')
                       }
                       className={cn(
-                        'inline-flex items-center gap-1 font-body text-label-sm text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring focus-visible:outline-none',
+                        'inline-flex items-center gap-1 font-body text-label-sm text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring',
                         col.align === 'right' && 'justify-end w-full',
                       )}
                     >

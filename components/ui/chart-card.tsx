@@ -47,7 +47,7 @@ export function ChartCard({ title, subtitle, headerAction, loading, error, empty
               <button
                 type="button"
                 onClick={onRetry}
-                className="inline-flex items-center gap-1.5 rounded-md bg-surface-container-lowest border border-outline-variant px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring focus-visible:outline-none"
+                className="inline-flex items-center gap-1.5 rounded-md bg-surface-container-lowest border border-outline-variant px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
               >
                 <RefreshCw className="h-4 w-4" />
                 Coba lagi

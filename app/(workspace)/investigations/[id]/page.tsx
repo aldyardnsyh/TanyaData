@@ -26,7 +26,7 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
   const data = useApi<InvestigationDetailResponse>(`/api/investigations/${id}`);
 
   const backLink = (
-    <Link href="/investigations" className="inline-flex items-center gap-1.5 font-body text-label-md text-on-surface-variant hover:text-on-surface focus-ring focus-visible:outline-none">
+    <Link href="/investigations" className="inline-flex items-center gap-1.5 font-body text-label-md text-on-surface-variant hover:text-on-surface focus-ring">
       <ArrowLeft className="h-4 w-4" /> Kembali ke Investigasi
     </Link>
   );
@@ -103,12 +103,12 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
           <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Failure rate</p>
-          <p className="mt-1 font-display text-metric-lg font-bold tabular text-on-surface">{formatPercent(comparison.failureRate.current)}</p>
+          <p className="mt-1 font-display text-metric-md font-bold tabular text-on-surface">{formatPercent(comparison.failureRate.current)}</p>
           <p className="font-body text-body-sm text-on-surface-variant">vs {formatPercent(comparison.failureRate.previous)} · {formatPercent(comparison.failureRate.deltaPctPoints)} poin</p>
         </div>
         <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
           <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Total transaksi</p>
-          <p className="mt-1 font-display text-metric-lg font-bold tabular text-on-surface">{formatNumber(comparison.total.current)}</p>
+          <p className="mt-1 font-display text-metric-md font-bold tabular text-on-surface">{formatNumber(comparison.total.current)}</p>
           <p className="font-body text-body-sm text-on-surface-variant">
             vs {formatNumber(comparison.total.previous)} · {comparison.total.changePct != null ? `${comparison.total.changePct > 0 ? '+' : ''}${comparison.total.changePct.toFixed(1)}%` : 'n/a'}
           </p>

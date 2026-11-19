@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Download, FileText } from 'lucide-react';
 import type { ReportDetailResponse, ReportMetric } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
-import { formatNumber, formatDateId, formatDateTimeId, formatIdr } from '@/lib/ui/format';
+import { formatNumber, formatDateId, formatDateTimeId, formatIdr, formatPercent } from '@/lib/ui/format';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -15,7 +15,7 @@ import { VisualizationView } from '@/components/chat/visualization-view';
 function fmtMetric(m: ReportMetric): string {
   if (m.value === null) return '—';
   if (m.format === 'currency') return formatIdr(m.value);
-  if (m.format === 'percent') return `${m.value.toFixed(1)}%`;
+  if (m.format === 'percent') return formatPercent(m.value);
   if (m.format === 'number') return formatNumber(m.value);
   return String(m.value);
 }
@@ -25,7 +25,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const data = useApi<ReportDetailResponse>(`/api/reports/${id}`);
 
   const backLink = (
-    <Link href="/reports" className="inline-flex items-center gap-1.5 font-body text-label-md text-on-surface-variant hover:text-on-surface focus-ring focus-visible:outline-none">
+    <Link href="/reports" className="inline-flex items-center gap-1.5 font-body text-label-md text-on-surface-variant hover:text-on-surface focus-ring">
       <ArrowLeft className="h-4 w-4" /> Kembali ke Laporan
     </Link>
   );
@@ -69,7 +69,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         format: (v) => {
           if (v === null || v === undefined) return '—';
           if (c.format === 'currency') return formatIdr(v as number);
-          if (c.format === 'percent') return `${Number(v).toFixed(1)}%`;
+          if (c.format === 'percent') return formatPercent(v as number);
           if (c.format === 'number') return formatNumber(v as number);
           return String(v);
         },

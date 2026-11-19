@@ -18,6 +18,7 @@ import { StatusBadge, type Status } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
+import { InlineError } from '@/components/ui/inline-error';
 import { toast } from '@/components/ui/toaster';
 import { Select } from '@/components/ui/select';
 
@@ -158,10 +159,7 @@ export default function InvestigationsPage() {
       )}
 
       {error && (
-        <div className="rounded-md bg-error-container p-4">
-          <p className="font-body text-body-md text-on-error-container">{error}</p>
-          <Button size="sm" variant="secondary" className="mt-2" onClick={() => void runAnalysis()}>Coba lagi</Button>
-        </div>
+        <InlineError title="Analisis gagal" message={error} onRetry={() => void runAnalysis()} />
       )}
 
       {analysis && <InvestigationResult investigation={analysis} />}
@@ -247,7 +245,7 @@ export default function InvestigationsPage() {
               <li key={inv.id}>
                 <Link
                   href={`/investigations/${inv.id}`}
-                  className="block rounded-lg border border-outline-variant bg-surface-container-low p-4 transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring focus-visible:outline-none"
+                  className="block rounded-lg border border-outline-variant bg-surface-container-low p-4 transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-body text-label-md font-semibold text-on-surface">{inv.question}</span>

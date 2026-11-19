@@ -286,7 +286,18 @@ export default function AssistantPage() {
             <Button size="sm" variant="ghost" onClick={list.retry}>Coba lagi</Button>
           </div>
         ) : conversations.length === 0 ? (
-          <p className="p-2 font-body text-body-sm text-on-surface-variant">{t('empty.conversations')}</p>
+          <EmptyState
+            icon={<MessageSquare className="h-6 w-6" />}
+            title="Belum ada percakapan"
+            description="Mulai pertanyaan pertama Anda."
+            className="py-8"
+            action={
+              <Button size="sm" variant="secondary" onClick={() => void newConversation()}>
+                <Plus className="h-3.5 w-3.5" />
+                Percakapan baru
+              </Button>
+            }
+          />
         ) : (
           <ul className="space-y-1">
             {conversations.map((c) => (
@@ -302,7 +313,7 @@ export default function AssistantPage() {
                       void loadConversation(c.id);
                       setHistoryOpen(false);
                     }}
-                    className="min-w-0 flex-1 text-left focus-ring focus-visible:outline-none rounded-sm"
+                    className="min-w-0 flex-1 text-left focus-ring rounded-sm"
                   >
                     <span className={`block truncate font-body text-label-md ${activeId === c.id ? 'text-primary font-semibold' : 'text-on-surface'}`}>
                       {c.title}
@@ -318,7 +329,7 @@ export default function AssistantPage() {
                     type="button"
                     aria-label={`Hapus percakapan ${c.title}`}
                     onClick={() => setDeleteTarget(c)}
-                    className="rounded-sm p-1 text-on-surface-variant opacity-0 transition-opacity duration-[var(--motion-fast)] hover:text-error group-hover:opacity-100 focus-visible:opacity-100 focus-ring focus-visible:outline-none"
+                    className="rounded-sm p-1 text-on-surface-variant opacity-0 transition-opacity duration-[var(--motion-fast)] hover:text-error group-hover:opacity-100 focus-visible:opacity-100 focus-ring"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -389,7 +400,7 @@ export default function AssistantPage() {
                       key={q}
                       type="button"
                       onClick={() => void send(q)}
-                      className="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring focus-visible:outline-none"
+                      className="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
                     >
                       {q}
                     </button>
@@ -404,7 +415,7 @@ export default function AssistantPage() {
                         type="button"
                         title={s.question}
                         onClick={() => void send(s.question)}
-                        className="rounded-full bg-surface-container px-3 py-1.5 font-body text-label-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container-high hover:text-on-surface focus-ring focus-visible:outline-none"
+                        className="rounded-full bg-surface-container px-3 py-1.5 font-body text-label-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container-high hover:text-on-surface focus-ring"
                       >
                         {s.label}
                       </button>

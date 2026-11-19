@@ -9,6 +9,7 @@ import { formatNumber, formatDateId, formatDateTimeId } from '@/lib/ui/format';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { InlineError } from '@/components/ui/inline-error';
 import { Dialog } from '@/components/ui/dialog';
 
 const FILTERS = [
@@ -55,7 +56,7 @@ export default function ReportsPage() {
               key={f.id}
               type="button"
               onClick={() => setFilter(f.id)}
-              className={`rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring focus-visible:outline-none ${
+              className={`rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring ${
                 filter === f.id ? 'bg-surface-container-high text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'
               }`}
             >
@@ -82,9 +83,8 @@ export default function ReportsPage() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : reports.error ? (
-          <div className="p-6 text-center">
-            <p className="font-body text-body-md text-error">{reports.error}</p>
-            <Button size="sm" variant="secondary" className="mt-2" onClick={reports.retry}>Coba lagi</Button>
+          <div className="p-4">
+            <InlineError title="Gagal memuat daftar laporan" message={reports.error} onRetry={reports.retry} />
           </div>
         ) : items.length === 0 ? (
           <EmptyState
@@ -106,7 +106,7 @@ export default function ReportsPage() {
             {items.map((r) => (
               <div key={r.id} className="flex flex-wrap items-center gap-3 p-4">
                 <div className="min-w-0 flex-1">
-                  <Link href={`/reports/${r.id}`} className="block truncate font-body text-label-md font-semibold text-on-surface hover:underline focus-ring focus-visible:outline-none">
+                  <Link href={`/reports/${r.id}`} className="block truncate font-body text-label-md font-semibold text-on-surface hover:underline focus-ring">
                     {r.title}
                   </Link>
                   <p className="font-body text-body-sm text-on-surface-variant">

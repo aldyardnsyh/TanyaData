@@ -151,7 +151,7 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
             type="button"
             onClick={() => setSqlOpen((o) => !o)}
             aria-expanded={sqlOpen}
-            className="flex w-full items-center justify-between bg-surface-container-low px-3 py-2 text-left font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring focus-visible:outline-none"
+            className="flex w-full items-center justify-between bg-surface-container-low px-3 py-2 text-left font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
           >
             <span className="flex items-center gap-2">
               <span className="font-mono text-label-sm text-primary">SQL</span>
@@ -202,7 +202,7 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
               type="button"
               disabled={disabled}
               onClick={() => onFollowUp(q)}
-              className="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container disabled:opacity-45 focus-ring focus-visible:outline-none"
+              className="rounded-full border border-outline-variant bg-surface-container-lowest px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container disabled:opacity-45 focus-ring"
             >
               {q}
             </button>

@@ -85,7 +85,7 @@ export default function OverviewPage() {
                   role="tab"
                   aria-selected={preset === p.id}
                   onClick={() => setPreset(p.id)}
-                  className={`rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring focus-visible:outline-none ${preset === p.id ? 'bg-surface-container-lowest text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  className={`rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring ${preset === p.id ? 'bg-surface-container-lowest text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`}
                 >
                   {p.label}
                 </button>
@@ -99,7 +99,7 @@ export default function OverviewPage() {
                   role="tab"
                   aria-selected={grain === g.id}
                   onClick={() => setGrain(g.id)}
-                  className={`rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring focus-visible:outline-none ${grain === g.id ? 'bg-surface-container-lowest text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  className={`rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring ${grain === g.id ? 'bg-surface-container-lowest text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`}
                 >
                   {g.label}
                 </button>
@@ -116,7 +116,7 @@ export default function OverviewPage() {
                 categoryPerf.retry();
                 insights.retry();
               }}
-              className="inline-flex items-center gap-1.5 rounded-md bg-surface-container-lowest border border-outline-variant px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring focus-visible:outline-none"
+              className="inline-flex items-center gap-1.5 rounded-md bg-surface-container-lowest border border-outline-variant px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
             >
               Muat ulang
             </button>
@@ -250,7 +250,7 @@ export default function OverviewPage() {
                         <a
                           key={link.href}
                           href={link.href}
-                          className="font-body text-label-sm font-semibold text-primary transition-colors duration-[var(--motion-fast)] hover:underline focus-ring focus-visible:outline-none"
+                          className="font-body text-label-sm font-semibold text-primary transition-colors duration-[var(--motion-fast)] hover:underline focus-ring"
                         >
                           {link.label} →
                         </a>
