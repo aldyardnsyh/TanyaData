@@ -1,0 +1,13 @@
+failure_code,failure_name,description,failure_type,owner_team,sla_hours
+F01,INSUFFICIENT_BALANCE,Saldo rekening/dompet pelanggan tidak mencukupi,Kesalahan Pengguna,Customer Support,0
+F02,INVALID_PIN_OTP,PIN atau OTP salah / kedaluwarsa,Kesalahan Pengguna,Customer Support,0
+F03,CARD_DECLINED,Transaksi kartu ditolak oleh bank penerbit (issuer),Penyedia (Bank/Wallet),Partnership & Settlement,24
+F04,BANK_TIMEOUT,Tidak ada respons dari bank/provider dalam batas waktu,Penyedia (Bank/Wallet),Integration Team,8
+F05,GATEWAY_ERROR,Error internal pada payment gateway,Teknis Internal,Platform Engineering,4
+F06,LIMIT_EXCEEDED,Nominal melebihi limit transaksi harian/per transaksi,Kesalahan Pengguna,Customer Support,0
+F07,FRAUD_SUSPECTED,Transaksi ditahan oleh sistem deteksi risiko,Risiko & Fraud,Risk & Fraud Team,2
+F08,INVALID_MERCHANT_CONFIG,Konfigurasi merchant/kanal tidak valid,Teknis Internal,Merchant Operations,24
+F09,DUPLICATE_TRANSACTION,Referensi transaksi duplikat terdeteksi,Teknis Internal,Platform Engineering,8
+F10,NETWORK_ERROR,Gangguan jaringan/koneksi antara gateway dan provider,Jaringan,Infrastructure Team,4
+F11,INVALID_ACCOUNT,Nomor VA/akun tujuan tidak valid atau tidak aktif,Kesalahan Pengguna,Customer Support,0
+F12,MAINTENANCE_WINDOW,Provider dalam pemeliharaan terjadwal,Penyedia (Bank/Wallet),Integration Team,0

@@ -1,0 +1,61 @@
+merchant_id,merchant_name,category,tier,city,onboarding_date
+M001,Tokoku Nusantara,E-commerce,Mid,Surabaya,2023-11-18
+M002,BelanjaIn,E-commerce,Small,Jakarta,2022-06-29
+M003,Pasar Digital Raya,E-commerce,Small,Medan,2025-07-23
+M004,Lapak Bandung,E-commerce,Mid,Surabaya,2022-09-10
+M005,Gadget Mart ID,E-commerce,Mid,Yogyakarta,2024-05-26
+M006,Fashionista ID,E-commerce,Mid,Semarang,2022-05-21
+M007,Elektro Plaza,E-commerce,Enterprise,Surabaya,2025-02-18
+M008,Buku Pelangi,E-commerce,Small,Surabaya,2021-04-26
+M009,Sepatu Kita,E-commerce,Enterprise,Tangerang,2021-01-15
+M010,Kosmetik Cantik ID,E-commerce,Small,Yogyakarta,2022-05-22
+M011,Rumah Furnitur,E-commerce,Mid,Yogyakarta,2022-08-25
+M012,Sport Station ID,E-commerce,Enterprise,Semarang,2025-01-14
+M013,Mainan Ceria,E-commerce,Small,Denpasar,2022-01-24
+M014,Otomotif Prima,E-commerce,Mid,Bekasi,2024-12-27
+M015,Listrik Pintar Pay,Tagihan & Utilitas,Mid,Tangerang,2021-10-18
+M016,PDAM Pay Nusantara,Tagihan & Utilitas,Small,Makassar,2024-08-05
+M017,Internet Rumah Net,Tagihan & Utilitas,Mid,Jakarta,2023-06-14
+M018,BPJS Bayar Mudah,Tagihan & Utilitas,Enterprise,Yogyakarta,2021-04-08
+M019,Asuransi Sehat Prima,Tagihan & Utilitas,Mid,Bekasi,2023-10-29
+M020,Cicilan Motor Maju,Tagihan & Utilitas,Small,Bekasi,2023-02-23
+M021,Pajak Kendaraan Online,Tagihan & Utilitas,Small,Denpasar,2025-01-08
+M022,TV Kabel Nusa,Tagihan & Utilitas,Small,Jakarta,2022-11-28
+M023,Gas Rumah Tangga Pay,Tagihan & Utilitas,Small,Jakarta,2024-05-29
+M024,Kost dan Sewa Online,Tagihan & Utilitas,Small,Yogyakarta,2022-10-23
+M025,PulsaKu,Top-up Pulsa & Saldo,Small,Makassar,2025-02-05
+M026,Kuota Murah ID,Top-up Pulsa & Saldo,Small,Bekasi,2025-05-27
+M027,Token Listrik Express,Top-up Pulsa & Saldo,Small,Semarang,2025-02-02
+M028,Voucher Game Hub,Top-up Pulsa & Saldo,Small,Bandung,2021-10-30
+M029,TopUp Dompet Kita,Top-up Pulsa & Saldo,Mid,Makassar,2025-03-21
+M030,Pulsa Cepat 24,Top-up Pulsa & Saldo,Mid,Denpasar,2022-07-19
+M031,Paket Data Kilat,Top-up Pulsa & Saldo,Small,Jakarta,2022-10-25
+M032,Game Credit Store,Top-up Pulsa & Saldo,Small,Tangerang,2024-02-06
+M033,Saldo Transport Pay,Top-up Pulsa & Saldo,Mid,Makassar,2024-10-22
+M034,E-Money Reload,Top-up Pulsa & Saldo,Mid,Jakarta,2024-08-20
+M035,Tiket Pesawat Nusa,Travel & Tiket,Enterprise,Makassar,2025-07-21
+M036,Kereta Pintar,Travel & Tiket,Small,Bandung,2025-03-28
+M037,Hotel Singgah,Travel & Tiket,Mid,Denpasar,2023-02-19
+M038,Tour Nusantara,Travel & Tiket,Small,Semarang,2022-01-14
+M039,Bus Antar Kota Online,Travel & Tiket,Enterprise,Bekasi,2021-07-15
+M040,Wisata Tiket ID,Travel & Tiket,Small,Bandung,2023-12-17
+M041,Rental Mobil Jaya,Travel & Tiket,Small,Semarang,2024-04-21
+M042,Kapal Cepat Booking,Travel & Tiket,Enterprise,Surabaya,2023-04-05
+M043,Kopi Senja,F&B,Mid,Bekasi,2021-06-24
+M044,Warung Digital,F&B,Small,Denpasar,2025-05-09
+M045,Resto Sunda Rasa,F&B,Enterprise,Jakarta,2024-06-30
+M046,Pizza Corner ID,F&B,Small,Yogyakarta,2024-09-27
+M047,Bakso Pak Haji Online,F&B,Mid,Semarang,2024-11-06
+M048,Dapur Nusantara,F&B,Enterprise,Bekasi,2022-09-09
+M049,Es Teh Kekinian,F&B,Small,Bandung,2025-04-16
+M050,Sushi Bandung,F&B,Small,Tangerang,2025-07-30
+M051,StreamNusa,Langganan Digital,Mid,Semarang,2022-04-09
+M052,Musik Kita,Langganan Digital,Small,Jakarta,2025-02-04
+M053,Belajar Pro,Langganan Digital,Mid,Bandung,2024-10-05
+M054,Cloud Storage ID,Langganan Digital,Enterprise,Jakarta,2023-11-01
+M055,Berita Premium,Langganan Digital,Small,Bekasi,2022-06-08
+M056,Fitness Online Club,Langganan Digital,Small,Yogyakarta,2021-07-24
+M057,Universitas Digital Nusantara,Pendidikan,Small,Jakarta,2024-06-25
+M058,Bimbel Cerdas,Pendidikan,Mid,Denpasar,2023-12-03
+M059,Kursus Bahasa Global,Pendidikan,Small,Medan,2022-10-01
+M060,Sekolah Mandiri SPP,Pendidikan,Mid,Medan,2022-05-13

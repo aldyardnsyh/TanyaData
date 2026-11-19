@@ -1,0 +1,11 @@
+channel_id,channel_name,channel_type,provider
+CH01,VA BCA,Virtual Account,Bank BCA
+CH02,VA Mandiri,Virtual Account,Bank Mandiri
+CH03,VA BNI,Virtual Account,Bank BNI
+CH04,VA BRI,Virtual Account,Bank BRI
+CH05,GoPay,E-Wallet,GoTo Financial
+CH06,OVO,E-Wallet,OVO
+CH07,DANA,E-Wallet,DANA Indonesia
+CH08,ShopeePay,E-Wallet,ShopeePay
+CH09,QRIS,QR Code,ASPI / QRIS
+CH10,Kartu Kredit,Kartu,Acquirer Visa/Mastercard

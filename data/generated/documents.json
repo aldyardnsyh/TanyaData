@@ -1,0 +1,407 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-19T02:06:07.656Z",
+  "documents": [
+    {
+      "id": "catatan-insiden-okt-nov-2026",
+      "title": "Catatan Insiden Operasional Okt-Nov 2026",
+      "file": "Catatan_Insiden_Okt-Nov_2026.txt",
+      "format": "txt",
+      "kind": "incident_log",
+      "sizeBytes": 5930,
+      "pages": [
+        {
+          "page": 1,
+          "text": "CATATAN INSIDEN OPERASIONAL - OKTOBER s.d. NOVEMBER 2026\nDisusun oleh : Payment Operations (kompilasi dari kanal #ops-incident dan tiket)\nTerakhir diperbarui : 2026-11-17\nCatatan : dokumen kerja internal, format bebas\n\n=====================================================================\nINC-2026-1015 | Lonjakan timeout VA Mandiri\nSeverity : High | Status : OPEN | Kanal : VA Mandiri (CH02) | Kode utama : F04 BANK_TIMEOUT\n=====================================================================\nRingkasan\nSejak 15 Oktober 2026, transaksi melalui Virtual Account Mandiri mengalami peningkatan kegagalan dengan kode F04 (BANK_TIMEOUT).\nWaktu respons dari bank naik signifikan (banyak permintaan menunggu 10 - 30 detik sebelum timeout), dan failure rate kanal meningkat jauh di atas normal (1% - 4%).\n\nTimeline\n- 2026-10-09  Partnership menerima email dari Bank Mandiri tentang rencana migrasi endpoint host-to-host (H2H) dari API versi 1 ke versi 2. Email tidak diteruskan ke tim operasional.\n- 2026-10-14 23:00  Bank Mandiri melakukan migrasi endpoint H2H ke versi 2 (informasi dari tiket bank, dikonfirmasi kemudian).\n- 2026-10-15 00:00  Kenaikan timeout mulai terlihat pada VA Mandiri. Kanal lain normal.\n- 2026-10-17  Customer Support melaporkan peningkatan keluhan \"VA Mandiri gagal dibayar / saldo terdebet tapi belum masuk\". Insiden resmi dibuka.\n- 2026-10-17  Verifikasi awal: kenaikan terkonsentrasi pada VA Mandiri; kanal VA lain (BCA, BNI, BRI) dan e-wallet normal. Tidak ada deployment internal pada periode 10 - 17 Oktober.\n- 2026-10-20  Tiket #BM-88213 dibuka ke Bank Mandiri.\n- 2026-10-24  Tim menambahkan retry otomatis 1 kali untuk F04. Dampak terbatas.\n- 2026-10-28  Timeout internal dinaikkan dari 10 detik ke 20 detik. Tidak menurunkan failure rate secara berarti.\n- 2026-11-03  Bank Mandiri menerapkan pembatasan rate limit pada endpoint v2 (informasi dari tiket). Failure rate VA Mandiri memburuk kembali, terutama pada jam sibuk.\n- 2026-11-10  Rencana mitigasi: connection pooling dan antrean permintaan; menunggu konfirmasi kapasitas dari Bank Mandiri.\n- 2026-11-17  Status masih OPEN. Belum ada perbaikan permanen dari sisi bank.\n\nObservasi dari analisis data operasional\n- Kegagalan didominasi kode F04 (sekitar 80% dari seluruh kegagalan VA Mandiri sejak 15 Oktober).\n- Terkonsentrasi pada jam 18:00 - 22:00 dan lebih tinggi pada hari kerja.\n- Kategori merchant yang paling terdampak: Tagihan dan Utilitas serta E-commerce (volume tinggi pada jam sibuk). Kategori lain relatif lebih rendah.\n- Processing time transaksi sukses di VA Mandiri naik sekitar 2 sampai 2,5 kali dibanding sebelum 15 Oktober.\n- Kanal VA lain tidak menunjukkan perubahan pola.\n\nDampak\n- Pelanggan VA Mandiri gagal membayar tagihan dan pesanan e-commerce pada jam sibuk malam hari.\n- Sebagian pelanggan melaporkan dana terdebet tetapi transaksi tidak terkonfirmasi; ditangani melalui rekonsiliasi dan refund (SLA VA: 3 hari kerja).\n\nTindak lanjut\n[ ] Eskalasi formal ke Head of Partnership - Bank Mandiri\n[ ] Evaluasi kanal cadangan: sarankan pelanggan memakai VA BCA atau e-wallet sementara waktu\n[ ] Perbarui alert: threshold failure rate per kanal agar memicu P2 lebih cepat\n[x] Tambah retry otomatis 1 kali (24 Okt)\n[x] Naikkan timeout internal (28 Okt)\n\n=====================================================================\nINC-2026-1106 | Lonjakan Gateway Error OVO pasca rilis v3.2.0\nSeverity : High | Status : OPEN | Kanal : OVO (CH06) | Kode utama : F05 GATEWAY_ERROR\n=====================================================================\nRingkasan\nSetelah rilis payment gateway versi 3.2.0 pada 5 November 2026 pukul 22:00 WIB, kegagalan pada kanal OVO meningkat dengan kode F05 (GATEWAY_ERROR).\nKanal e-wallet lain (GoPay, DANA, ShopeePay) tidak menunjukkan kenaikan serupa.\n\nTimeline\n- 2026-11-05 22:00  Deployment gateway v3.2.0 (refactor payload builder untuk transaksi wallet, termasuk top-up).\n- 2026-11-06 00:00  Kenaikan F05 pada OVO mulai terlihat.\n- 2026-11-07  Tim Platform Engineering menerima laporan dari Merchant Operations mengenai kegagalan top-up pada OVO.\n- 2026-11-09  Reproduksi di staging: validasi field referensi pelanggan pada payload top-up OVO gagal setelah refactor.\n- 2026-11-12  Diputuskan tidak melakukan rollback penuh karena rilis memuat perbaikan lain; hotfix disiapkan.\n- 2026-11-17  Hotfix v3.2.1 dijadwalkan 2026-11-20. Status masih OPEN.\n\nObservasi dari analisis data operasional\n- Kenaikan terkonsentrasi pada OVO dan terutama pada kategori Top-up Pulsa dan Saldo; kategori lain pada OVO relatif lebih rendah.\n- Kode dominan F05; sebagian kecil F08 (konfigurasi merchant).\n- Mulai tepat setelah deployment 5 November, tidak terkait jam tertentu.\n- Processing time pada OVO naik sekitar 1,8 kali.\n\n=====================================================================\nINC-2026-1111 | Lonjakan trafik 11.11 (semua kanal)\nSeverity : Medium | Status : RESOLVED | Kanal : semua\n=====================================================================\n- 2026-11-11 20:00  Trafik kampanye 11.11 melonjak; latency meningkat dan kegagalan F05/F04 naik sementara pada semua kanal.\n- 2026-11-11 21:30  Autoscaling menambah kapasitas; kondisi kembali normal.\n- Volume transaksi 11 November sekitar 1,7 kali hari biasa dan 12 November sekitar 1,35 kali.\n- Catatan: autoscaling terlambat 15 menit; threshold scale-up diturunkan.\n\n=====================================================================\nCATATAN LAIN (bukan insiden)\n=====================================================================\n- 2026-09-13 01:00 - 04:00  Pemeliharaan terjadwal VA BNI (INC-2026-0913), kode F12. Sudah diinformasikan ke merchant.\n- 2026-09-30 19:20 - 20:10  Gangguan jaringan switching QRIS (INC-2026-0930), kode F10. Resolved.\n- Rapat evaluasi bulanan dijadwalkan 24 November 2026, agenda: review INC-2026-1015 dan INC-2026-1106.\n- Pengingat: perbarui daftar kontak on-call Integration Team sebelum akhir bulan.\n"
+        }
+      ],
+      "sections": [
+        {
+          "no": null,
+          "title": "Catatan Insiden Operasional Okt-Nov 2026",
+          "page": 1,
+          "text": "CATATAN INSIDEN OPERASIONAL - OKTOBER s.d. NOVEMBER 2026\nDisusun oleh : Payment Operations (kompilasi dari kanal #ops-incident dan tiket)\nTerakhir diperbarui : 2026-11-17\nCatatan : dokumen kerja internal, format bebas"
+        },
+        {
+          "no": null,
+          "title": "INC-2026-1015 | Lonjakan timeout VA Mandiri",
+          "page": 1,
+          "text": "Severity : High | Status : OPEN | Kanal : VA Mandiri (CH02) | Kode utama : F04 BANK_TIMEOUT\nRingkasan\nSejak 15 Oktober 2026, transaksi melalui Virtual Account Mandiri mengalami peningkatan kegagalan dengan kode F04 (BANK_TIMEOUT).\nWaktu respons dari bank naik signifikan (banyak permintaan menunggu 10 - 30 detik sebelum timeout), dan failure rate kanal meningkat jauh di atas normal (1% - 4%).\n\nTimeline\n- 2026-10-09  Partnership menerima email dari Bank Mandiri tentang rencana migrasi endpoint host-to-host (H2H) dari API versi 1 ke versi 2. Email tidak diteruskan ke tim operasional.\n- 2026-10-14 23:00  Bank Mandiri melakukan migrasi endpoint H2H ke versi 2 (informasi dari tiket bank, dikonfirmasi kemudian).\n- 2026-10-15 00:00  Kenaikan timeout mulai terlihat pada VA Mandiri. Kanal lain normal.\n- 2026-10-17  Customer Support melaporkan peningkatan keluhan \"VA Mandiri gagal dibayar / saldo terdebet tapi belum masuk\". Insiden resmi dibuka.\n- 2026-10-17  Verifikasi awal: kenaikan terkonsentrasi pada VA Mandiri; kanal VA lain (BCA, BNI, BRI) dan e-wallet normal. Tidak ada deployment internal pada periode 10 - 17 Oktober.\n- 2026-10-20  Tiket #BM-88213 dibuka ke Bank Mandiri.\n- 2026-10-24  Tim menambahkan retry otomatis 1 kali untuk F04. Dampak terbatas.\n- 2026-10-28  Timeout internal dinaikkan dari 10 detik ke 20 detik. Tidak menurunkan failure rate secara berarti.\n- 2026-11-03  Bank Mandiri menerapkan pembatasan rate limit pada endpoint v2 (informasi dari tiket). Failure rate VA Mandiri memburuk kembali, terutama pada jam sibuk.\n- 2026-11-10  Rencana mitigasi: connection pooling dan antrean permintaan; menunggu konfirmasi kapasitas dari Bank Mandiri.\n- 2026-11-17  Status masih OPEN. Belum ada perbaikan permanen dari sisi bank.\n\nObservasi dari analisis data operasional\n- Kegagalan didominasi kode F04 (sekitar 80% dari seluruh kegagalan VA Mandiri sejak 15 Oktober).\n- Terkonsentrasi pada jam 18:00 - 22:00 dan lebih tinggi pada hari kerja.\n- Kategori merchant yang paling terdampak: Tagihan dan Utilitas serta E-commerce (volume tinggi pada jam sibuk). Kategori lain relatif lebih rendah.\n- Processing time transaksi sukses di VA Mandiri naik sekitar 2 sampai 2,5 kali dibanding sebelum 15 Oktober.\n- Kanal VA lain tidak menunjukkan perubahan pola.\n\nDampak\n- Pelanggan VA Mandiri gagal membayar tagihan dan pesanan e-commerce pada jam sibuk malam hari.\n- Sebagian pelanggan melaporkan dana terdebet tetapi transaksi tidak terkonfirmasi; ditangani melalui rekonsiliasi dan refund (SLA VA: 3 hari kerja).\n\nTindak lanjut\n[ ] Eskalasi formal ke Head of Partnership - Bank Mandiri\n[ ] Evaluasi kanal cadangan: sarankan pelanggan memakai VA BCA atau e-wallet sementara waktu\n[ ] Perbarui alert: threshold failure rate per kanal agar memicu P2 lebih cepat\n[x] Tambah retry otomatis 1 kali (24 Okt)\n[x] Naikkan timeout internal (28 Okt)"
+        },
+        {
+          "no": null,
+          "title": "INC-2026-1106 | Lonjakan Gateway Error OVO pasca rilis v3.2.0",
+          "page": 1,
+          "text": "Severity : High | Status : OPEN | Kanal : OVO (CH06) | Kode utama : F05 GATEWAY_ERROR\nRingkasan\nSetelah rilis payment gateway versi 3.2.0 pada 5 November 2026 pukul 22:00 WIB, kegagalan pada kanal OVO meningkat dengan kode F05 (GATEWAY_ERROR).\nKanal e-wallet lain (GoPay, DANA, ShopeePay) tidak menunjukkan kenaikan serupa.\n\nTimeline\n- 2026-11-05 22:00  Deployment gateway v3.2.0 (refactor payload builder untuk transaksi wallet, termasuk top-up).\n- 2026-11-06 00:00  Kenaikan F05 pada OVO mulai terlihat.\n- 2026-11-07  Tim Platform Engineering menerima laporan dari Merchant Operations mengenai kegagalan top-up pada OVO.\n- 2026-11-09  Reproduksi di staging: validasi field referensi pelanggan pada payload top-up OVO gagal setelah refactor.\n- 2026-11-12  Diputuskan tidak melakukan rollback penuh karena rilis memuat perbaikan lain; hotfix disiapkan.\n- 2026-11-17  Hotfix v3.2.1 dijadwalkan 2026-11-20. Status masih OPEN.\n\nObservasi dari analisis data operasional\n- Kenaikan terkonsentrasi pada OVO dan terutama pada kategori Top-up Pulsa dan Saldo; kategori lain pada OVO relatif lebih rendah.\n- Kode dominan F05; sebagian kecil F08 (konfigurasi merchant).\n- Mulai tepat setelah deployment 5 November, tidak terkait jam tertentu.\n- Processing time pada OVO naik sekitar 1,8 kali."
+        },
+        {
+          "no": null,
+          "title": "INC-2026-1111 | Lonjakan trafik 11.11 (semua kanal)",
+          "page": 1,
+          "text": "Severity : Medium | Status : RESOLVED | Kanal : semua\n- 2026-11-11 20:00  Trafik kampanye 11.11 melonjak; latency meningkat dan kegagalan F05/F04 naik sementara pada semua kanal.\n- 2026-11-11 21:30  Autoscaling menambah kapasitas; kondisi kembali normal.\n- Volume transaksi 11 November sekitar 1,7 kali hari biasa dan 12 November sekitar 1,35 kali.\n- Catatan: autoscaling terlambat 15 menit; threshold scale-up diturunkan."
+        },
+        {
+          "no": null,
+          "title": "CATATAN LAIN (bukan insiden)",
+          "page": 1,
+          "text": "- 2026-09-13 01:00 - 04:00  Pemeliharaan terjadwal VA BNI (INC-2026-0913), kode F12. Sudah diinformasikan ke merchant.\n- 2026-09-30 19:20 - 20:10  Gangguan jaringan switching QRIS (INC-2026-0930), kode F10. Resolved.\n- Rapat evaluasi bulanan dijadwalkan 24 November 2026, agenda: review INC-2026-1015 dan INC-2026-1106.\n- Pengingat: perbarui daftar kontak on-call Integration Team sebelum akhir bulan."
+        }
+      ]
+    },
+    {
+      "id": "faq-customer-support",
+      "title": "FAQ Customer Support - Transaksi Gagal",
+      "file": "FAQ_Customer_Support.md",
+      "format": "md",
+      "kind": "faq",
+      "sizeBytes": 3341,
+      "pages": [
+        {
+          "page": 1,
+          "text": "# FAQ Customer Support - Transaksi Gagal\n\n_Dokumen internal Customer Support | Versi 1.4 | Diperbarui: 1 Oktober 2026_\n\n## 1. Saldo saya terpotong tetapi transaksi gagal. Apa yang harus saya lakukan?\nTunggu hingga 30 menit karena sistem melakukan pengecekan status otomatis setiap 5 menit. Jika status akhir transaksi FAILED dan dana terdebet, dana akan dikembalikan otomatis. Estimasi pengembalian: Virtual Account 3 hari kerja, e-wallet maksimal 2 x 24 jam, QRIS 2 hari kerja, kartu kredit 7 sampai 14 hari kerja. Jika dana belum kembali setelah SLA terlewati, hubungi Customer Support dengan menyertakan nomor transaksi (format `TRXyyyymmddnnnnn`).\n\n## 2. Apa arti status transaksi?\n- **SUCCESS**: pembayaran berhasil.\n- **FAILED**: pembayaran gagal; penyebabnya ditunjukkan oleh kode kegagalan.\n- **PENDING**: menunggu konfirmasi dari bank/penyedia.\n- **EXPIRED**: batas waktu pembayaran terlewati (bukan kegagalan sistem).\n- **REFUNDED**: dana sudah dikembalikan.\n\n## 3. Mengapa pembayaran saya gagal dengan pesan \"saldo tidak mencukupi\" (F01)?\nSaldo rekening atau dompet digital tidak cukup untuk nominal ditambah biaya layanan. Lakukan top-up atau pilih kanal pembayaran lain.\n\n## 4. OTP saya ditolak (F02). Bagaimana solusinya?\nOTP berlaku 5 menit. Minta kirim ulang OTP (maksimal 3 kali). Setelah 3 kali salah, akun dikunci 30 menit demi keamanan.\n\n## 5. Kartu kredit saya ditolak (F03).\nPenolakan dilakukan oleh bank penerbit kartu. Hubungi bank penerbit untuk memastikan limit, status kartu, dan pengaturan transaksi online, atau gunakan kanal lain.\n\n## 6. Pembayaran Virtual Account Mandiri sering timeout. Apakah ini gangguan?\nSejak pertengahan Oktober 2026 terdapat gangguan pada VA Mandiri yang sedang ditangani (lihat INC-2026-1015). Sementara waktu pelanggan disarankan memakai VA BCA, VA BNI, VA BRI, atau e-wallet. Jika dana sudah terdebet, tim akan melakukan rekonsiliasi dan refund sesuai SLA.\n\n## 7. Top-up lewat OVO gagal dengan \"Gateway Error\". Apakah ini gangguan?\nSejak 6 November 2026 terdapat kendala pada transaksi OVO terutama kategori top-up (lihat INC-2026-1106). Perbaikan (hotfix) dijadwalkan pada 20 November 2026. Gunakan e-wallet lain sementara waktu.\n\n## 8. Mengapa transaksi saya berstatus EXPIRED?\nNomor Virtual Account berlaku 24 jam secara default (dapat dikonfigurasi 1 sampai 72 jam). QRIS dinamis berlaku 15 menit dan e-wallet 30 menit. Setelah lewat batas waktu, buat transaksi baru. Transaksi EXPIRED tidak memotong dana.\n\n## 9. Apa itu limit transaksi (F06)?\nSetiap kanal memiliki limit harian dan limit per transaksi. Jika nominal melebihi limit, pecah transaksi atau naikkan limit melalui bank/penyedia dompet digital.\n\n## 10. Transaksi saya ditahan karena dicurigai fraud (F07).\nSistem risiko menahan transaksi yang tidak biasa (nominal tinggi, perangkat baru, atau pola berulang). Tim Risk akan meninjau secara manual dalam 2 jam kerja dan menghubungi Anda bila perlu verifikasi.\n\n## 11. Transaksi saya tercatat dua kali (F09).\nHal ini dapat terjadi karena klik ganda atau percobaan ulang. Transaksi duplikat akan dibatalkan; jika dana terdebet ganda, kelebihan dana dikembalikan.\n\n## 12. Kapan layanan dalam pemeliharaan (F12)?\nPemeliharaan terjadwal penyedia umumnya dilakukan dini hari sekitar pukul 01:00 sampai 04:00 WIB dan diumumkan lebih dulu melalui banner di halaman pembayaran.\n"
+        }
+      ],
+      "sections": [
+        {
+          "no": null,
+          "title": "FAQ Customer Support - Transaksi Gagal",
+          "page": 1,
+          "text": "_Dokumen internal Customer Support | Versi 1.4 | Diperbarui: 1 Oktober 2026_"
+        },
+        {
+          "no": 1,
+          "title": "Saldo saya terpotong tetapi transaksi gagal. Apa yang harus saya lakukan?",
+          "page": 1,
+          "text": "Tunggu hingga 30 menit karena sistem melakukan pengecekan status otomatis setiap 5 menit. Jika status akhir transaksi FAILED dan dana terdebet, dana akan dikembalikan otomatis. Estimasi pengembalian: Virtual Account 3 hari kerja, e-wallet maksimal 2 x 24 jam, QRIS 2 hari kerja, kartu kredit 7 sampai 14 hari kerja. Jika dana belum kembali setelah SLA terlewati, hubungi Customer Support dengan menyertakan nomor transaksi (format `TRXyyyymmddnnnnn`)."
+        },
+        {
+          "no": 2,
+          "title": "Apa arti status transaksi?",
+          "page": 1,
+          "text": "- **SUCCESS**: pembayaran berhasil.\n- **FAILED**: pembayaran gagal; penyebabnya ditunjukkan oleh kode kegagalan.\n- **PENDING**: menunggu konfirmasi dari bank/penyedia.\n- **EXPIRED**: batas waktu pembayaran terlewati (bukan kegagalan sistem).\n- **REFUNDED**: dana sudah dikembalikan."
+        },
+        {
+          "no": 3,
+          "title": "Mengapa pembayaran saya gagal dengan pesan \"saldo tidak mencukupi\" (F01)?",
+          "page": 1,
+          "text": "Saldo rekening atau dompet digital tidak cukup untuk nominal ditambah biaya layanan. Lakukan top-up atau pilih kanal pembayaran lain."
+        },
+        {
+          "no": 4,
+          "title": "OTP saya ditolak (F02). Bagaimana solusinya?",
+          "page": 1,
+          "text": "OTP berlaku 5 menit. Minta kirim ulang OTP (maksimal 3 kali). Setelah 3 kali salah, akun dikunci 30 menit demi keamanan."
+        },
+        {
+          "no": 5,
+          "title": "Kartu kredit saya ditolak (F03).",
+          "page": 1,
+          "text": "Penolakan dilakukan oleh bank penerbit kartu. Hubungi bank penerbit untuk memastikan limit, status kartu, dan pengaturan transaksi online, atau gunakan kanal lain."
+        },
+        {
+          "no": 6,
+          "title": "Pembayaran Virtual Account Mandiri sering timeout. Apakah ini gangguan?",
+          "page": 1,
+          "text": "Sejak pertengahan Oktober 2026 terdapat gangguan pada VA Mandiri yang sedang ditangani (lihat INC-2026-1015). Sementara waktu pelanggan disarankan memakai VA BCA, VA BNI, VA BRI, atau e-wallet. Jika dana sudah terdebet, tim akan melakukan rekonsiliasi dan refund sesuai SLA."
+        },
+        {
+          "no": 7,
+          "title": "Top-up lewat OVO gagal dengan \"Gateway Error\". Apakah ini gangguan?",
+          "page": 1,
+          "text": "Sejak 6 November 2026 terdapat kendala pada transaksi OVO terutama kategori top-up (lihat INC-2026-1106). Perbaikan (hotfix) dijadwalkan pada 20 November 2026. Gunakan e-wallet lain sementara waktu."
+        },
+        {
+          "no": 8,
+          "title": "Mengapa transaksi saya berstatus EXPIRED?",
+          "page": 1,
+          "text": "Nomor Virtual Account berlaku 24 jam secara default (dapat dikonfigurasi 1 sampai 72 jam). QRIS dinamis berlaku 15 menit dan e-wallet 30 menit. Setelah lewat batas waktu, buat transaksi baru. Transaksi EXPIRED tidak memotong dana."
+        },
+        {
+          "no": 9,
+          "title": "Apa itu limit transaksi (F06)?",
+          "page": 1,
+          "text": "Setiap kanal memiliki limit harian dan limit per transaksi. Jika nominal melebihi limit, pecah transaksi atau naikkan limit melalui bank/penyedia dompet digital."
+        },
+        {
+          "no": 10,
+          "title": "Transaksi saya ditahan karena dicurigai fraud (F07).",
+          "page": 1,
+          "text": "Sistem risiko menahan transaksi yang tidak biasa (nominal tinggi, perangkat baru, atau pola berulang). Tim Risk akan meninjau secara manual dalam 2 jam kerja dan menghubungi Anda bila perlu verifikasi."
+        },
+        {
+          "no": 11,
+          "title": "Transaksi saya tercatat dua kali (F09).",
+          "page": 1,
+          "text": "Hal ini dapat terjadi karena klik ganda atau percobaan ulang. Transaksi duplikat akan dibatalkan; jika dana terdebet ganda, kelebihan dana dikembalikan."
+        },
+        {
+          "no": 12,
+          "title": "Kapan layanan dalam pemeliharaan (F12)?",
+          "page": 1,
+          "text": "Pemeliharaan terjadwal penyedia umumnya dilakukan dini hari sekitar pukul 01:00 sampai 04:00 WIB dan diumumkan lebih dulu melalui banner di halaman pembayaran."
+        }
+      ]
+    },
+    {
+      "id": "katalog-kode-kegagalan",
+      "title": "Katalog Kode Kegagalan Transaksi dan Panduan Diagnosis",
+      "file": "Katalog_Kode_Kegagalan_Transaksi.docx",
+      "format": "docx",
+      "kind": "catalog",
+      "sizeBytes": 15413,
+      "pages": [
+        {
+          "page": 1,
+          "text": "Katalog Kode Kegagalan Transaksi dan Panduan Diagnosis\n\nNomor Dokumen: KB-TRX-007 | Versi 1.3 | Berlaku sejak: 1 Maret 2026 | Pemilik: Payment Operations | Klasifikasi: Internal\n\n1. Pendahuluan\n\nDokumen ini menjelaskan seluruh kode kegagalan transaksi (F01 sampai F12) yang digunakan pada platform pembayaran, penyebab umum masing-masing kode, tindakan standar, serta penanggung jawab dan SLA. Dokumen ini merupakan pelengkap SOP-TRX-003 (Penanganan Transaksi Gagal) dan dipakai sebagai acuan saat menganalisis kenaikan tingkat kegagalan.\n\n2. Katalog Kode Kegagalan\n\nKode\n\nNama\n\nJenis\n\nPenyebab umum\n\nTindakan standar\n\nPIC / SLA\n\nF01\n\nINSUFFICIENT_BALANCE\n\nKesalahan Pengguna\n\nSaldo rekening atau dompet kurang saat pembayaran; pelanggan lupa top-up sebelum membayar.\n\nTampilkan pesan saldo kurang; sarankan top-up atau ganti kanal. Tidak ada dana terdebet.\n\nCustomer Support / respons 4 jam kerja\n\nF02\n\nINVALID_PIN_OTP\n\nKesalahan Pengguna\n\nOTP kedaluwarsa (lebih dari 5 menit), salah ketik PIN, SMS OTP terlambat diterima.\n\nIzinkan kirim ulang OTP maksimal 3 kali; setelah 3 kali salah, kunci akun 30 menit.\n\nCustomer Support / respons 4 jam kerja\n\nF03\n\nCARD_DECLINED\n\nPenyedia (Bank/Wallet)\n\nLimit kartu habis, kartu diblokir atau kedaluwarsa, kebijakan bank penerbit, autentikasi 3DS gagal.\n\nArahkan pelanggan menghubungi bank penerbit; tawarkan kanal pembayaran alternatif.\n\nPartnership and Settlement / 24 jam\n\nF04\n\nBANK_TIMEOUT\n\nPenyedia (Bank/Wallet)\n\nBank atau provider tidak merespons dalam batas 10 detik: gangguan di sisi bank, perubahan versi API atau host-to-host, rate limit atau throttling, antrean tinggi pada jam sibuk.\n\nLakukan status inquiry; retry otomatis 1 kali; rekonsiliasi dan refund bila dana terdebet; eskalasi ke Integration Team jika failure rate kanal di atas 5%.\n\nIntegration Team / 8 jam\n\nF05\n\nGATEWAY_ERROR\n\nTeknis Internal\n\nBug pada rilis terbaru, kegagalan validasi atau pembentukan payload, kehabisan koneksi database, kapasitas tidak cukup saat lonjakan trafik.\n\nBuat insiden; periksa deployment 24 jam terakhir; lakukan rollback atau hotfix; pantau kategori transaksi yang terdampak.\n\nPlatform Engineering / 4 jam\n\nF06\n\nLIMIT_EXCEEDED\n\nKesalahan Pengguna\n\nNominal melebihi limit harian atau limit per transaksi pada kanal pelanggan.\n\nInformasikan limit; sarankan memecah transaksi, menaikkan limit, atau memakai kanal lain.\n\nCustomer Support / respons 4 jam kerja\n\nF07\n\nFRAUD_SUSPECTED\n\nRisiko dan Fraud\n\nAturan velocity terpicu, perangkat baru, nominal tidak wajar, alamat IP berisiko.\n\nTahan transaksi; review manual dalam 2 jam kerja; hubungi pelanggan; lepaskan atau blokir.\n\nRisk and Fraud Team / 2 jam kerja\n\nF08\n\nINVALID_MERCHANT_CONFIG\n\nTeknis Internal\n\nKredensial, callback URL, atau kanal pembayaran belum aktif/valid pada konfigurasi merchant.\n\nPerbaiki konfigurasi merchant dan uji ulang.\n\nMerchant Operations / 24 jam\n\nF09\n\nDUPLICATE_TRANSACTION\n\nTeknis Internal\n\nRetry dari sisi klien tanpa idempotency key, klik ganda pada tombol bayar.\n\nBatalkan transaksi duplikat; pastikan idempotency key; refund jika terdebet ganda.\n\nPlatform Engineering / 8 jam\n\nF10\n\nNETWORK_ERROR\n\nJaringan\n\nGangguan koneksi antara gateway dan provider, masalah DNS, gangguan ISP atau penyedia cloud.\n\nRetry otomatis 2 kali; jika serentak pada banyak kanal, eskalasi ke Infrastructure Team.\n\nInfrastructure Team / 4 jam\n\nF11\n\nINVALID_ACCOUNT\n\nKesalahan Pengguna\n\nNomor VA salah ketik, tidak aktif, atau sudah kedaluwarsa.\n\nValidasi nomor; buat ulang Virtual Account baru.\n\nCustomer Support / respons 4 jam kerja\n\nF12\n\nMAINTENANCE_WINDOW\n\nPenyedia (Bank/Wallet)\n\nPemeliharaan terjadwal oleh provider, umumnya dini hari sekitar pukul 01:00 - 04:00 WIB.\n\nTampilkan banner jadwal; tidak dihitung pelanggaran SLA; tidak perlu eskalasi.\n\nIntegration Team (pemantauan)\n\n3. Penyebab Umum Kegagalan Berdasarkan Jenis\n\nKesalahan Pengguna (F01, F02, F06, F11)\n\nDisebabkan oleh kondisi atau tindakan pelanggan: saldo kurang, OTP atau PIN salah atau kedaluwarsa, limit transaksi terlampaui, dan nomor Virtual Account atau akun tidak valid. Jenis ini umumnya merupakan porsi terbesar kegagalan dasar (baseline) dan tidak memerlukan eskalasi teknis. Penanganan berfokus pada edukasi dan pesan kesalahan yang jelas.\n\nPenyedia: Bank atau Wallet (F03, F04, F12)\n\nDisebabkan oleh pihak ketiga. F03 berasal dari penolakan bank penerbit kartu. F04 (timeout) berasal dari bank atau provider yang lambat atau tidak merespons, misalnya akibat gangguan, perubahan versi API atau host-to-host, pembatasan rate limit, atau antrean tinggi pada jam sibuk. F12 berasal dari pemeliharaan terjadwal. Penanganan membutuhkan koordinasi dengan provider dan rekonsiliasi dana.\n\nTeknis Internal (F05, F08, F09)\n\nDisebabkan oleh sistem sendiri: bug pada rilis, kegagalan validasi payload (F05), konfigurasi merchant salah (F08), atau transaksi duplikat akibat retry tanpa idempotency key (F09). Kenaikan F05 yang bertepatan dengan jadwal deployment menjadi indikasi kuat regresi rilis.\n\nRisiko dan Fraud (F07)\n\nTransaksi ditahan oleh aturan deteksi risiko. Penyebab umum: nominal tidak wajar, kecepatan transaksi tinggi, perangkat atau alamat IP berisiko. Penanganan melalui review manual Risk Team.\n\nJaringan (F10)\n\nGangguan konektivitas antara gateway dan provider, DNS, ISP, atau penyedia cloud. Pola khasnya adalah kenaikan serentak pada beberapa kanal sekaligus.\n\n4. Pola Kenaikan Kegagalan dan Panduan Diagnosis\n\nTabel berikut membantu menghubungkan pola yang terlihat pada data transaksi dengan kemungkinan penyebabnya. Pola harus selalu diverifikasi dengan data tambahan (jam, kategori, kanal, tanggal mulai) dan dokumen pendukung seperti log insiden dan jadwal deployment.\n\nPola pada data\n\nKemungkinan penyebab\n\nLangkah verifikasi\n\nLonjakan F04 pada satu kanal bank/VA saja\n\nPerubahan API atau host-to-host di sisi bank, pembatasan rate limit, gangguan provider.\n\nCek pemberitahuan perubahan teknis dari bank; bandingkan processing time; lihat apakah terkonsentrasi di jam sibuk dan kategori bervolume tinggi.\n\nLonjakan F05 pada satu kanal setelah deployment\n\nRegresi pada rilis gateway, perubahan payload atau validasi.\n\nCocokkan tanggal mulai kenaikan dengan jadwal deployment; periksa kategori transaksi yang paling terdampak; pertimbangkan rollback atau hotfix.\n\nLonjakan F10 serentak lintas kanal\n\nMasalah jaringan, DNS, atau penyedia cloud.\n\nPeriksa konektivitas dan status penyedia cloud; eskalasi ke Infrastructure Team.\n\nLonjakan F12 pada dini hari\n\nPemeliharaan terjadwal provider.\n\nCocokkan dengan jadwal pemeliharaan; bukan insiden dan tidak dihitung dalam SLA.\n\nKenaikan merata F01, F02, F06\n\nPerilaku pengguna atau efek kampanye promosi.\n\nUmumnya tidak perlu eskalasi; evaluasi pesan kesalahan dan edukasi pengguna.\n\nKenaikan F03 pada Kartu Kredit\n\nKebijakan bank penerbit atau BIN tertentu.\n\nKoordinasi dengan acquirer dan bank penerbit; pantau per BIN.\n\nKenaikan EXPIRED pada Virtual Account\n\nMasa berlaku VA terlalu singkat atau pengingat pembayaran kurang efektif.\n\nEvaluasi masa berlaku VA dan kirim pengingat sebelum jatuh tempo.\n\nLonjakan F07\n\nAturan risiko baru atau serangan terkoordinasi.\n\nReview aturan velocity; analisis perangkat dan IP; koordinasi dengan Risk Team.\n\n5. Catatan Interpretasi Metrik\n\nFailure rate dihitung sebagai transaksi berstatus FAILED dibagi total transaksi. Status EXPIRED, PENDING, dan REFUNDED tidak dihitung sebagai FAILED.\n\nRentang failure rate normal per kanal adalah 1% sampai 4%. Kartu Kredit memiliki failure rate dasar yang lebih tinggi (sekitar 4% sampai 7%) karena penolakan bank penerbit (F03).\n\nPerbandingan antar bulan sebaiknya dilakukan pada periode yang setara (misalnya tanggal 1 sampai 18) bila salah satu bulan belum lengkap.\n\nKegagalan akibat kesalahan pengguna (F01, F02, F06, F11) cenderung stabil dari bulan ke bulan; lonjakan pada kode lain lebih mungkin menandakan masalah sistemik.\n\nWaktu pemrosesan (processing time) yang meningkat bersamaan dengan kenaikan F04 atau F05 merupakan indikator pendukung degradasi layanan.\n\n"
+        }
+      ],
+      "sections": [
+        {
+          "no": null,
+          "title": "Katalog Kode Kegagalan Transaksi dan Panduan Diagnosis",
+          "page": 1,
+          "text": "Katalog Kode Kegagalan Transaksi dan Panduan Diagnosis\nNomor Dokumen: KB-TRX-007 | Versi 1.3 | Berlaku sejak: 1 Maret 2026 | Pemilik: Payment Operations | Klasifikasi: Internal"
+        },
+        {
+          "no": 1,
+          "title": "Pendahuluan",
+          "page": 1,
+          "text": "Dokumen ini menjelaskan seluruh kode kegagalan transaksi (F01 sampai F12) yang digunakan pada platform pembayaran, penyebab umum masing-masing kode, tindakan standar, serta penanggung jawab dan SLA. Dokumen ini merupakan pelengkap SOP-TRX-003 (Penanganan Transaksi Gagal) dan dipakai sebagai acuan saat menganalisis kenaikan tingkat kegagalan."
+        },
+        {
+          "no": 2,
+          "title": "Katalog Kode Kegagalan",
+          "page": 1,
+          "text": "Kode\nNama\nJenis\nPenyebab umum\nTindakan standar\nPIC / SLA\nF01\nINSUFFICIENT_BALANCE\nKesalahan Pengguna\nSaldo rekening atau dompet kurang saat pembayaran; pelanggan lupa top-up sebelum membayar.\nTampilkan pesan saldo kurang; sarankan top-up atau ganti kanal. Tidak ada dana terdebet.\nCustomer Support / respons 4 jam kerja\nF02\nINVALID_PIN_OTP\nKesalahan Pengguna\nOTP kedaluwarsa (lebih dari 5 menit), salah ketik PIN, SMS OTP terlambat diterima.\nIzinkan kirim ulang OTP maksimal 3 kali; setelah 3 kali salah, kunci akun 30 menit.\nCustomer Support / respons 4 jam kerja\nF03\nCARD_DECLINED\nPenyedia (Bank/Wallet)\nLimit kartu habis, kartu diblokir atau kedaluwarsa, kebijakan bank penerbit, autentikasi 3DS gagal.\nArahkan pelanggan menghubungi bank penerbit; tawarkan kanal pembayaran alternatif.\nPartnership and Settlement / 24 jam\nF04\nBANK_TIMEOUT\nPenyedia (Bank/Wallet)\nBank atau provider tidak merespons dalam batas 10 detik: gangguan di sisi bank, perubahan versi API atau host-to-host, rate limit atau throttling, antrean tinggi pada jam sibuk.\nLakukan status inquiry; retry otomatis 1 kali; rekonsiliasi dan refund bila dana terdebet; eskalasi ke Integration Team jika failure rate kanal di atas 5%.\nIntegration Team / 8 jam\nF05\nGATEWAY_ERROR\nTeknis Internal\nBug pada rilis terbaru, kegagalan validasi atau pembentukan payload, kehabisan koneksi database, kapasitas tidak cukup saat lonjakan trafik.\nBuat insiden; periksa deployment 24 jam terakhir; lakukan rollback atau hotfix; pantau kategori transaksi yang terdampak.\nPlatform Engineering / 4 jam\nF06\nLIMIT_EXCEEDED\nKesalahan Pengguna\nNominal melebihi limit harian atau limit per transaksi pada kanal pelanggan.\nInformasikan limit; sarankan memecah transaksi, menaikkan limit, atau memakai kanal lain.\nCustomer Support / respons 4 jam kerja\nF07\nFRAUD_SUSPECTED\nRisiko dan Fraud\nAturan velocity terpicu, perangkat baru, nominal tidak wajar, alamat IP berisiko.\nTahan transaksi; review manual dalam 2 jam kerja; hubungi pelanggan; lepaskan atau blokir.\nRisk and Fraud Team / 2 jam kerja\nF08\nINVALID_MERCHANT_CONFIG\nTeknis Internal\nKredensial, callback URL, atau kanal pembayaran belum aktif/valid pada konfigurasi merchant.\nPerbaiki konfigurasi merchant dan uji ulang.\nMerchant Operations / 24 jam\nF09\nDUPLICATE_TRANSACTION\nTeknis Internal\nRetry dari sisi klien tanpa idempotency key, klik ganda pada tombol bayar.\nBatalkan transaksi duplikat; pastikan idempotency key; refund jika terdebet ganda.\nPlatform Engineering / 8 jam\nF10\nNETWORK_ERROR\nJaringan\nGangguan koneksi antara gateway dan provider, masalah DNS, gangguan ISP atau penyedia cloud.\nRetry otomatis 2 kali; jika serentak pada banyak kanal, eskalasi ke Infrastructure Team.\nInfrastructure Team / 4 jam\nF11\nINVALID_ACCOUNT\nKesalahan Pengguna\nNomor VA salah ketik, tidak aktif, atau sudah kedaluwarsa.\nValidasi nomor; buat ulang Virtual Account baru.\nCustomer Support / respons 4 jam kerja\nF12\nMAINTENANCE_WINDOW\nPenyedia (Bank/Wallet)\nPemeliharaan terjadwal oleh provider, umumnya dini hari sekitar pukul 01:00 - 04:00 WIB.\nTampilkan banner jadwal; tidak dihitung pelanggaran SLA; tidak perlu eskalasi.\nIntegration Team (pemantauan)"
+        },
+        {
+          "no": 3,
+          "title": "Penyebab Umum Kegagalan Berdasarkan Jenis",
+          "page": 1,
+          "text": "Kesalahan Pengguna (F01, F02, F06, F11)\nDisebabkan oleh kondisi atau tindakan pelanggan: saldo kurang, OTP atau PIN salah atau kedaluwarsa, limit transaksi terlampaui, dan nomor Virtual Account atau akun tidak valid. Jenis ini umumnya merupakan porsi terbesar kegagalan dasar (baseline) dan tidak memerlukan eskalasi teknis. Penanganan berfokus pada edukasi dan pesan kesalahan yang jelas.\nPenyedia: Bank atau Wallet (F03, F04, F12)\nDisebabkan oleh pihak ketiga. F03 berasal dari penolakan bank penerbit kartu. F04 (timeout) berasal dari bank atau provider yang lambat atau tidak merespons, misalnya akibat gangguan, perubahan versi API atau host-to-host, pembatasan rate limit, atau antrean tinggi pada jam sibuk. F12 berasal dari pemeliharaan terjadwal. Penanganan membutuhkan koordinasi dengan provider dan rekonsiliasi dana.\nTeknis Internal (F05, F08, F09)\nDisebabkan oleh sistem sendiri: bug pada rilis, kegagalan validasi payload (F05), konfigurasi merchant salah (F08), atau transaksi duplikat akibat retry tanpa idempotency key (F09). Kenaikan F05 yang bertepatan dengan jadwal deployment menjadi indikasi kuat regresi rilis.\nRisiko dan Fraud (F07)\nTransaksi ditahan oleh aturan deteksi risiko. Penyebab umum: nominal tidak wajar, kecepatan transaksi tinggi, perangkat atau alamat IP berisiko. Penanganan melalui review manual Risk Team.\nJaringan (F10)\nGangguan konektivitas antara gateway dan provider, DNS, ISP, atau penyedia cloud. Pola khasnya adalah kenaikan serentak pada beberapa kanal sekaligus."
+        },
+        {
+          "no": 4,
+          "title": "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
+          "page": 1,
+          "text": "Tabel berikut membantu menghubungkan pola yang terlihat pada data transaksi dengan kemungkinan penyebabnya. Pola harus selalu diverifikasi dengan data tambahan (jam, kategori, kanal, tanggal mulai) dan dokumen pendukung seperti log insiden dan jadwal deployment.\nPola pada data\nKemungkinan penyebab\nLangkah verifikasi\nLonjakan F04 pada satu kanal bank/VA saja\nPerubahan API atau host-to-host di sisi bank, pembatasan rate limit, gangguan provider.\nCek pemberitahuan perubahan teknis dari bank; bandingkan processing time; lihat apakah terkonsentrasi di jam sibuk dan kategori bervolume tinggi.\nLonjakan F05 pada satu kanal setelah deployment\nRegresi pada rilis gateway, perubahan payload atau validasi.\nCocokkan tanggal mulai kenaikan dengan jadwal deployment; periksa kategori transaksi yang paling terdampak; pertimbangkan rollback atau hotfix.\nLonjakan F10 serentak lintas kanal\nMasalah jaringan, DNS, atau penyedia cloud.\nPeriksa konektivitas dan status penyedia cloud; eskalasi ke Infrastructure Team.\nLonjakan F12 pada dini hari\nPemeliharaan terjadwal provider.\nCocokkan dengan jadwal pemeliharaan; bukan insiden dan tidak dihitung dalam SLA.\nKenaikan merata F01, F02, F06\nPerilaku pengguna atau efek kampanye promosi.\nUmumnya tidak perlu eskalasi; evaluasi pesan kesalahan dan edukasi pengguna.\nKenaikan F03 pada Kartu Kredit\nKebijakan bank penerbit atau BIN tertentu.\nKoordinasi dengan acquirer dan bank penerbit; pantau per BIN.\nKenaikan EXPIRED pada Virtual Account\nMasa berlaku VA terlalu singkat atau pengingat pembayaran kurang efektif.\nEvaluasi masa berlaku VA dan kirim pengingat sebelum jatuh tempo.\nLonjakan F07\nAturan risiko baru atau serangan terkoordinasi.\nReview aturan velocity; analisis perangkat dan IP; koordinasi dengan Risk Team."
+        },
+        {
+          "no": 5,
+          "title": "Catatan Interpretasi Metrik",
+          "page": 1,
+          "text": "Failure rate dihitung sebagai transaksi berstatus FAILED dibagi total transaksi. Status EXPIRED, PENDING, dan REFUNDED tidak dihitung sebagai FAILED.\nRentang failure rate normal per kanal adalah 1% sampai 4%. Kartu Kredit memiliki failure rate dasar yang lebih tinggi (sekitar 4% sampai 7%) karena penolakan bank penerbit (F03).\nPerbandingan antar bulan sebaiknya dilakukan pada periode yang setara (misalnya tanggal 1 sampai 18) bila salah satu bulan belum lengkap.\nKegagalan akibat kesalahan pengguna (F01, F02, F06, F11) cenderung stabil dari bulan ke bulan; lonjakan pada kode lain lebih mungkin menandakan masalah sistemik.\nWaktu pemrosesan (processing time) yang meningkat bersamaan dengan kenaikan F04 atau F05 merupakan indikator pendukung degradasi layanan."
+        }
+      ]
+    },
+    {
+      "id": "laporan-operasional-2026-09",
+      "title": "Laporan Operasional Bulanan - September 2026",
+      "file": "Laporan_Operasional_2026-09.pdf",
+      "format": "pdf",
+      "kind": "monthly_report",
+      "sizeBytes": 6538,
+      "pages": [
+        {
+          "page": 1,
+          "text": "Laporan Operasional Bulanan -\nLaporan Operasional Bulanan - September 2026\nPayment Operations | PT Neural Technologies Indonesia | Klasifikasi: Internal\n1. Ringkasan KPI\nIndikator September 2026 Agustus 2026 Perubahan\nTotal transaksi 12.520 12.980 -3,5%\nNilai transaksi sukses (Rp) 8.973.463.500 10.718.905.500 -16,3%\nSuccess rate 94,86% 95,00% -0,14 poin\nFailure rate 2,52% 2,81% -0,30 poin\nTransaksi EXPIRED 180 156\nTransaksi PENDING 44 45\nTransaksi REFUNDED 105 83\n2. Kinerja per Kanal\nKanal Total transaksi Success rate Failure rate Failure rate Agustus\nGoPay 1.848 95,94% 2,06% 2,75%\nVA BCA 1.768 94,57% 1,75% 1,66%\nVA Mandiri 1.459 93,56% 2,12% 1,93%\nDANA 1.451 95,86% 2,62% 2,95%\nQRIS 1.364 96,92% 1,47% 2,06%\nOVO 1.299 93,76% 3,08% 2,32%\nKartu Kredit 1.004 93,73% 5,18% 7,18%\nShopeePay 962 95,32% 3,01% 3,04%\nVA BRI 709 92,38% 2,96% 2,95%\nVA BNI 656 94,82% 2,29% 2,37%\n3. Kinerja per Kategori Merchant\nKategori Total transaksi Perubahan vs Agustus Failure rate\nE-commerce 3.177 +3,2% 2,55%\nTravel & Tiket 2.168 -21,2% 2,77%\nTop-up Pulsa & Saldo 1.961 +7,3% 2,14%\nF&B 1.703 +1,1% 2,41%\nTagihan & Utilitas 1.418 +1,6% 3,10%\nLangganan Digital 1.303 +4,0% 2,30%\nPendidikan 790 -20,0% 2,15%\n4. Kode Kegagalan Teratas\nKode Nama Jumlah Porsi dari FAILED\nF01 INSUFFICIENT_BALANCE 86 27,3%\nF02 INVALID_PIN_OTP 49 15,6%\nF06 LIMIT_EXCEEDED 32 10,2%"
+        },
+        {
+          "page": 2,
+          "text": "Laporan Operasional Bulanan -\nKode Nama Jumlah Porsi dari FAILED\nF10 NETWORK_ERROR 32 10,2%\nF04 BANK_TIMEOUT 24 7,6%\n5. Insiden pada Periode Ini\nID Mulai Judul Severity Status\nINC-2026-0913 2026-09-13 01:00 Pemeliharaan terjadwal VA BNI Low Resolved\nINC-2026-0930 2026-09-30 19:20 Gangguan jaringan switching QRIS Medium Resolved\n6. Catatan Manajemen\nKinerja transaksi September 2026 stabil. Failure rate 2,52% berada dalam rentang normal (1% - 4%) dan sedikit\nmembaik dibanding Agustus (2,81%). Success rate 94,86%.\nVolume transaksi turun 3,5% dibanding Agustus, terutama karena normalisasi setelah musim liburan dan tahun\najaran baru: kategori Travel & Tiket berubah -21,2%, sedangkan kategori Top-up Pulsa & Saldo berubah 7,3%.\nDua kejadian operasional minor: pemeliharaan terjadwal VA BNI pada 13 September pukul 01:00 - 04:00\n(INC-2026-0913, kode F12) dan gangguan jaringan switching QRIS pada 30 September pukul 19:20 - 20:10\n(INC-2026-0930, kode F10). Keduanya telah selesai dan berdampak terbatas.\nSeluruh kanal non-kartu berada di bawah threshold peringatan (5%). Kartu Kredit memiliki failure rate tertinggi\n(5,18%) secara struktural karena penolakan issuer (F03), masih dalam baseline kanal tersebut (4% sampai\n7%)."
+        }
+      ],
+      "sections": [
+        {
+          "no": null,
+          "title": "Laporan Operasional Bulanan - September 2026",
+          "page": 1,
+          "text": "Laporan Operasional Bulanan -\nLaporan Operasional Bulanan - September 2026\nPayment Operations | PT Neural Technologies Indonesia | Klasifikasi: Internal"
+        },
+        {
+          "no": 1,
+          "title": "Ringkasan KPI",
+          "page": 1,
+          "text": "Indikator September 2026 Agustus 2026 Perubahan\nTotal transaksi 12.520 12.980 -3,5%\nNilai transaksi sukses (Rp) 8.973.463.500 10.718.905.500 -16,3%\nSuccess rate 94,86% 95,00% -0,14 poin\nFailure rate 2,52% 2,81% -0,30 poin\nTransaksi EXPIRED 180 156\nTransaksi PENDING 44 45\nTransaksi REFUNDED 105 83"
+        },
+        {
+          "no": 2,
+          "title": "Kinerja per Kanal",
+          "page": 1,
+          "text": "Kanal Total transaksi Success rate Failure rate Failure rate Agustus\nGoPay 1.848 95,94% 2,06% 2,75%\nVA BCA 1.768 94,57% 1,75% 1,66%\nVA Mandiri 1.459 93,56% 2,12% 1,93%\nDANA 1.451 95,86% 2,62% 2,95%\nQRIS 1.364 96,92% 1,47% 2,06%\nOVO 1.299 93,76% 3,08% 2,32%\nKartu Kredit 1.004 93,73% 5,18% 7,18%\nShopeePay 962 95,32% 3,01% 3,04%\nVA BRI 709 92,38% 2,96% 2,95%\nVA BNI 656 94,82% 2,29% 2,37%"
+        },
+        {
+          "no": 3,
+          "title": "Kinerja per Kategori Merchant",
+          "page": 1,
+          "text": "Kategori Total transaksi Perubahan vs Agustus Failure rate\nE-commerce 3.177 +3,2% 2,55%\nTravel & Tiket 2.168 -21,2% 2,77%\nTop-up Pulsa & Saldo 1.961 +7,3% 2,14%\nF&B 1.703 +1,1% 2,41%\nTagihan & Utilitas 1.418 +1,6% 3,10%\nLangganan Digital 1.303 +4,0% 2,30%\nPendidikan 790 -20,0% 2,15%"
+        },
+        {
+          "no": 4,
+          "title": "Kode Kegagalan Teratas",
+          "page": 1,
+          "text": "Kode Nama Jumlah Porsi dari FAILED\nF01 INSUFFICIENT_BALANCE 86 27,3%\nF02 INVALID_PIN_OTP 49 15,6%\nF06 LIMIT_EXCEEDED 32 10,2%\nLaporan Operasional Bulanan -\nKode Nama Jumlah Porsi dari FAILED\nF10 NETWORK_ERROR 32 10,2%\nF04 BANK_TIMEOUT 24 7,6%"
+        },
+        {
+          "no": 5,
+          "title": "Insiden pada Periode Ini",
+          "page": 2,
+          "text": "ID Mulai Judul Severity Status\nINC-2026-0913 2026-09-13 01:00 Pemeliharaan terjadwal VA BNI Low Resolved\nINC-2026-0930 2026-09-30 19:20 Gangguan jaringan switching QRIS Medium Resolved"
+        },
+        {
+          "no": 6,
+          "title": "Catatan Manajemen",
+          "page": 2,
+          "text": "Kinerja transaksi September 2026 stabil. Failure rate 2,52% berada dalam rentang normal (1% - 4%) dan sedikit\nmembaik dibanding Agustus (2,81%). Success rate 94,86%.\nVolume transaksi turun 3,5% dibanding Agustus, terutama karena normalisasi setelah musim liburan dan tahun\najaran baru: kategori Travel & Tiket berubah -21,2%, sedangkan kategori Top-up Pulsa & Saldo berubah 7,3%.\nDua kejadian operasional minor: pemeliharaan terjadwal VA BNI pada 13 September pukul 01:00 - 04:00\n(INC-2026-0913, kode F12) dan gangguan jaringan switching QRIS pada 30 September pukul 19:20 - 20:10\n(INC-2026-0930, kode F10). Keduanya telah selesai dan berdampak terbatas.\nSeluruh kanal non-kartu berada di bawah threshold peringatan (5%). Kartu Kredit memiliki failure rate tertinggi\n(5,18%) secara struktural karena penolakan issuer (F03), masih dalam baseline kanal tersebut (4% sampai\n7%)."
+        }
+      ]
+    },
+    {
+      "id": "laporan-operasional-2026-10",
+      "title": "Laporan Operasional Bulanan - Oktober 2026",
+      "file": "Laporan_Operasional_2026-10.pdf",
+      "format": "pdf",
+      "kind": "monthly_report",
+      "sizeBytes": 6672,
+      "pages": [
+        {
+          "page": 1,
+          "text": "Laporan Operasional Bulanan -\nLaporan Operasional Bulanan - Oktober 2026\nPayment Operations | PT Neural Technologies Indonesia | Klasifikasi: Internal\n1. Ringkasan KPI\nIndikator Oktober 2026 September 2026 Perubahan\nTotal transaksi 13.327 12.520 +6,4%\nNilai transaksi sukses (Rp) 8.231.978.500 8.973.463.500 -8,3%\nSuccess rate 94,36% 94,86% -0,50 poin\nFailure rate 3,30% 2,52% +0,79 poin\nTransaksi EXPIRED 169 180\nTransaksi PENDING 49 44\nTransaksi REFUNDED 94 105\n2. Kinerja per Kanal\nKanal Total transaksi Success rate Failure rate Failure rate\nSeptember\nGoPay 2.148 95,81% 2,75% 2,06%\nVA BCA 1.712 94,04% 1,52% 1,75%\nQRIS 1.652 96,37% 1,82% 1,47%\nDANA 1.582 94,63% 3,67% 2,62%\nVA Mandiri 1.526 90,56% 6,03% 2,12%\nOVO 1.421 94,93% 3,24% 3,08%\nShopeePay 1.054 95,16% 3,51% 3,01%\nKartu Kredit 939 92,97% 6,07% 5,18%\nVA BRI 668 95,21% 2,10% 2,96%\nVA BNI 625 92,00% 3,36% 2,29%\n3. Kinerja per Kategori Merchant\nKategori Total transaksi Perubahan vs September Failure rate\nE-commerce 3.764 +18,5% 3,53%\nTop-up Pulsa & Saldo 2.305 +17,5% 3,17%\nTravel & Tiket 1.894 -12,6% 3,48%\nF&B 1.812 +6,4% 2,81%\nTagihan & Utilitas 1.508 +6,3% 3,58%\nLangganan Digital 1.474 +13,1% 3,26%\nPendidikan 570 -27,8% 2,63%\n4. Kode Kegagalan Teratas\nKode Nama Jumlah Porsi dari FAILED\nF01 INSUFFICIENT_BALANCE 96 21,8%\nF04 BANK_TIMEOUT 92 20,9%"
+        },
+        {
+          "page": 2,
+          "text": "Laporan Operasional Bulanan -\nKode Nama Jumlah Porsi dari FAILED\nF02 INVALID_PIN_OTP 53 12,0%\nF06 LIMIT_EXCEEDED 47 10,7%\nF10 NETWORK_ERROR 37 8,4%\n5. Insiden pada Periode Ini\nID Mulai Judul Severity Status\nINC-2026-1015 2026-10-15 00:00 Lonjakan timeout VA Mandiri pasca migrasi API\nhost-to-host v2\nHigh Open\n6. Catatan Manajemen\nFailure rate Oktober 2026 naik menjadi 3,30% dari 2,52% pada September, dan success rate turun menjadi\n94,36%. Kenaikan terjadi pada paruh kedua bulan.\nKontributor utama adalah kanal VA Mandiri: failure rate bulanan 6,03% dibanding 2,12% pada September.\nJumlah kegagalan kode F04 (BANK_TIMEOUT) meningkat dari 24 menjadi 92 kasus.\nInsiden INC-2026-1015 (Lonjakan timeout VA Mandiri) dibuka oleh tim operasional pada 17 Oktober setelah\nkeluhan pelanggan, dengan waktu mulai gangguan tercatat 15 Oktober. Dugaan awal terkait migrasi endpoint\nhost-to-host Bank Mandiri ke versi 2. Tiket telah dibuka ke Bank Mandiri dan insiden masih berstatus Open\npada akhir bulan.\nKategori dengan kenaikan volume terbesar adalah E-commerce dan Top-up Pulsa dan Saldo (persiapan\nkampanye akhir tahun), sedangkan Travel dan Pendidikan menurun. Kanal QRIS terus bertumbuh dan menjadi\nsalah satu kanal dengan pertumbuhan tercepat.\nRekomendasi: (1) turunkan threshold alert per kanal agar anomali terdeteksi lebih cepat, (2) tetapkan PIC untuk\nmemantau pemberitahuan perubahan teknis dari bank mitra, (3) evaluasi mekanisme retry dan failover untuk\nVA Mandiri."
+        }
+      ],
+      "sections": [
+        {
+          "no": null,
+          "title": "Laporan Operasional Bulanan - Oktober 2026",
+          "page": 1,
+          "text": "Laporan Operasional Bulanan -\nLaporan Operasional Bulanan - Oktober 2026\nPayment Operations | PT Neural Technologies Indonesia | Klasifikasi: Internal"
+        },
+        {
+          "no": 1,
+          "title": "Ringkasan KPI",
+          "page": 1,
+          "text": "Indikator Oktober 2026 September 2026 Perubahan\nTotal transaksi 13.327 12.520 +6,4%\nNilai transaksi sukses (Rp) 8.231.978.500 8.973.463.500 -8,3%\nSuccess rate 94,36% 94,86% -0,50 poin\nFailure rate 3,30% 2,52% +0,79 poin\nTransaksi EXPIRED 169 180\nTransaksi PENDING 49 44\nTransaksi REFUNDED 94 105"
+        },
+        {
+          "no": 2,
+          "title": "Kinerja per Kanal",
+          "page": 1,
+          "text": "Kanal Total transaksi Success rate Failure rate Failure rate\nSeptember\nGoPay 2.148 95,81% 2,75% 2,06%\nVA BCA 1.712 94,04% 1,52% 1,75%\nQRIS 1.652 96,37% 1,82% 1,47%\nDANA 1.582 94,63% 3,67% 2,62%\nVA Mandiri 1.526 90,56% 6,03% 2,12%\nOVO 1.421 94,93% 3,24% 3,08%\nShopeePay 1.054 95,16% 3,51% 3,01%\nKartu Kredit 939 92,97% 6,07% 5,18%\nVA BRI 668 95,21% 2,10% 2,96%\nVA BNI 625 92,00% 3,36% 2,29%"
+        },
+        {
+          "no": 3,
+          "title": "Kinerja per Kategori Merchant",
+          "page": 1,
+          "text": "Kategori Total transaksi Perubahan vs September Failure rate\nE-commerce 3.764 +18,5% 3,53%\nTop-up Pulsa & Saldo 2.305 +17,5% 3,17%\nTravel & Tiket 1.894 -12,6% 3,48%\nF&B 1.812 +6,4% 2,81%\nTagihan & Utilitas 1.508 +6,3% 3,58%\nLangganan Digital 1.474 +13,1% 3,26%\nPendidikan 570 -27,8% 2,63%"
+        },
+        {
+          "no": 4,
+          "title": "Kode Kegagalan Teratas",
+          "page": 1,
+          "text": "Kode Nama Jumlah Porsi dari FAILED\nF01 INSUFFICIENT_BALANCE 96 21,8%\nF04 BANK_TIMEOUT 92 20,9%\nLaporan Operasional Bulanan -\nKode Nama Jumlah Porsi dari FAILED\nF02 INVALID_PIN_OTP 53 12,0%\nF06 LIMIT_EXCEEDED 47 10,7%\nF10 NETWORK_ERROR 37 8,4%"
+        },
+        {
+          "no": 5,
+          "title": "Insiden pada Periode Ini",
+          "page": 2,
+          "text": "ID Mulai Judul Severity Status\nINC-2026-1015 2026-10-15 00:00 Lonjakan timeout VA Mandiri pasca migrasi API\nhost-to-host v2\nHigh Open"
+        },
+        {
+          "no": 6,
+          "title": "Catatan Manajemen",
+          "page": 2,
+          "text": "Failure rate Oktober 2026 naik menjadi 3,30% dari 2,52% pada September, dan success rate turun menjadi\n94,36%. Kenaikan terjadi pada paruh kedua bulan.\nKontributor utama adalah kanal VA Mandiri: failure rate bulanan 6,03% dibanding 2,12% pada September.\nJumlah kegagalan kode F04 (BANK_TIMEOUT) meningkat dari 24 menjadi 92 kasus.\nInsiden INC-2026-1015 (Lonjakan timeout VA Mandiri) dibuka oleh tim operasional pada 17 Oktober setelah\nkeluhan pelanggan, dengan waktu mulai gangguan tercatat 15 Oktober. Dugaan awal terkait migrasi endpoint\nhost-to-host Bank Mandiri ke versi 2. Tiket telah dibuka ke Bank Mandiri dan insiden masih berstatus Open\npada akhir bulan.\nKategori dengan kenaikan volume terbesar adalah E-commerce dan Top-up Pulsa dan Saldo (persiapan\nkampanye akhir tahun), sedangkan Travel dan Pendidikan menurun. Kanal QRIS terus bertumbuh dan menjadi\nsalah satu kanal dengan pertumbuhan tercepat.\nRekomendasi: (1) turunkan threshold alert per kanal agar anomali terdeteksi lebih cepat, (2) tetapkan PIC untuk\nmemantau pemberitahuan perubahan teknis dari bank mitra, (3) evaluasi mekanisme retry dan failover untuk\nVA Mandiri."
+        }
+      ]
+    },
+    {
+      "id": "sop-trx-003",
+      "title": "SOP-TRX-003 Penanganan Transaksi Gagal",
+      "file": "SOP-TRX-003_Penanganan_Transaksi_Gagal.pdf",
+      "format": "pdf",
+      "kind": "sop",
+      "sizeBytes": 10164,
+      "pages": [
+        {
+          "page": 1,
+          "text": "SOP-TRX-003 v2.1 -\nSOP Penanganan Transaksi Gagal\nNomor Dokumen: SOP-TRX-003 | Versi 2.1 | Berlaku sejak: 1 Maret 2026 | Pemilik: Payment Operations | Klasifikasi:\nInternal\n1. Tujuan\nDokumen ini menetapkan prosedur standar untuk mendeteksi, menangani, mengeskalasi, dan melaporkan\ntransaksi yang tidak berhasil diselesaikan pada platform pembayaran, sehingga dampak terhadap pelanggan\ndan merchant dapat diminimalkan dan dana pelanggan dapat dikembalikan tepat waktu.\n2. Ruang Lingkup\nBerlaku untuk seluruh transaksi pada kanal Virtual Account (BCA, Mandiri, BNI, BRI), E-Wallet (GoPay, OVO,\nDANA, ShopeePay), QRIS, dan Kartu Kredit. Berlaku bagi tim Payment Operations, Customer Support,\nIntegration Team, Platform Engineering, Infrastructure, dan Risk and Fraud.\n3. Definisi Status Transaksi dan Metrik\nStatus Definisi\nSUCCESS Pembayaran terkonfirmasi oleh provider dan dana diterima.\nFAILED Pembayaran ditolak atau gagal diproses. Wajib memiliki kode kegagalan (F01 - F12).\nPENDING Menunggu konfirmasi provider. Dicek ulang otomatis (status inquiry) setiap 5 menit selama 30 menit.\nEXPIRED Batas waktu pembayaran terlewati (VA default 24 jam, QRIS dinamis 15 menit, e-wallet 30 menit).\nTidak dihitung sebagai FAILED.\nREFUNDED Transaksi sukses yang dananya telah dikembalikan kepada pelanggan.\nSuccess Rate = jumlah transaksi SUCCESS dibagi total transaksi. Failure Rate = jumlah transaksi FAILED\ndibagi total transaksi. Rentang failure rate normal per kanal adalah 1% sampai 4%; khusus Kartu Kredit sekitar\n4% sampai 7% karena penolakan bank penerbit (F03) bersifat struktural.\n4. Prosedur Umum Penanganan Transaksi Gagal\n- Langkah 1 - Deteksi: sistem mencatat status FAILED beserta kode kegagalan dan menampilkan pesan yang\nsesuai kepada pelanggan.\n- Langkah 2 - Klasifikasi: kelompokkan kegagalan ke salah satu jenis (Kesalahan Pengguna, Penyedia,\nTeknis Internal, Risiko dan Fraud, Jaringan) berdasarkan Katalog Kode Kegagalan.\n- Langkah 3 - Verifikasi dana: lakukan status inquiry ke provider untuk memastikan apakah dana pelanggan\nsudah terdebet.\n- Langkah 4 - Tindakan: jalankan prosedur sesuai jenis kegagalan (Bagian 5).\n- Langkah 5 - Komunikasi: informasikan pelanggan dan merchant mengenai status serta estimasi\npenyelesaian melalui email, aplikasi, atau Customer Support.\n- Langkah 6 - Rekonsiliasi dan refund: jika dana terdebet tetapi transaksi gagal, proses refund sesuai SLA\npada Bagian 7.\n- Langkah 7 - Pencatatan: seluruh kasus dan insiden dicatat pada incident log dan dilaporkan dalam laporan\noperasional bulanan.\n5. Prosedur Berdasarkan Jenis Kegagalan\nPenanganan berbeda untuk setiap jenis kegagalan karena penyebab dan pihak yang bertanggung jawab\nberbeda."
+        },
+        {
+          "page": 2,
+          "text": "SOP-TRX-003 v2.1 -\nJenis kegagalan Kode Prosedur penanganan PIC SLA\nKesalahan\nPengguna\nF01, F02,\nF06, F11\nTidak perlu eskalasi. Tampilkan pesan edukatif\n(saldo kurang, OTP/PIN salah, limit terlampaui,\nnomor tidak valid). Izinkan percobaan ulang\nmaksimal 3 kali dalam 10 menit; setelah 3 kali\nOTP/PIN salah akun dikunci 30 menit. Tidak ada\nrefund bila dana belum terdebet.\nCustomer Support Respons 4\njam kerja\nPenyedia\n(Bank/Wallet)\nF03, F04,\nF12\nF04 (timeout): lakukan status inquiry, retry otomatis\n1 kali, rekonsiliasi dan refund bila dana terdebet; jika\nfailure rate kanal melebihi 5% buka tiket ke provider\ndan eskalasi ke Integration Team. F03 (kartu\nditolak): arahkan pelanggan menghubungi bank\npenerbit dan tawarkan kanal alternatif. F12\n(maintenance): tampilkan banner jadwal\npemeliharaan; tidak dihitung sebagai pelanggaran\nSLA.\nIntegration Team;\nPartnership and\nSettlement\nF04: 8 jam;\nF03: 24 jam\nTeknis Internal F05, F08,\nF09\nF05 (gateway error): buat insiden, periksa\ndeployment dalam 24 jam terakhir, lakukan rollback\natau hotfix bila terkait rilis. F08: perbaiki konfigurasi\nmerchant. F09: batalkan transaksi duplikat, pastikan\nidempotency key, refund bila terdebet ganda.\nPlatform\nEngineering;\nMerchant\nOperations\nF05: 4 jam;\nF09: 8 jam;\nF08: 24 jam\nRisiko dan Fraud F07 Tahan transaksi, lakukan review manual oleh Risk\nTeam, hubungi pelanggan atau merchant untuk\nverifikasi. Jika terbukti fraud: blokir akun/perangkat\ndan laporkan; jika false positive: lepaskan transaksi\ndan sesuaikan aturan.\nRisk and Fraud\nTeam\n2 jam kerja\nJaringan F10 Retry otomatis 2 kali. Jika gangguan terjadi serentak\npada beberapa kanal, eskalasi ke Infrastructure\nTeam untuk memeriksa konektivitas, DNS, dan\npenyedia cloud.\nInfrastructure\nTeam\n4 jam\n6. Pemantauan, Threshold, dan Eskalasi\nFailure rate dipantau per kanal secara real-time. Tingkat keparahan insiden ditetapkan sebagai berikut:\nLevel Kondisi Respons Target\npemulihan\nEskalasi ke\nP3 - Sedang Failure rate kanal di atas 4% sampai 5%\nselama 60 menit, atau naik lebih dari 2 poin\npersentase dibanding rata-rata 7 hari\nsebelumnya\n4 jam kerja 2 hari kerja Payment Operations\nLead\nP2 - Tinggi Failure rate kanal di atas 5% sampai 10%\nselama 30 menit\n1 jam 8 jam Head of Operations\nP1 - Kritis Failure rate kanal di atas 10% selama 15 menit,\natau kanal tidak merespons\n15 menit 4 jam CTO dan Head of\nOperations\nCatatan: untuk Kartu Kredit, threshold di atas diterapkan terhadap kenaikan relatif dari baseline kanal tersebut\n(4% sampai 7%), bukan terhadap angka absolut.\nLangkah diagnosis awal untuk kenaikan failure rate: (a) tentukan apakah kenaikan terkonsentrasi pada satu\nkanal, kategori merchant, atau jam tertentu; (b) lihat distribusi kode kegagalan; (c) bandingkan dengan jadwal\ndeployment internal dan pemberitahuan perubahan dari provider; (d) periksa waktu respons provider\n(processing time) untuk indikasi degradasi.\n7. Prosedur Refund dan Rekonsiliasi\nKanal SLA pengembalian dana Catatan\nVirtual Account 3 hari kerja Dikembalikan ke rekening sumber melalui bank\nterkait."
+        },
+        {
+          "page": 3,
+          "text": "SOP-TRX-003 v2.1 -\nKanal SLA pengembalian dana Catatan\nE-Wallet (GoPay, OVO, DANA, ShopeePay) Maksimal 2 x 24 jam Dikembalikan ke saldo dompet digital.\nQRIS 2 hari kerja Dikembalikan melalui penyelenggara terkait.\nKartu Kredit 7 sampai 14 hari kerja Mengikuti siklus acquirer dan bank penerbit.\nTransaksi berstatus PENDING yang tidak terkonfirmasi lebih dari 24 jam diubah menjadi FAILED dan dana (bila\nterdebet) dikembalikan secara otomatis. Rekonsiliasi harian dilakukan pada pukul 06:00 WIB oleh Settlement\nTeam.\n8. Pelaporan\n- Laporan harian: failure rate per kanal dan daftar insiden terbuka, dikirim ke Payment Operations sebelum\npukul 09:00 WIB.\n- Laporan operasional bulanan: KPI transaksi, kinerja kanal dan kategori, kode kegagalan teratas, serta\nringkasan insiden, diterbitkan paling lambat hari kerja ke-5 bulan berikutnya.\n- Post-incident report wajib dibuat untuk insiden level P1 dan P2 maksimal 5 hari kerja setelah insiden ditutup.\n9. Kontak Eskalasi (dummy)\nTim Kontak Jam layanan\nPayment Operations ops-payment@neuraltech.example 24/7\nIntegration Team integration@neuraltech.example 24/7 (on-call)\nPlatform Engineering platform-oncall@neuraltech.example 24/7 (on-call)\nRisk and Fraud Team risk@neuraltech.example Senin - Jumat 08:00 - 20:00 WIB"
+        }
+      ],
+      "sections": [
+        {
+          "no": null,
+          "title": "SOP-TRX-003 Penanganan Transaksi Gagal",
+          "page": 1,
+          "text": "SOP-TRX-003 v2.1 -\nSOP Penanganan Transaksi Gagal\nNomor Dokumen: SOP-TRX-003 | Versi 2.1 | Berlaku sejak: 1 Maret 2026 | Pemilik: Payment Operations | Klasifikasi:\nInternal"
+        },
+        {
+          "no": 1,
+          "title": "Tujuan",
+          "page": 1,
+          "text": "Dokumen ini menetapkan prosedur standar untuk mendeteksi, menangani, mengeskalasi, dan melaporkan\ntransaksi yang tidak berhasil diselesaikan pada platform pembayaran, sehingga dampak terhadap pelanggan\ndan merchant dapat diminimalkan dan dana pelanggan dapat dikembalikan tepat waktu."
+        },
+        {
+          "no": 2,
+          "title": "Ruang Lingkup",
+          "page": 1,
+          "text": "Berlaku untuk seluruh transaksi pada kanal Virtual Account (BCA, Mandiri, BNI, BRI), E-Wallet (GoPay, OVO,\nDANA, ShopeePay), QRIS, dan Kartu Kredit. Berlaku bagi tim Payment Operations, Customer Support,\nIntegration Team, Platform Engineering, Infrastructure, dan Risk and Fraud."
+        },
+        {
+          "no": 3,
+          "title": "Definisi Status Transaksi dan Metrik",
+          "page": 1,
+          "text": "Status Definisi\nSUCCESS Pembayaran terkonfirmasi oleh provider dan dana diterima.\nFAILED Pembayaran ditolak atau gagal diproses. Wajib memiliki kode kegagalan (F01 - F12).\nPENDING Menunggu konfirmasi provider. Dicek ulang otomatis (status inquiry) setiap 5 menit selama 30 menit.\nEXPIRED Batas waktu pembayaran terlewati (VA default 24 jam, QRIS dinamis 15 menit, e-wallet 30 menit).\nTidak dihitung sebagai FAILED.\nREFUNDED Transaksi sukses yang dananya telah dikembalikan kepada pelanggan.\nSuccess Rate = jumlah transaksi SUCCESS dibagi total transaksi. Failure Rate = jumlah transaksi FAILED\ndibagi total transaksi. Rentang failure rate normal per kanal adalah 1% sampai 4%; khusus Kartu Kredit sekitar\n4% sampai 7% karena penolakan bank penerbit (F03) bersifat struktural."
+        },
+        {
+          "no": 4,
+          "title": "Prosedur Umum Penanganan Transaksi Gagal",
+          "page": 1,
+          "text": "- Langkah 1 - Deteksi: sistem mencatat status FAILED beserta kode kegagalan dan menampilkan pesan yang\nsesuai kepada pelanggan.\n- Langkah 2 - Klasifikasi: kelompokkan kegagalan ke salah satu jenis (Kesalahan Pengguna, Penyedia,\nTeknis Internal, Risiko dan Fraud, Jaringan) berdasarkan Katalog Kode Kegagalan.\n- Langkah 3 - Verifikasi dana: lakukan status inquiry ke provider untuk memastikan apakah dana pelanggan\nsudah terdebet.\n- Langkah 4 - Tindakan: jalankan prosedur sesuai jenis kegagalan (Bagian 5).\n- Langkah 5 - Komunikasi: informasikan pelanggan dan merchant mengenai status serta estimasi\npenyelesaian melalui email, aplikasi, atau Customer Support.\n- Langkah 6 - Rekonsiliasi dan refund: jika dana terdebet tetapi transaksi gagal, proses refund sesuai SLA\npada Bagian 7.\n- Langkah 7 - Pencatatan: seluruh kasus dan insiden dicatat pada incident log dan dilaporkan dalam laporan\noperasional bulanan."
+        },
+        {
+          "no": 5,
+          "title": "Prosedur Berdasarkan Jenis Kegagalan",
+          "page": 1,
+          "text": "Penanganan berbeda untuk setiap jenis kegagalan karena penyebab dan pihak yang bertanggung jawab\nberbeda.\nSOP-TRX-003 v2.1 -\nJenis kegagalan Kode Prosedur penanganan PIC SLA\nKesalahan\nPengguna\nF01, F02,\nF06, F11\nTidak perlu eskalasi. Tampilkan pesan edukatif\n(saldo kurang, OTP/PIN salah, limit terlampaui,\nnomor tidak valid). Izinkan percobaan ulang\nmaksimal 3 kali dalam 10 menit; setelah 3 kali\nOTP/PIN salah akun dikunci 30 menit. Tidak ada\nrefund bila dana belum terdebet.\nCustomer Support Respons 4\njam kerja\nPenyedia\n(Bank/Wallet)\nF03, F04,\nF12\nF04 (timeout): lakukan status inquiry, retry otomatis\n1 kali, rekonsiliasi dan refund bila dana terdebet; jika\nfailure rate kanal melebihi 5% buka tiket ke provider\ndan eskalasi ke Integration Team. F03 (kartu\nditolak): arahkan pelanggan menghubungi bank\npenerbit dan tawarkan kanal alternatif. F12\n(maintenance): tampilkan banner jadwal\npemeliharaan; tidak dihitung sebagai pelanggaran\nSLA.\nIntegration Team;\nPartnership and\nSettlement\nF04: 8 jam;\nF03: 24 jam\nTeknis Internal F05, F08,\nF09\nF05 (gateway error): buat insiden, periksa\ndeployment dalam 24 jam terakhir, lakukan rollback\natau hotfix bila terkait rilis. F08: perbaiki konfigurasi\nmerchant. F09: batalkan transaksi duplikat, pastikan\nidempotency key, refund bila terdebet ganda.\nPlatform\nEngineering;\nMerchant\nOperations\nF05: 4 jam;\nF09: 8 jam;\nF08: 24 jam\nRisiko dan Fraud F07 Tahan transaksi, lakukan review manual oleh Risk\nTeam, hubungi pelanggan atau merchant untuk\nverifikasi. Jika terbukti fraud: blokir akun/perangkat\ndan laporkan; jika false positive: lepaskan transaksi\ndan sesuaikan aturan.\nRisk and Fraud\nTeam\n2 jam kerja\nJaringan F10 Retry otomatis 2 kali. Jika gangguan terjadi serentak\npada beberapa kanal, eskalasi ke Infrastructure\nTeam untuk memeriksa konektivitas, DNS, dan\npenyedia cloud.\nInfrastructure\nTeam\n4 jam"
+        },
+        {
+          "no": 6,
+          "title": "Pemantauan, Threshold, dan Eskalasi",
+          "page": 2,
+          "text": "Failure rate dipantau per kanal secara real-time. Tingkat keparahan insiden ditetapkan sebagai berikut:\nLevel Kondisi Respons Target\npemulihan\nEskalasi ke\nP3 - Sedang Failure rate kanal di atas 4% sampai 5%\nselama 60 menit, atau naik lebih dari 2 poin\npersentase dibanding rata-rata 7 hari\nsebelumnya\n4 jam kerja 2 hari kerja Payment Operations\nLead\nP2 - Tinggi Failure rate kanal di atas 5% sampai 10%\nselama 30 menit\n1 jam 8 jam Head of Operations\nP1 - Kritis Failure rate kanal di atas 10% selama 15 menit,\natau kanal tidak merespons\n15 menit 4 jam CTO dan Head of\nOperations\nCatatan: untuk Kartu Kredit, threshold di atas diterapkan terhadap kenaikan relatif dari baseline kanal tersebut\n(4% sampai 7%), bukan terhadap angka absolut.\nLangkah diagnosis awal untuk kenaikan failure rate: (a) tentukan apakah kenaikan terkonsentrasi pada satu\nkanal, kategori merchant, atau jam tertentu; (b) lihat distribusi kode kegagalan; (c) bandingkan dengan jadwal\ndeployment internal dan pemberitahuan perubahan dari provider; (d) periksa waktu respons provider\n(processing time) untuk indikasi degradasi."
+        },
+        {
+          "no": 7,
+          "title": "Prosedur Refund dan Rekonsiliasi",
+          "page": 2,
+          "text": "Kanal SLA pengembalian dana Catatan\nVirtual Account 3 hari kerja Dikembalikan ke rekening sumber melalui bank\nterkait.\nSOP-TRX-003 v2.1 -\nKanal SLA pengembalian dana Catatan\nE-Wallet (GoPay, OVO, DANA, ShopeePay) Maksimal 2 x 24 jam Dikembalikan ke saldo dompet digital.\nQRIS 2 hari kerja Dikembalikan melalui penyelenggara terkait.\nKartu Kredit 7 sampai 14 hari kerja Mengikuti siklus acquirer dan bank penerbit.\nTransaksi berstatus PENDING yang tidak terkonfirmasi lebih dari 24 jam diubah menjadi FAILED dan dana (bila\nterdebet) dikembalikan secara otomatis. Rekonsiliasi harian dilakukan pada pukul 06:00 WIB oleh Settlement\nTeam."
+        },
+        {
+          "no": 8,
+          "title": "Pelaporan",
+          "page": 3,
+          "text": "- Laporan harian: failure rate per kanal dan daftar insiden terbuka, dikirim ke Payment Operations sebelum\npukul 09:00 WIB.\n- Laporan operasional bulanan: KPI transaksi, kinerja kanal dan kategori, kode kegagalan teratas, serta\nringkasan insiden, diterbitkan paling lambat hari kerja ke-5 bulan berikutnya.\n- Post-incident report wajib dibuat untuk insiden level P1 dan P2 maksimal 5 hari kerja setelah insiden ditutup."
+        },
+        {
+          "no": 9,
+          "title": "Kontak Eskalasi (dummy)",
+          "page": 3,
+          "text": "Tim Kontak Jam layanan\nPayment Operations ops-payment@neuraltech.example 24/7\nIntegration Team integration@neuraltech.example 24/7 (on-call)\nPlatform Engineering platform-oncall@neuraltech.example 24/7 (on-call)\nRisk and Fraud Team risk@neuraltech.example Senin - Jumat 08:00 - 20:00 WIB"
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

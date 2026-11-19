@@ -1,0 +1,8 @@
+incident_id,started_at,ended_at,channel_id,severity,incident_type,title,root_cause,status,related_failure_code
+INC-2026-0809,2026-08-09 01:00:00,2026-08-09 03:00:00,CH05,Low,Planned Maintenance,Pemeliharaan terjadwal API GoPay,Pemeliharaan terjadwal oleh provider,Resolved,F12
+INC-2026-0824,2026-08-24 14:10:00,2026-08-24 15:40:00,CH01,Medium,Provider Outage,Gangguan koneksi host-to-host BCA,Gangguan jaringan sementara di sisi provider,Resolved,F04
+INC-2026-0913,2026-09-13 01:00:00,2026-09-13 04:00:00,CH03,Low,Planned Maintenance,Pemeliharaan terjadwal VA BNI,Pemeliharaan terjadwal oleh Bank BNI,Resolved,F12
+INC-2026-0930,2026-09-30 19:20:00,2026-09-30 20:10:00,CH09,Medium,Network,Gangguan jaringan switching QRIS,Gangguan jaringan pada switching QRIS,Resolved,F10
+INC-2026-1015,2026-10-15 00:00:00,,CH02,High,Provider Degradation,Lonjakan timeout VA Mandiri pasca migrasi API host-to-host v2,Dugaan: migrasi endpoint H2H Bank Mandiri ke versi 2 dan pembatasan rate limit yang belum sesuai volume merchant,Open,F04
+INC-2026-1106,2026-11-06 00:00:00,,CH06,High,Internal Release Regression,Lonjakan Gateway Error OVO pasca rilis gateway v3.2.0,Dugaan: regresi payload builder untuk transaksi top-up pada rilis gateway v3.2.0 (deploy 2026-11-05 22:00),Open,F05
+INC-2026-1111,2026-11-11 20:00:00,2026-11-11 21:30:00,,Medium,Capacity,Lonjakan trafik 11.11 (semua kanal),Peningkatan trafik kampanye 11.11; autoscaling terlambat,Resolved,F05
