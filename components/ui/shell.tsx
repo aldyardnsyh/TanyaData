@@ -103,6 +103,13 @@ export function Shell({ children, engineOnline = true, engineLabel, engineHref, 
 
   return (
     <div className="flex min-h-screen bg-surface">
+      {/* C-31: skip link sebagai elemen fokus pertama. */}
+      <a
+        href="#konten-utama"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-toast focus:rounded-md focus:bg-primary focus:px-3 focus:py-1.5 focus:text-label-md focus:text-on-primary"
+      >
+        Lompat ke konten utama
+      </a>
       <aside className="fixed inset-y-0 left-0 z-sticky hidden w-58 flex-col border-r border-outline-variant bg-surface md:flex" aria-label="Sidebar">
         <div className="flex h-14 items-center gap-2 border-b border-outline-variant px-4">
           <span className="font-display text-headline-sm font-bold tracking-tight text-primary">TanyaData</span>
@@ -110,12 +117,12 @@ export function Shell({ children, engineOnline = true, engineLabel, engineHref, 
         {navList()}
         <div className="border-t border-outline-variant p-3">{engineBadge}</div>
       </aside>
-      <main className="min-h-screen flex-1 md:ml-58">
+      <main id="konten-utama" className="min-h-screen flex-1 md:ml-58">
         <header className="sticky top-0 z-sticky flex h-14 items-center justify-between border-b border-outline-variant bg-surface px-4 md:px-6">
           <nav className="flex items-center gap-2 text-label-sm text-on-surface-variant" aria-label="Breadcrumb">
             <button
               type="button"
-              className="rounded-md p-1.5 text-on-surface-variant hover:bg-surface-container md:hidden focus-ring focus-visible:outline-none"
+              className="rounded-md p-1.5 text-on-surface-variant hover:bg-surface-container md:hidden focus-ring"
               aria-label="Buka menu navigasi"
               onClick={() => setMobileOpen(true)}
             >

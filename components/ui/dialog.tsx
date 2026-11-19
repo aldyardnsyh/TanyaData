@@ -43,7 +43,7 @@ export function Dialog({ open, onOpenChange, title, description, children, class
           <DialogPrimitive.Close asChild>
             <button
               type="button"
-              className="absolute right-4 top-4 rounded-md p-1 text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring focus-visible:outline-none"
+              className="absolute right-4 top-4 rounded-md p-1 text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
               aria-label="Tutup"
             >
               <X className="h-4 w-4" />

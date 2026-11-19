@@ -26,7 +26,7 @@ export function DateRangeFilter({ presets, value, onChange, className }: DateRan
           aria-selected={value === preset.id}
           onClick={() => onChange(preset.id)}
           className={cn(
-            'rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring focus-visible:outline-none',
+            'rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring',
             value === preset.id
               ? 'bg-surface-container-lowest text-primary font-semibold'
               : 'text-on-surface-variant hover:text-on-surface',

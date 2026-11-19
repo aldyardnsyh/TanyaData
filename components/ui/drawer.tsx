@@ -40,7 +40,7 @@ export function Drawer({ open, onOpenChange, side = 'left', width = '280px', tit
               <DialogPrimitive.Close asChild>
                 <button
                   type="button"
-                  className="rounded-md p-1 text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring focus-visible:outline-none"
+                  className="rounded-md p-1 text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
                   aria-label="Tutup"
                 >
                   <X className="h-4 w-4" />

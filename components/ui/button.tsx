@@ -36,11 +36,13 @@ export function Button({
   disabled,
   className,
   children,
+  ref,
   ...props
-}: ButtonProps) {
+}: ButtonProps & { ref?: React.Ref<HTMLButtonElement> }) {
   return (
     <button
       type="button"
+      ref={ref}
       disabled={disabled || loading}
       aria-busy={loading}
       className={cn(
@@ -48,7 +50,7 @@ export function Button({
         variantClasses[variant],
         sizeClasses[size],
         variant === 'icon' && 'w-9 h-9 px-0',
-        'focus-ring focus-visible:outline-none',
+        'focus-ring',
         disabled && 'opacity-45 cursor-not-allowed',
         className,
       )}

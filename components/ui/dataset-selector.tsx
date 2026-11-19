@@ -20,7 +20,7 @@ export function DatasetSelector({ datasets, value, onChange, className }: Datase
   return (
     <div
       className={cn(
-        'flex items-center gap-1.5 rounded-md bg-surface-container-low px-2.5 py-1.5 text-on-surface font-body text-label-md transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring focus-visible:outline-none',
+        'flex items-center gap-1.5 rounded-md bg-surface-container-low px-2.5 py-1.5 text-on-surface font-body text-label-md transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring',
         className,
       )}
       role="button"

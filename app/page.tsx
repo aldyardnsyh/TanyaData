@@ -37,19 +37,19 @@ export default function LandingPage() {
             TanyaData
           </Link>
           <div className="hidden items-center gap-6 md:flex">
-            <Link href="#cara-kerja" className="font-body text-label-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring focus-visible:outline-none">
+            <Link href="#cara-kerja" className="font-body text-label-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring">
               Cara kerja
             </Link>
-            <Link href="#kemampuan" className="font-body text-label-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring focus-visible:outline-none">
+            <Link href="#kemampuan" className="font-body text-label-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring">
               Kemampuan
             </Link>
-            <Link href="#batasan" className="font-body text-label-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring focus-visible:outline-none">
+            <Link href="#batasan" className="font-body text-label-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring">
               Batasan
             </Link>
           </div>
           <Link
             href="/overview"
-            className="rounded-md bg-primary px-4 py-2 font-body text-label-md font-semibold text-on-primary transition-colors duration-[var(--motion-fast)] hover:bg-primary-container focus-ring focus-visible:outline-none"
+            className="rounded-md bg-primary px-4 py-2 font-body text-label-md font-semibold text-on-primary transition-colors duration-[var(--motion-fast)] hover:bg-primary-container focus-ring"
           >
             Buka Workspace
           </Link>
@@ -66,7 +66,7 @@ export default function LandingPage() {
             </span>
           </Reveal>
           <Reveal delay={80}>
-            <h1 className="font-display text-display-lg font-bold text-on-surface tracking-tight lg:text-[48px]">
+            <h1 className="font-display text-display-lg font-bold text-on-surface">
               Tanyakan datanya. <span className="italic text-primary">Temukan wawasannya.</span>
             </h1>
           </Reveal>
@@ -79,13 +79,13 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <Link
                 href="/overview"
-                className="rounded-md bg-primary px-5 py-3 font-body text-label-md font-semibold text-on-primary transition-colors duration-[var(--motion-fast)] hover:bg-primary-container focus-ring focus-visible:outline-none"
+                className="rounded-md bg-primary px-5 py-3 font-body text-label-md font-semibold text-on-primary transition-colors duration-[var(--motion-fast)] hover:bg-primary-container focus-ring"
               >
                 Buka Workspace
               </Link>
               <Link
                 href="/assistant"
-                className="rounded-md bg-surface-container-lowest px-5 py-3 font-body text-label-md font-semibold text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring focus-visible:outline-none"
+                className="rounded-md bg-surface-container-lowest px-5 py-3 font-body text-label-md font-semibold text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
               >
                 Tanya Asisten
               </Link>
@@ -200,7 +200,7 @@ export default function LandingPage() {
                 <p className="mt-1 font-body text-body-md text-on-surface-variant">{cap.desc}</p>
                 <Link
                   href={cap.href}
-                  className="mt-3 inline-block font-body text-label-md font-semibold text-primary transition-colors duration-[var(--motion-fast)] hover:underline focus-ring focus-visible:outline-none"
+                  className="mt-3 inline-block font-body text-label-md font-semibold text-primary transition-colors duration-[var(--motion-fast)] hover:underline focus-ring"
                 >
                   Pelajari lebih lanjut →
                 </Link>
@@ -231,7 +231,7 @@ export default function LandingPage() {
         <p className="font-body text-body-sm text-on-surface-variant">TanyaData · 2026</p>
         <Link
           href="#batasan"
-          className="mt-2 inline-block font-body text-label-sm font-semibold text-primary transition-colors duration-[var(--motion-fast)] hover:underline focus-ring focus-visible:outline-none"
+          className="mt-2 inline-block font-body text-label-sm font-semibold text-primary transition-colors duration-[var(--motion-fast)] hover:underline focus-ring"
         >
           Batasan
         </Link>

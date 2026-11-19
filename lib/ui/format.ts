@@ -13,10 +13,10 @@ export function formatNumber(value: number | null | undefined): string {
   return value.toLocaleString('id-ID', { useGrouping: true, maximumFractionDigits: 0 });
 }
 
-/** Format persen: 1 digit desimal, koma. Null/undefined → `—`. */
+/** Format persen id-ID: 1 digit desimal, koma. Null/undefined → `—`. */
 export function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—';
-  return `${value.toFixed(1)}%`;
+  return `${value.toFixed(1).replace('.', ',')}%`;
 }
 
 /** Format tanggal ID: `d MMM yyyy` (mis. `18 Nov 2026`). */

@@ -3,7 +3,10 @@ import './globals.css';
 import { inter, jakarta } from '@/lib/fonts';
 
 export const metadata: Metadata = {
-  title: 'TanyaData',
+  title: {
+    default: 'TanyaData',
+    template: '%s · TanyaData',
+  },
   description: 'Tanyakan Datanya. Temukan Wawasannya.',
 };
 

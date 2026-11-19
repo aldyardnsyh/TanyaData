@@ -15,6 +15,7 @@
   --color-on-secondary-fixed: #191e00;
   --color-tertiary: #68270d;
   --color-tertiary-container: #863d22;
+  --color-tertiary-fixed: #ffdbcf;
   --color-on-tertiary-fixed-variant: #773217;
   --color-error: #ba1a1a;
   --color-error-container: #ffdad6;
@@ -31,6 +32,77 @@
   --color-outline-variant: #c0c9c2;
   --color-inverse-surface: #2c322f;
   --color-inverse-on-surface: #ecf2ed;
+
+  /* Tipografi §2.3 — satu sumber skala teks (A-01 / DECISION-008) */
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 56px;
+  --text-display-lg--font-weight: 700;
+  --text-display-lg--letter-spacing: -0.03em;
+
+  --text-display-md: 40px;
+  --text-display-md--line-height: 48px;
+  --text-display-md--font-weight: 700;
+  --text-display-md--letter-spacing: -0.03em;
+
+  --text-headline-xl: 36px;
+  --text-headline-xl--line-height: 44px;
+  --text-headline-xl--font-weight: 700;
+  --text-headline-xl--letter-spacing: -0.025em;
+
+  --text-headline-lg: 28px;
+  --text-headline-lg--line-height: 36px;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-lg--letter-spacing: -0.02em;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 600;
+  --text-headline-md--letter-spacing: -0.015em;
+
+  --text-headline-sm: 20px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--font-weight: 600;
+  --text-headline-sm--letter-spacing: -0.01em;
+
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 26px;
+  --text-body-lg--font-weight: 400;
+  --text-body-lg--letter-spacing: 0;
+
+  --text-body-md: 14px;
+  --text-body-md--line-height: 22px;
+  --text-body-md--font-weight: 400;
+  --text-body-md--letter-spacing: 0;
+
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 20px;
+  --text-body-sm--font-weight: 400;
+  --text-body-sm--letter-spacing: 0;
+
+  --text-label-md: 13px;
+  --text-label-md--line-height: 18px;
+  --text-label-md--font-weight: 600;
+  --text-label-md--letter-spacing: 0;
+
+  --text-label-sm: 11px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--font-weight: 600;
+  --text-label-sm--letter-spacing: 0.06em;
+
+  --text-metric-xl: 32px;
+  --text-metric-xl--line-height: 36px;
+  --text-metric-xl--font-weight: 700;
+  --text-metric-xl--letter-spacing: -0.02em;
+
+  --text-metric-md: 24px;
+  --text-metric-md--line-height: 30px;
+  --text-metric-md--font-weight: 700;
+  --text-metric-md--letter-spacing: -0.01em;
+
+  --text-mono-sm: 12.5px;
+  --text-mono-sm--line-height: 20px;
+  --text-mono-sm--font-weight: 400;
+  --text-mono-sm--letter-spacing: 0;
 
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -63,7 +135,23 @@
 }
 
 @utility tabular { font-variant-numeric: tabular-nums; }
-@utility focus-ring { box-shadow: var(--focus-ring); }
+
+/* A-03: ring fokus hanya saat :focus-visible (DECISION-008); outline browser tetap dimatikan,
+   box-shadow token menjadi satu-satunya indikator. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+/* A-02: z-index §2.7 sebagai utility Tailwind agar kelas z-* ter-generate. */
+@utility z-sticky { z-index: var(--z-sticky); }
+@utility z-drawer { z-index: var(--z-drawer); }
+@utility z-dropdown { z-index: var(--z-dropdown); }
+@utility z-modal { z-index: var(--z-modal); }
+@utility z-toast { z-index: var(--z-toast); }
+@utility z-tooltip { z-index: var(--z-tooltip); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
