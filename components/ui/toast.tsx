@@ -2,7 +2,7 @@
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { IconCheckCircle, IconAlertTriangle, IconInfo, IconX } from './icons';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -28,17 +28,23 @@ export function Toast({ status, message, action, onAction, onClose, className }:
         className,
       )}
     >
-      {status === 'success' && <CheckCircle className="h-4 w-4 text-secondary" />}
-      {status === 'error' && <AlertTriangle className="h-4 w-4 text-error" />}
-      {status === 'info' && <CheckCircle className="h-4 w-4 text-primary" />}
+      {/* A-11: ikon status terang di atas latar gelap; bentuk glyph membedakan status, bukan warna saja. */}
+      {status === 'success' && <IconCheckCircle className="h-4 w-4 shrink-0 text-secondary-container" aria-hidden="true" />}
+      {status === 'error' && <IconAlertTriangle className="h-4 w-4 shrink-0 text-error-container" aria-hidden="true" />}
+      {status === 'info' && <IconInfo className="h-4 w-4 shrink-0 text-inverse-on-surface" aria-hidden="true" />}
       <span className="font-body text-label-md">{message}</span>
       {action && onAction && (
-        <button type="button" onClick={onAction} className="font-body text-label-md font-semibold text-primary underline">
+        <button type="button" onClick={onAction} className="font-body text-label-md font-semibold text-inverse-on-surface underline focus-ring">
           {action}
         </button>
       )}
-      <button type="button" onClick={onClose} className="ml-2 text-on-surface-variant hover:text-on-surface" aria-label="Tutup toast">
-        <X className="h-3 w-3" />
+      <button
+        type="button"
+        onClick={onClose}
+        className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-inverse-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container-lowest/10 focus-ring"
+        aria-label="Tutup toast"
+      >
+        <IconX className="h-4 w-4" />
       </button>
     </div>
   );

@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Trash2, Send, History, MessageSquare } from 'lucide-react';
+import { Plus, Trash2, Send, History, MessageSquare, Check } from 'lucide-react';
 import type {
   ChatMessage,
   ConversationDetailResponse,
@@ -21,7 +21,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Drawer } from '@/components/ui/drawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
-import { StatusBadge } from '@/components/ui/badge';
+import { EngineIndicator } from '@/components/ui/engine-indicator';
 import { AnswerCard } from '@/components/chat/answer-card';
 import { toast } from '@/components/ui/toaster';
 
@@ -67,6 +67,14 @@ export default function AssistantPage() {
 
   const threadRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // C-15: composer auto-grow 48–160px, tanpa resize manual (§4.10).
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [draft]);
 
   const loadConversation = useCallback(async (id: string) => {
     setDetailLoading(true);
@@ -365,8 +373,20 @@ export default function AssistantPage() {
             <span className="font-body text-body-sm text-on-surface-variant">
               {meta.data?.data.activeDataset.name ?? settings.data?.datasets.find((d) => d.id === settings.data?.activeDatasetId)?.name ?? 'Dataset aktif'}
             </span>
-            <StatusBadge status="success" label="SQLite · SQL + FTS5" />
-            {llmOn && <StatusBadge status="info" label="LLM aktif" />}
+            {/* C-10: indikator mesin bersama (§4.5); label & status dari /api/meta capabilities. */}
+            <EngineIndicator
+              online={!!meta.data && !meta.error}
+              label={meta.data
+                ? `Mesin: ${meta.data.capabilities.sql === 'sqlite' ? 'SQLite' : meta.data.capabilities.sql} · SQL + ${meta.data.capabilities.rag.toUpperCase()}`
+                : undefined}
+            />
+            {/* C-11: kondisi aktif = badge statis dengan Check, bukan spinner permanen. */}
+            {llmOn && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2 py-0.5 font-body text-label-sm font-semibold text-on-surface-variant">
+                <Check className="h-3 w-3" aria-hidden="true" />
+                LLM aktif
+              </span>
+            )}
             <Button size="sm" variant="secondary" className="lg:hidden" onClick={() => void newConversation()}>
               <Plus className="h-3.5 w-3.5" />
               Baru
@@ -482,7 +502,7 @@ export default function AssistantPage() {
                 disabled={sending}
                 aria-label="Tulis pertanyaan"
                 placeholder="Tanyakan sesuatu tentang data atau dokumen…"
-                className="max-h-40 min-h-12 w-full resize-y bg-transparent px-2 py-1 font-body text-body-md text-on-surface placeholder:text-outline focus:outline-none"
+                className="max-h-40 min-h-12 w-full resize-none overflow-y-auto bg-transparent px-2 py-1 font-body text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none"
               />
               <div className="flex items-center justify-between px-1 pt-1">
                 <span className="font-body text-body-sm text-on-surface-variant">Enter untuk mengirim · Shift+Enter baris baru</span>
@@ -509,7 +529,7 @@ export default function AssistantPage() {
         description={deleteTarget ? `“${deleteTarget.title}” akan dihapus beserta seluruh pesannya. Laporan yang sudah dibuat tetap tersimpan.` : undefined}
       >
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setDeleteTarget(null)}>{t('button.cancel')}</Button>
+          <Button variant="ghost" autoFocus onClick={() => setDeleteTarget(null)}>{t('button.cancel')}</Button>
           <Button variant="danger" loading={deleting} onClick={() => void confirmDelete()}>{t('button.delete')}</Button>
         </div>
       </Dialog>

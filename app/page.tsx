@@ -215,7 +215,7 @@ export default function LandingPage() {
         <h2 className="text-center font-display text-headline-lg font-bold text-on-surface">Batasan</h2>
         <div className="mx-auto mt-6 max-w-[640px] space-y-3">
           <div className="rounded-md bg-surface-container-low px-4 py-3 font-body text-body-md text-on-surface-variant">
-            Tanpa login — workspace dapat diakses siapa saja.
+            Tanpa login; workspace dapat diakses siapa saja.
           </div>
           <div className="rounded-md bg-surface-container-low px-4 py-3 font-body text-body-md text-on-surface-variant">
             Berjalan lokal / state dapat hilang di hosting ephemeral.

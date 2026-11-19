@@ -121,9 +121,37 @@
   /* B-11: progres unggah indeterminate (fetch tidak mengekspos progres byte). */
   --animate-indeterminate: indeterminate 1.1s var(--ease-in-out-quart) infinite;
 
+  /* A-16: skeleton opacity pulse 1,2s (§4.6), hanya saat reduced-motion mati. */
+  --animate-skeleton: skeleton-pulse 1.2s ease-in-out infinite;
+
+  /* C-33/DECISION-009: entrance sekali saat mount (bukan scroll-driven). */
+  --animate-entrance: entrance 240ms var(--ease-out-quart) both;
+  --animate-stagger: stagger-in 180ms var(--ease-out-quart) both;
+  --animate-crossfade: crossfade 150ms ease-out both;
+
   @keyframes indeterminate {
     0% { transform: translateX(-120%); }
     100% { transform: translateX(360%); }
+  }
+
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+
+  @keyframes entrance {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes stagger-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes crossfade {
+    from { opacity: 0.4; }
+    to { opacity: 1; }
   }
 }
 
@@ -144,11 +172,35 @@
 
 @utility tabular { font-variant-numeric: tabular-nums; }
 
+/* A-12/C-34: dimensi layout §2.4 sebagai utility bernama, bukan nilai ad-hoc. */
+@utility w-sidebar { width: 232px; }
+@utility w-sidebar-rail { width: 72px; }
+@utility w-conversations { width: 264px; }
+@utility ml-sidebar { margin-left: 232px; }
+@utility ml-sidebar-rail { margin-left: 72px; }
+@utility h-dropzone { height: 144px; }
+
+/* C-18: baris chip filter — scroll horizontal, snap, fade tepi kanan (§4.4). */
+@utility chip-scroll {
+  scroll-snap-type: x mandatory;
+  mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
+}
+
 /* A-03: ring fokus hanya saat :focus-visible (DECISION-008); outline browser tetap dimatikan,
    box-shadow token menjadi satu-satunya indikator. */
 @utility focus-ring {
   &:focus-visible {
     outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+/* A-03: pola fokus yang sama untuk field (input/select/textarea) — border primary + ring,
+   konsisten dengan komponen Input/Select (§4.3). */
+@utility field-focus {
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
     box-shadow: var(--focus-ring);
   }
 }
@@ -168,4 +220,9 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* A-16: pulse skeleton hanya hidup bila pengguna tidak meminta reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-skeleton { animation: none !important; }
 }

@@ -9,6 +9,7 @@ import { LineChart } from '@/components/charts/line-chart';
 import { PieChart } from '@/components/charts/pie-chart';
 import { BarChart } from '@/components/charts/bar-chart';
 import { Card } from '@/components/ui/card';
+import { FilterChips } from '@/components/ui/filter-chips';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatNumber, formatPercent } from '@/lib/ui/format';
 import type {
@@ -77,34 +78,19 @@ export default function OverviewPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Filter periode */}
-            <div className="flex gap-1 rounded-md bg-surface-container-low p-0.5" role="tablist">
-              {PERIOD_PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  role="tab"
-                  aria-selected={preset === p.id}
-                  onClick={() => setPreset(p.id)}
-                  className={`rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring ${preset === p.id ? 'bg-surface-container-lowest text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-            {/* Grain selector */}
-            <div className="flex gap-1 rounded-md bg-surface-container-low p-0.5" role="tablist">
-              {GRAINS.map((g) => (
-                <button
-                  key={g.id}
-                  role="tab"
-                  aria-selected={grain === g.id}
-                  onClick={() => setGrain(g.id)}
-                  className={`rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring ${grain === g.id ? 'bg-surface-container-lowest text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'}`}
-                >
-                  {g.label}
-                </button>
-              ))}
-            </div>
+            {/* A-14/C-18: filter periode & grain = FilterChips (group + aria-pressed), bukan tab. */}
+            <FilterChips
+              chips={PERIOD_PRESETS.map((p) => ({ id: p.id, label: p.label }))}
+              value={preset}
+              onChange={(id) => setPreset(id as PresetId)}
+              label="Filter periode"
+            />
+            <FilterChips
+              chips={GRAINS.map((g) => ({ id: g.id, label: g.label }))}
+              value={grain}
+              onChange={(id) => setGrain(id as GrainId)}
+              label="Granularitas tren"
+            />
             {/* Muat ulang */}
             <button
               type="button"
@@ -130,7 +116,7 @@ export default function OverviewPage() {
           {summary.data?.period.isPartial && (
             <span className="inline-flex items-center gap-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-secondary-container" aria-hidden="true" />
-              {summary.data.period.label} — bulan berjalan belum lengkap
+              {summary.data.period.label}, bulan berjalan belum lengkap.
             </span>
           )}
           {summary.data?.dataset && <span>Sumber: {summary.data.dataset.name}</span>}

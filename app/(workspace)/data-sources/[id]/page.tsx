@@ -15,6 +15,7 @@ import { StatusBadge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
+import { Tabs } from '@/components/ui/tabs';
 import { Dialog } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/toaster';
 
@@ -34,6 +35,8 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [limit, setLimit] = useState(20);
+  // C-19/A-13: dua tab sesuai jenis sumber (dataset: Pratinjau/Skema; dokumen: Teks/Metadata).
+  const [tab, setTab] = useState('preview');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -216,9 +219,19 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
             )}
           </div>
 
-          {/* Dataset: schema + quality */}
-          {isDataset && (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {/* C-19: konten bertab — Pratinjau/Skema (dataset), Teks/Metadata (dokumen). */}
+          <Tabs
+            tabs={isDocument
+              ? [{ id: 'preview', label: 'Teks' }, { id: 'schema', label: 'Metadata' }]
+              : [{ id: 'preview', label: 'Pratinjau' }, { id: 'schema', label: 'Skema' }]}
+            value={tab}
+            onChange={setTab}
+            idPrefix="detail"
+            label="Bagian sumber"
+          />
+
+          {tab === 'schema' && isDataset && (
+            <div role="tabpanel" id="detail-panel-schema" aria-labelledby="detail-schema" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
                 <h2 className="font-display text-headline-sm font-semibold text-on-surface">Skema</h2>
                 <p className="mb-2 font-body text-body-sm text-on-surface-variant">{detail.schema?.tableName ?? '—'}</p>
@@ -244,9 +257,9 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
             </div>
           )}
 
-          {/* Document: sections */}
-          {isDocument && (
-            <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
+          {/* Document: sections — tab "Teks" */}
+          {isDocument && tab === 'preview' && (
+            <div role="tabpanel" id="detail-panel-preview" aria-labelledby="detail-preview" className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
               <h2 className="mb-2 font-display text-headline-sm font-semibold text-on-surface">Daftar bagian & chunk</h2>
               <DataTable
                 columns={[
@@ -261,11 +274,25 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
             </div>
           )}
 
-          {/* Preview */}
-          <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
+          {/* Document: index — tab "Metadata" */}
+          {isDocument && tab === 'schema' && (
+            <div role="tabpanel" id="detail-panel-schema" aria-labelledby="detail-schema" className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
+              <h2 className="font-display text-headline-sm font-semibold text-on-surface">Metadata indeks</h2>
+              <dl className="mt-2 space-y-2">
+                <div className="flex justify-between font-body text-body-md"><dt className="text-on-surface-variant">Status indeks</dt><dd className="text-on-surface">{detail.index.indexed ? 'Terindeks' : 'Belum terindeks'}</dd></div>
+                <div className="flex justify-between font-body text-body-md"><dt className="text-on-surface-variant">Mesin</dt><dd className="text-on-surface">{detail.index.indexed ? detail.index.engine : '—'}</dd></div>
+                <div className="flex justify-between font-body text-body-md"><dt className="text-on-surface-variant">Terindeks pada</dt><dd className="text-on-surface">{detail.index.indexedAt ? formatDateTimeId(detail.index.indexedAt) : '—'}</dd></div>
+                <div className="flex justify-between font-body text-body-md"><dt className="text-on-surface-variant">Jumlah chunk</dt><dd className="tabular text-on-surface">{formatNumber(detail.source.chunkCount)}</dd></div>
+              </dl>
+            </div>
+          )}
+
+          {/* Preview baris — tab "Pratinjau" (dataset) */}
+          {isDataset && tab === 'preview' && (
+          <div role="tabpanel" id="detail-panel-preview" aria-labelledby="detail-preview" className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-display text-headline-sm font-semibold text-on-surface">
-                Pratinjau {isDocument ? 'kutipan' : 'baris'}
+                Pratinjau baris
               </h2>
               <Button size="sm" variant="secondary" disabled={!preview?.truncated || previewLoading} onClick={() => void loadPreview(limit + 30)}>
                 Muat {Math.min(30, Math.max(0, (preview?.rowCount ?? 0) - (preview?.rows.length ?? 0)))} baris berikutnya
@@ -289,6 +316,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
               <EmptyState title="Tidak ada data untuk ditampilkan" />
             )}
           </div>
+          )}
         </>
       ) : null}
 
@@ -299,7 +327,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
         description="Tindakan ini tidak dapat dibatalkan. Riwayat percakapan dan laporan tetap tersimpan."
       >
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setDeleteOpen(false)}>Batal</Button>
+          <Button variant="ghost" autoFocus onClick={() => setDeleteOpen(false)}>Batal</Button>
           <Button variant="danger" loading={deleting} onClick={() => void confirmDelete()}>Hapus</Button>
         </div>
       </Dialog>

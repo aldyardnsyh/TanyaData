@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { InlineError } from '@/components/ui/inline-error';
+import { FilterChips } from '@/components/ui/filter-chips';
 import { Dialog } from '@/components/ui/dialog';
 
 const FILTERS = [
@@ -50,27 +51,15 @@ export default function ReportsPage() {
 
       {/* Filter */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest p-3">
-        <div className="flex gap-1">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => setFilter(f.id)}
-              className={`rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring ${
-                filter === f.id ? 'bg-surface-container-high text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        {/* A-14/C-18: filter daftar = FilterChips (group + aria-pressed), bukan tab. */}
+        <FilterChips chips={FILTERS} value={filter} onChange={setFilter} label="Filter laporan" />
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Cari laporan…"
           aria-label="Cari laporan"
-          className="h-8 w-48 rounded-md border border-outline-variant bg-surface-container-lowest px-3 font-body text-body-md text-on-surface placeholder:text-outline focus:border-primary focus:shadow-[var(--focus-ring)] focus:outline-none"
+          className="h-8 w-48 rounded-md border border-outline-variant bg-surface-container-lowest px-3 font-body text-body-md text-on-surface placeholder:text-on-surface-variant focus:border-primary focus:shadow-[var(--focus-ring)] focus:outline-none"
         />
       </div>
 

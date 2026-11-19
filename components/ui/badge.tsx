@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Check, Clock, AlertTriangle, Minus, Loader2 } from 'lucide-react';
+import { IconCheck, IconClock, IconAlertTriangle, IconMinus, IconLoader } from './icons';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -9,11 +9,11 @@ function cn(...inputs: ClassValue[]) {
 export type Status = 'success' | 'warning' | 'danger' | 'neutral' | 'info';
 
 const statusConfig: Record<Status, { bg: string; text: string; icon: React.ReactNode }> = {
-  success: { bg: 'bg-secondary-container', text: 'text-on-secondary-fixed', icon: <Check className="h-3 w-3" /> },
-  warning: { bg: 'bg-tertiary-fixed', text: 'text-on-tertiary-fixed-variant', icon: <Clock className="h-3 w-3" /> },
-  danger: { bg: 'bg-error-container', text: 'text-on-error-container', icon: <AlertTriangle className="h-3 w-3" /> },
-  neutral: { bg: 'bg-surface-container-high', text: 'text-on-surface-variant', icon: <Minus className="h-3 w-3" /> },
-  info: { bg: 'bg-surface-container-low', text: 'text-primary', icon: <Loader2 className="h-3 w-3 animate-spin" /> },
+  success: { bg: 'bg-secondary-container', text: 'text-on-secondary-fixed', icon: <IconCheck className="h-3 w-3" /> },
+  warning: { bg: 'bg-tertiary-fixed', text: 'text-on-tertiary-fixed-variant', icon: <IconClock className="h-3 w-3" /> },
+  danger: { bg: 'bg-error-container', text: 'text-on-error-container', icon: <IconAlertTriangle className="h-3 w-3" /> },
+  neutral: { bg: 'bg-surface-container-high', text: 'text-on-surface-variant', icon: <IconMinus className="h-3 w-3" /> },
+  info: { bg: 'bg-surface-container-low', text: 'text-primary', icon: <IconLoader className="h-3 w-3" /> },
 };
 
 export interface StatusBadgeProps {

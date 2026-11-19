@@ -3,7 +3,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { X } from 'lucide-react';
+import { IconX } from './icons';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -43,10 +43,10 @@ export function Dialog({ open, onOpenChange, title, description, children, class
           <DialogPrimitive.Close asChild>
             <button
               type="button"
-              className="absolute right-4 top-4 rounded-md p-1 text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
+              className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
               aria-label="Tutup"
             >
-              <X className="h-4 w-4" />
+              <IconX className="h-5 w-5" />
             </button>
           </DialogPrimitive.Close>
         </DialogPrimitive.Content>

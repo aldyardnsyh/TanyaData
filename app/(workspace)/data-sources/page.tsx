@@ -14,6 +14,7 @@ import { formatNumber, formatDateTimeId } from '@/lib/ui/format';
 import { Button } from '@/components/ui/button';
 import { StatusBadge, type Status } from '@/components/ui/badge';
 import { Tabs } from '@/components/ui/tabs';
+import { FilterChips } from '@/components/ui/filter-chips';
 import { Dialog } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -259,22 +260,23 @@ export default function DataSourcesPage() {
             ]}
             value={tab}
             onChange={(v) => { setTab(v); setKindFilter('all'); }}
+            idPrefix="sumber"
+            label="Jenis sumber"
           />
-          <div className="flex flex-wrap gap-1">
-            {(tab === 'structured' ? ['all', 'csv', 'xlsx'] : ['all', 'pdf', 'docx', 'txt', 'md']).map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setKindFilter(k)}
-                className={`rounded-md px-2 py-1 font-body text-label-sm transition-colors duration-[var(--motion-fast)] focus-ring ${
-                  kindFilter === k ? 'bg-surface-container-high text-primary font-semibold' : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-              >
-                {k === 'all' ? 'Semua' : k.toUpperCase()}
-              </button>
-            ))}
-          </div>
+          {/* C-18: filter format = pill chip (group + aria-pressed), scroll + fade tepi kanan. */}
+          <FilterChips
+            chips={(tab === 'structured' ? ['all', 'csv', 'xlsx'] : ['all', 'pdf', 'docx', 'txt', 'md']).map((k) => ({
+              id: k,
+              label: k === 'all' ? 'Semua' : k.toUpperCase(),
+            }))}
+            value={kindFilter}
+            onChange={setKindFilter}
+            label="Filter format"
+          />
         </div>
+
+        {/* Panel tab — id cocok dengan aria-controls Tabs (A-13). */}
+        <div role="tabpanel" id={`sumber-panel-${tab}`} aria-labelledby={`sumber-${tab}`}>
 
         {sources.loading ? (
           <div className="space-y-2 p-4">
@@ -337,6 +339,7 @@ export default function DataSourcesPage() {
             ))}
           </div>
         )}
+        </div>
       </div>
 
       <Dialog
@@ -346,7 +349,7 @@ export default function DataSourcesPage() {
         description="Tindakan ini tidak dapat dibatalkan. Riwayat percakapan dan laporan tetap tersimpan."
       >
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Batal</Button>
+          <Button variant="ghost" autoFocus onClick={() => setDeleteTarget(null)}>Batal</Button>
           <Button variant="danger" loading={deleting} onClick={() => void confirmDelete()}>Hapus</Button>
         </div>
       </Dialog>

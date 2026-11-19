@@ -10,5 +10,6 @@ export interface SkeletonProps {
 }
 
 export function Skeleton({ className }: SkeletonProps) {
-  return <div className={cn('rounded-md bg-surface-container animate-pulse', className)} />;
+  // A-16: opacity pulse 1,2s dari token (globals.css), mati saat reduced-motion.
+  return <div className={cn('rounded-md bg-surface-container animate-skeleton', className)} />;
 }

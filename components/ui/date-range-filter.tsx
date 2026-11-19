@@ -1,11 +1,6 @@
 'use client';
 
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { FilterChips } from './filter-chips';
 
 export type PeriodPreset = 'bulan_ini' | '7_hari' | '30_hari' | 'kustom';
 
@@ -16,25 +11,18 @@ export interface DateRangeFilterProps {
   className?: string;
 }
 
+/**
+ * A-14: filter periode adalah filter, bukan tab — role="group" + aria-pressed
+ * lewat komponen FilterChips bersama.
+ */
 export function DateRangeFilter({ presets, value, onChange, className }: DateRangeFilterProps) {
   return (
-    <div className={cn('flex items-center gap-1 rounded-md bg-surface-container-low p-0.5', className)} role="tablist">
-      {presets.map((preset) => (
-        <button
-          key={preset.id}
-          role="tab"
-          aria-selected={value === preset.id}
-          onClick={() => onChange(preset.id)}
-          className={cn(
-            'rounded-md px-2.5 py-1 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring',
-            value === preset.id
-              ? 'bg-surface-container-lowest text-primary font-semibold'
-              : 'text-on-surface-variant hover:text-on-surface',
-          )}
-        >
-          {preset.label}
-        </button>
-      ))}
-    </div>
+    <FilterChips
+      chips={presets}
+      value={value}
+      onChange={(id) => onChange(id as PeriodPreset)}
+      label="Filter periode"
+      className={className}
+    />
   );
 }

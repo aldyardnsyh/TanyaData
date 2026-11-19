@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { ChevronDown, Copy, Check, Database, FileText } from 'lucide-react';
 import type { ChatMessage, SourceCitation } from '@/lib/contracts/http';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
@@ -54,6 +54,7 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
   const { t } = useI18n();
   const [sqlOpen, setSqlOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const sqlPanelId = useId();
 
   const hasEvidence = (message.sources?.length ?? 0) > 0 || !!message.sql;
   const guardrail = message.guardrail;
@@ -151,27 +152,34 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
             type="button"
             onClick={() => setSqlOpen((o) => !o)}
             aria-expanded={sqlOpen}
+            aria-controls={sqlPanelId}
             className="flex w-full items-center justify-between bg-surface-container-low px-3 py-2 text-left font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
           >
             <span className="flex items-center gap-2">
               <span className="font-mono text-label-sm text-primary">SQL</span>
               Query Transparency · {formatNumber(message.sql.rowCount)} {t('label.rows')} · {message.sql.durationMs} ms
             </span>
-            <ChevronDown className={`h-4 w-4 text-on-surface-variant transition-transform duration-[var(--motion-base)] ${sqlOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+            <ChevronDown className={`h-4 w-4 text-on-surface-variant transition-transform duration-[160ms] ${sqlOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
-          {sqlOpen && (
-            <div className="bg-surface-container-highest p-3">
-              <div className="mb-2 flex justify-end">
-                <Button size="sm" variant="ghost" onClick={copySql}>
-                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copied ? 'Tersalin' : 'Salin SQL'}
-                </Button>
+          {/* C-13: grid-rows 0fr→1fr, 160ms — tinggi beranimasi, bukan lompat (§4.11). */}
+          <div
+            id={sqlPanelId}
+            className={`grid transition-[grid-template-rows] duration-[160ms] ease-[var(--ease-out-quart)] ${sqlOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+          >
+            <div className="overflow-hidden">
+              <div className="bg-surface-container-highest p-3">
+                <div className="mb-2 flex justify-end">
+                  <Button size="sm" variant="ghost" onClick={copySql} tabIndex={sqlOpen ? 0 : -1}>
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copied ? 'Tersalin' : 'Salin SQL'}
+                  </Button>
+                </div>
+                <pre className="overflow-x-auto rounded-sm bg-inverse-surface p-3 font-mono text-[12.5px] leading-5 text-inverse-on-surface">
+                  <code>{message.sql.query}</code>
+                </pre>
               </div>
-              <pre className="overflow-x-auto rounded-sm bg-inverse-surface p-3 font-mono text-[12.5px] leading-5 text-inverse-on-surface">
-                <code>{message.sql.query}</code>
-              </pre>
             </div>
-          )}
+          </div>
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { Loader2 } from 'lucide-react';
+import { IconLoader } from './icons';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -56,7 +56,7 @@ export function Button({
       )}
       {...props}
     >
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+      {loading ? <IconLoader className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
       {children}
     </button>
   );
