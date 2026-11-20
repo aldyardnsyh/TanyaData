@@ -133,6 +133,7 @@ export interface ExtractionResult {
   pasal: Pasal[];
   parameter: ExtractedField[];
   metrik: ExtractedField[];
+  catatan: string[];
   section: { judul: string; teks: string; page?: number }[];
   tables: ExtractedTable[];
   referensi: string[];
@@ -200,6 +201,8 @@ export interface SqlValidation {
   ok: boolean;
   errors: string[];
   failed_layer?: string;
+  /** SQL after L6 LIMIT normalisation; use this for execution. */
+  sql?: string;
 }
 
 export interface SqlExecution {
@@ -207,6 +210,7 @@ export interface SqlExecution {
   rows: unknown[][];
   duration_ms: number;
   row_count: number;
+  error?: string;
 }
 
 export interface QueryPlan {
