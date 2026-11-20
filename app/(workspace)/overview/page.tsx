@@ -3,8 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/lib/ui/fetch-hooks';
-import { Skeleton } from '@/components/ui/skeleton';
-import { formatIdr, formatNumber, formatPercent, formatSnapshotRange } from '@/lib/ui/format';
+import { Icon } from '@/components/ui/icons';
+import { MonoMeta } from '@/components/ui/mono-meta';
+import { MeasurementRule } from '@/components/ui/measurement-rule';
+import { StatusDot } from '@/components/ui/status-dot';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { PageHeader } from '@/components/ui/page-header';
+import { Button } from '@/components/ui/button';
+import { FilterChips } from '@/components/ui/filter-chips';
+import { formatIdr, formatNumber, formatPercent } from '@/lib/ui/format';
 import type {
   Kpi,
   MetaResponse,
@@ -16,40 +23,24 @@ import type {
   InsightsResponse,
 } from '@/lib/contracts/http';
 
-/** Ikon Material Symbols self-hosted; dekoratif → aria-hidden (blueprint §2). */
-function Icon({ name, className }: { name: string; className?: string }) {
-  return (
-    <span className={`material-symbols-outlined ${className ?? ''}`} aria-hidden="true">
-      {name}
-    </span>
-  );
-}
-
-const num = (value: number | null | undefined) => (value == null ? 'n/a' : formatNumber(value));
-const pct = (value: number | null | undefined) => (value == null ? 'n/a' : formatPercent(value));
-
-function delta(kpi: Kpi | undefined): string {
-  if (!kpi || kpi.changePct == null) return 'n/a';
-  return `${kpi.direction === 'down' ? '' : '+'}${formatPercent(kpi.changePct)}`;
-}
+const num = (value: number | null | undefined) => (value == null ? '—' : formatNumber(value));
+const pct = (value: number | null | undefined) => (value == null ? '—' : formatPercent(value));
 
 const PERIOD_PRESETS = [
-  { id: 'this_month', label: 'This month' },
-  { id: 'last_7_days', label: 'Last 7 days' },
-  { id: 'last_30_days', label: 'Last 30 days' },
-  { id: 'custom', label: 'Custom' },
+  { id: 'this_month', label: 'Bulan ini' },
+  { id: 'last_7_days', label: '7 hari' },
+  { id: 'last_30_days', label: '30 hari' },
+  { id: 'custom', label: 'Kustom' },
 ] as const;
-
 const GRAINS = [
-  { id: 'day', label: 'Daily' },
-  { id: 'week', label: 'Weekly' },
-  { id: 'month', label: 'Monthly' },
+  { id: 'day', label: 'Hari' },
+  { id: 'week', label: 'Minggu' },
+  { id: 'month', label: 'Bulan' },
 ] as const;
-
 const COMPARE = [
-  { id: 'like_for_like', label: 'Like-for-like' },
-  { id: 'previous', label: 'Previous period' },
-  { id: 'none', label: 'None' },
+  { id: 'like_for_like', label: 'Setara' },
+  { id: 'previous', label: 'Sebelumnya' },
+  { id: 'none', label: 'Tanpa' },
 ] as const;
 
 type Filters = {
@@ -59,14 +50,7 @@ type Filters = {
   start: string | null;
   end: string | null;
 };
-
-const DEFAULT_FILTERS: Filters = {
-  period: 'this_month',
-  grain: 'day',
-  compare: 'like_for_like',
-  start: null,
-  end: null,
-};
+const DEFAULT_FILTERS: Filters = { period: 'this_month', grain: 'day', compare: 'like_for_like', start: null, end: null };
 
 function readFilters(): Filters {
   if (typeof window === 'undefined') return DEFAULT_FILTERS;
@@ -75,19 +59,15 @@ function readFilters(): Filters {
   const grain = params.get('grain');
   const compare = params.get('compare');
   return {
-    period: PERIOD_PRESETS.some((item) => item.id === period)
-      ? (period as Filters['period'])
-      : DEFAULT_FILTERS.period,
-    grain: GRAINS.some((item) => item.id === grain) ? (grain as Filters['grain']) : DEFAULT_FILTERS.grain,
-    compare: COMPARE.some((item) => item.id === compare)
-      ? (compare as Filters['compare'])
-      : DEFAULT_FILTERS.compare,
+    period: PERIOD_PRESETS.some((i) => i.id === period) ? (period as Filters['period']) : DEFAULT_FILTERS.period,
+    grain: GRAINS.some((i) => i.id === grain) ? (grain as Filters['grain']) : DEFAULT_FILTERS.grain,
+    compare: COMPARE.some((i) => i.id === compare) ? (compare as Filters['compare']) : DEFAULT_FILTERS.compare,
     start: params.get('start'),
     end: params.get('end'),
   };
 }
 
-function baseParams(filters: Filters): URLSearchParams {
+function dashboardUrl(endpoint: string, filters: Filters): string {
   const params = new URLSearchParams();
   params.set('period', filters.period);
   params.set('compare', filters.compare);
@@ -95,40 +75,11 @@ function baseParams(filters: Filters): URLSearchParams {
     params.set('start', filters.start);
     params.set('end', filters.end);
   }
-  return params;
-}
-
-function withParams(endpoint: string, params: URLSearchParams): string {
-  return `${endpoint}${endpoint.includes('?') ? '&' : '?'}${params.toString()}`;
-}
-
-function dashboardUrl(endpoint: string, filters: Filters): string {
-  return withParams(endpoint, baseParams(filters));
-}
-
-function trendsUrl(filters: Filters): string {
-  const params = baseParams(filters);
-  params.set('grain', filters.grain);
-  return withParams('/api/dashboard/trends', params);
-}
-
-/** Path garis pembanding pada SVG viewBox 0 0 1000 300. */
-function trendPath(values: number[], max: number): string {
-  if (values.length === 0) return '';
-  if (values.length === 1) return `M 0,${(300 - (values[0] / max) * 260).toFixed(1)}`;
-  return values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * 1000;
-      const y = 300 - (value / max) * 260;
-      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
+  return `${endpoint}?${params.toString()}`;
 }
 
 function downloadCsv(filename: string, rows: (string | number | null)[][]): void {
-  const csv = rows
-    .map((row) => row.map((cell) => `"${String(cell ?? '').replaceAll('"', '""')}"`).join(','))
-    .join('\n');
+  const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? '').replaceAll('"', '""')}"`).join(',')).join('\n');
   const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
   const anchor = document.createElement('a');
   anchor.href = url;
@@ -140,19 +91,15 @@ function downloadCsv(filename: string, rows: (string | number | null)[][]): void
 export default function OverviewPage() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [hydrated, setHydrated] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [openMenu, setOpenMenu] = useState<'dataset' | 'period' | 'compare' | 'tune' | null>(null);
-  const [hidden, setHidden] = useState({ success: false, failed: false, trend: false });
   const [activeBar, setActiveBar] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [hidden, setHidden] = useState({ success: false, failed: false });
 
   useEffect(() => {
     setFilters(readFilters());
     setHydrated(true);
-    setMounted(true);
   }, []);
 
-  // Filter periode & grain tercermin di query string (blueprint §4.2).
   useEffect(() => {
     if (!hydrated) return;
     const params = new URLSearchParams();
@@ -168,39 +115,14 @@ export default function OverviewPage() {
 
   const meta = useApi<MetaResponse>('/api/meta');
   const summary = useApi<DashboardSummaryResponse>(dashboardUrl('/api/dashboard/summary', filters));
-  const trends = useApi<TrendsResponse>(trendsUrl(filters));
-  const statusDist = useApi<StatusDistributionResponse>(
-    dashboardUrl('/api/dashboard/status-distribution', filters),
-  );
-  const channels = useApi<ChannelPerformanceResponse>(
-    dashboardUrl('/api/dashboard/channel-performance?metric=volume&limit=10', filters),
-  );
-  const categories = useApi<CategoryPerformanceResponse>(
-    dashboardUrl('/api/dashboard/category-performance', filters),
-  );
+  const trends = useApi<TrendsResponse>(`${dashboardUrl('/api/dashboard/trends', filters)}&grain=${filters.grain}`);
+  const statusDist = useApi<StatusDistributionResponse>(dashboardUrl('/api/dashboard/status-distribution', filters));
+  const channels = useApi<ChannelPerformanceResponse>(dashboardUrl('/api/dashboard/channel-performance?metric=volume&limit=10', filters));
+  const categories = useApi<CategoryPerformanceResponse>(dashboardUrl('/api/dashboard/category-performance', filters));
   const insights = useApi<InsightsResponse>(dashboardUrl('/api/dashboard/insights?limit=3', filters));
 
   const refresh = () => {
-    meta.retry();
-    summary.retry();
-    trends.retry();
-    statusDist.retry();
-    channels.retry();
-    categories.retry();
-    insights.retry();
-  };
-
-  const selectDataset = (id: string) => {
-    setOpenMenu(null);
-    void fetch('/api/settings', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ activeDatasetId: id }),
-    })
-      .then(() => refresh())
-      .catch(() => {
-        /* state lokal tetap; pengguna dapat mencoba lagi */
-      });
+    [meta, summary, trends, statusDist, channels, categories, insights].forEach((api) => api.retry());
   };
 
   const kpis = summary.data?.kpis ?? [];
@@ -210,867 +132,345 @@ export default function OverviewPage() {
   const failed = kpi('failed');
   const successRate = kpi('successRate');
   const failureRate = kpi('failureRate');
-  const successValue = kpi('successValue');
 
   const period = summary.data?.period ?? null;
-  const datasetName =
-    summary.data?.dataset.name ?? meta.data?.data.activeDataset.name ?? 'n/a';
-  const periodLabel = period?.label ?? meta.data?.data.periodDefaults.label ?? 'n/a';
-  const snapshotRange = formatSnapshotRange(period?.start, period?.end, 'en');
-  const compareLabel = period?.compare?.label ?? 'None';
-  const grainLabel = GRAINS.find((item) => item.id === filters.grain)?.label ?? 'Daily';
+  const periodLabel = period?.label ?? meta.data?.data.periodDefaults.label ?? '—';
+  const compareLabel = period?.compare?.label ?? 'Tanpa pembanding';
+  const dataset = summary.data?.dataset ?? meta.data?.data.activeDataset ?? null;
+
+  const delta = (item: Kpi | undefined) =>
+    item?.changePct == null ? null : { pct: item.changePct, direction: item.direction, compareValue: item.compareValue };
+
+  const points = trends.data?.points ?? [];
+  const chartMax = Math.max(1, ...points.map((p) => p.total));
+  const shownPoint = activeBar !== null ? points[activeBar] : null;
+  const peakIndex = points.length ? points.reduce((best, p, i) => (p.failed > points[best].failed ? i : best), 0) : -1;
 
   const statusItems = statusDist.data?.items ?? [];
   const status = (name: string) => statusItems.find((item) => item.status === name);
-  const pending = status('PENDING');
   const statusTotal = statusDist.data?.total ?? null;
-
-  const points = trends.data?.points ?? [];
-  const chartMax = Math.max(1, ...points.map((point) => point.total));
-  const guideLabels = [1, 0.75, 0.5, 0.25, 0].map((fraction) => num(Math.round(chartMax * fraction)));
-  const successTrendPath = trendPath(points.map((point) => point.successful), chartMax);
-  const peakIndex = points.length
-    ? points.reduce((best, point, index) => (point.failed > points[best].failed ? index : best), 0)
-    : -1;
-  const peakPoint = peakIndex >= 0 ? points[peakIndex] : null;
-  // Tooltip hanya mengikuti hover/fokus pengguna. Tidak ada fallback ke peakIndex
-  // lagi: dulu fallback inilah yang membuat tooltip "12 Nov / Total Vol 587" nempel
-  // permanen dan menutupi chart (bug visual P0).
-  const shownIndex = activeBar;
-  const shownPoint = shownIndex !== null && shownIndex >= 0 ? points[shownIndex] : null;
-  const axis = [0, 0.2, 0.4, 0.6, 0.8, 1].map((fraction) => {
-    const index = points.length
-      ? Math.min(points.length - 1, Math.round(fraction * (points.length - 1)))
-      : -1;
-    return { label: index >= 0 ? points[index].label : '—', peak: index === peakIndex };
-  });
-
-  const channelItems = channels.data?.items ?? [];
-  // Badge memakai metrik yang jelas: merah hanya untuk failure rate tertinggi
-  // (sinyal risiko), volume tertinggi bersifat netral/informatif. Label "Lowest"
-  // dihapus karena merah pada failure terendah menyesatkan.
-  const highestFailure = channelItems.length
-    ? Math.max(...channelItems.map((item) => item.failureRate))
-    : null;
-  const topVolume = channelItems.length
-    ? Math.max(...channelItems.map((item) => item.total))
-    : null;
-
-  const categoryItems = categories.data?.items ?? [];
-  const visibleCategories = categoryItems.filter((item) =>
-    item.categoryName.toLowerCase().includes(categoryFilter.toLowerCase()),
-  );
-  const overallFailure = failureRate?.value ?? 0;
-  const diagnostic = (rate: number) => {
-    if (overallFailure > 0 && rate > overallFailure * 2) return 'Critical';
-    if (overallFailure > 0 && rate > overallFailure * 1.3) return 'Investigate';
-    return 'Normal';
-  };
-
-  const insightItems = insights.data?.items ?? [];
   const circumference = 2 * Math.PI * 38;
-  const donut = [
-    { item: status('SUCCESS'), color: '#0B4433' },
-    { item: status('FAILED'), color: '#CF7656' },
-    { item: status('PENDING'), color: '#707974' },
-  ];
   let donutOffset = 0;
-  const donutArcs = donut.map(({ item, color }) => {
+  const donutArcs = [
+    { item: status('SUCCESS'), color: 'var(--color-primary)' },
+    { item: status('FAILED'), color: 'var(--color-signal-terracotta)' },
+    { item: status('PENDING'), color: 'var(--color-primary-dim)' },
+  ].map(({ item, color }) => {
     const length = item ? (item.percent / 100) * circumference : 0;
     const offset = donutOffset;
     donutOffset += length;
-    return { color, length, offset, item };
+    return { item, color, length, offset };
   });
 
-  const menuButton =
-    'flex items-center gap-1.5 px-space-sm py-1.5 rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors';
-  const menuPanel =
-    'absolute z-dropdown mt-1 min-w-[220px] rounded-lg border border-outline-variant bg-surface-container-lowest p-1 shadow-lg';
-  const menuOption =
-    'block w-full rounded px-space-sm py-1.5 text-left font-label-md text-label-md text-on-surface hover:bg-surface-container transition-colors';
+  const channelItems = channels.data?.items ?? [];
+  const highestFailure = channelItems.length ? Math.max(...channelItems.map((i) => i.failureRate)) : null;
+  const lowestFailure = channelItems.length ? Math.min(...channelItems.map((i) => i.failureRate)) : null;
+
+  const categoryItems = categories.data?.items ?? [];
+  const visibleCategories = categoryItems.filter((item) => item.categoryName.toLowerCase().includes(categoryFilter.toLowerCase()));
+  const overallFailure = failureRate?.value ?? 0;
+  const diagnostic = (rate: number) =>
+    overallFailure > 0 && rate > overallFailure * 2 ? 'Kritis' : overallFailure > 0 && rate > overallFailure * 1.3 ? 'Periksa' : 'Normal';
+
+  const insightItems = insights.data?.items ?? [];
 
   return (
-    <div
-      className={`p-space-lg flex flex-col gap-space-lg max-w-[1720px] mx-auto w-full transition-opacity duration-150 ease-out ${
-        mounted ? 'opacity-100' : 'opacity-0'
-      }`}
-    >
-      {/* Sub-Header / Operational Controls Strip */}
-      <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-space-md">
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-space-xs mb-1">
-            <span className="font-label-sm text-label-sm uppercase tracking-wider text-outline">Executive Console</span>
-            <span className="inline-block w-1 h-1 rounded-full bg-outline" aria-hidden="true" />
-            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-              Data snapshot
-            </span>
-            <span className="font-label-sm text-label-sm text-outline">{snapshotRange}</span>
+    <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 lg:p-8">
+      <PageHeader
+        title="Ringkasan"
+        subtitle="Pantau metrik transaksi dan temukan perubahan yang bermakna antarperiode."
+        meta={dataset ? `SQL · FTS5 · ${formatNumber(dataset.rowCount)} ROWS` : undefined}
+        actions={
+          <Button variant="secondary" size="sm" onClick={refresh} aria-label="Muat ulang data">
+            <Icon name="refresh" className="text-[18px]" aria-hidden="true" />
+            Muat ulang
+          </Button>
+        }
+      />
+
+      {/* Header hanya periode + refresh (L-04). Grain pindah ke panel chart. */}
+      <div className="mb-6 flex flex-wrap items-center gap-4">
+        <FilterChips chips={PERIOD_PRESETS.map((p) => ({ id: p.id, label: p.label }))} value={filters.period} onChange={(id) => setFilters((c) => ({ ...c, period: id as Filters['period'] }))} label="Filter periode" />
+        {filters.period === 'custom' && (
+          <div className="flex items-center gap-2">
+            <input type="date" aria-label="Tanggal mulai" value={filters.start ?? ''} onChange={(e) => setFilters((c) => ({ ...c, start: e.target.value }))} className="min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink focus-ring" />
+            <input type="date" aria-label="Tanggal akhir" value={filters.end ?? ''} onChange={(e) => setFilters((c) => ({ ...c, end: e.target.value }))} className="min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink focus-ring" />
           </div>
-          <div className="flex items-baseline gap-space-sm">
-            <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Overview</h1>
-            <p className="font-body-md text-body-md text-on-surface-variant truncate">
-              Monitor performance and identify meaningful changes across your business data.
-            </p>
-          </div>
+        )}
+        <MonoMeta>{periodLabel} · vs {compareLabel}</MonoMeta>
+      </div>
+
+      {/* Asymmetric bento: hero 6, tiga regular 2 dari 12 (S-04 / §3.3). */}
+      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="lg:col-span-6">
+          <KpiCard hero label="Total Transaksi" value={total?.value ?? null} format="number" delta={delta(total)} note={`vs ${compareLabel}`} meta="SQL · SUMMARY" loading={summary.loading} error={summary.error} onRetry={summary.retry} sparkline={points.map((p) => p.successful)} />
         </div>
-        {/* Controls Toolbar */}
-        <div className="flex flex-wrap items-center gap-space-xs">
-          {/* Dataset chip → PUT /api/settings */}
-          <div className="relative">
-            <button
-              type="button"
-              className={menuButton}
-              aria-haspopup="listbox"
-              aria-expanded={openMenu === 'dataset'}
-              onClick={() => setOpenMenu(openMenu === 'dataset' ? null : 'dataset')}
-            >
-              <Icon name="dataset" className="text-[16px] text-primary" />
-              <span className="font-label-md text-label-md font-semibold truncate max-w-[150px]">{datasetName}</span>
-              <Icon name="arrow_drop_down" className="text-[16px] text-outline" />
-            </button>
-            {openMenu === 'dataset' && (
-              <div className={menuPanel} role="listbox" aria-label="Select dataset">
-                {(meta.data?.data.datasetChoices ?? []).map((choice) => (
-                  <button
-                    key={choice.id}
-                    type="button"
-                    role="option"
-                    aria-selected={choice.id === (summary.data?.dataset.id ?? meta.data?.data.activeDataset.id)}
-                    className={menuOption}
-                    onClick={() => selectDataset(choice.id)}
-                  >
-                    {choice.name}
-                  </button>
-                ))}
-                {(meta.data?.data.datasetChoices ?? []).length === 0 && (
-                  <span className="block px-space-sm py-1.5 font-label-md text-label-md text-on-surface-variant">
-                    No datasets available
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-          {/* Date range + grain chip → ?period=&grain= */}
-          <div className="relative">
-            <button
-              type="button"
-              className={menuButton}
-              aria-haspopup="menu"
-              aria-expanded={openMenu === 'period'}
-              onClick={() => setOpenMenu(openMenu === 'period' ? null : 'period')}
-            >
-              <Icon name="calendar_today" className="text-[16px] text-outline" />
-              <span className="font-label-md text-label-md font-medium">{periodLabel}</span>
-              <span className="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-bold">
-                {grainLabel}
-              </span>
-            </button>
-            {openMenu === 'period' && (
-              <div className={`${menuPanel} min-w-[240px]`} role="group" aria-label="Date range and grain">
-                <span className="block px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">
-                  Period
-                </span>
-                {PERIOD_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    aria-pressed={filters.period === preset.id}
-                    className={`${menuOption} ${filters.period === preset.id ? 'bg-primary-container text-on-primary' : ''}`}
-                    onClick={() => setFilters((current) => ({ ...current, period: preset.id }))}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-                {filters.period === 'custom' && (
-                  <div className="flex flex-col gap-1 px-space-sm py-1">
-                    <input
-                      type="date"
-                      aria-label="Start date"
-                      className="rounded bg-surface-container-low px-2 py-1 font-body-sm text-body-sm text-on-surface"
-                      value={filters.start ?? ''}
-                      onChange={(event) =>
-                        setFilters((current) => ({ ...current, start: event.target.value }))
-                      }
-                    />
-                    <input
-                      type="date"
-                      aria-label="End date"
-                      className="rounded bg-surface-container-low px-2 py-1 font-body-sm text-body-sm text-on-surface"
-                      value={filters.end ?? ''}
-                      onChange={(event) => setFilters((current) => ({ ...current, end: event.target.value }))}
-                    />
-                  </div>
-                )}
-                <span className="mt-1 block px-space-sm py-1 font-label-sm text-label-sm uppercase tracking-wider text-outline">
-                  Grain
-                </span>
-                {GRAINS.map((grain) => (
-                  <button
-                    key={grain.id}
-                    type="button"
-                    aria-pressed={filters.grain === grain.id}
-                    className={`${menuOption} ${filters.grain === grain.id ? 'bg-primary-container text-on-primary' : ''}`}
-                    onClick={() => setFilters((current) => ({ ...current, grain: grain.id }))}
-                  >
-                    {grain.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          {/* Compare chip → ?compare= */}
-          <div className="relative hidden md:block">
-            <button
-              type="button"
-              className={menuButton}
-              aria-haspopup="listbox"
-              aria-expanded={openMenu === 'compare'}
-              onClick={() => setOpenMenu(openMenu === 'compare' ? null : 'compare')}
-            >
-              <Icon name="compare_arrows" className="text-[16px] text-outline" />
-              <span className="font-label-md text-label-md text-on-surface-variant">
-                vs. <span className="text-on-surface font-medium">{compareLabel}</span>
-              </span>
-            </button>
-            {openMenu === 'compare' && (
-              <div className={menuPanel} role="listbox" aria-label="Comparison">
-                {COMPARE.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    role="option"
-                    aria-selected={filters.compare === option.id}
-                    className={menuOption}
-                    onClick={() => {
-                      setFilters((current) => ({ ...current, compare: option.id }));
-                      setOpenMenu(null);
-                    }}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <button
-            aria-label="Refresh Dataset"
-            type="button"
-            onClick={refresh}
-            className="p-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant transition-colors flex items-center justify-center"
-          >
-            <Icon name="refresh" className="text-[18px]" />
-          </button>
-          <Link
-            href="/assistant"
-            className="flex items-center gap-1.5 px-space-md py-1.5 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md shadow-sm transition-all"
-          >
-            <Icon name="bolt" className="text-[16px] text-secondary-fixed" />
-            <span>Ask TanyaData</span>
-          </Link>
+        <div className="lg:col-span-2">
+          <KpiCard label="Transaksi Sukses" value={successful?.value ?? null} format="number" delta={delta(successful)} loading={summary.loading} />
+        </div>
+        <div className="lg:col-span-2">
+          <KpiCard label="Success Rate" value={successRate?.value ?? null} format="percent" delta={delta(successRate)} loading={summary.loading} />
+        </div>
+        <div className="lg:col-span-2">
+          <KpiCard label="Transaksi Gagal" value={failed?.value ?? null} format="number" delta={delta(failed)} loading={summary.loading} />
         </div>
       </div>
 
-      {/* KPI Metric Blocks (4-column responsive grid) — 4 kartu sesuai Stitch. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
-        <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between relative overflow-hidden group">
-          <div className="flex items-center justify-between">
-            <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Total Transactions</span>
-            <Icon name="bar_chart" className="text-[16px] text-outline" />
-          </div>
-          <div className="my-space-xs flex items-baseline justify-between">
-            <span className="font-metric-display text-metric-display text-on-surface font-bold tracking-tight tabular">
-              {summary.loading ? <Skeleton className="h-8 w-24" /> : num(total?.value)}
-            </span>
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#C5D94B]/20 text-on-surface font-label-sm text-label-sm font-bold">
-              <Icon name="trending_up" className="text-[12px] text-primary font-bold" />
-              {delta(total)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm pt-space-xs bg-surface-container-low/50 -mx-space-md -mb-space-md px-space-md py-1">
-            <span>Comparison</span>
-            <span className="font-label-md text-label-md text-on-surface font-semibold tabular">
-              {num(total?.compareValue)} txns
-            </span>
-          </div>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between relative overflow-hidden group">
-          <div className="flex items-center justify-between">
-            <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Successful Transactions</span>
-            <Icon name="check_circle" className="text-[16px] text-primary" />
-          </div>
-          <div className="my-space-xs flex items-baseline justify-between">
-            <span className="font-metric-display text-metric-display text-on-surface font-bold tracking-tight tabular">
-              {summary.loading ? <Skeleton className="h-8 w-24" /> : num(successful?.value)}
-            </span>
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary-fixed/60 text-primary font-label-sm text-label-sm font-bold">
-              {pct(successRate?.value)} rate
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm pt-space-xs bg-surface-container-low/50 -mx-space-md -mb-space-md px-space-md py-1">
-            <span>Success Value</span>
-            <span className="font-label-md text-label-md text-on-surface font-semibold tabular">
-              {formatIdr(successValue?.value)}
-            </span>
-          </div>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between relative overflow-hidden group">
-          <div className="flex items-center justify-between">
-            <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Failed Transactions</span>
-            <Icon name="error_med" className="text-[16px] text-[#CF7656]" />
-          </div>
-          <div className="my-space-xs flex items-baseline justify-between">
-            <span className="font-metric-display text-metric-display text-on-surface font-bold tracking-tight tabular">
-              {summary.loading ? <Skeleton className="h-8 w-20" /> : num(failed?.value)}
-            </span>
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#CF7656]/15 text-[#CF7656] font-label-sm text-label-sm font-bold">
-              <Icon name="arrow_upward" className="text-[12px] text-[#CF7656] font-bold" />
-              {pct(failureRate?.value)} ({delta(failed)})
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm pt-space-xs bg-surface-container-low/50 -mx-space-md -mb-space-md px-space-md py-1">
-            <span>Comparison</span>
-            <span className="font-label-md text-label-md text-[#CF7656] font-semibold tabular">
-              {num(failed?.compareValue)} txns
-            </span>
-          </div>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between relative overflow-hidden group">
-          <div className="flex items-center justify-between">
-            <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Pending Settlement</span>
-            <Icon name="hourglass_empty" className="text-[16px] text-outline" />
-          </div>
-          <div className="my-space-xs flex items-baseline justify-between">
-            <span className="font-metric-display text-metric-display text-on-surface font-bold tracking-tight tabular">
-              {statusDist.loading ? <Skeleton className="h-8 w-20" /> : num(pending?.count)}
-            </span>
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-semibold">
-              {pct(pending?.percent)} pending
-            </span>
-          </div>
-          <div className="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm pt-space-xs bg-surface-container-low/50 -mx-space-md -mb-space-md px-space-md py-1">
-            <span>Status Total</span>
-            <span className="font-label-md text-label-md text-on-surface font-semibold tabular">{num(statusTotal)} txns</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Visualizations Bento: 2/3 Time Series + 1/3 Channel Donut/Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
-        {/* Left: Dual Stacked Time Series Chart (8 cols) */}
-        <div className="lg:col-span-8 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-xs">
-            <div>
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider block">Telemetry Sequence</span>
-              <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
-                Transaction Performance ({grainLabel})
-              </h2>
+      {/* Chart + distribusi: split 8/4 (L-05 KEEP). */}
+      <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <section className="rounded-card border border-border-hairline bg-surface lg:col-span-8">
+          <header className="measurement-rule px-5 pb-3 pt-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="font-body text-headline-sm text-ink">Transaksi per {GRAINS.find((g) => g.id === filters.grain)?.label.toLowerCase()}, {periodLabel}</h2>
+                <p className="mt-1 font-body text-body-sm text-ink-muted-strong">Sukses dan gagal, agregat dari dataset aktif.</p>
+              </div>
+              <MonoMeta>SQL · TRENDS</MonoMeta>
             </div>
-            <div className="flex flex-wrap items-center gap-space-sm text-on-surface-variant font-label-sm text-label-sm">
-              <button
-                type="button"
-                aria-pressed={!hidden.success}
-                onClick={() => setHidden((current) => ({ ...current, success: !current.success }))}
-                className={`flex items-center gap-1.5 ${hidden.success ? 'opacity-40' : ''}`}
-              >
-                <span className="w-3 h-3 rounded bg-primary" aria-hidden="true" />
-                <span>Successful</span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={!hidden.failed}
-                onClick={() => setHidden((current) => ({ ...current, failed: !current.failed }))}
-                className={`flex items-center gap-1.5 ${hidden.failed ? 'opacity-40' : ''}`}
-              >
-                <span className="w-3 h-3 rounded bg-[#CF7656]" aria-hidden="true" />
-                <span>Failed</span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={!hidden.trend}
-                onClick={() => setHidden((current) => ({ ...current, trend: !current.trend }))}
-                className={`flex items-center gap-1.5 ${hidden.trend ? 'opacity-40' : ''}`}
-              >
-                <span className="w-4 h-0.5 border-t-2 border-dashed border-outline" aria-hidden="true" />
-                <span>Success Trend</span>
-              </button>
-              <div className="h-3 w-px bg-surface-variant" aria-hidden="true" />
-              <div className="relative">
-                <button
-                  type="button"
-                  aria-label="Chart settings"
-                  aria-expanded={openMenu === 'tune'}
-                  onClick={() => setOpenMenu(openMenu === 'tune' ? null : 'tune')}
-                  className="p-1 rounded hover:bg-surface-container text-outline hover:text-on-surface"
-                >
-                  <Icon name="tune" className="text-[16px]" />
+          </header>
+          <div className="p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-3">
+                <button type="button" aria-pressed={!hidden.success} onClick={() => setHidden((c) => ({ ...c, success: !c.success }))} className="inline-flex min-h-11 items-center gap-2 rounded-control px-2 font-body text-body-sm text-ink-muted-strong transition-colors hover:bg-row-hover focus-ring">
+                  <span className="state-dot" aria-hidden="true" /> Sukses
                 </button>
-                {openMenu === 'tune' && (
-                  <div className={`${menuPanel} right-0`} role="group" aria-label="Chart grain">
-                    {GRAINS.map((grain) => (
-                      <button
-                        key={grain.id}
-                        type="button"
-                        aria-pressed={filters.grain === grain.id}
-                        className={`${menuOption} ${filters.grain === grain.id ? 'bg-primary-container text-on-primary' : ''}`}
-                        onClick={() => {
-                          setFilters((current) => ({ ...current, grain: grain.id }));
-                          setOpenMenu(null);
-                        }}
-                      >
-                        {grain.label}
-                      </button>
+                <button type="button" aria-pressed={!hidden.failed} onClick={() => setHidden((c) => ({ ...c, failed: !c.failed }))} className="inline-flex min-h-11 items-center gap-2 rounded-control px-2 font-body text-body-sm text-ink-muted-strong transition-colors hover:bg-row-hover focus-ring">
+                  <span className="state-dot state-dot-error" aria-hidden="true" /> Gagal
+                </button>
+              </div>
+              <FilterChips chips={GRAINS.map((g) => ({ id: g.id, label: g.label }))} value={filters.grain} onChange={(id) => setFilters((c) => ({ ...c, grain: id as Filters['grain'] }))} label="Granularitas" />
+            </div>
+
+            {trends.loading ? (
+              <div className="h-64 animate-skeleton rounded-control bg-row-hover" />
+            ) : trends.error ? (
+              <div className="rounded-card border border-signal-terracotta p-4">
+                <p className="font-body text-body-md text-error-text">{trends.error}</p>
+                <Button size="sm" onClick={trends.retry} className="mt-2">Coba lagi</Button>
+              </div>
+            ) : points.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="font-body text-body-md text-ink">Tidak ada transaksi pada periode ini.</p>
+                <p className="mt-1 font-body text-body-sm text-ink-muted-strong">Pilih periode lain untuk melihat data.</p>
+                <Button size="sm" onClick={() => setFilters((c) => ({ ...c, period: 'last_30_days' }))} className="mt-4">Periode sebelumnya</Button>
+              </div>
+            ) : (
+              <div key={`${filters.period}-${filters.grain}`} className="animate-crossfade">
+                <div className="relative h-64 border-b border-border-hairline">
+                  <div className="absolute inset-0 flex flex-col justify-between">
+                    {[1, 0.75, 0.5, 0.25, 0].map((f) => (
+                      <div key={f} className="flex items-center gap-2 border-b border-border-hairline pb-0.5">
+                        <span className="w-12 text-right font-body text-body-sm tabular text-ink-muted-strong">{num(Math.round(chartMax * f))}</span>
+                        <span className="h-px flex-1 bg-border-hairline" aria-hidden="true" />
+                      </div>
                     ))}
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
-          {/* High-Precision Telemetry Chart Area */}
-          <div className="relative w-full h-[320px] select-none bg-surface-container-low/30 rounded-lg p-2 flex flex-col justify-end">
-            <div className="absolute inset-0 p-4 flex flex-col justify-between pointer-events-none opacity-40">
-              {guideLabels.map((label, index) => (
-                <div
-                  key={index}
-                  className="w-full flex justify-between items-center text-outline font-label-sm text-label-sm border-b border-[#E1E5DE] pb-0.5"
-                >
-                  <span className="tabular">{label}</span>
-                  <span className="h-px flex-1 mx-2 bg-surface-variant" aria-hidden="true" />
-                </div>
-              ))}
-            </div>
-            <svg
-              className="absolute inset-0 w-full h-full pointer-events-none p-4"
-              preserveAspectRatio="none"
-              viewBox="0 0 1000 300"
-            >
-              {!hidden.trend && successTrendPath && (
-                <path d={successTrendPath} fill="none" opacity="0.65" stroke="#707974" strokeDasharray="4,4" strokeWidth="2" />
-              )}
-              {peakPoint && (
-                <line
-                  opacity="0.8"
-                  stroke="#CF7656"
-                  strokeDasharray="2,2"
-                  strokeWidth="1.5"
-                  x1={(peakIndex / Math.max(1, points.length - 1)) * 1000}
-                  x2={(peakIndex / Math.max(1, points.length - 1)) * 1000}
-                  y1="40"
-                  y2="280"
-                />
-              )}
-            </svg>
-            <div className="relative z-10 w-full h-[230px] flex items-end justify-between gap-1 px-4">
-              {points.map((point, index) => {
-                const successHeight = (point.successful / chartMax) * 230;
-                const failedHeight = (point.failed / chartMax) * 230;
-                const isPeak = index === peakIndex;
-                const isShown = index === shownIndex;
-                return (
-                  <div
-                    key={point.bucket}
-                    className="flex-1 flex flex-col items-center justify-end h-full relative cursor-pointer group/bar"
-                    onMouseEnter={() => setActiveBar(index)}
-                    onMouseLeave={() => setActiveBar(null)}
-                    onFocus={() => setActiveBar(index)}
-                    onBlur={() => setActiveBar(null)}
-                    tabIndex={0}
-                    role="img"
-                    aria-label={`${point.label}: ${num(point.total)} transactions, ${num(point.failed)} failed`}
-                  >
-                    {isShown && shownPoint && (
-                      <div className="absolute -top-24 left-1/2 -translate-x-1/2 z-tooltip bg-surface-container-lowest border border-outline-variant shadow-lg rounded-lg p-2.5 w-56 flex flex-col gap-1 pointer-events-none animate-[crossfade_var(--motion-tooltip)_ease-out_both]">
-                        <div className="flex items-center justify-between pb-1 border-b border-surface-variant">
-                          <span className="font-label-sm text-label-sm text-on-surface font-bold">{shownPoint.label}</span>
-                          <span
-                            className={`font-label-sm text-label-sm px-1 rounded font-bold ${
-                              isPeak ? 'bg-[#CF7656]/20 text-[#CF7656]' : 'bg-surface-container text-on-surface-variant'
-                            }`}
-                          >
-                            {isPeak ? 'Peak' : 'Normal'}
-                          </span>
+                  <div className="absolute inset-0 ml-14 flex items-end justify-between gap-1 pb-1">
+                    {points.map((point, index) => {
+                      const shown = index === activeBar;
+                      return (
+                        <div
+                          key={point.bucket}
+                          tabIndex={0}
+                          role="img"
+                          aria-label={`${point.label}: ${num(point.total)} transaksi, ${num(point.failed)} gagal`}
+                          onMouseEnter={() => setActiveBar(index)}
+                          onMouseLeave={() => setActiveBar(null)}
+                          onFocus={() => setActiveBar(index)}
+                          onBlur={() => setActiveBar(null)}
+                          className="relative flex h-full flex-1 cursor-default flex-col items-center justify-end focus:outline-none"
+                        >
+                          {shown && shownPoint && (
+                            <div className="animate-crossfade pointer-events-none absolute bottom-full left-1/2 z-tooltip mb-2 w-52 -translate-x-1/2 rounded-card border border-border-hairline bg-surface p-3 shadow-overlay">
+                              <p className="font-body text-body-sm font-semibold text-ink">{shownPoint.label}</p>
+                              <div className="mt-2 space-y-1 font-body text-body-sm">
+                                <div className="flex justify-between"><span className="text-ink-muted-strong">Total</span><span className="tabular text-ink">{num(shownPoint.total)}</span></div>
+                                <div className="flex justify-between"><span className="text-ink-muted-strong">Sukses</span><span className="tabular text-primary">{num(shownPoint.successful)}</span></div>
+                                <div className="flex justify-between"><span className="text-ink-muted-strong">Gagal</span><span className="tabular text-error-text">{num(shownPoint.failed)}</span></div>
+                              </div>
+                            </div>
+                          )}
+                          {!hidden.failed && (
+                            <div className={`w-full max-w-3.5 rounded-t-sm bg-signal-terracotta transition-opacity duration-[var(--motion-fast)] ${activeBar !== null && !shown ? 'opacity-40' : 'opacity-100'}`} style={{ height: `${(point.failed / chartMax) * 230}px` }} />
+                          )}
+                          {!hidden.success && (
+                            <div className={`w-full max-w-3.5 bg-primary transition-opacity duration-[var(--motion-fast)] ${activeBar !== null && !shown ? 'opacity-40' : 'opacity-100'} ${index === peakIndex ? 'ring-1 ring-white' : ''}`} style={{ height: `${(point.successful / chartMax) * 230}px` }} />
+                          )}
                         </div>
-                        <div className="flex items-center justify-between font-body-sm text-body-sm">
-                          <span className="text-outline">Total Vol:</span>
-                          <span className="font-label-md text-label-md text-on-surface font-bold tabular">
-                            {num(shownPoint.total)} txns
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between font-body-sm text-body-sm">
-                          <span className="text-primary flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" /> Success:
-                          </span>
-                          <span className="text-on-surface font-medium tabular">
-                            {num(shownPoint.successful)} ({pct(shownPoint.successRate)})
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between font-body-sm text-body-sm">
-                          <span className="text-[#CF7656] flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#CF7656]" aria-hidden="true" /> Failed:
-                          </span>
-                          <span className="text-[#CF7656] font-bold tabular">
-                            {num(shownPoint.failed)} ({pct(shownPoint.failureRate)})
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    {isPeak && (
-                      <span
-                        className="h-2 w-2 rounded-full bg-[#CF7656] ring-4 ring-[#CF7656]/20 mb-1"
-                        aria-hidden="true"
-                      />
-                    )}
-                    {!hidden.failed && (
-                      <div
-                        className={`w-full transition-opacity duration-[var(--motion-focus)] ${activeBar !== null && !isShown ? 'opacity-40' : 'opacity-100'} ${isPeak ? 'max-w-[16px] ring-1 ring-white' : 'max-w-[14px]'} bg-[#CF7656] rounded-t-sm`}
-                        style={{ height: `${failedHeight}px` }}
-                      />
-                    )}
-                    {!hidden.success && (
-                      <div
-                        className={`w-full transition-opacity duration-[var(--motion-focus)] ${activeBar !== null && !isShown ? 'opacity-40' : 'opacity-100'} ${isPeak ? 'max-w-[16px]' : 'max-w-[14px]'} bg-primary`}
-                        style={{ height: `${successHeight}px` }}
-                      />
-                    )}
+                      );
+                    })}
                   </div>
-                );
-              })}
-              {points.length === 0 && !trends.loading && (
-                <div className="w-full text-center font-body-sm text-body-sm text-on-surface-variant py-16">
-                  {trends.error ?? 'No trend data for this filter.'}
                 </div>
-              )}
-            </div>
-            <div className="w-full flex justify-between items-center text-outline font-label-sm text-label-sm pt-2 px-2 border-t border-[#E1E5DE]">
-              {axis.map((item, index) => (
-                <span key={index} className={item.peak ? 'text-[#CF7656] font-bold' : ''}>
-                  {item.label}
-                  {item.peak ? ' (Peak)' : ''}
-                </span>
-              ))}
+                <div className="mt-2 flex justify-between pl-14 font-body text-body-sm text-ink-muted-strong">
+                  {[0, 0.2, 0.4, 0.6, 0.8, 1].map((f) => {
+                    const i = points.length ? Math.min(points.length - 1, Math.round(f * (points.length - 1))) : -1;
+                    return <span key={f}>{i >= 0 ? points[i].label : '—'}</span>;
+                  })}
+                </div>
+                <table className="sr-only">
+                  <caption>Transaksi per periode</caption>
+                  <thead><tr><th>Periode</th><th>Total</th><th>Sukses</th><th>Gagal</th></tr></thead>
+                  <tbody>{points.map((p) => <tr key={p.bucket}><td>{p.label}</td><td>{p.total}</td><td>{p.successful}</td><td>{p.failed}</td></tr>)}</tbody>
+                </table>
+              </div>
+            )}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border-hairline pt-3">
+              <MonoMeta>{points.length} BUCKET · {num(statusTotal)} TOTAL</MonoMeta>
+              <Button variant="ghost" size="sm" onClick={() => downloadCsv('tanyadata-tren.csv', [['Periode', 'Total', 'Sukses', 'Gagal'], ...points.map((p) => [p.label, p.total, p.successful, p.failed])])}>
+                <Icon name="download" className="text-[16px]" aria-hidden="true" /> Ekspor CSV
+              </Button>
             </div>
           </div>
-          <div className="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm pt-1">
-            <span className="flex items-center gap-1">
-              <Icon name="info" className="text-[14px] text-primary" />
-              Aggregated from {num(points.length)} buckets. Peak volume reached {num(peakPoint?.total)} txns on{' '}
-              {peakPoint?.label ?? 'n/a'}.
-            </span>
-            <button
-              type="button"
-              onClick={() =>
-                downloadCsv('tanyadata-time-series.csv', [
-                  ['Bucket', 'Total', 'Successful', 'Failed', 'Success Rate', 'Failure Rate'],
-                  ...points.map((point) => [
-                    point.label,
-                    point.total,
-                    point.successful,
-                    point.failed,
-                    point.successRate,
-                    point.failureRate,
-                  ]),
-                ])
-              }
-              className="text-primary font-label-md text-label-md font-semibold hover:underline flex items-center gap-0.5"
-            >
-              Export Time Series CSV
-              <Icon name="download" className="text-[14px]" />
-            </button>
-          </div>
-        </div>
+        </section>
 
-        {/* Right: Status Distribution Donut & Channel Breakdown (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col gap-space-md">
-          <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-space-sm">
-              <div>
-                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider block">Telemetry Ratio</span>
-                <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">Status Allocation</h3>
-              </div>
-              <span className="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface font-mono font-bold tabular">
-                {num(statusTotal)} TOTAL
-              </span>
-            </div>
-            <div className="flex items-center justify-center gap-space-md py-space-xs">
-              <div className="relative w-36 h-36 flex items-center justify-center">
-                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" fill="none" r="38" stroke="#E1E5DE" strokeWidth="12" />
-                  {donutArcs.map((arc, index) =>
-                    arc.length > 0 ? (
-                      <circle
-                        key={index}
-                        cx="50"
-                        cy="50"
-                        fill="none"
-                        r="38"
-                        stroke={arc.color}
-                        strokeDasharray={`${arc.length.toFixed(1)} ${circumference.toFixed(1)}`}
-                        strokeDashoffset={-arc.offset}
-                        strokeLinecap="round"
-                        strokeWidth="12"
-                      />
-                    ) : null,
-                  )}
+        <div className="flex flex-col gap-6 lg:col-span-4">
+          <section className="rounded-card border border-border-hairline bg-surface">
+            <header className="measurement-rule px-5 pb-3 pt-4">
+              <h2 className="font-body text-headline-sm text-ink">Distribusi status</h2>
+            </header>
+            <div className="flex items-center gap-4 p-5">
+              <div className="relative h-32 w-32 shrink-0">
+                <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" role="img" aria-label="Distribusi status transaksi">
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="var(--color-border-hairline)" strokeWidth="12" />
+                  {donutArcs.map((arc, i) => arc.length > 0 && (
+                    <circle key={i} cx="50" cy="50" r="38" fill="none" stroke={arc.color} strokeWidth="12" strokeDasharray={`${arc.length.toFixed(1)} ${circumference.toFixed(1)}`} strokeDashoffset={-arc.offset} />
+                  ))}
                 </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="font-label-sm text-label-sm text-outline uppercase">Health Index</span>
-                  <span className="font-metric-display text-metric-display text-primary font-bold leading-none tabular">
-                    {pct(successRate?.value)}
-                  </span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Clearance</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="font-body text-body-sm text-ink-muted-strong">Tingkat Keberhasilan</span>
+                  <span className="font-body text-metric-md tabular text-primary">{pct(successRate?.value)}</span>
                 </div>
               </div>
-              <div className="flex flex-col gap-space-xs flex-1">
-                {donutArcs.map((arc, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-1 rounded hover:bg-surface-container-low transition-colors"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full"
-                        style={{ backgroundColor: arc.color }}
-                        aria-hidden="true"
-                      />
-                      <span className="font-label-md text-label-md text-on-surface">
-                        {arc.item
-                          ? arc.item.status.charAt(0) + arc.item.status.slice(1).toLowerCase()
-                          : 'n/a'}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-label-md text-label-md text-on-surface font-bold block tabular">
-                        {num(arc.item?.count)}
-                      </span>
-                      <span className="font-label-sm text-label-sm text-outline tabular">{pct(arc.item?.percent)}</span>
-                    </div>
+              <div className="min-w-0 flex-1 space-y-2">
+                {donutArcs.map((arc, i) => (
+                  <div key={i} className="flex items-center justify-between gap-2">
+                    <span className="inline-flex min-w-0 items-center gap-2 font-body text-body-sm text-ink-muted-strong">
+                      <span className="state-dot shrink-0" style={{ backgroundColor: arc.color }} aria-hidden="true" />
+                      <span className="truncate">{arc.item?.status ?? '—'}</span>
+                    </span>
+                    <span className="font-body text-body-sm tabular text-ink">{num(arc.item?.count)}</span>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
-          {/* Channel Performance Horizontal Bar Chart */}
-          <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm flex-1" id="channel">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider block">Routing Split</span>
-                <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">Channel Breakdown</h3>
-              </div>
-              <Icon name="hub" className="text-[18px] text-outline" />
-            </div>
-            <div className="flex flex-col gap-space-sm mt-1">
+          </section>
+
+          <section className="rounded-card border border-border-hairline bg-surface">
+            <header className="measurement-rule px-5 pb-3 pt-4">
+              <h2 className="font-body text-headline-sm text-ink">Kanal berdasarkan volume</h2>
+            </header>
+            <div className="space-y-3 p-5">
               {channelItems.map((channel) => (
-                <div
-                  key={channel.channelId}
-                  className="flex flex-col gap-1 p-2 rounded-lg bg-surface-container-low/60 hover:bg-surface-container transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-label-md text-label-md text-on-surface font-semibold">{channel.channelName}</span>
-                      {channel.failureRate === highestFailure && (
-                        <span className="font-label-sm text-label-sm px-1 rounded bg-error-container text-on-error-container font-bold">
-                          Highest failure
-                        </span>
-                      )}
-                      {channel.total === topVolume && (
-                        <span className="font-label-sm text-label-sm px-1 rounded bg-surface-container text-on-surface-variant font-bold">
-                          Top volume
-                        </span>
-                      )}
-                    </div>
-                    <span className="font-label-md text-label-md text-on-surface font-bold tabular">
-                      {num(channel.total)} txns
+                <div key={channel.channelId} className="rounded-control border border-border-hairline p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex min-w-0 items-center gap-2 font-body text-body-md font-semibold text-ink">
+                      <span className={`state-dot shrink-0 ${channel.failureRate === highestFailure ? 'state-dot-error' : channel.failureRate === lowestFailure ? 'state-dot-active' : ''}`} aria-hidden="true" />
+                      <span className="truncate">{channel.channelName}</span>
                     </span>
+                    <span className="font-body text-body-sm tabular text-ink">{num(channel.total)}</span>
                   </div>
-                  <div className="w-full bg-[#E1E5DE] h-2 rounded-full overflow-hidden flex">
-                    <div className="bg-primary h-full" style={{ width: `${channel.successRate}%` }} />
-                    <div className="bg-[#CF7656] h-full" style={{ width: `${channel.failureRate}%` }} />
+                  <div className="mt-2 flex h-2 w-full overflow-hidden rounded-control bg-row-hover">
+                    <div className="h-full bg-primary" style={{ width: `${channel.successRate}%` }} />
+                    <div className="h-full bg-signal-terracotta" style={{ width: `${channel.failureRate}%` }} />
                   </div>
-                  <div className="flex justify-between font-label-sm text-label-sm text-outline">
-                    <span>
-                      Success: <strong className="text-on-surface tabular">{pct(channel.successRate)}</strong>
-                    </span>
-                    <span>
-                      Fail: <strong className="text-[#CF7656] tabular">{pct(channel.failureRate)}</strong>
-                    </span>
+                  <div className="mt-1 flex justify-between font-body text-body-sm">
+                    <span className="text-primary tabular">Sukses {pct(channel.successRate)}</span>
+                    <span className="text-error-text tabular">Gagal {pct(channel.failureRate)}</span>
                   </div>
+                  {channel.failureRate === highestFailure && <p className="mt-1 font-body text-body-sm font-semibold text-error-text">Tertinggi</p>}
+                  {channel.failureRate === lowestFailure && <p className="mt-1 font-body text-body-sm font-semibold text-primary">Terendah</p>}
                 </div>
               ))}
-              {channelItems.length === 0 && !channels.loading && (
-                <div className="p-2 font-body-sm text-body-sm text-on-surface-variant">
-                  {channels.error ?? 'No channel data available.'}
-                </div>
-              )}
+              {channelItems.length === 0 && !channels.loading && <p className="font-body text-body-md text-ink-muted-strong">Belum ada data kanal pada periode ini.</p>}
             </div>
-          </div>
+          </section>
         </div>
       </div>
 
-      {/* Category Performance Precision Table */}
-      <div className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col">
-        <div className="p-space-md flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm bg-surface-container-lowest">
-          <div>
-            <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider block">Matrix Categorization</span>
-            <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">Category Performance Matrix</h3>
-          </div>
-          <div className="flex items-center gap-space-xs">
-            <div className="relative">
-              <Icon name="filter_list" className="absolute left-2 top-2 text-[16px] text-outline" />
-              <input
-                type="text"
-                aria-label="Filter category"
-                placeholder="Filter category..."
-                value={categoryFilter}
-                onChange={(event) => setCategoryFilter(event.target.value)}
-                className="h-8 pl-7 pr-3 rounded bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:bg-surface-container"
-              />
+      {/* Tabel kategori. */}
+      <section className="mb-6 overflow-hidden rounded-card border border-border-hairline bg-surface">
+        <header className="measurement-rule px-5 pb-3 pt-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="font-body text-headline-sm text-ink">Kinerja kategori</h2>
+              <p className="mt-1 font-body text-body-sm text-ink-muted-strong">Diurutkan sesuai data dari API.</p>
             </div>
-            <button
-              type="button"
-              onClick={() =>
-                downloadCsv('tanyadata-categories.csv', [
-                  ['Category', 'Total Txns', 'Avg Ticket (IDR)', 'Success Rate', 'Failure Rate', 'Period Change'],
-                  ...visibleCategories.map((item) => [
-                    item.categoryName,
-                    item.total,
-                    item.avgTicket,
-                    item.successRate,
-                    item.failureRate,
-                    item.changePct,
-                  ]),
-                ])
-              }
-              className="flex items-center gap-1 h-8 px-space-sm rounded bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md"
-            >
-              <Icon name="file_download" className="text-[16px]" />
-              <span>Export Table</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <input type="text" aria-label="Filter kategori" placeholder="Filter kategori…" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink placeholder:text-ink-muted-strong focus-ring" />
+              <Button variant="secondary" size="sm" onClick={() => downloadCsv('tanyadata-kategori.csv', [['Kategori', 'Total', 'Rata-rata', 'Sukses', 'Gagal'], ...visibleCategories.map((i) => [i.categoryName, i.total, i.avgTicket, i.successRate, i.failureRate])])}>
+                <Icon name="download" className="text-[16px]" aria-hidden="true" /> Ekspor CSV
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface-container-low font-label-sm text-label-sm text-outline uppercase tracking-wider border-b border-[#E1E5DE]">
-                <th className="py-2.5 px-space-md font-bold">Category</th>
-                <th className="py-2.5 px-space-md text-right font-bold">Total Txns</th>
-                <th className="py-2.5 px-space-md text-right font-bold">Avg Ticket (IDR)</th>
-                <th className="py-2.5 px-space-md text-right font-bold">Success Rate</th>
-                <th className="py-2.5 px-space-md text-right font-bold">Failure Rate</th>
-                <th className="py-2.5 px-space-md text-right font-bold">Period Change</th>
-                <th className="py-2.5 px-space-md text-center font-bold">Diagnostic Status</th>
+        </header>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-canvas">
+              <tr>
+                {['Kategori', 'Total', 'Rata-rata', 'Sukses', 'Gagal', 'Perubahan', 'Status'].map((h, i) => (
+                  <th key={h} className={`whitespace-nowrap px-4 py-3 font-body text-label-sm uppercase text-ink-muted-strong ${i > 0 && i < 6 ? 'text-right' : ''}`}>{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E1E5DE] font-body-md text-body-md text-on-surface">
+            <tbody className="animate-crossfade">
               {visibleCategories.map((item) => {
                 const statusLabel = diagnostic(item.failureRate);
                 return (
-                  <tr key={item.categoryName} className="hover:bg-surface-container-low transition-colors group">
-                    <td className="py-3 px-space-md font-semibold flex items-center gap-2">
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          statusLabel === 'Normal' ? 'bg-primary' : 'bg-[#CF7656]'
-                        }`}
-                        aria-hidden="true"
-                      />
-                      <span>{item.categoryName}</span>
-                    </td>
-                    <td className="py-3 px-space-md text-right font-mono font-medium tabular">{num(item.total)}</td>
-                    <td className="py-3 px-space-md text-right font-mono font-semibold text-on-surface tabular">
-                      {formatIdr(item.avgTicket)}
-                    </td>
-                    <td className="py-3 px-space-md text-right font-mono text-primary font-bold tabular">
-                      {pct(item.successRate)}
-                    </td>
-                    <td className="py-3 px-space-md text-right font-mono text-on-surface-variant tabular">
-                      {pct(item.failureRate)}
-                    </td>
-                    <td className="py-3 px-space-md text-right font-mono font-bold text-primary tabular">
-                      {item.changePct == null ? 'n/a' : `${item.changePct >= 0 ? '+' : ''}${formatPercent(item.changePct)}`}
-                    </td>
-                    <td className="py-3 px-space-md text-center">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold ${
-                          statusLabel === 'Critical'
-                            ? 'bg-error-container text-on-error-container font-bold'
-                            : statusLabel === 'Investigate'
-                              ? 'bg-[#CF7656]/20 text-[#CF7656] font-bold'
-                              : 'bg-surface-container text-on-surface-variant'
-                        }`}
-                      >
-                        {statusLabel === 'Critical' && <Icon name="warning" className="text-[12px]" />}
-                        {statusLabel}
+                  <tr key={item.categoryName} className="border-t border-border-hairline hover:bg-row-hover">
+                    <td className="px-4 py-3 font-body text-body-md text-ink">
+                      <span className="inline-flex items-center gap-2">
+                        <span className={`state-dot ${statusLabel === 'Normal' ? '' : 'state-dot-error'}`} aria-hidden="true" />
+                        {item.categoryName}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-right font-body text-body-md tabular text-ink">{num(item.total)}</td>
+                    <td className="px-4 py-3 text-right font-body text-body-md tabular text-ink">{formatIdr(item.avgTicket)}</td>
+                    <td className="px-4 py-3 text-right font-body text-body-md tabular text-primary">{pct(item.successRate)}</td>
+                    <td className="px-4 py-3 text-right font-body text-body-md tabular text-error-text">{pct(item.failureRate)}</td>
+                    <td className="px-4 py-3 text-right font-body text-body-md tabular text-ink">{item.changePct == null ? '—' : `${item.changePct >= 0 ? '+' : ''}${formatPercent(item.changePct)}`}</td>
+                    <td className="px-4 py-3 text-right font-body text-body-sm font-semibold text-ink-muted-strong">{statusLabel}</td>
                   </tr>
                 );
               })}
               {visibleCategories.length === 0 && !categories.loading && (
-                <tr>
-                  <td colSpan={7} className="py-4 px-space-md text-center font-body-md text-body-md text-on-surface-variant">
-                    {categories.error ?? 'No categories match this filter.'}
-                  </td>
-                </tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center font-body text-body-md text-ink-muted-strong">Tidak ada kategori yang cocok. Hapus filter untuk melihat semua.</td></tr>
               )}
             </tbody>
           </table>
         </div>
-        <div className="px-space-md py-2 bg-surface-container-low/40 flex items-center justify-between text-outline font-label-sm text-label-sm">
-          <span>Showing {visibleCategories.length} categories</span>
-          <span className="font-mono tabular">{periodLabel}</span>
-        </div>
-      </div>
+        <div className="border-t border-border-hairline px-4 py-2"><MonoMeta>{visibleCategories.length} KATEGORI · {periodLabel}</MonoMeta></div>
+      </section>
 
-      {/* Operational Insights Panel (Actionable Cards) */}
-      <div className="flex flex-col gap-space-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-space-xs">
-            <Icon name="lightbulb" className="text-primary text-[20px]" />
-            <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">TanyaData Autonomous Inferences</h3>
-          </div>
-          <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">
-            {insightItems.length} Automated Flags Triggered
-          </span>
+      {/* Temuan dari API, bukan "Autonomous Inferences". */}
+      <section>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <h2 className="font-display text-headline-lg text-ink">Temuan</h2>
+          <MonoMeta>{insightItems.length} TEMUAN · {periodLabel}</MonoMeta>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
-          {insightItems.map((insight) => {
-            const badge =
-              insight.severity === 'high'
-                ? { label: 'Anomaly Detected', className: 'bg-[#CF7656]/20 text-[#CF7656]', icon: 'show_chart', iconClass: 'text-[#CF7656] text-[18px]', buttonClass: 'text-[#CF7656]' }
-                : insight.severity === 'medium'
-                  ? { label: 'Channel Exposure', className: 'bg-surface-container-high text-on-surface-variant', icon: 'account_balance', iconClass: 'text-outline text-[18px]', buttonClass: 'text-on-surface' }
-                  : { label: 'Optimal Efficiency', className: 'bg-[#C5D94B]/20 text-on-surface', icon: 'qr_code_2', iconClass: 'text-primary text-[18px]', buttonClass: 'text-primary' };
-            return (
-              <div
-                key={insight.id}
-                className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col justify-between gap-space-md relative overflow-hidden"
-              >
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`font-label-sm text-label-sm px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${badge.className}`}
-                    >
-                      {badge.label}
-                    </span>
-                    <Icon name={badge.icon} className={badge.iconClass} />
-                  </div>
-                  <p className="font-body-md text-body-md text-on-surface font-medium leading-relaxed">{insight.detail}</p>
-                </div>
-                <Link
-                  href={insight.links[0]?.href ?? '/investigations'}
-                  className={`w-full flex items-center justify-between px-space-sm py-2 rounded-lg bg-surface-container-low hover:bg-surface-container font-label-md text-label-md font-bold transition-colors ${badge.buttonClass}`}
-                >
-                  <span>{insight.links[0]?.label ?? 'Investigate'}</span>
-                  <Icon name="arrow_forward" className="text-[16px]" />
-                </Link>
+        <MeasurementRule className="mb-6" />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {insightItems.map((insight) => (
+            <div key={insight.id} className="flex flex-col justify-between rounded-card border border-border-hairline bg-surface p-5">
+              <div>
+                <StatusDot state={insight.severity === 'high' ? 'error' : 'neutral'} label={insight.severity === 'high' ? 'Prioritas tinggi' : 'Perlu diperiksa'} />
+                <p className="mt-3 font-body text-body-md font-semibold text-ink">{insight.title}</p>
+                <p className="mt-2 font-body text-body-sm text-ink-muted-strong">{insight.detail}</p>
               </div>
-            );
-          })}
+              <Link href={insight.links[0]?.href ?? '/investigations'} className="mt-4 inline-flex min-h-11 items-center justify-between rounded-control px-2 font-body text-label-md font-semibold text-primary transition-colors hover:bg-row-hover focus-ring">
+                {insight.links[0]?.label ?? 'Investigasi'}
+                <Icon name="arrow_forward" className="text-[16px]" aria-hidden="true" />
+              </Link>
+            </div>
+          ))}
           {insightItems.length === 0 && !insights.loading && (
-            <div className="md:col-span-3 rounded-xl bg-surface-container-lowest p-space-md shadow-sm font-body-md text-body-md text-on-surface-variant">
-              {insights.error ?? 'No insights available for this filter.'}
+            <div className="md:col-span-3 rounded-card border border-border-hairline bg-surface p-5">
+              <p className="font-body text-body-md text-ink">Belum ada temuan pada periode ini.</p>
+              <p className="mt-1 font-body text-body-sm text-ink-muted-strong">Ubah periode atau buka Investigasi untuk analisis lebih lanjut.</p>
+              <Link href="/investigations" className="mt-3 inline-flex min-h-11 items-center font-body text-label-md font-semibold text-primary focus-ring">Buka Investigasi</Link>
             </div>
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
