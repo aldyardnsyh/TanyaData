@@ -24,6 +24,8 @@ import type {
   SourceType,
 } from '@/lib/core/contracts';
 import { emptyQualityReport, newDocumentId, recordStep } from '@/lib/core/registry';
+import { invalidateQueryCache } from '@/lib/core/cache';
+import { normalizeForFts } from '@/lib/core/store';
 import {
   buildSchemaJson,
   detectPeriod,
@@ -560,6 +562,28 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
         db.prepare('SELECT COUNT(*) AS n FROM core_chunks WHERE dataset_id = ?').get(dataset.id) as { n: number }
       ).n;
       quality.issues.push(`chunks_indexed=${n}`);
+
+      // Normalisasi teks saat indexing: trigger core-schema.sql mengisi FTS
+      // dengan teks mentah; di sini diganti bentuk stem ringan. Dibatasi 2000
+      // chunk agar RAM puncak tetap rendah di VPS 2 GB. Bila UPDATE FTS tidak
+      // didukung, query dual-term (asli + stem) di store.ts tetap bekerja.
+      try {
+        const rows = db
+          .prepare(
+            `SELECT id, text, section_path FROM core_chunks
+             WHERE dataset_id = ? ORDER BY id LIMIT 2000`,
+          )
+          .all(dataset.id) as Array<{ id: number; text: string; section_path: string }>;
+        const update = db.prepare('UPDATE core_chunks_fts SET text = ?, section_path = ? WHERE rowid = ?');
+        db.transaction(() => {
+          for (const row of rows) {
+            update.run(normalizeForFts(row.text), normalizeForFts(row.section_path), row.id);
+          }
+        })();
+        quality.issues.push('fts_stemmed=1');
+      } catch {
+        quality.issues.push('fts_stemmed=0');
+      }
     });
 
     await mark('storage', () => {
@@ -580,6 +604,9 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
         dataset.id,
       );
     });
+
+    // Dataset berubah → cache lama tidak boleh dipakai lagi.
+    invalidateQueryCache(db);
 
     return {
       ...dataset,

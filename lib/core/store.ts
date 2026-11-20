@@ -6,6 +6,9 @@
 import { randomUUID } from 'node:crypto';
 import type { DB } from '@/lib/db/client';
 import { nowJakartaIso } from '@/lib/date';
+import { stemIndonesian } from '@/lib/core/stem';
+
+export { normalizeForFts } from '@/lib/core/stem';
 import type {
   Citation,
   EvaluationResult,
@@ -182,15 +185,33 @@ const STOPWORDS = new Set([
   'how', 'many', 'per', 'total', 'data', 'tentang', 'mengenai', 'saya', 'aku', 'kamu', 'nya',
 ]);
 
+/**
+ * Kueri FTS memakai DUA bentuk per kata: asli + stem.
+ * - Bentuk asli menjaga kompatibilitas dengan teks FTS mentah (trigger bawaan
+ *   core-schema.sql mengindeks teks apa adanya, termasuk di eval ground truth).
+ * - Bentuk stem menangkap variasi kata Indonesia (mengatur/atur, pendidikan/didik)
+ *   tanpa mengubah skema atau menambah dependency berat.
+ */
 export function searchTerms(question: string): string[] {
-  return [...new Set(
+  const raw = [...new Set(
     question
       .toLowerCase()
       .normalize('NFKD')
       .replace(/[^a-z0-9\s]/g, ' ')
       .split(/\s+/)
       .filter((word) => word.length >= 3 && !STOPWORDS.has(word)),
-  )].slice(0, 12);
+  )];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const word of raw) {
+    for (const term of [word, stemIndonesian(word)]) {
+      if (term.length < 3 || STOPWORDS.has(term) || seen.has(term)) continue;
+      seen.add(term);
+      out.push(term);
+      if (out.length >= 12) return out;
+    }
+  }
+  return out;
 }
 
 export type SearchChunksOptions = {
