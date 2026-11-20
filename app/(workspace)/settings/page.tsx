@@ -5,26 +5,27 @@ import type { MetaResponse, SettingsResponse } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { useI18n } from '@/lib/ui/i18n-provider';
 import { formatNumber } from '@/lib/ui/format';
+import { Icon } from '@/components/ui/icons';
+import { MonoMeta } from '@/components/ui/mono-meta';
+import { MeasurementRule } from '@/components/ui/measurement-rule';
+import { StatusDot } from '@/components/ui/status-dot';
+import { PageHeader } from '@/components/ui/page-header';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toaster';
 
-/** Material Symbols self-hosted; dekoratif → aria-hidden (blueprint §2). */
-function Icon({ name, className }: { name: string; className?: string }) {
-  return (
-    <span className={`material-symbols-outlined ${className ?? ''}`} aria-hidden="true">
-      {name}
-    </span>
-  );
-}
-
+/** Nilai preset mengikuti kontrak API (§9.1), bukan label panjang rekaan. */
 const PRESETS = [
-  'Last 30 Days (Rolling)',
-  'Current Fiscal Quarter (Q3 to Date)',
-  'Last 90 Days',
-  'Year to Date (YTD)',
-  'Trailing 12 Months (T12M)',
-];
-
-const CHART_TYPES = ['bar', 'line', 'pie'] as const;
+  { id: 'this_month', label: 'Bulan ini' },
+  { id: 'last_7_days', label: '7 hari terakhir' },
+  { id: 'last_30_days', label: '30 hari terakhir' },
+  { id: 'custom', label: 'Kustom' },
+] as const;
+const CHART_TYPES = [
+  { id: 'bar', label: 'Batang' },
+  { id: 'line', label: 'Garis' },
+  { id: 'pie', label: 'Lingkaran' },
+] as const;
 
 type Notice = 'hidden' | 'draft' | 'saved';
 
@@ -36,7 +37,7 @@ export default function SettingsPage() {
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
   const [activeDataset, setActiveDataset] = useState('');
-  const [preset, setPreset] = useState(PRESETS[0]);
+  const [preset, setPreset] = useState<string>('this_month');
   const [chartDefault, setChartDefault] = useState<string>('bar');
   const [denseTables, setDenseTables] = useState(true);
   const [activeSection, setActiveSection] = useState('general');
@@ -48,7 +49,7 @@ export default function SettingsPage() {
     setName(data?.profile.name ?? '');
     setRole(data?.profile.role ?? '');
     setActiveDataset(data?.activeDatasetId ?? '');
-    setPreset(data && PRESETS.includes(data.dateRange.preset) ? data.dateRange.preset : PRESETS[0]);
+    setPreset(data && PRESETS.some((p) => p.id === data.dateRange.preset) ? data.dateRange.preset : 'this_month');
     setChartDefault(data?.preferences.chartDefault ?? 'bar');
     setDenseTables(data?.preferences.denseTables ?? true);
   }, []);
@@ -68,18 +69,16 @@ export default function SettingsPage() {
     setLang(next);
     try {
       const res = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lang: next }),
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang: next }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(body?.error?.message ?? 'Could not update the language.');
+        throw new Error(body?.error?.message ?? 'Bahasa gagal diperbarui.');
       }
       settings.retry();
     } catch (err) {
       setLang(next === 'en' ? 'id' : 'en');
-      toast({ status: 'error', message: err instanceof Error ? err.message : 'Could not update the language.' });
+      toast({ status: 'error', message: err instanceof Error ? err.message : 'Bahasa gagal diperbarui.' });
     }
   };
 
@@ -87,78 +86,37 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       const res = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           lang,
           profile: { name, role },
           activeDatasetId: activeDataset,
-          dateRange: {
-            start: settings.data?.dateRange.start ?? '',
-            end: settings.data?.dateRange.end ?? '',
-            preset,
-          },
+          dateRange: { start: settings.data?.dateRange.start ?? '', end: settings.data?.dateRange.end ?? '', preset },
           preferences: { chartDefault, denseTables },
         }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(body?.error?.message ?? 'Could not save preferences.');
+        throw new Error(body?.error?.message ?? 'Pengaturan gagal disimpan.');
       }
-      setDirty(false);
-      setNotice('saved');
-      settings.retry();
+      setDirty(false); setNotice('saved'); settings.retry();
       window.setTimeout(() => setNotice('hidden'), 2500);
     } catch (err) {
-      toast({ status: 'error', message: err instanceof Error ? err.message : 'Could not save preferences.' });
-    } finally {
-      setSaving(false);
-    }
+      toast({ status: 'error', message: err instanceof Error ? err.message : 'Pengaturan gagal disimpan.' });
+    } finally { setSaving(false); }
   };
 
-  const discard = () => {
-    resetForm(settings.data);
-    setDirty(false);
-    setNotice('hidden');
-  };
-
+  const discard = () => { resetForm(settings.data); setDirty(false); setNotice('hidden'); };
   const switchTab = (id: string) => {
     setActiveSection(id);
     document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const editDetails = () => {
-    switchTab('general');
-    window.setTimeout(() => document.getElementById('ws-name')?.focus(), 250);
-  };
-
   if (settings.loading) {
-    return (
-      <div className="px-space-md sm:px-margin py-space-md flex flex-col gap-space-lg max-w-[1440px] mx-auto w-full">
-        <div className="h-10 w-1/3 rounded bg-surface-container-high animate-skeleton" />
-        <div className="grid grid-cols-12 gap-space-md">
-          <div className="col-span-12 lg:col-span-3 h-64 rounded-xl bg-surface-container-high animate-skeleton" />
-          <div className="col-span-12 lg:col-span-9 h-96 rounded-xl bg-surface-container-high animate-skeleton" />
-        </div>
-      </div>
-    );
+    return <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 p-4 sm:p-6 lg:p-8"><Skeleton className="h-10 w-1/3" /><div className="grid grid-cols-1 gap-6 lg:grid-cols-12"><Skeleton className="h-64 lg:col-span-3" /><Skeleton className="h-96 lg:col-span-9" /></div></div>;
   }
-
   if (settings.error) {
-    return (
-      <div className="px-space-md sm:px-margin py-space-md flex flex-col gap-space-lg max-w-[1440px] mx-auto w-full">
-        <div className="content-panel bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm">
-          <p className="font-body-md text-body-md text-error">{settings.error}</p>
-          <button
-            type="button"
-            onClick={settings.retry}
-            className="mt-space-sm px-space-md py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary transition-all"
-          >
-            Try again
-          </button>
-        </div>
-      </div>
-    );
+    return <div className="mx-auto w-full max-w-[1440px] p-4 sm:p-6 lg:p-8"><div className="rounded-card border border-signal-terracotta bg-surface p-4"><p className="font-body text-body-md text-error-text">{settings.error}</p><Button size="sm" onClick={settings.retry} className="mt-2">Coba lagi</Button></div></div>;
   }
 
   const datasets = settings.data?.datasets ?? meta.data?.data.datasetChoices ?? [];
@@ -166,343 +124,153 @@ export default function SettingsPage() {
   const documentsTotal = meta.data?.data.documents.total ?? null;
 
   const navItems = [
-    { id: 'general', label: 'General', icon: 'tune' },
-    { id: 'data', label: 'Data Preferences', icon: 'analytics' },
-    { id: 'ai', label: 'AI Preferences', icon: 'psychology' },
-    { id: 'account', label: 'Account & Security', icon: 'shield_person' },
+    { id: 'general', label: 'Umum', icon: 'tune' },
+    { id: 'data', label: 'Data', icon: 'database' },
+    { id: 'assistant', label: 'Asisten', icon: 'forum' },
+    { id: 'about', label: 'Tentang', icon: 'info' },
   ];
 
   return (
-    <div className="px-space-md sm:px-margin py-space-md flex flex-col gap-space-lg max-w-[1440px] mx-auto w-full">
-      {/* Top Action Banner / Viewport Breadcrumb */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-sm pb-space-sm">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-space-xs font-label-sm text-label-sm text-outline uppercase tracking-wider mb-1">
-            <span>Enterprise Portal</span>
-            <span>/</span>
-            <span className="text-primary font-bold">Preferences</span>
-          </div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Settings</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-0.5">Manage workspace configurations, analytical parameters, and account details.</p>
-        </div>
-        <div className="flex items-center gap-space-xs self-start md:self-auto">
-          <div
-            id="saveNotice"
-            aria-live="polite"
-            className={`${notice === 'hidden' ? 'hidden' : 'flex'} items-center gap-1.5 px-space-sm py-1 rounded bg-secondary-fixed-dim/20 text-on-secondary-fixed text-label-sm font-label-sm font-semibold`}
-          >
-            {notice === 'saved' ? (
-              <>
-                <Icon name="done_all" className="text-[16px] text-primary" />
-                <span className="text-primary font-bold">Preferences Saved</span>
-              </>
-            ) : (
-              <>
-                <span className="h-2 w-2 rounded-full bg-secondary-fixed-dim inline-block" />
-                <span>Draft changes pending</span>
-              </>
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
+      <PageHeader
+        title="Pengaturan"
+        subtitle="Atur bahasa, dataset aktif, dan preferensi tampilan workspace."
+        meta="PENGATURAN LOKAL · TANPA AKUN"
+        actions={
+          <>
+            {notice !== 'hidden' && (
+              <span className="inline-flex min-h-11 items-center gap-2 px-2">
+                <StatusDot state={notice === 'saved' ? 'active' : 'neutral'} label={notice === 'saved' ? 'Tersimpan' : 'Perubahan belum disimpan'} />
+              </span>
             )}
-          </div>
-          <button
-            type="button"
-            onClick={discard}
-            disabled={!dirty}
-            className="px-space-md py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md hover:bg-surface-variant transition-colors disabled:opacity-50"
-          >
-            Discard
-          </button>
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={saving}
-            className="px-space-md py-1.5 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
-          >
-            <Icon name="check_circle" className="text-[16px]" />
-            <span>{saving ? 'Saving…' : 'Save Changes'}</span>
-          </button>
-        </div>
-      </div>
+            <Button variant="secondary" size="sm" onClick={discard} disabled={!dirty}>Buang</Button>
+            <Button variant="primary" size="sm" onClick={() => void save()} disabled={saving || !dirty}>{saving ? 'Menyimpan…' : 'Simpan'}</Button>
+          </>
+        }
+      />
 
-      {/* Main Workspace Layout Grid */}
-      <div className="grid grid-cols-12 gap-space-md lg:gap-space-lg items-start">
-        {/* Secondary Left Navigation Rail */}
-        <aside className="col-span-12 lg:col-span-3 bg-surface-container-lowest rounded-xl p-space-sm shadow-sm">
-          <div className="px-space-sm py-2">
-            <span className="font-label-sm text-label-sm uppercase tracking-wider text-outline block">Categories</span>
-          </div>
-          <nav className="flex flex-col gap-1" id="settings-nav" aria-label="Settings categories">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <aside className="lg:col-span-3">
+          <nav className="flex flex-col gap-1" aria-label="Kategori pengaturan">
             {navItems.map((item) => {
               const active = item.id === activeSection;
               return (
-                <button
-                  key={item.id}
-                  type="button"
-                  id={`tab-btn-${item.id}`}
-                  aria-current={active ? 'true' : undefined}
-                  onClick={() => switchTab(item.id)}
-                  className={`nav-btn w-full flex items-center justify-between px-space-sm py-2.5 rounded-lg text-left transition-all ${
-                    active
-                      ? 'bg-primary-container text-on-primary font-semibold'
-                      : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
-                  }`}
-                >
-                  <span className="flex items-center gap-2.5">
-                    <Icon name={item.icon} className="text-[18px]" />
-                    <span className="font-label-md text-label-md">{item.label}</span>
-                  </span>
-                  {item.id === 'data' ? (
-                    <span className="font-label-sm text-label-sm px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-bold">{formatNumber(activeRowCount)}</span>
-                  ) : item.id === 'ai' ? (
-                    <span className="h-2 w-2 rounded-full bg-secondary-fixed-dim inline-block" />
-                  ) : item.id === 'account' ? (
-                    <Icon name="verified_user" className="text-[16px] text-primary" />
-                  ) : (
-                    <Icon name="chevron_right" className="text-[16px]" />
-                  )}
+                <button key={item.id} type="button" aria-current={active ? 'true' : undefined} onClick={() => switchTab(item.id)} className={`flex min-h-11 items-center justify-between gap-2 rounded-control px-3 text-left font-body text-label-md transition-colors focus-ring ${active ? 'bg-primary/10 font-semibold text-primary' : 'text-ink-muted-strong hover:bg-row-hover hover:text-ink'}`}>
+                  <span className="inline-flex items-center gap-2"><Icon name={item.icon} className="text-[20px]" aria-hidden="true" />{item.label}</span>
+                  {active && <span className="state-dot state-dot-active" aria-hidden="true" />}
                 </button>
               );
             })}
           </nav>
-          {/* Environment Metadata Pill dihapus: tidak ada field workspace/instance di kontrak. */}
         </aside>
 
-        {/* Central Content Stream */}
-        <main className="col-span-12 lg:col-span-9 flex flex-col gap-space-lg">
-          {/* SECTION 1: General Workspace Settings */}
-          <section className="content-panel bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-md" id="section-general">
-            <div className="flex items-center justify-between pb-space-sm">
-              <div className="flex items-center gap-space-xs">
-                <Icon name="domain" className="text-primary text-[22px]" />
-                <div>
-                  <h2 className="font-headline-sm text-headline-sm text-on-surface">General Workspace Settings</h2>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Core identity, language, and regional specifications for telemetry aggregation.</p>
-                </div>
-              </div>
-              <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded font-bold">SEC-01</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-2">
-              {/* Workspace Name → profile.name */}
+        <div className="flex flex-col gap-6 lg:col-span-9">
+          {/* UMUM */}
+          <section id="section-general" className="rounded-card border border-border-hairline bg-surface p-5">
+            <header className="measurement-rule -mx-5 -mt-5 mb-5 px-5 pb-3 pt-4"><h2 className="font-body text-headline-sm text-ink">Umum</h2></header>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <label className="flex flex-col gap-1">
+                <span className="font-body text-label-md font-semibold text-ink">Nama workspace</span>
+                <input id="ws-name" type="text" value={name} maxLength={80} onChange={(e) => { setName(e.target.value); markDirty(); }} className="min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink focus-ring" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="font-body text-label-md font-semibold text-ink">Peran</span>
+                <input id="ws-role" type="text" value={role} maxLength={80} onChange={(e) => { setRole(e.target.value); markDirty(); }} className="min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink focus-ring" />
+              </label>
               <div className="flex flex-col gap-1">
-                <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between" htmlFor="ws-name">
-                  <span>Workspace Name</span>
-                  <span className="text-outline font-normal text-label-sm">Primary label</span>
-                </label>
-                <input
-                  id="ws-name"
-                  type="text"
-                  value={name}
-                  maxLength={80}
-                  onChange={(event) => { setName(event.target.value); markDirty(); }}
-                  className="h-9 px-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none focus:bg-surface-container transition-colors"
-                />
-              </div>
-              {/* Workspace Identifier dihapus: tidak ada field slug di kontrak. */}
-              {/* Language Interface → lang (PUT /api/settings) */}
-              <div className="flex flex-col gap-1">
-                <span className="font-label-md text-label-md text-on-surface font-semibold">Primary Language Interface</span>
-                <div className="grid grid-cols-2 p-1 rounded-lg bg-surface-container-high gap-1">
-                  <button
-                    type="button"
-                    onClick={() => void changeLang('id')}
-                    className={`lang-toggle py-1.5 rounded font-label-md text-label-md text-center transition-all ${
-                      lang === 'id' ? 'text-on-primary bg-primary font-bold shadow-sm' : 'text-on-surface-variant'
-                    }`}
-                  >
-                    Bahasa Indonesia
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void changeLang('en')}
-                    className={`lang-toggle py-1.5 rounded font-label-md text-label-md text-center transition-all ${
-                      lang === 'en' ? 'text-on-primary bg-primary font-bold shadow-sm' : 'text-on-surface-variant'
-                    }`}
-                  >
-                    English (US)
-                  </button>
-                </div>
-              </div>
-              {/* Default Timezone → konstanta kontrak Asia/Jakarta (bukan field settings). */}
-              <div className="flex flex-col gap-1">
-                <span className="font-label-md text-label-md text-on-surface font-semibold">Default Timezone</span>
-                <div className="relative">
-                  <div className="w-full h-9 px-3 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md flex items-center">
-                    (UTC+07:00) Jakarta
-                  </div>
-                  <Icon name="expand_more" className="absolute right-2.5 top-2 pointer-events-none text-outline text-[18px]" />
-                </div>
-              </div>
-              {/* Default Date Range → dateRange.preset */}
-              <div className="flex flex-col gap-1 md:col-span-2">
-                <label className="font-label-md text-label-md text-on-surface font-semibold" htmlFor="ws-daterange">Default Date Range for Dashboards</label>
-                <div className="relative">
-                  <select
-                    id="ws-daterange"
-                    value={preset}
-                    onChange={(event) => { setPreset(event.target.value); markDirty(); }}
-                    className="w-full h-9 px-3 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md appearance-none focus:outline-none focus:bg-surface-container cursor-pointer"
-                  >
-                    {PRESETS.map((option) => <option key={option} value={option}>{option}</option>)}
-                  </select>
-                  <Icon name="calendar_month" className="absolute right-2.5 top-2 pointer-events-none text-outline text-[18px]" />
-                </div>
-                <span className="font-body-sm text-body-sm text-outline mt-1">Applies globally across all newly synthesized executive dashboards and anomaly feeds.</span>
-              </div>
-            </div>
-          </section>
-
-          {/* SECTION 2: Data Preferences */}
-          <section className="content-panel bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-md" id="section-data">
-            <div className="flex items-center justify-between pb-space-sm">
-              <div className="flex items-center gap-space-xs">
-                <Icon name="dataset" className="text-primary text-[22px]" />
-                <div>
-                  <h2 className="font-headline-sm text-headline-sm text-on-surface">Data Preferences</h2>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Default telemetry datasets and table display standards.</p>
-                </div>
-              </div>
-              <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded font-bold">SEC-02</span>
-            </div>
-            {/* Default Active Dataset Selector */}
-            <div className="flex flex-col gap-1">
-              <label className="font-label-md text-label-md text-on-surface font-semibold" htmlFor="dataset-select">Default Active Dataset</label>
-              <div className="relative">
-                <select
-                  id="dataset-select"
-                  value={activeDataset}
-                  onChange={(event) => { setActiveDataset(event.target.value); markDirty(); }}
-                  className="w-full h-9 px-3 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md appearance-none focus:outline-none focus:bg-surface-container cursor-pointer"
-                >
-                  {datasets.map((dataset) => (
-                    <option key={dataset.id} value={dataset.id}>{dataset.name} ({formatNumber(dataset.rowCount)} rows)</option>
-                  ))}
-                </select>
-                <Icon name="table_chart" className="absolute right-2.5 top-2 pointer-events-none text-outline text-[18px]" />
-              </div>
-            </div>
-            {/* Compact Tables → preferences.denseTables (satu-satunya field format yang tersedia). */}
-            <label className="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container cursor-pointer transition-colors">
-              <input
-                type="checkbox"
-                checked={denseTables}
-                onChange={(event) => { setDenseTables(event.target.checked); markDirty(); }}
-                className="mt-0.5 accent-primary h-4 w-4"
-              />
-              <div className="flex flex-col">
-                <span className="font-label-md text-label-md text-on-surface font-semibold">Compact Tables</span>
-                <span className="font-body-sm text-body-sm text-outline">Use denser row spacing in analytical tables.</span>
-              </div>
-            </label>
-            {/* Number Formatting, Anomaly Sensitivity, Auto-sync dihapus: tidak ada field di kontrak. */}
-            <div className="p-space-sm rounded-lg bg-surface-container-low flex items-center justify-between gap-space-sm">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Indexed documents</span>
-              <span className="font-label-md text-label-md text-on-surface font-semibold tabular">{documentsTotal ?? 'n/a'}</span>
-            </div>
-          </section>
-
-          {/* SECTION 3: AI Assistant & Analytical Preferences */}
-          <section className="content-panel bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-md" id="section-ai">
-            <div className="flex items-center justify-between pb-space-sm">
-              <div className="flex items-center gap-space-xs">
-                <Icon name="smart_toy" className="text-primary text-[22px]" />
-                <div>
-                  <h2 className="font-headline-sm text-headline-sm text-on-surface">AI Assistant &amp; Analytical Preferences</h2>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Default visualization behavior for analytical answers.</p>
-                </div>
-              </div>
-              <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded font-bold">SEC-03</span>
-            </div>
-            {/* Default Chart Type → preferences.chartDefault (mapping dari tone control Stitch). */}
-            <div className="flex flex-col gap-1.5">
-              <span className="font-label-md text-label-md text-on-surface font-semibold">Default Chart Type</span>
-              <div className="grid grid-cols-1 md:grid-cols-3 p-1 rounded-lg bg-surface-container-high gap-1">
-                {CHART_TYPES.map((type) => {
-                  const active = chartDefault === type;
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => { setChartDefault(type); markDirty(); }}
-                      className={`tone-toggle py-2 px-3 rounded font-label-md text-label-md text-center transition-all ${
-                        active ? 'text-on-primary bg-primary font-bold shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
-                      }`}
-                    >
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                <span className="font-body text-label-md font-semibold text-ink">Bahasa antarmuka</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['id', 'en'] as const).map((code) => (
+                    <button key={code} type="button" onClick={() => void changeLang(code)} aria-pressed={lang === code} className={`min-h-11 rounded-control border font-body text-label-md transition-colors focus-ring ${lang === code ? 'border-primary bg-primary font-semibold text-on-primary' : 'border-border-control bg-surface text-ink-muted-strong hover:border-primary'}`}>
+                      {code === 'id' ? 'Bahasa Indonesia' : 'English'}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-            {/* Response Tone, Grounding, SQL Transparency, Causality dihapus: tidak ada field di kontrak. */}
-            <div className="p-space-sm rounded-lg bg-surface-container-low flex items-center justify-between gap-space-sm">
-              <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">Retrieval engine</span>
-              <span className="font-label-md text-label-md text-on-surface font-semibold font-mono">
-                {meta.data ? `${meta.data.capabilities.sql} · ${meta.data.capabilities.rag}` : 'n/a'}
-              </span>
+              <div className="flex flex-col gap-1">
+                <span className="font-body text-label-md font-semibold text-ink">Zona waktu</span>
+                <div className="flex min-h-11 items-center rounded-control border border-border-hairline bg-canvas px-3 font-body text-body-md text-ink-muted-strong">UTC+07:00 · Jakarta</div>
+              </div>
+              <label className="flex flex-col gap-1 md:col-span-2">
+                <span className="font-body text-label-md font-semibold text-ink">Rentang tanggal bawaan</span>
+                <select id="ws-daterange" value={preset} onChange={(e) => { setPreset(e.target.value); markDirty(); }} className="min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink focus-ring">
+                  {PRESETS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+                </select>
+                <span className="font-body text-body-sm text-ink-muted-strong">Diterapkan pada dashboard dan pertanyaan baru.</span>
+              </label>
             </div>
           </section>
 
-          {/* SECTION 4: Account & Security */}
-          <section className="content-panel bg-surface-container-lowest rounded-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-md" id="section-account">
-            <div className="flex items-center justify-between pb-space-sm">
-              <div className="flex items-center gap-space-xs">
-                <Icon name="security" className="text-primary text-[22px]" />
-                <div>
-                  <h2 className="font-headline-sm text-headline-sm text-on-surface">Account &amp; Security</h2>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Local workspace identity and profile details.</p>
-                </div>
+          {/* DATA */}
+          <section id="section-data" className="rounded-card border border-border-hairline bg-surface p-5">
+            <header className="measurement-rule -mx-5 -mt-5 mb-5 px-5 pb-3 pt-4"><h2 className="font-body text-headline-sm text-ink">Data</h2></header>
+            <div className="flex flex-col gap-5">
+              <label className="flex flex-col gap-1">
+                <span className="font-body text-label-md font-semibold text-ink">Dataset aktif</span>
+                <select id="dataset-select" value={activeDataset} onChange={(e) => { setActiveDataset(e.target.value); markDirty(); }} className="min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink focus-ring">
+                  {datasets.map((dataset) => <option key={dataset.id} value={dataset.id}>{dataset.name} ({formatNumber(dataset.rowCount)} baris)</option>)}
+                </select>
+              </label>
+              <label className="flex min-h-11 items-start gap-3 rounded-control border border-border-hairline bg-canvas p-3">
+                <input type="checkbox" checked={denseTables} onChange={(e) => { setDenseTables(e.target.checked); markDirty(); }} className="mt-1 h-4 w-4 accent-primary" />
+                <span className="flex flex-col"><span className="font-body text-body-md font-semibold text-ink">Tabel ringkas</span><span className="font-body text-body-sm text-ink-muted-strong">Gunakan jarak baris lebih rapat pada tabel analitik.</span></span>
+              </label>
+              <div className="flex min-h-11 items-center justify-between gap-3 rounded-control border border-border-hairline bg-canvas px-3">
+                <span className="font-body text-body-md text-ink-muted-strong">Dokumen terindeks</span>
+                <MonoMeta>{documentsTotal ?? '—'}</MonoMeta>
               </div>
-              <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded font-bold">SEC-04</span>
+              {activeRowCount != null && <div className="flex min-h-11 items-center justify-between gap-3 rounded-control border border-border-hairline bg-canvas px-3"><span className="font-body text-body-md text-ink-muted-strong">Baris dataset aktif</span><MonoMeta>{formatNumber(activeRowCount)} ROWS</MonoMeta></div>}
             </div>
-            {/* Current User Profile Card → profile.name / profile.role */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-space-md rounded-xl bg-surface-container-low gap-space-md">
-              <div className="flex items-center gap-space-md">
-                <div className="w-14 h-14 rounded-full object-cover shadow-sm flex-shrink-0 bg-primary-fixed text-primary flex items-center justify-center font-headline-sm text-headline-sm font-bold">
-                  {(name || 'TD').trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('')}
-                </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="font-headline-sm text-headline-sm text-on-surface">{name || 'n/a'}</span>
-                    <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-bold uppercase tracking-wider">Local</span>
-                  </div>
-                  <span className="font-label-md text-label-md text-primary font-semibold">{role || 'n/a'}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={editDetails}
-                className="px-space-md py-1.5 rounded-lg bg-surface-container-highest hover:bg-surface-variant text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5 self-stretch sm:self-auto justify-center"
-              >
-                <Icon name="edit" className="text-[16px]" />
-                <span>Edit Details</span>
-              </button>
-            </div>
-            {/* API tokens, SSO, Sign Out dihapus: tidak ada auth/token di arsitektur (D.001/D.002). */}
+          </section>
 
-            {/* Bottom Action Suite */}
-            <div className="pt-space-md mt-space-sm flex flex-col sm:flex-row items-center justify-between gap-space-sm">
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Changes are stored locally in this workspace.</p>
-              <div className="flex items-center gap-space-xs w-full sm:w-auto justify-end">
-                <button
-                  type="button"
-                  onClick={discard}
-                  disabled={!dirty}
-                  className="flex-1 sm:flex-initial px-space-md py-2 rounded-lg bg-surface-container-high text-on-surface-variant font-label-md text-label-md hover:bg-surface-variant transition-colors text-center disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void save()}
-                  disabled={saving}
-                  className="flex-1 sm:flex-initial px-space-lg py-2 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
-                >
-                  <Icon name="save" className="text-[18px]" />
-                  <span>{saving ? 'Saving…' : 'Save Changes'}</span>
-                </button>
+          {/* ASISTEN */}
+          <section id="section-assistant" className="rounded-card border border-border-hairline bg-surface p-5">
+            <header className="measurement-rule -mx-5 -mt-5 mb-5 px-5 pb-3 pt-4"><h2 className="font-body text-headline-sm text-ink">Asisten</h2></header>
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-1">
+                <span className="font-body text-label-md font-semibold text-ink">Jenis grafik bawaan</span>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {CHART_TYPES.map((type) => (
+                    <button key={type.id} type="button" onClick={() => { setChartDefault(type.id); markDirty(); }} aria-pressed={chartDefault === type.id} className={`min-h-11 rounded-control border font-body text-label-md transition-colors focus-ring ${chartDefault === type.id ? 'border-primary bg-primary font-semibold text-on-primary' : 'border-border-control bg-surface text-ink-muted-strong hover:border-primary'}`}>{type.label}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex min-h-11 items-center justify-between gap-3 rounded-control border border-border-hairline bg-canvas px-3">
+                <span className="font-body text-body-md text-ink-muted-strong">Mesin pengambilan data</span>
+                <MonoMeta>{meta.data ? `${meta.data.capabilities.sql.toUpperCase()} · ${meta.data.capabilities.rag.toUpperCase()}` : '—'}</MonoMeta>
               </div>
             </div>
           </section>
-        </main>
+
+          {/* TENTANG */}
+          <section id="section-about" className="rounded-card border border-border-hairline bg-surface p-5">
+            <header className="measurement-rule -mx-5 -mt-5 mb-5 px-5 pb-3 pt-4"><h2 className="font-body text-headline-sm text-ink">Tentang</h2></header>
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {[
+                ['Aplikasi', meta.data?.app.name ?? 'TanyaData'],
+                ['Versi', meta.data?.app.version ?? '—'],
+                ['Mesin data', 'SQLite · SQL + FTS5'],
+                ['Akses', 'Hanya baca (read-only)'],
+                ['Akun', 'Tidak ada · satu workspace lokal'],
+                ['Zona waktu', 'Asia/Jakarta'],
+              ].map(([label, value]) => (
+                <div key={label} className="flex min-h-11 items-center justify-between gap-3 rounded-control border border-border-hairline bg-canvas px-3">
+                  <dt className="font-body text-body-md text-ink-muted-strong">{label}</dt>
+                  <dd className="text-right font-mono text-body-sm text-ink">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-4 font-body text-body-sm text-ink-muted-strong">Perubahan disimpan di workspace lokal ini. Tidak ada data yang dikirim ke layanan eksternal.</p>
+          </section>
+
+          <div className="flex flex-col gap-3 border-t border-border-hairline pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="font-body text-body-sm text-ink-muted-strong">Perubahan hanya berlaku setelah disimpan.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary" onClick={discard} disabled={!dirty}>Buang</Button>
+              <Button variant="primary" onClick={() => void save()} disabled={saving || !dirty}>{saving ? 'Menyimpan…' : 'Simpan perubahan'}</Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
