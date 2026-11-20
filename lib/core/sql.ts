@@ -344,14 +344,28 @@ const GROUP_RE = /berdasarkan|\bper\s+\w+|distribusi|\bgroup\b|\bby\b/i;
 const MONTH_RE = /per bulan|bulanan|monthly|tiap bulan/i;
 const YEAR_RE = /per tahun|tahunan|yearly|tiap tahun/i;
 const DAY_RE = /per hari|harian|daily|tiap hari/i;
-const RATE_RE =
-  /\b(success|failure|error|completion|approval|conversion|retention)\s*[- ]?\s*rate\b/i ||
-  /tingkat\s+(keberhasilan|kegagalan|sukses|gagal|penyelesaian)/i ||
-  /\b(rasio|persentase|percentage|ratio)\b/i ||
-  /\b[a-z]+\s+rate\b/i;
+const RATE_PATTERNS: RegExp[] = [
+  /\b(success|failure|error|completion|approval|conversion|retention)\s*[- ]?\s*rate\b/i,
+  /tingkat\s+(keberhasilan|kegagalan|sukses|gagal|penyelesaian)/i,
+  /\b(rasio|persentase|percentage|ratio)\b/i,
+  /\b[a-z]+\s+rate\b/i,
+];
 
 function mentioned(column: SchemaColumn, lower: string): boolean {
   return lower.includes(column.name.toLowerCase()) || lower.includes(column.sourceName.toLowerCase());
+}
+
+/** Ambil nilai teks pertama yang cocok; null berarti tidak ada (boolean dilewati). */
+function firstMatchingValue(
+  values: Array<string | number | boolean | null>,
+  predicate: (text: string) => boolean,
+): string | number | null {
+  for (const value of values) {
+    if (value === null || typeof value === 'boolean') continue;
+    const text = String(value);
+    if (predicate(text)) return value;
+  }
+  return null;
 }
 
 /** Nilai kategori yang dihitung rate-nya, dipetakan ke enum dari schema_json. */
@@ -374,7 +388,7 @@ function buildRateCandidate(
   context: QueryContext | null,
   time: SchemaColumn | null,
 ): SqlCandidate | null {
-  if (!RATE_RE.test(question)) return null;
+  if (!RATE_PATTERNS.some((re) => re.test(question))) return null;
   const target = rateTarget(lower);
   if (!target) return null;
 
@@ -383,11 +397,10 @@ function buildRateCandidate(
   let category: SchemaColumn | null = null;
   let categoryValue: string | null = null;
   for (const column of ordered) {
-    const values = column.sample_values.filter((v) => v !== null && v !== undefined).map(String);
-    const hit = values.find((v) => target.test(v));
-    if (hit) {
+    const hit = firstMatchingValue(column.sample_values, (text) => target.test(text));
+    if (hit !== null) {
       category = column;
-      categoryValue = hit;
+      categoryValue = String(hit);
       break;
     }
   }
@@ -400,10 +413,11 @@ function buildRateCandidate(
   const whereParts: string[] = [];
   for (const column of table.columns) {
     if (column.semantic_role !== 'dimension' && column.semantic_role !== 'identifier') continue;
-    const hit = column.sample_values.find(
-      (v) => v !== null && typeof v !== 'boolean' && String(v).length >= 3 && lower.includes(String(v).toLowerCase()),
+    const hit = firstMatchingValue(
+      column.sample_values,
+      (text) => text.length >= 3 && lower.includes(text.toLowerCase()),
     );
-    if (hit !== undefined) {
+    if (hit !== null) {
       whereParts.push(`${column.name} = ?`);
       params.filter = hit;
       break;
@@ -490,10 +504,11 @@ export function buildRuleBasedCandidate(
   const whereParts: string[] = [];
   for (const column of table.columns) {
     if (column.semantic_role !== 'dimension' && column.semantic_role !== 'identifier') continue;
-    const hit = column.sample_values.find(
-      (v) => v !== null && typeof v !== 'boolean' && String(v).length >= 3 && lower.includes(String(v).toLowerCase()),
+    const hit = firstMatchingValue(
+      column.sample_values,
+      (text) => text.length >= 3 && lower.includes(text.toLowerCase()),
     );
-    if (hit !== undefined) {
+    if (hit !== null) {
       whereParts.push(`${column.name} = ?`);
       params.filter = hit;
       break;

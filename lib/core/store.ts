@@ -274,7 +274,7 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
 
   if (!useBoost) return results.slice(0, limit);
   return results
-    .map((citation) => ({ citation, rank: citation.score + metadataBoost(citation, options) }))
+    .map((citation) => ({ citation, rank: (citation.score ?? 0) + metadataBoost(citation, options) }))
     .sort((a, b) => b.rank - a.rank)
     .slice(0, limit)
     .map((entry) => entry.citation);
