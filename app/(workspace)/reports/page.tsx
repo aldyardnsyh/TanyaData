@@ -2,15 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import type { ReportListResponse, ReportDetailResponse } from '@/lib/contracts/http';
+import type { ReportDetailResponse, ReportListResponse } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { Icon } from '@/components/ui/icons';
-import { MonoMeta } from '@/components/ui/mono-meta';
-import { PageHeader } from '@/components/ui/page-header';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from '@/components/ui/toaster';
+import { PageHeading } from '@/components/signal/page-heading';
+import { SectionRule } from '@/components/signal/section-rule';
+import { StatusBadge } from '@/components/signal/status-badge';
 import { ReportDocument } from '@/components/reports/report-document';
+import { toast } from '@/components/ui/toaster';
 
 export default function ReportsPage() {
   const reports = useApi<ReportListResponse>('/api/reports?limit=20');
@@ -35,7 +34,9 @@ export default function ReportsPage() {
     const escape = (value: string) => `"${value.replaceAll('"', '""')}"`;
     const lines = [header.join(','), ...items.map((report) => [report.id, report.title, report.period, report.dataset.name, report.createdAt].map(escape).join(','))];
     const url = URL.createObjectURL(new Blob([`\uFEFF${lines.join('\n')}`], { type: 'text/csv; charset=utf-8' }));
-    const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'tanyadata-laporan.csv'; anchor.click(); URL.revokeObjectURL(url);
+    const anchor = document.createElement('a');
+    anchor.href = url; anchor.download = 'tanyadata-laporan.csv'; anchor.click();
+    URL.revokeObjectURL(url);
   };
 
   const shareLink = async () => {
@@ -44,74 +45,81 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <PageHeader
+    <div className="page-container py-s5">
+      <PageHeading
         title="Laporan"
-        subtitle="Tinjau dan ekspor temuan analitik yang tersimpan."
+        caption="Tinjau dan ekspor temuan analitik yang tersimpan."
         meta={`${reports.data?.total ?? 0} LAPORAN`}
-        actions={<Link href="/assistant" className="inline-flex min-h-11 items-center gap-2 rounded-control bg-primary px-4 font-body text-label-md font-semibold text-on-primary transition-colors hover:bg-[#0A3A2C] focus-ring-forest"><Icon name="add" className="text-[16px]" aria-hidden="true" /> Buat dari asisten</Link>}
+        actions={
+          <Link href="/assistant" className="touch-44 inline-flex items-center gap-s2 rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring">
+            <Icon name="add" className="text-[16px]" /> Buat dari asisten
+          </Link>
+        }
       />
 
-      <section className="overflow-hidden rounded-card border border-border-hairline bg-surface">
-        <header className="measurement-rule px-5 pb-3 pt-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="grid-dashboard">
+        {/* Daftar: 4 kolom. */}
+        <section className="surface col-span-4 flex flex-col p-s4 xl:col-span-4" aria-labelledby="daftar-heading">
+          <div className="mb-s3 flex flex-wrap items-start justify-between gap-s2">
             <div>
-              <h2 className="font-body text-headline-sm text-ink">Daftar laporan</h2>
-              <p className="mt-1 font-body text-body-sm text-ink-muted-strong">Pilih laporan untuk melihat pratinjau dokumen.</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter judul…" aria-label="Filter judul laporan" className="min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink placeholder:text-ink-muted-strong focus-ring" />
-              <Button variant="secondary" size="sm" onClick={exportListCsv} aria-label="Ekspor daftar CSV"><Icon name="download" className="text-[16px]" aria-hidden="true" /> Ekspor CSV</Button>
+              <h2 id="daftar-heading" className="font-display text-title text-ink">Daftar laporan</h2>
+              <p className="mt-s1 font-body text-caption text-ink-72">Pilih laporan untuk melihat pratinjau.</p>
             </div>
           </div>
-        </header>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-canvas"><tr>{['Judul laporan', 'Dataset', 'Dibuat', 'Aksi'].map((h, i) => <th key={h} className={`whitespace-nowrap px-4 py-3 font-body text-label-sm uppercase text-ink-muted-strong ${i === 3 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
-            <tbody>
-              {reports.loading && <tr><td colSpan={4} className="px-4 py-4"><Skeleton className="h-8 w-full" /></td></tr>}
-              {!reports.loading && reports.error && <tr><td colSpan={4} className="px-4 py-4 font-body text-body-md text-error-text">{reports.error}</td></tr>}
-              {!reports.loading && !reports.error && items.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-8 text-center"><p className="font-body text-body-md text-ink">{query ? 'Tidak ada laporan yang cocok.' : 'Belum ada laporan.'}</p><p className="mt-1 font-body text-body-sm text-ink-muted-strong">Simpan jawaban dari asisten untuk membuat laporan. <Link href="/assistant" className="font-semibold text-primary hover:underline focus-ring">Buka asisten</Link></p></td></tr>
-              )}
+          <SectionRule className="mb-s3" />
+          <div className="mb-s3 flex flex-wrap gap-s2">
+            <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter judul" aria-label="Filter judul laporan" className="min-h-11 min-w-0 flex-1 rounded-control border border-[var(--border-hairline)] bg-porcelain px-s3 font-body text-caption text-ink placeholder:text-ink-72 focus-ring" />
+            <button type="button" onClick={exportListCsv} aria-label="Ekspor daftar CSV" className="touch-44 inline-flex items-center justify-center rounded-control border border-[var(--border-hairline)] px-s3 text-ink-72 focus-ring"><Icon name="download" className="text-[16px]" /></button>
+          </div>
+          {reports.loading ? (
+            <div className="space-y-s2" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="skeleton h-16 w-full" />)}</div>
+          ) : reports.error ? (
+            <div className="flex flex-col items-start gap-s2" role="alert"><StatusBadge label="Gagal" tone="error" /><span className="font-body text-body text-ink">{reports.error}</span><button type="button" onClick={reports.retry} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button></div>
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-start gap-s2 py-s4">
+              <StatusBadge label="Kosong" tone="neutral" />
+              <p className="font-body text-body text-ink">{query ? 'Tidak ada laporan yang cocok.' : 'Belum ada laporan.'}</p>
+              <p className="font-body text-caption text-ink-72">Simpan jawaban dari asisten untuk membuat laporan.</p>
+              <Link href="/assistant" className="touch-44 inline-flex items-center font-display text-label font-semibold text-forest focus-ring">Buka asisten</Link>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-s2">
               {items.map((report) => {
                 const active = report.id === selectedId;
                 return (
-                  <tr key={report.id} tabIndex={0} onClick={() => setSelectedId(report.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(report.id); } }} className={`cursor-pointer border-t border-border-hairline transition-colors hover:bg-row-hover focus-ring ${active ? 'bg-row-hover' : ''}`}>
-                    <td className="px-4 py-3 font-body text-body-md text-ink"><span className="inline-flex items-center gap-2"><span className={`state-dot shrink-0 ${active ? 'state-dot-active' : ''}`} aria-hidden="true" /><span className="font-semibold">{report.title}</span></span></td>
-                    <td className="px-4 py-3"><MonoMeta>{report.dataset.name}</MonoMeta></td>
-                    <td className="px-4 py-3 font-body text-body-sm text-ink-muted-strong">{report.createdAt.slice(0, 10)}</td>
-                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="inline-flex items-center gap-1">
-                        <Link href={`/reports/${report.id}`} className="inline-flex min-h-11 items-center rounded-control px-2 font-body text-label-md font-semibold text-primary hover:bg-row-hover focus-ring">Lihat</Link>
-                        <a href={`/api/reports/${report.id}/export?format=pdf`} download className="inline-flex min-h-11 items-center rounded-control px-2 font-body text-label-md text-ink-muted-strong hover:bg-row-hover focus-ring">PDF</a>
-                      </div>
-                    </td>
-                  </tr>
+                  <li key={report.id}>
+                    <button type="button" onClick={() => setSelectedId(report.id)} aria-current={active ? 'true' : undefined} className={`flex min-h-11 w-full flex-col items-start gap-s1 rounded-control border px-s3 py-s2 text-left transition-colors focus-ring ${active ? 'border-forest bg-forest-08' : 'border-[var(--border-hairline)] hover:border-forest'}`}>
+                      <span className="inline-flex items-center gap-s2 font-body text-body font-semibold text-ink"><span className={`state-dot ${active ? 'state-dot-active' : ''}`} aria-hidden="true" />{report.title}</span>
+                      <span className="mono-meta">{report.period} · {report.createdAt.slice(0, 10)}</span>
+                    </button>
+                  </li>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-        <div className="border-t border-border-hairline px-4 py-2"><MonoMeta>{items.length} LAPORAN</MonoMeta></div>
-      </section>
+            </ul>
+          )}
+          <div className="mt-auto border-t border-[var(--border-hairline)] pt-s2"><span className="mono-meta">{items.length} LAPORAN</span></div>
+        </section>
 
-      <section className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3"><MonoMeta>PRATINJAU DOKUMEN</MonoMeta><span className="state-dot" aria-hidden="true" /><span className="font-body text-body-md font-semibold text-ink">Pratinjau cetak</span></div>
-          <div className="flex items-center gap-2"><MonoMeta>A4 · 100%</MonoMeta><Button variant="secondary" size="sm" onClick={() => window.print()}><Icon name="print" className="text-[16px]" aria-hidden="true" /> Cetak</Button></div>
-        </div>
-        {detailReady ? <ReportDocument report={detail.data!.report} profileName="" profileRole="" /> : (
-          <div className="mx-auto flex w-full max-w-[1020px] flex-col gap-8 rounded-card border border-border-hairline bg-surface p-6 sm:p-10"><p className="font-body text-body-md text-ink-muted-strong">{detail.loading ? 'Memuat laporan…' : detail.error ?? 'Pilih laporan untuk melihat pratinjau.'}</p></div>
-        )}
-        {detailReady && (
-          <div className="sticky bottom-4 z-30 flex flex-wrap items-center justify-center gap-2 self-center rounded-overlay border border-border-hairline bg-surface p-2 shadow-overlay">
-            <a href={`/api/reports/${selectedId}/export?format=pdf`} download className="inline-flex min-h-11 items-center gap-2 rounded-control bg-primary px-4 font-body text-label-md font-semibold text-on-primary transition-colors hover:bg-[#0A3A2C] focus-ring-forest"><Icon name="picture_as_pdf" className="text-[16px]" aria-hidden="true" /> Unduh PDF</a>
-            <a href={`/api/reports/${selectedId}/export?format=csv`} download className="inline-flex min-h-11 items-center gap-2 rounded-control border border-border-control px-4 font-body text-label-md text-ink transition-colors hover:border-primary focus-ring"><Icon name="download" className="text-[16px]" aria-hidden="true" /> Ekspor CSV</a>
-            <Button variant="ghost" onClick={() => void shareLink()}><Icon name="link" className="text-[16px]" aria-hidden="true" /> Salin tautan</Button>
+        {/* Pratinjau: 8 kolom. */}
+        <section className="col-span-4 flex flex-col gap-s3 xl:col-span-8" aria-labelledby="pratinjau-heading">
+          <div className="flex flex-wrap items-center justify-between gap-s2">
+            <div className="flex items-center gap-s2"><span className="mono-meta" id="pratinjau-heading">PRATINJAU DOKUMEN</span><span className="state-dot" aria-hidden="true" /><span className="font-body text-body font-semibold text-ink">Pratinjau cetak</span></div>
+            <div className="flex items-center gap-s2"><span className="mono-meta">A4 · 100%</span><button type="button" onClick={() => window.print()} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="print" className="text-[16px]" /> Cetak</button></div>
           </div>
-        )}
-      </section>
+          {detailReady ? <ReportDocument report={detail.data!.report} profileName="" profileRole="" /> : (
+            <div className="mx-auto flex w-full max-w-[1020px] flex-col gap-s5 rounded-surface border border-[var(--border-hairline)] bg-porcelain p-s5">
+              <p className="font-body text-body text-ink-72">{detail.loading ? 'Memuat laporan' : detail.error ?? 'Pilih laporan untuk melihat pratinjau.'}</p>
+            </div>
+          )}
+          {detailReady && (
+            <div className="sticky bottom-s3 z-sticky flex flex-wrap items-center justify-center gap-s2 self-center rounded-overlay border border-[var(--border-hairline)] bg-porcelain p-s2 elevated">
+              <a href={`/api/reports/${selectedId}/export?format=pdf`} download className="touch-44 inline-flex items-center gap-s2 rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring"><Icon name="picture_as_pdf" className="text-[16px]" /> Unduh PDF</a>
+              <a href={`/api/reports/${selectedId}/export?format=csv`} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="download" className="text-[16px]" /> Ekspor CSV</a>
+              <button type="button" onClick={() => void shareLink()} className="touch-44 inline-flex items-center gap-s2 rounded-control px-s3 font-display text-label text-ink-72 focus-ring"><Icon name="link" className="text-[16px]" /> Salin tautan</button>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
