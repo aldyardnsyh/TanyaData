@@ -119,10 +119,15 @@ export function LandingSteps() {
               bertabrakan dengan lime tema), dan SQL sebagai silinder bank data
               memakai warna brand. Warna merah/biru/hijau adalah warna identitas
               fungsional jenis berkas yang diminta eksplisit, di luar enam token
-              palet, hanya untuk lencana kecil di ilustrasi ini. */}
+              palet, hanya untuk lencana kecil di ilustrasi ini.
+              Tanpa ghost: dokumen tampil penuh hanya di fase unggah dan di fase
+              akhir (ringkasan hasil), lalu menghilang selama pertanyaan dan
+              jawaban diproses, dan muncul kembali tiap siklus diulang. */}
           <div
             className={`flex items-start gap-s2 transition-all duration-[var(--motion-slow)] ${
-              phase === 0 ? 'opacity-100' : 'opacity-50'
+              phase === 0 || phase === 3
+                ? 'opacity-100'
+                : 'pointer-events-none opacity-0'
             }`}
           >
             {/* PDF: kertas dengan strip judul merah dan garis teks. */}
