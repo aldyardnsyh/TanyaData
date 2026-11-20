@@ -47,7 +47,10 @@ export function Topbar({
         >
           <Icon name="menu" className="text-[22px]" />
         </button>
-        <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-space-xs sm:flex">
+        {/* Breadcrumb hanya tampil di xl. Di 1024 sidebar rail 72px + topbar
+            membuat ruang breadcrumb terpotong mid-word ("PLATFORM" → "PL"),
+            jadi disembunyikan sampai ada ruang penuh. */}
+        <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-space-xs xl:flex">
           <span className="font-label-sm uppercase tracking-wider text-on-surface-variant">
             {t('shell.platform')}
           </span>

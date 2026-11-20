@@ -22,6 +22,9 @@ export interface DatasetChipProps {
 
 export function DatasetChip({ name, choices, activeId, onSelect }: DatasetChipProps) {
   const { t } = useI18n();
+  // Di 390px nama penuh ("analytics.db - ...") terpotong mid-word jadi "analyt".
+  // Mobile memakai segmen pertama sebelum " - " dengan truncate/ellipsis yang benar.
+  const shortName = name.split(' - ')[0]?.trim() || t('label.dataset');
 
   return (
     <DropdownMenu.Root>
@@ -29,11 +32,12 @@ export function DatasetChip({ name, choices, activeId, onSelect }: DatasetChipPr
         <button
           type="button"
           aria-label={t('label.activeDataset')}
-          className="flex h-9 max-w-[190px] items-center gap-space-xs rounded-lg bg-surface-container-low px-space-sm text-on-surface transition-colors hover:bg-surface-container focus-ring"
+          className="flex h-9 min-w-0 max-w-[190px] items-center gap-space-xs rounded-lg bg-surface-container-low px-space-sm text-on-surface transition-colors hover:bg-surface-container focus-ring max-sm:max-w-[132px]"
         >
-          <Icon name="dataset" className="text-[16px] text-primary" />
-          <span className="truncate font-label-md font-semibold">{name}</span>
-          <Icon name="expand_more" className="text-[16px] text-on-surface-variant" />
+          <Icon name="dataset" className="shrink-0 text-[16px] text-primary" />
+          <span className="hidden min-w-0 truncate font-label-md font-semibold sm:inline">{name}</span>
+          <span className="min-w-0 truncate font-label-md font-semibold sm:hidden">{shortName}</span>
+          <Icon name="expand_more" className="shrink-0 text-[16px] text-on-surface-variant" />
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
