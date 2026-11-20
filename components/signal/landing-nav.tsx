@@ -15,8 +15,7 @@ const LINKS = [
   { href: '#fitur', label: 'Fitur' },
   { href: '#cara-kerja', label: 'Cara kerja' },
   { href: '#format', label: 'Format' },
-  { href: '#audit', label: 'Jejak audit' },
-  { href: '#privasi', label: 'Privasi' },
+  { href: '#faq', label: 'FAQ' },
 ] as const;
 
 export function LandingNav() {

@@ -6,11 +6,9 @@ import { AnimatedTabs, type TabItem } from '@/components/signal/animated-tabs';
 /**
  * S4 Kapabilitas dokumen dalam panel gelap (C-04 Context Tabs, tone dark).
  * Purpose Gate: tab dipakai karena dua kelompok format punya perlakuan
- * berbeda (query SQL untuk data terstruktur, sitasi halaman untuk dokumen),
- * bukan untuk menghias daftar. Dua tab saja karena produk hanya menerima dua
- * kelompok; kelompok tambahan berarti klaim rekaan.
- * Caption tiap tab adalah kutipan mekanisme dari kontrak (S5), sehingga tab
- * benar-benar mengganti konten, bukan menghias.
+ * berbeda (analisis data terstruktur, sitasi dokumen), bukan untuk menghias
+ * daftar. Dua tab saja karena produk hanya menerima dua kelompok; kelompok
+ * tambahan berarti klaim rekaan.
  */
 const TABS: TabItem[] = [
   { id: 'structured', label: 'Data terstruktur' },
@@ -23,8 +21,8 @@ const FORMATS: Record<string, readonly string[]> = {
 };
 
 const CAPTIONS: Record<string, string> = {
-  structured: 'Untuk pertanyaan angka, query SQL tampil bersama durasi dan jumlah baris.',
-  documents: 'Sitasi membuka halaman, bagian, dan kutipan asal.',
+  structured: 'Metrik, distribusi, dan perbandingan dihitung dari data yang diunggah.',
+  documents: 'Jawaban menunjuk halaman dan bagian asalnya.',
 };
 
 export function LandingFormatPanel() {
