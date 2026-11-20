@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Search, AlertTriangle, MapPin, FileText, Loader2 } from 'lucide-react';
+import { Search, AlertTriangle, MapPin, FileText, Loader2, Save } from 'lucide-react';
 import type {
   AnomaliesResponse,
+  CategoryPerformanceResponse,
   Investigation,
   InvestigationsListResponse,
   InvestigationsOverviewResponse,
@@ -24,8 +25,15 @@ import { Select } from '@/components/ui/select';
 
 const STEPS = ['Menghitung baseline', 'Membandingkan dimensi', 'Menyusun temuan'];
 
+// C-22/DD-04: label Indonesia, tidak hanya warna (§7.4).
+const SEVERITY_LABEL: Record<string, string> = { high: 'Tinggi', medium: 'Sedang', low: 'Rendah' };
+const CLAIM_LABEL: Record<string, string> = { proven: 'Terbukti', measured: 'Terukur', indication: 'Dugaan' };
+
 function severityStatus(s: string): Status {
   return s === 'high' ? 'danger' : s === 'medium' ? 'warning' : 'neutral';
+}
+function claimStatus(level: string): Status {
+  return level === 'proven' ? 'success' : level === 'measured' ? 'neutral' : 'warning';
 }
 
 export default function InvestigationsPage() {
@@ -38,29 +46,31 @@ export default function InvestigationsPage() {
   const [category, setCategory] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<Investigation | null>(null);
-  const [step, setStep] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const runAnalysis = useCallback(async () => {
-    if (question.trim().length < 3) {
+  const runAnalysis = useCallback(async (opts?: { question?: string; channel?: string }) => {
+    const q = (opts?.question ?? question).trim();
+    const ch = opts?.channel ?? channel;
+    if (q.length < 3) {
       toast({ status: 'error', message: 'Pertanyaan minimal 3 karakter.' });
       return;
     }
     setAnalyzing(true);
     setAnalysis(null);
     setError(null);
-    setStep(0);
-    const stepTimer = setInterval(() => setStep((s) => Math.min(s + 1, STEPS.length - 1)), 900);
+    setSavedId(null);
     try {
       const period = overview.data?.period;
       const res = await fetch('/api/investigations/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          question,
+          question: q,
           ...(period ? { period: { start: period.start, end: period.end } } : {}),
           compare: 'like_for_like',
-          focus: { channel: channel || null, category: category || null },
+          focus: { channel: ch || null, category: category || null },
           persist: false,
         }),
       });
@@ -73,13 +83,49 @@ export default function InvestigationsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Analisis gagal.');
     } finally {
-      clearInterval(stepTimer);
       setAnalyzing(false);
     }
   }, [question, channel, category, overview.data?.period]);
 
+  // C-23: simpan analisis yang sudah dijalankan (persist:true → tersimpan & dapat diaudit).
+  const saveInvestigation = useCallback(async () => {
+    if (!analysis || saving || savedId) return;
+    setSaving(true);
+    try {
+      const period = overview.data?.period;
+      const res = await fetch('/api/investigations/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: analysis.question,
+          ...(period ? { period: { start: period.start, end: period.end } } : {}),
+          compare: 'like_for_like',
+          focus: { channel: channel || null, category: category || null },
+          persist: true,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
+      }
+      const json: InvestigateResponse = await res.json();
+      setSavedId(json.investigation.id);
+      saved.retry();
+      toast({ status: 'success', message: 'Investigasi tersimpan.', action: 'Buka dossier', onAction: () => { window.location.href = `/investigations/${json.investigation.id}`; } });
+    } catch (err) {
+      toast({ status: 'error', message: err instanceof Error ? err.message : 'Gagal menyimpan investigasi.' });
+    } finally {
+      setSaving(false);
+    }
+  }, [analysis, saving, savedId, channel, category, overview.data?.period, saved]);
+
   const topChannels = overview.data?.topChannels ?? [];
   const channelNames = [...new Set(topChannels.map((c) => c.channelName))];
+  // C-20: kategori dari API (bukan hardcode). Bila tidak tersedia, sembunyikan field.
+  const categoriesEndpoint = useApi<CategoryPerformanceResponse>('/api/dashboard/category-performance');
+  const categories = categoriesEndpoint.data?.items ?? [];
+  const categoryNames = categories.length > 0 ? categories.map((c) => c.categoryName) : [];
+  const categoriesAvailable = categories.length > 0;
 
   return (
     <div className="mx-auto max-w-[1240px] space-y-6 px-6 py-8">
@@ -95,7 +141,7 @@ export default function InvestigationsPage() {
       {/* Ringkasan */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5">
-          <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Failure rate saat ini</p>
+          <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Tingkat kegagalan saat ini</p>
           <p className="mt-1 font-display text-metric-xl font-bold tabular text-on-surface">
             {formatPercent(overview.data?.failureRate.current ?? null)}
           </p>
@@ -114,8 +160,8 @@ export default function InvestigationsPage() {
       </div>
 
       {/* Form analisis */}
-      <Card title="Analisis baru" subtitle="Hitung kontribusi kanal dan kategori terhadap perubahan failure rate.">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_200px_200px_auto]">
+      <Card title="Analisis baru" subtitle="Hitung kontribusi kanal dan kategori terhadap perubahan tingkat kegagalan.">
+        <div className={`grid grid-cols-1 gap-3 ${categoriesAvailable ? 'sm:grid-cols-[1fr_200px_200px_auto]' : 'sm:grid-cols-[1fr_200px_auto]'}`}>
           <label className="flex flex-col gap-1">
             <span className="font-body text-label-md text-on-surface">Pertanyaan</span>
             <input
@@ -129,10 +175,13 @@ export default function InvestigationsPage() {
             <option value="">Semua kanal</option>
             {channelNames.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
-          <Select label="Kategori" value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option value="">Semua kategori</option>
-            {['E-commerce', 'Top-up Pulsa & Saldo', 'Tagihan & Utilitas', 'F&B', 'Langganan Digital', 'Travel & Tiket', 'Pendidikan'].map((c) => <option key={c} value={c}>{c}</option>)}
-          </Select>
+          {/* C-20: field kategori hanya tampil bila API menyediakan daftar (R-38: jangan mengarang). */}
+          {categoriesAvailable && (
+            <Select label="Kategori" value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">Semua kategori</option>
+              {categoryNames.map((c) => <option key={c} value={c}>{c}</option>)}
+            </Select>
+          )}
           <div className="flex items-end">
             <Button variant="primary" loading={analyzing} onClick={() => void runAnalysis()}>
               <Search className="h-4 w-4" /> Analisis
@@ -142,15 +191,16 @@ export default function InvestigationsPage() {
       </Card>
 
       {analyzing && (
-        <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5">
+        <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5" role="status" aria-live="polite">
           <div className="flex items-center gap-2 font-body text-body-md text-on-surface">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            {STEPS[step]}
+            <Loader2 className="h-4 w-4 animate-spin text-primary" aria-hidden="true" />
+            Menganalisis…
           </div>
+          {/* C-21: daftar langkah statis, tanpa progres palsu. Progres nyata hanya dari respons API. */}
           <div className="mt-3 space-y-2">
-            {STEPS.map((s, i) => (
-              <div key={s} className={`flex items-center gap-2 font-body text-body-sm ${i <= step ? 'text-on-surface' : 'text-on-surface-variant'}`}>
-                <span className={`h-1.5 w-1.5 rounded-full ${i <= step ? 'bg-primary' : 'bg-surface-container-highest'}`} />
+            {STEPS.map((s) => (
+              <div key={s} className="flex items-center gap-2 font-body text-body-sm text-on-surface-variant">
+                <span className="h-1.5 w-1.5 rounded-full bg-surface-container-highest" aria-hidden="true" />
                 {s}
               </div>
             ))}
@@ -162,22 +212,29 @@ export default function InvestigationsPage() {
         <InlineError title="Analisis gagal" message={error} onRetry={() => void runAnalysis()} />
       )}
 
-      {analysis && <InvestigationResult investigation={analysis} />}
+      {analysis && (
+        <InvestigationResult
+          investigation={analysis}
+          onSave={saveInvestigation}
+          saving={saving}
+          savedId={savedId}
+        />
+      )}
 
       {/* Top channels */}
       <Card title="Kanal dengan kenaikan terbesar" subtitle="Perbandingan periode setara.">
         {overview.loading ? (
           <div className="space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
         ) : topChannels.length === 0 ? (
-          <EmptyState title="Belum ada anomali" description="Kanal tidak menunjukkan kenaikan failure rate yang signifikan." />
+          <EmptyState title="Belum ada anomali" description="Kanal tidak menunjukkan kenaikan tingkat kegagalan yang signifikan." />
         ) : (
           <DataTable
             columns={[
               { key: 'channelName', label: 'Kanal' },
-              { key: 'failureRate', label: 'Failure rate', align: 'right', format: (v) => formatPercent(v as number) },
+              { key: 'failureRate', label: 'Tingkat gagal', align: 'right', format: (v) => formatPercent(v as number) },
               { key: 'previousFailureRate', label: 'Sebelumnya', align: 'right', format: (v) => formatPercent(v as number) },
               { key: 'excessFailures', label: 'Kelebihan gagal', align: 'right', format: (v) => formatNumber(v as number) },
-              { key: 'severity', label: 'Severity', format: (v) => (v === 'high' ? 'Tinggi' : v === 'medium' ? 'Sedang' : 'Rendah') },
+              { key: 'severity', label: 'Keparahan', format: (v) => (SEVERITY_LABEL[v as string] ?? v) },
             ]}
             rows={topChannels as unknown as Record<string, any>[]}
           />
@@ -198,7 +255,7 @@ export default function InvestigationsPage() {
                   <span className="font-body text-label-md font-semibold text-on-surface">
                     {a.channelName ?? a.kind}
                   </span>
-                  <StatusBadge status={severityStatus(a.severity)} label={a.severity} />
+                  <StatusBadge status={severityStatus(a.severity)} label={SEVERITY_LABEL[a.severity] ?? a.severity} />
                 </div>
                 <p className="mt-1 font-body text-body-sm text-on-surface-variant">
                   {a.metric}: {formatPercent(a.baseline)} → {formatPercent(a.current)} ({formatPercent(a.deltaPctPoints)} poin)
@@ -206,6 +263,21 @@ export default function InvestigationsPage() {
                 <p className="mt-1 font-body text-body-sm text-on-surface-variant">
                   {formatDateId(a.detectedAt)} · {a.window}
                 </p>
+                {/* C-23: aksi lanjutan — isi kanal lalu jalankan analisis pada anomali ini. */}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="mt-2"
+                  disabled={analyzing}
+                  onClick={() => {
+                    const ch = a.channelName ?? '';
+                    setChannel(ch);
+                    setQuestion(`Mengapa tingkat kegagalan ${ch || 'transaksi'} meningkat?`);
+                    void runAnalysis({ question: `Mengapa tingkat kegagalan ${ch || 'transaksi'} meningkat?`, channel: ch });
+                  }}
+                >
+                  Investigasi
+                </Button>
               </div>
             ))}
           </div>
@@ -249,7 +321,7 @@ export default function InvestigationsPage() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-body text-label-md font-semibold text-on-surface">{inv.question}</span>
-                    <StatusBadge status={inv.claimLevel === 'proven' ? 'success' : inv.claimLevel === 'measured' ? 'neutral' : 'warning'} label={inv.claimLevel} />
+                    <StatusBadge status={claimStatus(inv.claimLevel)} label={CLAIM_LABEL[inv.claimLevel] ?? inv.claimLevel} />
                   </div>
                   <p className="mt-1 font-body text-body-sm text-on-surface-variant">
                     {inv.period}{inv.topChannel ? ` · ${inv.topChannel}` : ''} · {formatDateTimeId(inv.createdAt)}
@@ -264,33 +336,53 @@ export default function InvestigationsPage() {
   );
 }
 
-function InvestigationResult({ investigation }: { investigation: Investigation }) {
+function InvestigationResult({
+  investigation,
+  onSave,
+  saving,
+  savedId,
+}: {
+  investigation: Investigation;
+  onSave?: () => void;
+  saving?: boolean;
+  savedId?: string | null;
+}) {
   const cmp = investigation.comparison;
+  const claim = investigation.conclusion.claimLevel;
   return (
     <div className="space-y-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-5">
-      <div>
-        <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Kesimpulan</p>
-        <p className="mt-1 font-body text-body-lg leading-relaxed text-on-surface">{investigation.conclusion.text}</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <StatusBadge status={investigation.conclusion.claimLevel === 'proven' ? 'success' : investigation.conclusion.claimLevel === 'measured' ? 'neutral' : 'warning'} label={investigation.conclusion.claimLevel} />
-          {investigation.conclusion.caveats.map((c, i) => (
-            <span key={i} className="inline-flex items-center gap-1 rounded-sm bg-surface-container-low px-1.5 py-0.5 font-body text-body-sm text-on-surface-variant">
-              <AlertTriangle className="h-3 w-3 text-tertiary" /> {c}
-            </span>
-          ))}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Kesimpulan</p>
+          <p className="mt-1 font-body text-body-lg leading-relaxed text-on-surface">{investigation.conclusion.text}</p>
         </div>
+        {onSave && (
+          <Button size="sm" variant="secondary" loading={saving} disabled={!!savedId} onClick={onSave}>
+            <Save className="h-3.5 w-3.5" />
+            {savedId ? 'Tersimpan' : 'Simpan investigasi'}
+          </Button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <StatusBadge status={claimStatus(claim)} label={CLAIM_LABEL[claim] ?? claim} />
+        {investigation.conclusion.caveats.map((c, i) => (
+          <span key={i} className="inline-flex items-center gap-1 rounded-sm bg-surface-container-low px-1.5 py-0.5 font-body text-body-sm text-on-surface-variant">
+            <AlertTriangle className="h-3 w-3 text-tertiary" aria-hidden="true" /> {c}
+          </span>
+        ))}
+      </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-lg bg-surface-container-low p-3">
-          <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Failure rate</p>
+          <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Tingkat gagal</p>
           <p className="mt-1 font-display text-metric-md font-bold tabular text-on-surface">{formatPercent(cmp.failureRate.current)}</p>
           <p className="font-body text-body-sm text-on-surface-variant">vs {formatPercent(cmp.failureRate.previous)} ({formatPercent(cmp.failureRate.deltaPctPoints)} poin)</p>
         </div>
         <div className="rounded-lg bg-surface-container-low p-3">
           <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Total transaksi</p>
           <p className="mt-1 font-display text-metric-md font-bold tabular text-on-surface">{formatNumber(cmp.total.current)}</p>
-          <p className="font-body text-body-sm text-on-surface-variant">vs {formatNumber(cmp.total.previous)} · {cmp.total.changePct != null ? `${cmp.total.changePct > 0 ? '+' : ''}${cmp.total.changePct.toFixed(1)}%` : 'n/a'}</p>
+          <p className="font-body text-body-sm text-on-surface-variant">vs {formatNumber(cmp.total.previous)} · {cmp.total.changePct != null ? `${cmp.total.changePct > 0 ? '+' : ''}${formatPercent(cmp.total.changePct)}` : '—'}</p>
         </div>
         <div className="rounded-lg bg-surface-container-low p-3">
           <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Kanal kontributor</p>
@@ -308,7 +400,7 @@ function InvestigationResult({ investigation }: { investigation: Investigation }
         <DataTable
           columns={[
             { key: 'channelName', label: 'Kanal' },
-            { key: 'failureRate', label: 'Failure rate', align: 'right', format: (v) => formatPercent(v as number) },
+            { key: 'failureRate', label: 'Tingkat gagal', align: 'right', format: (v) => formatPercent(v as number) },
             { key: 'baselineFailureRate', label: 'Baseline', align: 'right', format: (v) => formatPercent(v as number) },
             { key: 'excessFailures', label: 'Kelebihan gagal', align: 'right', format: (v) => formatNumber(v as number) },
             { key: 'shareOfExcess', label: 'Pangsa', align: 'right', format: (v) => formatPercent(v as number) },

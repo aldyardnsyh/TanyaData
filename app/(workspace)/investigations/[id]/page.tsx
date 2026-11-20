@@ -11,12 +11,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 
+// C-22/DD-04: label Indonesia, tidak hanya warna (§7.4).
+const CLAIM_LABEL: Record<string, string> = { proven: 'Terbukti', measured: 'Terukur', indication: 'Dugaan' };
+const TEMPORAL_KIND: Record<string, string> = { start: 'mulai', worsened: 'memburuk', resolved: 'pulih' };
+
 function TimelineNode({ p }: { p: TemporalPoint }) {
   return (
     <li className="relative">
       <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-tertiary" aria-hidden="true" />
       <span className="font-body text-label-md font-semibold text-on-surface">{p.channelName}</span>
-      <span className="ml-2 font-body text-body-sm text-on-surface-variant">{formatDateId(p.date)} · {p.kind}</span>
+      <span className="ml-2 font-body text-body-sm text-on-surface-variant">{formatDateId(p.date)} · {TEMPORAL_KIND[p.kind] ?? p.kind}</span>
     </li>
   );
 }
@@ -66,7 +70,7 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
   const { question, period, comparison, contribution, temporal, documents, conclusion } = investigation;
   const columns: DataTableColumn<Record<string, string | number | null>>[] = [
     { key: 'channelName', label: 'Kanal' },
-    { key: 'failureRate', label: 'Failure rate', align: 'right', format: (v) => formatPercent(v as number) },
+    { key: 'failureRate', label: 'Tingkat gagal', align: 'right', format: (v) => formatPercent(v as number) },
     { key: 'baselineFailureRate', label: 'Baseline', align: 'right', format: (v) => formatPercent(v as number) },
     { key: 'excessFailures', label: 'Kelebihan gagal', align: 'right', format: (v) => formatNumber(v as number) },
     { key: 'shareOfExcess', label: 'Pangsa', align: 'right', format: (v) => formatPercent(v as number) },
@@ -89,7 +93,7 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
         <p className="mt-1 font-body text-body-lg leading-relaxed text-on-surface">{conclusion.text}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-sm bg-surface-container-low px-1.5 py-0.5 font-body text-body-sm text-on-surface-variant">
-            <Info className="h-3 w-3" /> Klasifikasi: {conclusion.claimLevel}
+            <Info className="h-3 w-3" aria-hidden="true" /> Klasifikasi: {CLAIM_LABEL[conclusion.claimLevel] ?? conclusion.claimLevel}
           </span>
           {conclusion.caveats.map((c, i) => (
             <span key={i} className="inline-flex items-center gap-1 rounded-sm bg-surface-container-low px-1.5 py-0.5 font-body text-body-sm text-on-surface-variant">
@@ -102,7 +106,7 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
       {/* Metrik pendukung */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-          <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Failure rate</p>
+          <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Tingkat gagal</p>
           <p className="mt-1 font-display text-metric-md font-bold tabular text-on-surface">{formatPercent(comparison.failureRate.current)}</p>
           <p className="font-body text-body-sm text-on-surface-variant">vs {formatPercent(comparison.failureRate.previous)} · {formatPercent(comparison.failureRate.deltaPctPoints)} poin</p>
         </div>
@@ -110,7 +114,7 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
           <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Total transaksi</p>
           <p className="mt-1 font-display text-metric-md font-bold tabular text-on-surface">{formatNumber(comparison.total.current)}</p>
           <p className="font-body text-body-sm text-on-surface-variant">
-            vs {formatNumber(comparison.total.previous)} · {comparison.total.changePct != null ? `${comparison.total.changePct > 0 ? '+' : ''}${comparison.total.changePct.toFixed(1)}%` : 'n/a'}
+            vs {formatNumber(comparison.total.previous)} · {comparison.total.changePct != null ? `${comparison.total.changePct > 0 ? '+' : ''}${formatPercent(comparison.total.changePct)}` : '—'}
           </p>
         </div>
       </div>
