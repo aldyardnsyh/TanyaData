@@ -365,7 +365,7 @@ function gradeGeneration(answer: string, allowed: number[]): {
 } {
   const tokens = answer.match(/\d+(?:[.,]\d+)*/g) ?? [];
   const foreign = tokens.filter((t) => !verifyGrounding(t, allowed));
-  const rate = ratio(foreign.length, tokens.length);
+  const rate = tokens.length === 0 ? 0 : ratio(foreign.length, tokens.length);
   return { pass: rate <= 0.02, detail: `foreign=${JSON.stringify(foreign)} tokens=${tokens.length}`, rate, foreign };
 }
 
