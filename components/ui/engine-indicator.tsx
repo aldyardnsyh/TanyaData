@@ -18,7 +18,7 @@ export function EngineIndicator({ online, label, href, className }: EngineIndica
   return (
     <span className={cn('inline-flex min-h-11 items-center gap-2 px-2', className)}>
       <span className={cn('state-dot', online ? 'state-dot-active' : 'state-dot-error')} aria-hidden="true" />
-      <span className="font-body text-body-sm text-ink-muted-strong">
+      <span className="font-mono text-body-sm text-ink-muted-strong">
         {label ?? (online ? 'SQLite · SQL + FTS5' : 'Sumber tidak tersedia')}
       </span>
       {href && !online && (

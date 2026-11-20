@@ -14,6 +14,8 @@ export interface StatusDotProps {
   label: string;
   /** Wrapper interaktif: dot + label menjadi tombol dengan focus ring. */
   onClick?: () => void;
+  /** Label berisi metadata teknis (SQL/FTS5/kode) → pakai font-mono. */
+  mono?: boolean;
   className?: string;
 }
 
@@ -38,11 +40,11 @@ const labelClass: Record<DotState, string> = {
  * Loading pulse hanya saat proses nyata dan berhenti saat tab tersembunyi
  * lewat aturan global `visibilitychange` di motion-tokens.
  */
-export function StatusDot({ state = 'neutral', label, onClick, className }: StatusDotProps) {
+export function StatusDot({ state = 'neutral', label, onClick, mono = false, className }: StatusDotProps) {
   const content = (
     <>
       <span className={dotClass[state]} aria-hidden="true" />
-      <span className={cn('font-body text-body-sm transition-colors duration-[var(--motion-fast)]', labelClass[state])}>
+      <span className={cn(mono ? 'font-mono' : 'font-body', 'text-body-sm transition-colors duration-[var(--motion-fast)]', labelClass[state])}>
         {label}
       </span>
     </>

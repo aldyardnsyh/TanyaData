@@ -12,7 +12,8 @@
   /* ---- Font: self-hosted via lib/fonts.ts ---- */
   --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Consolas", "Liberation Mono", monospace;
+  /* Metadata teknis (SQL/FTS5/ROWS/kode) memakai font-mono, bukan font-body. */
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Consolas", "JetBrains Mono", "Liberation Mono", monospace;
 
   /* ---- Warna (WCAG 2.1 terukur, lihat DESIGN_DIRECTION §2.1) ---- */
   --color-canvas: #F5F6F1;

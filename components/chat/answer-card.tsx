@@ -163,7 +163,7 @@ export function AnswerCard({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <MonoMeta>JAWABAN · {wibTime(message.createdAt)} WIB</MonoMeta>
-          <StatusDot state="neutral" label={modeLabel} />
+          <StatusDot state="neutral" label={modeLabel} mono />
         </div>
         <div className="flex items-center gap-1">
           <button type="button" aria-label="Salin jawaban" onClick={() => void copyText(message.answer ?? message.content, 'Jawaban disalin.')} className="flex h-11 w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="content_copy" className="text-[16px]" aria-hidden="true" /></button>

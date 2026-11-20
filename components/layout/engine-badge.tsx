@@ -21,7 +21,7 @@ export function EngineBadge({ online, version: _version, rail = false }: EngineB
   return (
     <div className={cn('flex min-h-11 items-center gap-2', rail && 'justify-center md:justify-start')}>
       <span className={cn('state-dot', online ? 'state-dot-active' : 'state-dot-error')} aria-hidden="true" />
-      <span className={cn('font-body text-body-sm text-ink-muted-strong', rail && 'md:hidden xl:inline')}>
+      <span className={cn('font-mono text-body-sm text-ink-muted-strong', rail && 'md:hidden xl:inline')}>
         SQLite · SQL + FTS5
       </span>
       <span className="sr-only">{online ? 'Sumber tersedia' : 'Sumber tidak tersedia'}</span>

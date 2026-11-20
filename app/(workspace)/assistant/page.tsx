@@ -366,7 +366,7 @@ export default function AssistantPage() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="font-display text-display text-ink">Asisten</h1>
-              <StatusDot state="active" label="SQLite · SQL + FTS5" />
+              <StatusDot state="active" label="SQLite · SQL + FTS5" mono />
             </div>
             <p className="mt-2 max-w-2xl font-body text-body-md text-ink-muted-strong">
               Ajukan pertanyaan metrik. Setiap jawaban menyertakan SQL dan sumber yang mendasarinya.
