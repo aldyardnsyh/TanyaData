@@ -118,8 +118,9 @@ function SourceCard({ src, onOpen }: { src: SourceCitation; onOpen?: (src: Sourc
 export interface AnswerCardProps {
   message: ChatMessage;
   modeLabel?: string;
-  conversationId?: string;
   onFollowUp?: (question: string) => void;
+  /** Membuka dialog konfirmasi share. Tidak ada auto-share (SHARE_PAGE_SPEC §8). */
+  onCreateShare?: (msg: ChatMessage) => void;
   onSaveReport?: (msg: ChatMessage) => void;
   savingReport?: boolean;
   onOpenSource?: (src: SourceCitation) => void;
@@ -129,7 +130,7 @@ export interface AnswerCardProps {
 
 /** §5.8 + motion #5: pesan masuk 180ms + 4px, bukti stagger 30ms maks 8. */
 export function AnswerCard({
-  message, modeLabel = 'SQLite · SQL + FTS5', conversationId, onFollowUp, onSaveReport, savingReport, onOpenSource, disabled, lang = 'id',
+  message, modeLabel = 'SQLite · SQL + FTS5', onFollowUp, onCreateShare, onSaveReport, savingReport, onOpenSource, disabled, lang = 'id',
 }: AnswerCardProps) {
   const [sqlOpen, setSqlOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -170,13 +171,11 @@ export function AnswerCard({
           <IconTooltip label="Salin">
             <button type="button" aria-label="Salin jawaban" onClick={() => void copyText(message.answer ?? message.content, 'Jawaban disalin.')} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="content_copy" className="text-[16px]" aria-hidden="true" /></button>
           </IconTooltip>
-          <IconTooltip label="Bagikan">
-            <button type="button" aria-label="Salin tautan" onClick={() => {
-              const base = typeof window === 'undefined' ? '' : window.location.origin + window.location.pathname;
-              const query = conversationId ? `?conversation=${conversationId}&message=${message.id}` : '';
-              void copyText(`${base}${query}`, 'Tautan disalin.');
-            }} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="link" className="text-[16px]" aria-hidden="true" /></button>
-          </IconTooltip>
+          {onCreateShare && (
+            <IconTooltip label="Bagikan">
+              <button type="button" aria-label="Bagikan sesi" onClick={() => onCreateShare(message)} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="link" className="text-[16px]" aria-hidden="true" /></button>
+            </IconTooltip>
+          )}
           {onSaveReport && (
             <IconTooltip label="Simpan sebagai laporan">
               <button type="button" aria-label="Simpan sebagai laporan" disabled={disabled || savingReport} onClick={() => onSaveReport(message)} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring disabled:opacity-45"><Icon name="save" className="text-[16px]" aria-hidden="true" /></button>

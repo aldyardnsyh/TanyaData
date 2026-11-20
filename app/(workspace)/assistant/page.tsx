@@ -29,6 +29,7 @@ import { Drawer } from '@/components/ui/drawer';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toaster';
+import { ShareConfirmDialog, type ShareOptions } from '@/components/share/share-confirm-dialog';
 
 const SUGGESTED = [
   'Berapa total transaksi bulan ini?',
@@ -85,6 +86,8 @@ export default function AssistantPage() {
   const [deleteTarget, setDeleteTarget] = useState<ConversationSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [savingReportId, setSavingReportId] = useState<string | null>(null);
+  const [shareTarget, setShareTarget] = useState<ChatMessage | null>(null);
+  const [sharing, setSharing] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
   const [schema, setSchema] = useState<DatasetSourceDetail | null>(null);
@@ -281,6 +284,41 @@ export default function AssistantPage() {
     } finally { setSavingReportId(null); }
   };
 
+  /** Konfirmasi dulu, baru POST /api/share. Tautan tidak dibuat saat Batal. */
+  const confirmShare = async (options: ShareOptions) => {
+    if (!activeId || !shareTarget) return;
+    setSharing(true);
+    try {
+      const res = await fetch('/api/share', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: activeId,
+          messageId: shareTarget.id,
+          options: {
+            includeCitations: options.includeCitations,
+            includeIdentity: options.includeIdentity,
+          },
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
+      }
+      const json: { id?: string; url?: string } = await res.json();
+      const url = json.url ?? (json.id && typeof window !== 'undefined' ? `${window.location.origin}/share/${json.id}` : '');
+      setShareTarget(null);
+      toast({
+        status: 'success', message: 'Tautan siap dibagikan.',
+        action: 'Salin tautan',
+        onAction: () => { void navigator.clipboard.writeText(url).then(() => toast({ status: 'success', message: 'Tautan disalin.' })).catch(() => toast({ status: 'error', message: 'Tautan gagal disalin.' })); },
+      });
+    } catch (err) {
+      toast({ status: 'error', message: err instanceof Error ? err.message : 'Tautan gagal dibuat.' });
+    } finally {
+      setSharing(false);
+    }
+  };
+
   const exportTranscript = async () => {
     if (!activeId) { toast({ status: 'error', message: 'Tidak ada percakapan aktif.' }); return; }
     try {
@@ -473,7 +511,7 @@ export default function AssistantPage() {
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-primary/10 text-primary" aria-hidden="true">
                       <Icon name="forum" className="text-[18px]" />
                     </span>
-                    <AnswerCard message={m} modeLabel={modeLabel} lang={lang} conversationId={activeId ?? undefined} onFollowUp={(q) => fillAndSend(q)} onSaveReport={saveReport} savingReport={savingReportId === m.id} onOpenSource={setSourceDetail} disabled={sending} />
+                    <AnswerCard message={m} modeLabel={modeLabel} lang={lang} onFollowUp={(q) => fillAndSend(q)} onCreateShare={setShareTarget} onSaveReport={saveReport} savingReport={savingReportId === m.id} onOpenSource={setSourceDetail} disabled={sending} />
                   </div>
                 ),
               )
@@ -662,6 +700,16 @@ export default function AssistantPage() {
           <Button variant="danger" loading={deleting} onClick={() => void confirmDelete()}>Hapus</Button>
         </div>
       </Dialog>
+
+      <ShareConfirmDialog
+        open={!!shareTarget}
+        onOpenChange={(open) => { if (!open) setShareTarget(null); }}
+        onConfirm={(options) => void confirmShare(options)}
+        busy={sharing}
+        previewUrl={shareTarget && activeId
+          ? `/api/share/preview?conversationId=${encodeURIComponent(activeId)}&messageId=${encodeURIComponent(shareTarget.id)}`
+          : undefined}
+      />
     </div>
   );
 }
