@@ -347,7 +347,7 @@ export default function OverviewPage() {
             <button
               type="button"
               className={menuButton}
-              aria-haspopup="group"
+              aria-haspopup="menu"
               aria-expanded={openMenu === 'period'}
               onClick={() => setOpenMenu(openMenu === 'period' ? null : 'period')}
             >
