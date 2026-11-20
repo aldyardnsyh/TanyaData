@@ -44,7 +44,7 @@ export function Drawer({ open, onOpenChange, side = 'left', width, title, childr
               <DialogPrimitive.Close asChild>
                 <button
                   type="button"
-                  className="flex h-11 w-11 items-center justify-center rounded-control text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:bg-row-hover focus-ring"
+                  className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:bg-row-hover focus-ring"
                   aria-label="Close"
                 >
                   <IconX className="h-5 w-5" />

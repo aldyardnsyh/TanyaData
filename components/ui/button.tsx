@@ -60,7 +60,7 @@ export function Button({
         'motion-ripple-host inline-flex min-h-11 items-center justify-center gap-2 rounded-control font-body font-semibold transition-[background-color,border-color,color] duration-[var(--motion-fast)] active:translate-y-px motion-reduce:transform-none',
         variantClasses[variant],
         sizeClasses[size],
-        variant === 'icon' && 'w-11 px-0',
+        variant === 'icon' && 'h-11 w-11 min-h-11 min-w-11 px-0',
         disabled && 'cursor-not-allowed opacity-45',
         className,
       )}

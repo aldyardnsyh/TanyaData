@@ -79,7 +79,7 @@ export function QuickSearch() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t('shell.quickSearch')}
-        className="flex min-h-11 items-center gap-2 rounded-control border border-border-control bg-surface px-3 text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:border-primary hover:text-ink focus-ring"
+        className="flex h-11 min-h-11 min-w-11 items-center gap-2 rounded-control border border-border-control bg-surface px-3 text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:border-primary hover:text-ink focus-ring"
       >
         <Icon name="search" className="text-[20px]" />
         <span className="hidden w-28 text-left font-body text-body-md lg:inline">Cari data…</span>

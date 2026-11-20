@@ -42,7 +42,7 @@ export function Topbar({
           type="button"
           onClick={onOpenMenu}
           aria-label={t('shell.openMenu')}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong transition-colors hover:bg-row-hover focus-ring md:hidden"
+          className="flex h-11 w-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong transition-colors hover:bg-row-hover focus-ring md:hidden"
         >
           <Icon name="menu" className="text-[22px]" />
         </button>
@@ -57,7 +57,7 @@ export function Topbar({
           <Link
             href="/overview"
             aria-label="Kembali ke Ringkasan"
-            className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong transition-colors hover:bg-row-hover focus-ring lg:flex xl:hidden"
+            className="hidden h-11 w-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong transition-colors hover:bg-row-hover focus-ring lg:flex xl:hidden"
           >
             <Icon name="arrow_back" className="text-[20px]" />
           </Link>
@@ -80,7 +80,7 @@ export function Topbar({
         <Link
           href="/assistant"
           aria-label={t('shell.askTanyaData')}
-          className="flex h-11 w-11 items-center justify-center rounded-control bg-primary text-on-primary transition-colors duration-[var(--motion-fast)] hover:bg-[#0A3A2C] focus-ring-forest"
+          className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control bg-primary text-on-primary transition-colors duration-[var(--motion-fast)] hover:bg-[#0A3A2C] focus-ring-forest"
         >
           <Icon name="forum" className="text-[20px]" />
         </Link>
