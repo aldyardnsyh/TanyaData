@@ -8,7 +8,7 @@ import { MeasurementRule } from '@/components/ui/measurement-rule';
 import { StatusDot } from '@/components/ui/status-dot';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatNumber, formatPercent } from '@/lib/ui/format';
+import { formatNumber, formatPercent, formatCompareLabel } from '@/lib/ui/format';
 import type {
   Kpi,
   MetaResponse,
@@ -43,6 +43,7 @@ export default function LandingPage() {
   const loading = meta.loading || summary.loading || trends.loading || channels.loading || insights.loading;
   const dataset = summary.data?.dataset ?? meta.data?.data.activeDataset ?? null;
   const period = summary.data?.period ?? null;
+  const compareLabel = formatCompareLabel(period?.compare);
   const docs = meta.data?.data.documents ?? null;
   const capabilities = meta.data?.capabilities ?? null;
   const kpis = summary.data?.kpis ?? [];
@@ -121,7 +122,7 @@ export default function LandingPage() {
                 format="number"
                 delta={delta(total)}
                 goodDirection="up"
-                note={period?.label}
+                note={compareLabel ?? period?.label}
                 meta={dataset ? `SQL · ${formatNumber(dataset.rowCount)} ROWS` : undefined}
                 loading={loading}
                 sparkline={points.map((p) => p.successful)}

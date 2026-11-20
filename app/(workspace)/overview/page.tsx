@@ -13,7 +13,7 @@ import { KpiCard } from '@/components/ui/kpi-card';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { FilterChips } from '@/components/ui/filter-chips';
-import { formatIdr, formatNumber, formatPercent } from '@/lib/ui/format';
+import { formatIdr, formatNumber, formatPercent, formatCompareLabel } from '@/lib/ui/format';
 import type {
   Kpi,
   MetaResponse,
@@ -142,7 +142,7 @@ export default function OverviewPage() {
 
   const period = summary.data?.period ?? null;
   const periodLabel = period?.label ?? meta.data?.data.periodDefaults.label ?? '—';
-  const compareLabel = period?.compare?.label ?? 'Tanpa pembanding';
+  const compareLabel = formatCompareLabel(period?.compare);
   const dataset = summary.data?.dataset ?? meta.data?.data.activeDataset ?? null;
 
   const delta = (item: Kpi | undefined) =>
@@ -205,13 +205,13 @@ export default function OverviewPage() {
             <input type="date" aria-label="Tanggal akhir" value={filters.end ?? ''} onChange={(e) => setFilters((c) => ({ ...c, end: e.target.value }))} className="min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink focus-ring" />
           </div>
         )}
-        <MonoMeta>{periodLabel} · vs {compareLabel}</MonoMeta>
+        <MonoMeta>{periodLabel} · {compareLabel ?? 'Tanpa pembanding'}</MonoMeta>
       </div>
 
       {/* Asymmetric bento: hero 6, tiga regular 2 dari 12 (S-04 / §3.3). */}
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
         <div className="xl:col-span-6">
-          <KpiCard hero label={t('kpi.total')} value={total?.value ?? null} format="number" delta={delta(total)} goodDirection="up" note={`vs ${compareLabel}`} meta="SQL · SUMMARY" loading={summary.loading} error={summary.error} onRetry={summary.retry} sparkline={points.map((p) => p.successful)} />
+          <KpiCard hero label={t('kpi.total')} value={total?.value ?? null} format="number" delta={delta(total)} goodDirection="up" note={compareLabel ?? undefined} meta="SQL · SUMMARY" loading={summary.loading} error={summary.error} onRetry={summary.retry} sparkline={points.map((p) => p.successful)} />
         </div>
         <div className="xl:col-span-2">
           <KpiCard label={t('kpi.successful')} value={successful?.value ?? null} format="number" delta={delta(successful)} goodDirection="up" loading={summary.loading} />

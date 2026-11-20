@@ -60,3 +60,15 @@ export function formatSnapshotRange(
   const m2 = format(parseISO(end), 'MMM yyyy', { locale });
   return start.slice(0, 7) === end.slice(0, 7) ? `${d1}–${d2} ${m2}` : `${d1} ${m1} – ${d2} ${m2}`;
 }
+
+/**
+ * Label perbandingan ramah analis: `vs 1–18 Okt 2026`.
+ * Menggantikan label mentah API (`2026-10-01 .. 2026-10-18`). Null bila tanpa pembanding.
+ */
+export function formatCompareLabel(
+  compare: { start: string; end: string } | null | undefined,
+  lang: 'id' | 'en' = 'id',
+): string | null {
+  if (!compare) return null;
+  return `vs ${formatSnapshotRange(compare.start, compare.end, lang)}`;
+}
