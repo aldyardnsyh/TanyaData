@@ -21,6 +21,9 @@ const items = [
   ['lib/db/schema.sql', 'lib/db/schema.sql'],
   ['public/fonts', 'public/fonts'],
   ['.env.example', '.env.example'],
+  // KRITIS: standalone tidak menyalin .next/static secara otomatis.
+  // Tanpa ini semua halaman tampil tanpa CSS (Material Symbols jadi teks mentah).
+  ['.next/static', '.next/static'],
 ];
 
 for (const [src, dst] of items) {
