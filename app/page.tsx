@@ -1,15 +1,16 @@
 import Link from 'next/link';
 import { HeroHighlight } from '@/components/signal/hero-highlight';
 import { BentoGrid, type BentoItem } from '@/components/signal/bento-grid';
-import { LayoutGrid, type RevealCard } from '@/components/signal/layout-grid';
 import { TimelineView, type TimelineNode } from '@/components/signal/timeline-view';
 import { SectionRule } from '@/components/signal/section-rule';
 import { LandingCTA } from '@/components/signal/landing-cta';
 import { LandingNav } from '@/components/signal/landing-nav';
-import { LandingFormatTabs } from '@/components/signal/landing-format-tabs';
+import { LandingFormatPanel } from '@/components/signal/landing-format-panel';
 import { FaqAccordion, type FaqItem } from '@/components/signal/landing-faq';
 import { ScrollReveal } from '@/components/signal/scroll-reveal';
 import { LandingPreviewCard } from '@/components/signal/landing-preview-card';
+import { LandingEvidenceSamples } from '@/components/signal/landing-evidence-samples';
+import { IconTooltip } from '@/components/ui/icon-tooltip';
 
 /*
  * Landing TanyaData. Copy disalin dari docs/LANDING_COPY_SEO.md (8 section, tanpa
@@ -17,8 +18,8 @@ import { LandingPreviewCard } from '@/components/signal/landing-preview-card';
  * (band gelap + grid pattern + glow lime + navbar melayang) dengan ritme band
  * dan kelembutan kanjikan.munawariz.site, dieksekusi hanya dengan enam token
  * warna dan turunan alphanya. Semua angka berasal dari berkas uji yang tercatat:
- * tanyadata/docs/ROBUSTNESS_REAL_DOCS.md (24/24, 6/6, 0 temuan, 46.952, SQL-01)
- * dan tanyadata/docs/EVAL_RESULTS.md (8/8 tahap, 11/11 kasus FR-A..E, 94,39%).
+ * tanyadata/docs/ROBUSTNESS_REAL_DOCS.md (24/24, 6/6, 0 temuan, 46.952, SQL-01,
+ * SQL-03, GR-02) dan tanyadata/docs/EVAL_RESULTS.md (8/8 tahap, 11/11 kasus).
  * Landing tidak memanggil API: datanya kontrak uji yang statis, sehingga state
  * loading/empty/error pada komponen data bersifat n/a (tidak ada sumber yang bisa gagal).
  */
@@ -59,17 +60,9 @@ const FAQ_JSONLD = {
   })),
 };
 
-/* S2 bukti: angka dan sumbernya disalin dari berkas uji (R-17). Tooltip C-12 menyebut sumber berkasnya. */
+/* S2: empat metrik pendukung bento (3+3+3+3 = baris penuh). Metrik utama 24/24
+ * tampil sebagai banner gelap penuh di atasnya agar bobot terlihat. */
 const EVIDENCE_ITEMS: BentoItem[] = [
-  {
-    id: 'kasus-lulus',
-    label: 'Kasus uji produksi lulus',
-    value: '24/24',
-    source: 'docs/ROBUSTNESS_REAL_DOCS.md',
-    tooltip: 'Sumber: docs/ROBUSTNESS_REAL_DOCS.md. Uji robust 20 November 2026: 24 kasus, 24 lulus.',
-    span: 'hero',
-    active: true,
-  },
   {
     id: 'dokumen-terbaca',
     label: 'Dokumen terbaca',
@@ -90,7 +83,6 @@ const EVIDENCE_ITEMS: BentoItem[] = [
     value: '11/11',
     source: 'docs/EVAL_RESULTS.md',
     tooltip: 'Sumber: docs/EVAL_RESULTS.md. Sebelas kasus kemampuan CORE V2 untuk FR-A sampai FR-E.',
-    span: 'wide',
   },
   {
     id: 'temuan',
@@ -98,73 +90,47 @@ const EVIDENCE_ITEMS: BentoItem[] = [
     value: '0',
     source: 'docs/ROBUSTNESS_REAL_DOCS.md',
     tooltip: 'Sumber: docs/ROBUSTNESS_REAL_DOCS.md. Daftar bug dan temuan pada run: tidak ada.',
-    span: 'wide',
   },
 ];
 
-/* S3: lima FR dari kontrak §2-S3. Kartu dikembangkan di tempat karena detail tiap FR
- * tidak muat di ringkasan tanpa menghilangkan daftar (Purpose Gate C-11). */
-const CAPABILITY_CARDS: RevealCard[] = [
+/* S3: lima FR dari kontrak §2-S3 sebagai daftar editorial bernomor. Copy tampil
+ * penuh (tidak disembunyikan di balik klik) karena tiap FR mendapat satu baris
+ * penuh; "bisa diuji satu per satu" dibaca langsung tanpa interaksi. */
+const CAPABILITIES = [
   {
     id: 'fr-a',
-    title: 'FR-A Ingest tangguh',
-    meta: 'PDF · TEXT-LAYER',
-    wide: true,
-    preview: null,
-    detail: (
-      <p className="max-w-[68ch] font-body text-body text-ink-72">
-        PDF ber-text-layer dibaca langsung. Halaman hasil pindai yang tidak terbaca ditandai dengan nomor
-        halaman dan tidak dipakai sebagai sitasi.
-      </p>
-    ),
+    no: '01',
+    fr: 'FR-A',
+    title: 'Ingest tangguh',
+    copy: 'PDF ber-text-layer dibaca langsung. Halaman hasil pindai yang tidak terbaca ditandai dengan nomor halaman dan tidak dipakai sebagai sitasi.',
   },
   {
     id: 'fr-b',
-    title: 'FR-B Readjustment dan laporan',
-    meta: 'FILTER · GROUP · AGREGASI',
-    preview: null,
-    detail: (
-      <p className="max-w-[68ch] font-body text-body text-ink-72">
-        Minta &quot;tampilkan bagian X saja&quot; atau &quot;group by kanal&quot;. Langkah filter, cleaning,
-        grouping, dan agregasi tercatat. PDF dan Excel memakai angka yang sama dengan tampilan.
-      </p>
-    ),
+    no: '02',
+    fr: 'FR-B',
+    title: 'Readjustment dan laporan',
+    copy: 'Minta "tampilkan bagian X saja" atau "group by kanal". Langkah filter, cleaning, grouping, dan agregasi tercatat. PDF dan Excel memakai angka yang sama dengan tampilan.',
   },
   {
     id: 'fr-c',
-    title: 'FR-C Chat per attachment',
-    meta: 'SCOPE PER BERKAS',
-    preview: null,
-    detail: (
-      <p className="max-w-[68ch] font-body text-body text-ink-72">
-        Pertanyaan hanya memakai berkas yang sedang aktif. Dua berkas berisi angka berbeda tidak saling
-        mencampur.
-      </p>
-    ),
+    no: '03',
+    fr: 'FR-C',
+    title: 'Chat per attachment',
+    copy: 'Pertanyaan hanya memakai berkas yang sedang aktif. Dua berkas berisi angka berbeda tidak saling mencampur.',
   },
   {
     id: 'fr-d',
-    title: 'FR-D Sitasi dan guardrail',
-    meta: 'SITASI · GUARDRAIL',
-    preview: null,
-    detail: (
-      <p className="max-w-[68ch] font-body text-body text-ink-72">
-        Klik sitasi untuk membuka halaman, bagian, dan potongan asal. Pertanyaan di luar sumber dijawab
-        dengan keterbatasan, bukan angka rekaan.
-      </p>
-    ),
+    no: '04',
+    fr: 'FR-D',
+    title: 'Sitasi dan guardrail',
+    copy: 'Klik sitasi untuk membuka halaman, bagian, dan potongan asal. Pertanyaan di luar sumber dijawab dengan keterbatasan, bukan angka rekaan.',
   },
   {
     id: 'fr-e',
-    title: 'FR-E Tautan hasil',
-    meta: 'READ-ONLY · TANPA LOGIN',
-    preview: null,
-    detail: (
-      <p className="max-w-[68ch] font-body text-body text-ink-72">
-        Bagikan percakapan sebagai halaman read-only tanpa login. Konfirmasi muncul lebih dulu, dan tautan
-        berisi salinan yang tidak berubah.
-      </p>
-    ),
+    no: '05',
+    fr: 'FR-E',
+    title: 'Tautan hasil',
+    copy: 'Bagikan percakapan sebagai halaman read-only tanpa login. Konfirmasi muncul lebih dulu, dan tautan berisi salinan yang tidak berubah.',
   },
 ];
 
@@ -208,53 +174,69 @@ export default function LandingPage() {
       />
       <LandingNav />
       <main>
-        {/* S1 Hero: band gelap forest, motif grid baris-data, glow lime tunggal pada fokus.
-            Sorotan frasa = lime + glow (C-10 tone dark); CTA menyala satu-satunya di hero. */}
+        {/* S1 Hero: band gelap dua kolom. Kiri = janji + CTA; kanan = pratinjau produk
+            (kartu SQL + kartu sitasi menumpuk) sebagai hook visual, bukan white space. */}
         <section className="relative overflow-hidden bg-forest text-porcelain">
           <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
           <div
             aria-hidden="true"
-            className="glow-radial-lime absolute -top-32 left-1/2 h-[440px] w-[720px] max-w-none -translate-x-1/2"
+            className="glow-radial-lime absolute -top-32 left-1/4 h-[460px] w-[760px] max-w-none -translate-x-1/2"
           />
-          <div className="page-container relative pb-16 pt-32 md:pb-24 md:pt-40">
-            <ScrollReveal className="max-w-3xl">
-              <p className="inline-flex items-center rounded-chip border border-hairline-dark px-s3 py-1 font-body text-caption text-dark-muted">
-                Text-to-SQL · Sitasi dokumen · Guardrail
-              </p>
-              <HeroHighlight
-                tone="dark"
-                size="hero"
-                highlight="Periksa jawabannya sampai ke sumbernya."
-                className="mt-s4"
-              >
-                Tanyakan datanya. Periksa jawabannya sampai ke sumbernya.
-              </HeroHighlight>
-              <p className="mt-s4 max-w-[52ch] font-body text-body text-dark-muted">
-                TanyaData mengubah pertanyaan Anda menjadi query SQL yang bisa dibaca, lalu menampilkan angka
-                hasilnya dan sitasi yang bisa diklik. Untuk dokumen, jawaban menunjuk ke halaman dan bagian asal.
-              </p>
-              <div className="mt-s5 flex flex-wrap items-center gap-s3">
-                <LandingCTA tone="dark" />
-                <Link
-                  href="#cara-kerja"
-                  className="touch-44 inline-flex items-center rounded-button-lg border border-hairline-dark px-s4 font-display text-label font-semibold text-porcelain transition-colors duration-[var(--motion-fast)] hover:border-porcelain focus-ring"
+          <div className="page-container relative pb-16 pt-32 md:pb-20 md:pt-44">
+            <div className="grid items-center gap-s5 lg:grid-cols-12">
+              <ScrollReveal className="lg:col-span-7">
+                <p className="inline-flex items-center rounded-chip border border-hairline-dark px-s3 py-1 font-body text-caption text-dark-muted">
+                  Text-to-SQL · Sitasi dokumen · Guardrail
+                </p>
+                <HeroHighlight
+                  tone="dark"
+                  size="hero"
+                  highlight="Periksa jawabannya sampai ke sumbernya."
+                  className="mt-s4"
                 >
-                  Lihat cara kerjanya
-                </Link>
-              </div>
-              <p className="mt-s4 inline-flex items-center rounded-chip border border-hairline-dark px-s3 py-1 font-body text-caption tabular text-dark-muted">
-                Data contoh: 46.952 transaksi · 1 sampai 18 November 2026.
-              </p>
-            </ScrollReveal>
-            <ScrollReveal className="mt-12 max-w-2xl md:mt-16" delay={120}>
-              <LandingPreviewCard />
-            </ScrollReveal>
+                  Tanyakan datanya. Periksa jawabannya sampai ke sumbernya.
+                </HeroHighlight>
+                <p className="mt-s4 max-w-[52ch] font-body text-body text-dark-muted">
+                  TanyaData mengubah pertanyaan Anda menjadi query SQL yang bisa dibaca, lalu menampilkan angka
+                  hasilnya dan sitasi yang bisa diklik. Untuk dokumen, jawaban menunjuk ke halaman dan bagian asal.
+                </p>
+                <div className="mt-s5 flex flex-wrap items-center gap-s3">
+                  <LandingCTA tone="dark" />
+                  <Link
+                    href="#cara-kerja"
+                    className="touch-44 inline-flex items-center rounded-button-lg border border-hairline-dark px-s4 font-display text-label font-semibold text-porcelain transition-colors duration-[var(--motion-fast)] hover:border-porcelain focus-ring"
+                  >
+                    Lihat cara kerjanya
+                  </Link>
+                </div>
+                <p className="mt-s4 inline-flex items-center rounded-chip border border-hairline-dark px-s3 py-1 font-body text-caption tabular text-dark-muted">
+                  Data contoh: 46.952 transaksi · 1 sampai 18 November 2026.
+                </p>
+              </ScrollReveal>
+              <ScrollReveal className="relative lg:col-span-5" delay={120}>
+                <div
+                  aria-hidden="true"
+                  className="glow-radial-lime absolute -inset-8 hidden lg:block"
+                />
+                <div className="relative">
+                  <LandingPreviewCard />
+                  <div className="mt-3 inline-flex items-center gap-s2 rounded-card-lg border border-hairline-dark bg-porcelain px-s3 py-s2 shadow-float md:absolute md:-right-3 md:-top-6 md:mt-0">
+                    <span className="state-dot state-dot-active" aria-hidden="true" />
+                    <div>
+                      <p className="mono-meta">SITASI · LAPORAN SEPT 2026 · BAGIAN 1</p>
+                      <p className="font-body text-caption text-ink-72">Halaman, bagian, dan kutipan asal</p>
+                    </div>
+                  </div>
+                </div>
+              </ScrollReveal>
+            </div>
           </div>
         </section>
 
         <SectionRule className="page-container" />
 
-        {/* S2 Bukti nyata: bento karena 24/24 lebih berbobot dari empat angka pendukung (C-01). */}
+        {/* S2 Bukti nyata: metrik utama mendapat banner gelap penuh (satu angka paling
+            berbobot), empat metrik pendukung satu baris bento di bawahnya (C-01). */}
         <section id="bukti" className="page-container py-16 md:py-24">
           <ScrollReveal>
             <p className="eyebrow">Bukti uji</p>
@@ -266,14 +248,36 @@ export default function LandingPage() {
               bawah berasal dari eksekusi, bukan dari narasi.
             </p>
           </ScrollReveal>
-          <div className="mt-s5">
-            <BentoGrid items={EVIDENCE_ITEMS} />
-          </div>
+          <ScrollReveal className="mt-s5">
+            <div className="relative overflow-hidden rounded-card-lg border border-hairline-dark bg-forest p-s4 text-porcelain md:p-s5">
+              <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
+              <div
+                aria-hidden="true"
+                className="glow-radial-lime absolute -right-24 -top-28 h-[320px] w-[440px]"
+              />
+              <div className="relative flex flex-wrap items-end justify-between gap-s3">
+                <div>
+                  <p className="font-display text-label font-semibold text-porcelain">
+                    Kasus uji produksi lulus
+                  </p>
+                  <p className="text-stat-lg mt-s1 text-lime text-glow-lime">24/24</p>
+                </div>
+                <IconTooltip label="Sumber: docs/ROBUSTNESS_REAL_DOCS.md. Uji robust 20 November 2026: 24 kasus, 24 lulus.">
+                  <span className="inline-flex min-h-11 items-center font-mono text-[11px] uppercase tracking-[0.06em] text-dark-muted">
+                    docs/ROBUSTNESS_REAL_DOCS.md
+                  </span>
+                </IconTooltip>
+              </div>
+            </div>
+            <div className="mt-s3">
+              <BentoGrid items={EVIDENCE_ITEMS} />
+            </div>
+          </ScrollReveal>
         </section>
 
         <SectionRule className="page-container" />
 
-        {/* S3 Cara kerja: mekanisme lima FR, detail dibuka di tempat (C-11). */}
+        {/* S3 Cara kerja: daftar editorial bernomor, copy tiap FR tampil penuh. */}
         <section id="cara-kerja" className="page-container py-16 md:py-24">
           <ScrollReveal>
             <p className="eyebrow">Cara kerja</p>
@@ -282,14 +286,29 @@ export default function LandingPage() {
               Setiap kemampuan punya kriteria yang bisa Anda coba sendiri.
             </p>
           </ScrollReveal>
-          <div className="mt-s5">
-            <LayoutGrid cards={CAPABILITY_CARDS} />
-          </div>
+          <ScrollReveal className="mt-s5">
+            <ol className="border-t border-[var(--border-hairline)]">
+              {CAPABILITIES.map((cap) => (
+                <li
+                  key={cap.id}
+                  className="grid gap-s2 border-b border-[var(--border-hairline)] py-s4 transition-colors duration-[var(--motion-fast)] hover:bg-forest-08 md:grid-cols-12 md:gap-s4 md:px-s2"
+                >
+                  <span className="mono-meta order-1 md:col-span-2">
+                    {cap.no} · {cap.fr}
+                  </span>
+                  <h3 className="order-2 font-display text-label font-semibold text-ink md:col-span-4">
+                    {cap.title}
+                  </h3>
+                  <p className="order-3 font-body text-body text-ink-72 md:col-span-6">{cap.copy}</p>
+                </li>
+              ))}
+            </ol>
+          </ScrollReveal>
         </section>
 
         <SectionRule className="page-container" />
 
-        {/* S4 Kapabilitas dokumen: dua kelompok format dipisah secara spasial (C-04). */}
+        {/* S4 Kapabilitas dokumen: panel gelap dengan tabs dua kelompok format (C-04 tone dark). */}
         <section id="format" className="page-container py-16 md:py-24">
           <ScrollReveal>
             <p className="eyebrow">Format diterima</p>
@@ -299,14 +318,15 @@ export default function LandingPage() {
               nyata berupa TXT, MD, DOCX, dan tiga PDF. Berkas MD diperlakukan sebagai teks.
             </p>
           </ScrollReveal>
-          <div className="mt-s5 max-w-xl">
-            <LandingFormatTabs />
-          </div>
+          <ScrollReveal className="mt-s5 max-w-3xl">
+            <LandingFormatPanel />
+          </ScrollReveal>
         </section>
 
         <SectionRule className="page-container" />
 
-        {/* S5 Audit trail: garis waktu bukti bertanggal nyata (C-07). */}
+        {/* S5 Audit trail: dua kolom. Kiri = garis waktu bukti bertanggal nyata (C-07);
+            kanan = sampel dua sisi jejak audit (query cocok dan penolakan guardrail). */}
         <section id="audit" className="page-container py-16 md:py-24">
           <ScrollReveal>
             <p className="eyebrow">Jejak audit</p>
@@ -317,30 +337,40 @@ export default function LandingPage() {
               asal masih cocok. Yang tidak cocok ditolak.
             </p>
           </ScrollReveal>
-          <div className="mt-s5 max-w-xl">
-            <TimelineView nodes={AUDIT_NODES} />
+          <div className="mt-s5 grid gap-s5 lg:grid-cols-2">
+            <ScrollReveal className="max-w-xl">
+              <TimelineView nodes={AUDIT_NODES} />
+            </ScrollReveal>
+            <ScrollReveal delay={100}>
+              <LandingEvidenceSamples />
+            </ScrollReveal>
           </div>
         </section>
 
         <SectionRule className="page-container" />
 
-        {/* S6 Privasi dan batas: menjawab keberatan nyata sebelum CTA terakhir. FAQ = kontrak §2-S6. */}
+        {/* S6 Privasi dan batas: dua kolom, copy kiri dan FAQ kanan; menjawab keberatan
+            nyata sebelum CTA terakhir. FAQ = kontrak §2-S6. */}
         <section id="privasi" className="page-container py-16 md:py-24">
-          <ScrollReveal>
-            <p className="eyebrow">Privasi</p>
-            <h2 className="mt-s2 font-display text-title text-ink">Apa yang dibagikan, dan apa yang tidak</h2>
-            <p className="mt-s2 max-w-[68ch] font-body text-body text-ink-72">
-              Tombol Bagikan memunculkan ringkasan jumlah pesan, nama berkas, serta ada tidaknya angka dan
-              kutipan. Anda memilih lanjut atau batal sebelum tautan dibuat. Halaman hasil bersifat read-only
-              dan tidak meminta login. Tautan adalah salinan statis: perubahan setelahnya tidak muncul di
-              tautan lama, dan tautan tidak bisa dicabut pada versi ini.
-            </p>
-            <h3 className="mt-s5 font-display text-label font-semibold text-ink">
-              Pertanyaan yang sering muncul
-            </h3>
-          </ScrollReveal>
-          <div className="mt-s2 max-w-2xl rounded-card-lg border border-[var(--border-hairline)] px-s4 py-s2 shadow-lift">
-            <FaqAccordion items={FAQ_ITEMS} />
+          <div className="grid gap-s5 lg:grid-cols-12">
+            <ScrollReveal className="lg:col-span-5">
+              <p className="eyebrow">Privasi</p>
+              <h2 className="mt-s2 font-display text-title text-ink">Apa yang dibagikan, dan apa yang tidak</h2>
+              <p className="mt-s2 max-w-[52ch] font-body text-body text-ink-72">
+                Tombol Bagikan memunculkan ringkasan jumlah pesan, nama berkas, serta ada tidaknya angka dan
+                kutipan. Anda memilih lanjut atau batal sebelum tautan dibuat. Halaman hasil bersifat read-only
+                dan tidak meminta login. Tautan adalah salinan statis: perubahan setelahnya tidak muncul di
+                tautan lama, dan tautan tidak bisa dicabut pada versi ini.
+              </p>
+            </ScrollReveal>
+            <ScrollReveal className="lg:col-span-7" delay={100}>
+              <h3 className="font-display text-label font-semibold text-ink">
+                Pertanyaan yang sering muncul
+              </h3>
+              <div className="mt-s2 rounded-card-lg border border-[var(--border-hairline)] px-s4 py-s2 shadow-lift">
+                <FaqAccordion items={FAQ_ITEMS} />
+              </div>
+            </ScrollReveal>
           </div>
         </section>
 
