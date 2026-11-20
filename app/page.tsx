@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatNumber } from '@/lib/ui/format';
-import { IconArrowDown } from '@/components/ui/icons';
+import { IconArrowDown, IconArrowRight } from '@/components/ui/icons';
 import type { MetaResponse, DashboardSummaryResponse } from '@/lib/contracts/http';
 
 export default function LandingPage() {
@@ -192,9 +192,10 @@ export default function LandingPage() {
                 <p className="mt-1 font-body text-body-md text-on-surface-variant">{cap.desc}</p>
                 <Link
                   href={cap.href}
-                  className="mt-3 inline-block font-body text-label-md font-semibold text-primary transition-colors duration-[var(--motion-fast)] hover:underline focus-ring"
+                  className="mt-3 inline-flex items-center gap-1 font-body text-label-md font-semibold text-primary transition-colors duration-[var(--motion-fast)] hover:underline focus-ring"
                 >
-                  Pelajari lebih lanjut →
+                  Pelajari lebih lanjut
+                  <IconArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </div>
             ))}

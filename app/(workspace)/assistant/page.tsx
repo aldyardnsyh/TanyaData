@@ -376,7 +376,7 @@ export default function AssistantPage() {
   return (
     <div className="flex h-[calc(100vh-3.5rem)]">
       {/* Conversation sidebar (desktop) */}
-      <aside className="hidden w-66 shrink-0 border-r border-outline-variant bg-surface-container-lowest lg:block" aria-label="Daftar percakapan">
+      <aside className="hidden w-conversations shrink-0 border-r border-outline-variant bg-surface-container-lowest lg:block" aria-label="Daftar percakapan">
         {conversationList}
       </aside>
 

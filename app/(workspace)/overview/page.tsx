@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card';
 import { FilterChips } from '@/components/ui/filter-chips';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatNumber, formatPercent } from '@/lib/ui/format';
+import { IconArrowRight } from '@/components/ui/icons';
 import type {
   DashboardSummaryResponse,
   TrendsResponse,
@@ -235,8 +236,9 @@ export default function OverviewPage() {
 
       {/* 5 KPI */}
       <div key={`kpi-${filterKey}`} className="animate-[crossfade_150ms_ease-out_both]">
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {SELECTED_KPI_KEYS.map((key) => {
+        {/* §2.4: 2 kolom mobile (item ke-5 full), 3 tablet, 5 desktop. */}
+        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+          {SELECTED_KPI_KEYS.map((key, index) => {
             const kpi = kpis.find((k) => k.key === key);
             if (!kpi) return null;
             return (
@@ -255,6 +257,7 @@ export default function OverviewPage() {
                 }
                 loading={summary.loading}
                 animateCount={!filterChanged}
+                className={index === 4 ? 'col-span-2 md:col-span-1' : undefined}
               />
             );
           })}
@@ -345,9 +348,10 @@ export default function OverviewPage() {
                         <a
                           key={link.href}
                           href={link.href}
-                          className="font-body text-label-sm font-semibold text-primary transition-colors duration-[var(--motion-fast)] hover:underline focus-ring"
+                          className="inline-flex items-center gap-1 font-body text-label-sm font-semibold text-primary transition-colors duration-[var(--motion-fast)] hover:underline focus-ring"
                         >
-                          {link.label} →
+                          {link.label}
+                          <IconArrowRight className="h-4 w-4" aria-hidden="true" />
                         </a>
                       ))}
                     </div>
