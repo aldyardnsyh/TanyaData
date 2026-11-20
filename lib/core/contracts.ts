@@ -222,6 +222,9 @@ export type GuardrailType =
 
 export type Guardrail = {
   type: GuardrailType;
+  /** Pesan utama yang tampil sebagai jawaban. Boleh berbeda dari `explanation`. */
+  answer?: string;
+  /** Penjelasan ringkas; tidak boleh mengulang `answer` kata demi kata. */
   explanation: string;
 };
 

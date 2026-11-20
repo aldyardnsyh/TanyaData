@@ -251,11 +251,18 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
   });
 
   if (guard.triggered) {
+    // Jangan pernah memakai string yang sama untuk dua tempat: UI merender
+    // `answer` sebagai jawaban dan `reason` sebagai penjelasan. Kalau keduanya
+    // identik, user melihat kalimat yang sama dua kali.
+    const reason =
+      guard.explanation && guard.explanation !== guard.message
+        ? guard.explanation
+        : 'Jawaban ditolak demi kejujuran sumber; tidak ada angka atau kutipan yang dipakai.';
     return {
       answer: guard.message,
       vizSpec: {
         type: 'none',
-        reason: guard.explanation,
+        reason,
         x_key: null,
         y_keys: [],
         data: [],

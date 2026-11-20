@@ -236,6 +236,7 @@ const MESSAGES: Record<CoreGuardrailType, { message: string; explanation: string
 export function checkGuardrails(input: GuardrailCheckInput): GuardrailResult {
   const q = String(input.question ?? '').trim();
   let type: CoreGuardrailType | null = null;
+  let scopeMessage: string | null = null;
   let scopeExplanation: string | null = null;
 
   // FR-C.1: scope is checked before any other rule. A leak from another
@@ -244,6 +245,7 @@ export function checkGuardrails(input: GuardrailCheckInput): GuardrailResult {
     const scoped = checkAttachmentScope(input.scope);
     if (!scoped.allowed) {
       type = scoped.type === 'not_ready' ? 'unsupported' : 'out_of_scope';
+      scopeMessage = scoped.message;
       scopeExplanation = scoped.explanation;
     }
   }
@@ -266,7 +268,7 @@ export function checkGuardrails(input: GuardrailCheckInput): GuardrailResult {
   return {
     triggered: true,
     type,
-    message: scopeExplanation ?? MESSAGES[type].message,
+    message: scopeMessage ?? MESSAGES[type].message,
     explanation: scopeExplanation ?? MESSAGES[type].explanation,
   };
 }

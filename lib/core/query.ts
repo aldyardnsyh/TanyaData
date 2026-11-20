@@ -26,6 +26,7 @@ import {
   composeDeterministicAnswer,
   detectGuardrail,
   evaluateGrounding,
+  friendlySourceName,
   notInSourcesGuardrail,
 } from '@/lib/core/answer';
 
@@ -72,11 +73,13 @@ export async function answerQuestion(
   const query = baseQuery(input);
   const dataset = getDataset(db, input.datasetId);
   if (dataset.status !== 'READY') {
+    const message = `Dataset "${friendlySourceName(dataset)}" belum siap digunakan (status ${dataset.status}).`;
     query.guardrail = {
       type: 'unsupported',
-      explanation: `Dataset "${dataset.name}" belum siap digunakan (status ${dataset.status}).`,
+      answer: message,
+      explanation: 'Dataset belum READY; tidak ada chunk atau SQL yang dipakai.',
     };
-    query.answer = query.guardrail.explanation;
+    query.answer = message;
     query.duration_ms = Math.round(performance.now() - started);
     return query;
   }
@@ -84,7 +87,7 @@ export async function answerQuestion(
   const guardrail = detectGuardrail({ question: input.question, dataset, context: input.context ?? null });
   if (guardrail) {
     query.guardrail = guardrail;
-    query.answer = guardrail.explanation;
+    query.answer = guardrail.answer ?? guardrail.explanation;
     query.duration_ms = Math.round(performance.now() - started);
     return query;
   }
@@ -173,10 +176,14 @@ export async function answerQuestion(
 
   if (!query.generated_sql && !citations.length) {
     const g: Guardrail = rejection
-      ? { type: 'sql_rejected', explanation: `SQL tidak dapat dibuat atau divalidasi: ${rejection}` }
+      ? {
+          type: 'sql_rejected',
+          answer: 'SQL tidak dapat dibuat atau divalidasi dari sumber yang tersedia.',
+          explanation: `SQL ditolak: ${rejection}`,
+        }
       : notInSourcesGuardrail(dataset);
     query.guardrail = g;
-    query.answer = g.explanation;
+    query.answer = g.answer ?? g.explanation;
     query.duration_ms = Math.round(performance.now() - started);
     return query;
   }

@@ -28,27 +28,30 @@ export function detectGuardrail(input: {
   if (DESTRUCTIVE_RE.test(question)) {
     return {
       type: 'destructive',
-      explanation:
-        'Saya hanya memiliki akses baca pada dataset. Perintah mengubah atau menghapus data tidak dapat dijalankan.',
+      answer: 'Saya hanya memiliki akses baca pada dataset. Perintah mengubah atau menghapus data tidak dapat dijalankan.',
+      explanation: 'Tidak ada pernyataan yang dieksekusi; data tidak berubah.',
     };
   }
   if (PII_RE.test(question)) {
     return {
       type: 'pii',
-      explanation: 'Dataset ini tidak menyediakan data pribadi yang dapat diidentifikasi. Saya tidak menebaknya.',
+      answer: 'Dataset ini tidak menyediakan data pribadi yang dapat diidentifikasi. Saya tidak menebaknya.',
+      explanation: 'Tidak ada nilai identitas yang direkayasa.',
     };
   }
   const period = context?.period;
   if (period?.start && dataset.period_start && period.start < dataset.period_start) {
     return {
       type: 'out_of_range',
-      explanation: `Rentang data yang tersedia mulai ${dataset.period_start}${dataset.period_end ? ` sampai ${dataset.period_end}` : ''}.`,
+      answer: `Rentang data yang tersedia mulai ${dataset.period_start}${dataset.period_end ? ` sampai ${dataset.period_end}` : ''}.`,
+      explanation: 'Periode yang diminta berada di luar rentang data.',
     };
   }
   if (period?.end && dataset.period_end && period.end > dataset.period_end) {
     return {
       type: 'out_of_range',
-      explanation: `Rentang data yang tersedia berhenti pada ${dataset.period_end}.`,
+      answer: `Rentang data yang tersedia berhenti pada ${dataset.period_end}.`,
+      explanation: 'Periode yang diminta berada di luar rentang data.',
     };
   }
   return null;
@@ -79,7 +82,8 @@ export function notInSourcesGuardrail(dataset: Dataset): Guardrail {
   const source = friendlySourceName(dataset);
   return {
     type: 'not_in_sources',
-    explanation: `Informasi itu tidak ditemukan pada sumber "${source}".`,
+    answer: `Informasi itu tidak ditemukan pada sumber "${source}". Saya tidak akan mengarang jawaban.`,
+    explanation: 'Tidak ada bukti relevan pada attachment aktif; tidak ada angka atau kutipan yang dipakai.',
   };
 }
 
