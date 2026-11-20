@@ -18,6 +18,7 @@ import Database from 'better-sqlite3';
 
 import { CORE_SCHEMA_SQL, SEED_DB, WORKSPACE_DB } from '../db/paths';
 import { createDataset, emptySchema, emptyQualityReport } from '../core/registry';
+import type { SchemaJson } from '../core/contracts';
 import { answerQuestion } from '../core/query';
 import { classifyDocument } from '../ai/classifier';
 import { extractFields, findPasalByKeyword } from '../ai/extraction';
@@ -117,7 +118,7 @@ function ratio(num: number, den: number): number {
 
 type Prepared = { datasetId: string; fixture: Json; cases: Json[] };
 
-function adaptSchema(fixture: Json): Json {
+function adaptSchema(fixture: Json): SchemaJson {
   const tables = (fixture.schema?.tables ?? []).map((t: Json) => ({
     name: t.name,
     // sourceName is the human-readable source label the generic rule builder
@@ -144,7 +145,7 @@ function adaptSchema(fixture: Json): Json {
     tables,
     relations: [],
     enums: fixture.schema?.enums ?? {},
-  };
+  } as SchemaJson;
 }
 
 function prepareWorkspace(fixturesDir: string, casesFile: Json): Prepared[] {
