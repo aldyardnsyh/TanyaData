@@ -139,6 +139,26 @@ export function queryTerms(question: string, maxTerms = 12): string[] {
     .slice(0, maxTerms);
 }
 
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Hitungan term dengan batas kata. Pencocokan substring membuat "pengadu"
+ * ikut cocok dengan "pengaduan" — itu yang menggeser butir 7 dari definisi
+ * "Pengadu" ke bawah. Dipakai oleh fallback leksikal dan eval harness.
+ */
+export function lexicalHits(text: string, terms: string[]): number {
+  const hay = String(text ?? '').toLowerCase();
+  let hits = 0;
+  for (const term of terms ?? []) {
+    const t = escapeRe(String(term).toLowerCase());
+    if (!t) continue;
+    if (new RegExp(`(^|[^a-z0-9])${t}([^a-z0-9]|$)`).test(hay)) hits += 1;
+  }
+  return hits;
+}
+
 /* ------------------------------------------------------------ entity signals */
 
 export interface RetrievalEntities {
@@ -150,6 +170,8 @@ export interface RetrievalEntities {
   boostSection: string | null;
   /** Explicit page hint ("halaman 10") when the question carries one. */
   boostPage: number | null;
+  /** "Apa yang dimaksud X?" → X; dipakai untuk boost definisi "X adalah". */
+  definitionTerm: string | null;
   /** Canonical phrases offered to the user on `limited` / `refused`. */
   keywords: string[];
 }
@@ -179,6 +201,8 @@ export function extractRetrievalEntities(question: string, knownChannels: string
   });
   const pageMatch = q.match(/(?:halaman|hlm\.?|page)\s*(\d+)/i);
   const boostPage = pageMatch ? Number(pageMatch[1]) : null;
+  const defMatch = q.match(/\bdimaksud\s+(?:dengan\s+)?([A-Za-zÀ-ÿ][\wÀ-ÿ\s-]*?)\s*\??\s*$/i);
+  const definitionTerm = defMatch ? defMatch[1].trim().replace(/[?.]+$/, '').trim() : null;
   const boostSection = pasal.length
     ? `Pasal ${pasal[0]}`
     : failureCodes.length
@@ -199,6 +223,7 @@ export function extractRetrievalEntities(question: string, knownChannels: string
     channels,
     boostSection,
     boostPage,
+    definitionTerm,
     keywords: [...new Set(keywords)],
   };
 }
@@ -303,11 +328,7 @@ export function retrieveHybrid(input: HybridRetrieveInput): RetrievalResult {
     // Deterministic lexical fallback when no FTS connection is supplied.
     const scored = chunks
       .filter((c) => c.parse_ok !== false)
-      .map((c) => {
-        const hay = c.text.toLowerCase();
-        const hits = terms.filter((t) => hay.includes(t)).length;
-        return { chunk: c, hits };
-      })
+        .map((c) => ({ chunk: c, hits: lexicalHits(c.text, terms) }))
       .filter((x) => x.hits > 0)
       .sort((a, b) => b.hits - a.hits)
       .slice(0, topK);
@@ -482,6 +503,11 @@ export function rerankCitations<T extends RerankableCitation>(question: string, 
       }
       if (entities.failureCodes.some((c) => hay.includes(c.toLowerCase()))) boost += 0.4;
       if (entities.channels.some((c) => hay.includes(c.toLowerCase()))) boost += 0.3;
+      // Pertanyaan definisi: teks "X adalah ..." adalah bukti paling tepat.
+      if (entities.definitionTerm) {
+        const defRe = new RegExp(`\\b${escapeRe(entities.definitionTerm)}\\s+adalah\\b`, 'i');
+        if (defRe.test(String(citation.quote ?? ''))) boost += 0.5;
+      }
       const base = typeof citation.score === 'number' && Number.isFinite(citation.score)
         ? citation.score
         : 0;
@@ -753,4 +779,94 @@ export function stitchPageTexts(pages: StitchPage[]): StitchedChunk[] {
     }
   }
   return out;
+}
+
+/* ========================================================================== */
+/* P3-TUNING — deterministic legal section expansion (FR-B.1 filter)            */
+/*                                                                             */
+/* "Pasal 1 berbunyi apa?" adalah operasi filter, bukan generasi bebas.         */
+/* Fungsi ini mengembalikan parent + SELURUH child-nya dalam urutan dokumen,     */
+/* tanpa small-to-big parent-dedup yang menyembunyikan butir/ayat. Tanpa model,  */
+/* tanpa jaringan, tanpa memori tambahan yang residen.                          */
+/* ========================================================================== */
+
+export interface LegalSectionChunk {
+  id: string;
+  section_path: string;
+  text: string;
+  page: number | null;
+  page_end?: number | null;
+  parent_id?: string | null;
+  chunk_type?: string | null;
+}
+
+export interface LegalSectionResult {
+  pasal: number;
+  parent: LegalSectionChunk | null;
+  children: LegalSectionChunk[];
+  evidence: Citation[];
+  page_span: [number, number] | null;
+  duplicate_count: number;
+  tried_terms: string[];
+}
+
+function legalOrder(a: LegalSectionChunk, b: LegalSectionChunk): number {
+  const rank = (c: LegalSectionChunk) => {
+    const m = c.section_path.match(/(?:butir|ayat)\s*\(?(\d+)\)?/i);
+    if (m) return Number(m[1]);
+    if (/butir\s+pengantar/i.test(c.section_path)) return -1;
+    return 0;
+  };
+  return rank(a) - rank(b);
+}
+
+/**
+ * Kembalikan pasal + child-nya. Dedup memakai contentHash NFKD/lowercase;
+ * page_span dihitung dari halaman semua potongan yang dipakai (lintas halaman
+ * tidak menghasilkan dua chunk ganda).
+ */
+export function retrieveLegalSection(chunks: LegalSectionChunk[], pasal: number): LegalSectionResult {
+  const re = new RegExp(`\\bPasal\\s+0*${pasal}\\b`, 'i');
+  const parent = (chunks ?? []).find((c) => !c.parent_id && re.test(c.section_path)) ?? null;
+  const children = parent
+    ? (chunks ?? []).filter((c) => c.parent_id === parent.id).sort(legalOrder)
+    : [];
+  const all = parent ? [parent, ...children] : [];
+
+  const seen = new Set<string>();
+  const unique = all.filter((c) => {
+    const h = contentHash(c.text);
+    if (seen.has(h)) return false;
+    seen.add(h);
+    return true;
+  });
+
+  const pages = unique
+    .map((c) => c.page)
+    .filter((p): p is number => typeof p === 'number' && Number.isFinite(p));
+  const ends = unique.map((c) => (typeof c.page_end === 'number' ? c.page_end : c.page));
+  const validEnds = ends.filter((p): p is number => typeof p === 'number' && Number.isFinite(p));
+  const pageSpan: [number, number] | null = pages.length
+    ? [Math.min(...pages), Math.max(...validEnds, ...pages)]
+    : null;
+
+  const evidence: Citation[] = unique.map((c) => ({
+    chunk_id: c.id,
+    section_id: parent?.id ?? c.id,
+    section_path: c.section_path,
+    doc: 'perpres76',
+    page: c.page ?? null,
+    quote: c.text.replace(/\s+/g, ' ').slice(0, 400),
+    score: 1,
+  }));
+
+  return {
+    pasal,
+    parent,
+    children,
+    evidence,
+    page_span: pageSpan,
+    duplicate_count: all.length - unique.length,
+    tried_terms: [`Pasal ${pasal}`],
+  };
 }
