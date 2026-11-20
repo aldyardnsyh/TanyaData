@@ -77,7 +77,10 @@ function dashboardUrl(endpoint: string, filters: Filters): string {
     params.set('start', filters.start);
     params.set('end', filters.end);
   }
-  return `${endpoint}?${params.toString()}`;
+  // Endpoint bisa sudah punya query (mis. channel-performance?metric=volume&limit=10).
+  // Pakai '&' agar `limit` tidak jadi "10?period=..." dan `period` tidak hilang.
+  const separator = endpoint.includes('?') ? '&' : '?';
+  return `${endpoint}${separator}${params.toString()}`;
 }
 
 function downloadCsv(filename: string, rows: (string | number | null)[][]): void {
