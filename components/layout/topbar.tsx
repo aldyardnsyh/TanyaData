@@ -18,8 +18,6 @@ export interface TopbarProps {
   onSelectDataset: (id: string) => void;
   engineOnline: boolean;
   documents?: number;
-  profileName: string;
-  profileRole: string;
   onOpenMenu: () => void;
 }
 
@@ -30,8 +28,6 @@ export function Topbar({
   onSelectDataset,
   engineOnline,
   documents,
-  profileName,
-  profileRole,
   onOpenMenu,
 }: TopbarProps) {
   const { t } = useI18n();
@@ -78,7 +74,7 @@ export function Topbar({
         </Link>
         <LangToggle />
         <NotificationMenu engineOnline={engineOnline} documents={documents} />
-        <UserMenu name={profileName} role={profileRole} />
+        <UserMenu />
       </div>
     </header>
   );

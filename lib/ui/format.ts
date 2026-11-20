@@ -41,3 +41,22 @@ export function formatDateTimeId(date: string | null | undefined): string {
 export function formatDateRangeId(start: string, end: string): string {
   return `${formatDateId(start)} – ${formatDateId(end)}`;
 }
+
+/**
+ * Label ringkas untuk data statis: `1–18 Nov 2026` bila satu bulan,
+ * `1 Nov 2026 – 1 Des 2026` bila lintas bulan. Dipakai untuk menggantikan
+ * klaim "live" pada periode yang sebenarnya tetap.
+ */
+export function formatSnapshotRange(
+  start: string | null | undefined,
+  end: string | null | undefined,
+  lang: 'id' | 'en' = 'en',
+): string {
+  if (!start || !end) return 'n/a';
+  const locale = lang === 'id' ? idLocale : enUS;
+  const d1 = format(parseISO(start), 'd', { locale });
+  const d2 = format(parseISO(end), 'd', { locale });
+  const m1 = format(parseISO(start), 'MMM yyyy', { locale });
+  const m2 = format(parseISO(end), 'MMM yyyy', { locale });
+  return start.slice(0, 7) === end.slice(0, 7) ? `${d1}–${d2} ${m2}` : `${d1} ${m1} – ${d2} ${m2}`;
+}

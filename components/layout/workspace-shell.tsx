@@ -30,8 +30,6 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const datasetChoices = meta.data?.data.datasetChoices ?? settings.data?.datasets ?? [];
   const activeDatasetId =
     settings.data?.activeDatasetId ?? meta.data?.data.activeDataset.id ?? 'seed';
-  const profileName = settings.data?.profile.name ?? 'R. Hartono';
-  const profileRole = settings.data?.profile.role ?? 'Data Lead';
 
   const selectDataset = (id: string) => {
     void fetch('/api/settings', {
@@ -67,8 +65,6 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         onSelectDataset={selectDataset}
         engineOnline={engineOnline}
         documents={meta.data?.data.documents.total}
-        profileName={profileName}
-        profileRole={profileRole}
         onOpenMenu={() => setMobileOpen(true)}
       />
 

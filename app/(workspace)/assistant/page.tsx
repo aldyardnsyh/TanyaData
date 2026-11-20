@@ -101,13 +101,6 @@ export default function AssistantPage() {
   const periodLabel = meta.data?.data.periodDefaults.label ?? 'n/a';
   const docCount = meta.data?.data.documents.total ?? docs.data?.total ?? 0;
   const docItems = docs.data?.items ?? [];
-  const profileName = settings.data?.profile.name ?? 'R. Hartono';
-  const initials = profileName
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
   const modeLabel = meta.data
     ? `${meta.data.capabilities.sql === 'sqlite' ? 'SQLite' : meta.data.capabilities.sql} · SQL + ${meta.data.capabilities.rag.toUpperCase()}`
     : 'SQLite · SQL + FTS5';
@@ -702,7 +695,7 @@ export default function AssistantPage() {
                   <div key={m.id} className="flex items-start justify-end gap-space-sm pl-space-xl">
                     <div className="flex flex-col items-end space-y-1 max-w-[85%]">
                       <div className="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
-                        <span>{profileName} (Lead)</span>
+                        <span>Local workspace</span>
                         <span>•</span>
                         <span>{new Date(m.createdAt).toISOString().slice(11, 19)} UTC</span>
                       </div>
@@ -715,8 +708,8 @@ export default function AssistantPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary font-bold font-label-sm text-label-sm shrink-0">
-                      {initials}
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary shrink-0" aria-hidden="true">
+                      <Icon name="workspace" className="text-[18px]" />
                     </div>
                   </div>
                 ) : (
@@ -1048,7 +1041,7 @@ export default function AssistantPage() {
               <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider flex items-center gap-1">
                 <Icon name="query_stats" className="text-[14px]" /> Dataset Snapshot
               </span>
-              <span className="font-label-sm text-label-sm text-on-surface-variant">Live</span>
+              <span className="font-label-sm text-label-sm text-on-surface-variant">Snapshot</span>
             </div>
             <div className="space-y-space-xs font-label-md text-label-md">
               <div className="flex items-center justify-between py-1 border-b border-surface-variant gap-2">

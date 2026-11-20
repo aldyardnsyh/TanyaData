@@ -2,7 +2,6 @@
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useI18n } from '@/lib/ui/i18n-provider';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,10 +13,14 @@ export interface EngineBadgeProps {
   rail?: boolean;
 }
 
+/**
+ * DECISION-011: label UI Inggris. Versi aplikasi diberi label jujur "App",
+ * bukan disajikan sebagai versi mesin. Titik status statis (tanpa ping loop).
+ */
 export function EngineBadge({ online, version, rail = false }: EngineBadgeProps) {
-  const { t } = useI18n();
-  const label = online ? t('shell.engineOnline') : t('shell.engineOffline');
-  const full = version ? `${label} v${version}` : label;
+  const label = online ? 'Engine Online' : 'Engine Offline';
+  const appVersion = version ? `App v${version}` : null;
+  const full = appVersion ? `${label} · ${appVersion}` : label;
 
   return (
     <div
@@ -25,17 +28,14 @@ export function EngineBadge({ online, version, rail = false }: EngineBadgeProps)
       title={full}
     >
       <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
-        {online && (
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-signal-lime opacity-60" />
-        )}
         <span className={cn('relative inline-flex h-2 w-2 rounded-full', online ? 'bg-signal-lime' : 'bg-error')} />
       </span>
       <span className={cn('font-label-sm text-on-surface-variant', rail && 'md:hidden xl:inline')}>
         {label}
       </span>
-      {version && (
+      {appVersion && (
         <span className={cn('font-label-sm font-mono text-on-surface-variant', rail && 'md:hidden xl:inline')}>
-          v{version}
+          {appVersion}
         </span>
       )}
       <span className="sr-only">{full}</span>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatIdr, formatNumber, formatPercent } from '@/lib/ui/format';
+import { formatIdr, formatNumber, formatPercent, formatSnapshotRange } from '@/lib/ui/format';
 import type {
   Kpi,
   MetaResponse,
@@ -216,6 +216,7 @@ export default function OverviewPage() {
   const datasetName =
     summary.data?.dataset.name ?? meta.data?.data.activeDataset.name ?? 'n/a';
   const periodLabel = period?.label ?? meta.data?.data.periodDefaults.label ?? 'n/a';
+  const snapshotRange = formatSnapshotRange(period?.start, period?.end, 'en');
   const compareLabel = period?.compare?.label ?? 'None';
   const grainLabel = GRAINS.find((item) => item.id === filters.grain)?.label ?? 'Daily';
 
@@ -300,9 +301,10 @@ export default function OverviewPage() {
           <div className="flex items-center gap-space-xs mb-1">
             <span className="font-label-sm text-label-sm uppercase tracking-wider text-outline">Executive Console</span>
             <span className="inline-block w-1 h-1 rounded-full bg-outline" aria-hidden="true" />
-            <span className="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">
-              Telemetry Live
+            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
+              Data snapshot
             </span>
+            <span className="font-label-sm text-label-sm text-outline">{snapshotRange}</span>
           </div>
           <div className="flex items-baseline gap-space-sm">
             <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Overview</h1>

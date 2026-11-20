@@ -94,11 +94,12 @@ export default function LandingPage() {
         {/* HERO SECTION */}
         <section className="relative w-full px-space-margin py-space-xl overflow-hidden">
           <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-            {/* Telemetry Signal Pill — klaim versi diganti app.version dari /api/meta. */}
+            {/* Pill jujur: workspace lokal + versi aplikasi dari /api/meta.
+                Tidak ada klaim "live"/"available" untuk data statis. */}
             <div className="animate-[entrance_240ms_var(--ease-out-quart)_both] [animation-delay:0ms] inline-flex items-center gap-space-xs bg-surface-container-high px-space-md py-1 rounded-full mb-space-md shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-secondary-fixed animate-pulse" aria-hidden="true" />
+              <span className="w-2 h-2 rounded-full bg-secondary-fixed" aria-hidden="true" />
               <span className="font-label-sm text-label-sm text-primary uppercase tracking-wider">
-                TanyaData v{version ?? 'n/a'} Available
+                Local workspace · App v{version ?? 'n/a'}
               </span>
             </div>
             {/* Main Headline */}
