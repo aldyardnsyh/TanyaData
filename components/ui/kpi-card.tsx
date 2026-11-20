@@ -145,7 +145,7 @@ export function KpiCard({
       onMouseEnter={() => setReplayToken((token) => token + 1)}
       title={tooltip}
     >
-      <div className="measurement-rule -mx-5 -mt-5 mb-4 px-5 pt-4 pb-3">
+      <div className="-mx-5 -mt-5 mb-4 px-5 pt-4 pb-3">
         <p className="font-body text-label-sm uppercase text-ink-muted-strong">{label}</p>
       </div>
 

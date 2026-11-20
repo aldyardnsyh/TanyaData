@@ -46,7 +46,7 @@ export function ChartCard({
 }: ChartCardProps) {
   return (
     <section className={cn('rounded-card border border-border-hairline bg-surface', className)}>
-      <header className="measurement-rule px-5 pb-3 pt-4">
+      <header className="px-5 pb-3 pt-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h3 className="font-body text-headline-sm text-ink">{title}</h3>

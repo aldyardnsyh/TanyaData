@@ -227,7 +227,7 @@ export default function OverviewPage() {
       {/* Chart + distribusi: split 8/4 (L-05 KEEP). */}
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
         <section className="rounded-card border border-border-hairline bg-surface lg:col-span-8">
-          <header className="measurement-rule px-5 pb-3 pt-4">
+          <header className="px-5 pb-3 pt-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="font-body text-headline-sm text-ink">Transaksi per {GRAINS.find((g) => g.id === filters.grain)?.label.toLowerCase()}, {periodLabel}</h2>
@@ -333,7 +333,7 @@ export default function OverviewPage() {
 
         <div className="flex flex-col gap-6 lg:col-span-4">
           <section className="rounded-card border border-border-hairline bg-surface">
-            <header className="measurement-rule px-5 pb-3 pt-4">
+            <header className="px-5 pb-3 pt-4">
               <h2 className="font-body text-headline-sm text-ink">Distribusi status</h2>
             </header>
             <div className="flex items-center gap-4 p-5">
@@ -360,7 +360,7 @@ export default function OverviewPage() {
           </section>
 
           <section className="rounded-card border border-border-hairline bg-surface">
-            <header className="measurement-rule px-5 pb-3 pt-4">
+            <header className="px-5 pb-3 pt-4">
               <h2 className="font-body text-headline-sm text-ink">Kanal berdasarkan volume</h2>
             </header>
             <div className="space-y-3 p-5">
@@ -393,7 +393,7 @@ export default function OverviewPage() {
 
       {/* Tabel kategori. */}
       <section className="mb-6 overflow-hidden rounded-card border border-border-hairline bg-surface">
-        <header className="measurement-rule px-5 pb-3 pt-4">
+        <header className="px-5 pb-3 pt-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="font-body text-headline-sm text-ink">Kinerja kategori</h2>

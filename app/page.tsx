@@ -149,7 +149,7 @@ export default function LandingPage() {
             {/* Tren dari data nyata. Tooltip tidak menempel saat load. */}
             <div className="lg:col-span-7">
               <div className="rounded-card border border-border-hairline bg-surface">
-                <header className="measurement-rule px-5 pb-3 pt-4">
+                <header className="px-5 pb-3 pt-4">
                   <h3 className="font-body text-headline-sm text-ink">Transaksi per hari, {period?.label ?? '—'}</h3>
                 </header>
                 <div className="p-5">
@@ -184,7 +184,7 @@ export default function LandingPage() {
             {/* Bukti dari API, bukan percakapan rekaan. */}
             <div className="lg:col-span-5">
               <div className="flex h-full flex-col rounded-card border border-border-hairline bg-surface">
-                <header className="measurement-rule px-5 pb-3 pt-4">
+                <header className="px-5 pb-3 pt-4">
                   <h3 className="font-body text-headline-sm text-ink">Temuan dari data</h3>
                 </header>
                 <div className="flex-1 space-y-3 p-5">
