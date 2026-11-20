@@ -151,14 +151,17 @@ export default function SettingsPage() {
                   key={l}
                   type="button"
                   onClick={() => void changeLang(l)}
+                  disabled={l === 'en'}
                   className={`rounded-md px-3 py-1.5 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring ${
                     lang === l ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
-                  }`}
+                  } ${l === 'en' ? 'cursor-not-allowed opacity-45' : ''}`}
                 >
                   {l === 'id' ? 'Indonesia' : 'English'}
                 </button>
               ))}
             </div>
+            {/* C-28 / DECISION-010: bilingual dibekukan; hanya Indonesia pada versi ini. */}
+            <p className="mt-1 font-body text-body-sm text-on-surface-variant">Satu bahasa pada versi ini.</p>
           </div>
           <div className="flex items-center justify-between">
             <div>
