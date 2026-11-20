@@ -226,8 +226,8 @@ export default function OverviewPage() {
 
       {/* Chart + distribusi: split 8/4 (L-05 KEEP). */}
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <section className="rounded-card border border-border-hairline bg-surface lg:col-span-8">
-          <header className="px-5 pb-3 pt-4">
+        <section className="rounded-card border border-border-hairline bg-surface p-5 lg:col-span-8">
+          <header className="pb-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h2 className="font-body text-headline-sm text-ink">Transaksi per {GRAINS.find((g) => g.id === filters.grain)?.label.toLowerCase()}, {periodLabel}</h2>
@@ -236,7 +236,7 @@ export default function OverviewPage() {
               <MonoMeta>SQL · TRENDS</MonoMeta>
             </div>
           </header>
-          <div className="p-5">
+          <div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-3">
                 <button type="button" aria-pressed={!hidden.success} onClick={() => setHidden((c) => ({ ...c, success: !c.success }))} className="inline-flex min-h-11 items-center gap-2 rounded-control px-2 font-body text-body-sm text-ink-muted-strong transition-colors hover:bg-row-hover focus-ring">
@@ -332,11 +332,11 @@ export default function OverviewPage() {
         </section>
 
         <div className="flex flex-col gap-6 lg:col-span-4">
-          <section className="rounded-card border border-border-hairline bg-surface">
-            <header className="px-5 pb-3 pt-4">
+          <section className="rounded-card border border-border-hairline bg-surface p-5">
+            <header className="pb-3">
               <h2 className="font-body text-headline-sm text-ink">Distribusi status</h2>
             </header>
-            <div className="flex items-center gap-4 p-5">
+            <div className="flex items-center gap-4">
               <div className="relative h-32 w-32 shrink-0">
                 <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" role="img" aria-label="Distribusi status transaksi">
                   <circle cx="50" cy="50" r="38" fill="none" stroke="var(--color-border-hairline)" strokeWidth="12" />
@@ -359,11 +359,11 @@ export default function OverviewPage() {
             </div>
           </section>
 
-          <section className="rounded-card border border-border-hairline bg-surface">
-            <header className="px-5 pb-3 pt-4">
+          <section className="rounded-card border border-border-hairline bg-surface p-5">
+            <header className="pb-3">
               <h2 className="font-body text-headline-sm text-ink">Kanal berdasarkan volume</h2>
             </header>
-            <div className="space-y-3 p-5">
+            <div className="space-y-3">
               {channelItems.map((channel) => (
                 <div key={channel.channelId} className="rounded-control border border-border-hairline p-3">
                   <div className="flex items-center justify-between gap-2">

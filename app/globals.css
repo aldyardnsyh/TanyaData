@@ -93,10 +93,17 @@
   --spacing-space-5: 24px;
   --spacing-space-6: 32px;
 
-  /* ---- Radius: 8 / 12 / 16 + dot 50% ---- */
+  /* ---- Radius: skala eksplisit, tiga peran saja (audit presisi §2) ----
+   * 16px = kartu hero KPI / overlay (--radius-overlay, alias --radius-hero)
+   * 12px = kartu regular & kartu chart (--radius-card)
+   *  8px = control, button, input (--radius-control)
+   * 50% = state dot (--radius-dot)
+   * Dilarang nilai radius liar di komponen; pakai token di atas.
+   */
   --radius-control: 8px;
   --radius-card: 12px;
   --radius-overlay: 16px;
+  --radius-hero: var(--radius-overlay);
   --radius-dot: 50%;
 
   /* ---- Elevasi: hanya 2 level ---- */
