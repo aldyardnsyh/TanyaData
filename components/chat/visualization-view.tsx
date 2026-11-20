@@ -26,9 +26,9 @@ export function VisualizationView({ viz }: { viz: Visualization }) {
           const raw = row[viz.dataKey];
           const value = typeof raw === 'number' ? raw : null;
           return (
-            <div key={`${label}-${i}`} className="rounded-md border border-outline-variant bg-surface-container-low p-3">
-              <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">{label}</p>
-              <p className="mt-1 font-display text-metric-md font-bold tabular text-on-surface">
+            <div key={`${label}-${i}`} className="rounded-card border border-border-hairline bg-surface p-3">
+              <p className="font-body text-label-sm uppercase text-ink-muted-strong">{label}</p>
+              <p className="mt-1 font-body text-metric-md tabular text-ink">
                 {fmtValue(value, viz.format)}
               </p>
             </div>
