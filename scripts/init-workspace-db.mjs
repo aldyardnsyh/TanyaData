@@ -11,6 +11,7 @@ const workspaceDir = path.resolve(
 const workspaceDbPath = path.join(workspaceDir, 'tanyadata.db');
 const seedDbPath = path.join(dataDir, 'analytics.db');
 const schemaPath = path.join(root, 'lib', 'db', 'schema.sql');
+const coreSchemaPath = path.join(root, 'lib', 'db', 'core-schema.sql');
 
 if (!fs.existsSync(seedDbPath)) {
   console.error(`FAIL: seed DB tidak ditemukan di ${seedDbPath}`);
@@ -49,6 +50,7 @@ const db = new Database(workspaceDbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 db.exec(fs.readFileSync(schemaPath, 'utf8'));
+db.exec(fs.readFileSync(coreSchemaPath, 'utf8'));
 
 const setMeta = db.prepare(
   'INSERT INTO app_meta(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',

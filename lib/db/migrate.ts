@@ -5,6 +5,7 @@ import { chunkSections } from '@/lib/ingest/chunker';
 import { docSourceId, type DocumentsJson } from '@/lib/ingest/types';
 import { nowJakartaIso } from '@/lib/date';
 import { conflict } from '@/lib/errors';
+import { registerSeedDataset } from '@/lib/core/registry';
 
 export const SCHEMA_VERSION = 1;
 const SETTINGS_KEY = 'app';
@@ -156,6 +157,7 @@ export function ensureWorkspaceReady(): DB {
   upsertMeta(db, 'schema_version', String(SCHEMA_VERSION));
   ensureSettings(db);
   ensureSeedSource(db);
+  registerSeedDataset(db);
   ensureDocuments(db);
   upsertMeta(db, 'ready_at', nowJakartaIso());
 

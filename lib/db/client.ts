@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import {
+  CORE_SCHEMA_SQL,
   SCHEMA_SQL,
   WORKSPACE_DB,
   ensureDirs,
@@ -22,8 +23,8 @@ let attachMode: 'uri' | 'plain' | 'unavailable' = 'unavailable';
 
 function applySchema(db: DB): void {
   if (globalThis.__tanyadataSchemaApplied) return;
-  const sql = fs.readFileSync(SCHEMA_SQL, 'utf8');
-  db.exec(sql);
+  db.exec(fs.readFileSync(SCHEMA_SQL, 'utf8'));
+  db.exec(fs.readFileSync(CORE_SCHEMA_SQL, 'utf8'));
   globalThis.__tanyadataSchemaApplied = true;
 }
 

@@ -15,6 +15,7 @@ export const GENERATED_DIR = path.join(DATA_DIR, 'generated');
 export const DOCUMENTS_JSON = path.join(GENERATED_DIR, 'documents.json');
 export const DOCUMENTS_JSON_LEGACY = path.join(GENERATED_DIR, 'documents.extracted.json');
 export const SCHEMA_SQL = path.join(cwd, 'lib', 'db', 'schema.sql');
+export const CORE_SCHEMA_SQL = path.join(cwd, 'lib', 'db', 'core-schema.sql');
 
 function writable(dir: string): boolean {
   try {
