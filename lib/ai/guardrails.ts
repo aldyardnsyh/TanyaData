@@ -211,7 +211,7 @@ const MESSAGES: Record<CoreGuardrailType, { message: string; explanation: string
     explanation: 'Permintaan mengarah pada data pribadi; tidak ada nilai yang direkayasa.',
   },
   out_of_scope: {
-    message: 'Pertanyaan ini di luar cakupan sumber yang tersedia. Saya hanya menjawab dari dokumen dan data yang diunggah.',
+    message: 'Pertanyaan ini di luar cakupan sumber aktif. Pilih attachment yang relevan dengan topik Anda, atau ajukan pertanyaan yang bisa dijawab dari dokumen dan data yang tersedia.',
     explanation: 'Tidak ada sumber aktif yang relevan dengan topik ini.',
   },
   ambiguous: {
@@ -223,7 +223,7 @@ const MESSAGES: Record<CoreGuardrailType, { message: string; explanation: string
     explanation: 'Tidak ada komponen pipeline yang dapat memenuhi permintaan ini.',
   },
   not_in_sources: {
-    message: 'Informasi tersebut tidak ditemukan pada sumber yang tersedia. Saya tidak akan mengarang jawaban.',
+    message: 'Informasi tersebut tidak ditemukan pada sumber yang tersedia. Saya tidak akan mengarang jawaban; coba kata kunci lain atau pilih attachment yang sesuai dengan topik Anda.',
     explanation: 'Tidak ada bukti relevan yang dapat disitasi.',
   },
 };

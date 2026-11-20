@@ -80,9 +80,17 @@ export function friendlySourceName(dataset: Dataset): string {
 
 export function notInSourcesGuardrail(dataset: Dataset): Guardrail {
   const source = friendlySourceName(dataset);
+  const isTabular = dataset.kind === 'tabular';
+  const kind = isTabular ? 'dataset' : 'dokumen';
+  const focus = isTabular ? 'transaksi' : 'isi dokumen';
+  const alternative = isTabular
+    ? 'Untuk pertanyaan tentang pasal atau isi dokumen, pilih attachment dokumen yang sesuai.'
+    : 'Untuk pertanyaan seputar transaksi, pilih attachment dataset transaksi.';
   return {
     type: 'not_in_sources',
-    answer: `Informasi itu tidak ditemukan pada sumber "${source}". Saya tidak akan mengarang jawaban.`,
+    answer:
+      `Pertanyaan ini tidak bisa dijawab dari ${kind} "${source}". ${alternative} ` +
+      `Pada attachment ini saya bisa menjawab pertanyaan seputar ${focus} yang tersedia.`,
     explanation: 'Tidak ada bukti relevan pada attachment aktif; tidak ada angka atau kutipan yang dipakai.',
   };
 }
