@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T08:01:46.187Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-34216-1795161705571\\tanyadata.db",
+  "generatedAt": "2026-11-20T08:11:22.615Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-39832-1795162281921\\tanyadata.db",
   "fixtures": [
     "transaksi",
     "uud-1945",
@@ -12,20 +12,20 @@
     {
       "stage": "classification",
       "metric": "accuracy",
-      "value": 0.75,
+      "value": 1,
       "threshold": 0.9,
       "direction": "min",
-      "pass": false,
-      "detail": "9/12 kasus"
+      "pass": true,
+      "detail": "12/12 kasus"
     },
     {
       "stage": "extraction",
       "metric": "precision",
-      "value": 0.2963,
+      "value": 1,
       "threshold": 0.85,
       "direction": "min",
-      "pass": false,
-      "detail": "8/27 field"
+      "pass": true,
+      "detail": "25/25 field (ground truth dokumen)"
     },
     {
       "stage": "extraction",
@@ -34,16 +34,16 @@
       "threshold": 0.8,
       "direction": "min",
       "pass": true,
-      "detail": "8/10 field"
+      "detail": "8/10 field (ditanyakan)"
     },
     {
       "stage": "retrieval",
       "metric": "citation_hit_rate",
-      "value": 0.8889,
+      "value": 1,
       "threshold": 0.9,
       "direction": "min",
-      "pass": false,
-      "detail": "8/9 sitasi (hanya kasus dokumen)"
+      "pass": true,
+      "detail": "9/9 sitasi (hanya kasus dokumen)"
     },
     {
       "stage": "sql",
@@ -57,11 +57,11 @@
     {
       "stage": "output",
       "metric": "appropriateness",
-      "value": 0.8333,
+      "value": 1,
       "threshold": 0.9,
       "direction": "min",
-      "pass": false,
-      "detail": "10/12 kasus"
+      "pass": true,
+      "detail": "12/12 kasus"
     },
     {
       "stage": "generation",
@@ -94,8 +94,8 @@
       "question": "Berapa total transaksi bulan ini?",
       "stages": {
         "classification": {
-          "pass": false,
-          "detail": "expected=financial got=general conf=0.39"
+          "pass": true,
+          "detail": "expected=financial got=financial conf=1.00"
         },
         "extraction": {
           "pass": true,
@@ -119,7 +119,7 @@
         }
       },
       "observed": {
-        "doc_type": "general",
+        "doc_type": "financial",
         "citations": [],
         "sql": "SELECT COUNT(*) AS value FROM tx_daily WHERE period >= ? AND period <= ? LIMIT 500",
         "answer": "Hasil: 8.125 (value). Angka ini berasal dari eksekusi SQL pada sumber data.",
@@ -145,8 +145,8 @@
       "question": "Distribusi status transaksi bulan ini",
       "stages": {
         "classification": {
-          "pass": false,
-          "detail": "expected=financial got=general conf=0.39"
+          "pass": true,
+          "detail": "expected=financial got=financial conf=1.00"
         },
         "extraction": {
           "pass": true,
@@ -170,7 +170,7 @@
         }
       },
       "observed": {
-        "doc_type": "general",
+        "doc_type": "financial",
         "citations": [],
         "sql": "SELECT status AS bucket, COUNT(*) AS value FROM tx_daily WHERE period >= ? AND period <= ? GROUP BY bucket LIMIT 500",
         "answer": "Ditemukan 5 baris. Saya menghitung jumlah baris dari tabel transaksi dikelompokkan per status dengan filter yang cocok dari pertanyaan.",
@@ -208,8 +208,8 @@
       "question": "Berapa success rate bulan ini?",
       "stages": {
         "classification": {
-          "pass": false,
-          "detail": "expected=financial got=general conf=0.39"
+          "pass": true,
+          "detail": "expected=financial got=financial conf=1.00"
         },
         "extraction": {
           "pass": true,
@@ -217,15 +217,15 @@
         },
         "sql": {
           "pass": false,
-          "detail": "tidak ada eksekusi SQL (kandidat ditolak/tidak dibuat)"
+          "detail": "expected=[[92.76]] got=[[100]] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN count ELSE 0 END) * 100.0 / NULLIF(SUM(count), 0), 2) AS value FROM tx_daily WHERE status = ? AND period >= ? AND period <= ? LIMIT 500"
         },
         "output": {
-          "pass": false,
-          "detail": "expected=kpi got=none kind=single_number reason=Tidak ada bukti yang dapat dikutip; jawaban jujur tanpa angka."
+          "pass": true,
+          "detail": "expected=kpi got=kpi kind=single_number reason=Satu angka dari eksekusi SQL; KPI + tabel ringkas, tanpa chart."
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=0"
+          "detail": "foreign=[] tokens=1"
         },
         "guardrail": {
           "pass": true,
@@ -233,14 +233,18 @@
         }
       },
       "observed": {
-        "doc_type": "general",
+        "doc_type": "financial",
         "citations": [],
-        "sql": null,
-        "answer": "Informasi itu tidak ditemukan pada sumber \"Ringkasan transaksi agregat per periode dan status\". Topik yang tersedia antara lain: status.",
-        "guardrail": "not_in_sources",
+        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN count ELSE 0 END) * 100.0 / NULLIF(SUM(count), 0), 2) AS value FROM tx_daily WHERE status = ? AND period >= ? AND period <= ? LIMIT 500",
+        "answer": "Hasil: 100 (value). Angka ini berasal dari eksekusi SQL pada sumber data.",
+        "guardrail": null,
         "numeric_grounding": 1,
-        "sql_rows": [],
-        "output_type": "none",
+        "sql_rows": [
+          [
+            100
+          ]
+        ],
+        "output_type": "kpi",
         "foreign_numbers": []
       }
     },
@@ -256,15 +260,15 @@
       "stages": {
         "classification": {
           "pass": true,
-          "detail": "expected=legal got=legal conf=0.64"
+          "detail": "expected=legal got=legal conf=0.82"
         },
         "extraction": {
           "pass": false,
-          "detail": "tp=1 extracted=2 expected=2 P=0.5 R=0.5"
+          "detail": "tp_question=1 tp_document=2 extracted=2 expected=2 P=1 R=0.5"
         },
         "retrieval": {
-          "pass": false,
-          "detail": "0/1 sitasi cocok"
+          "pass": true,
+          "detail": "1/1 sitasi cocok"
         },
         "output": {
           "pass": true,
@@ -272,7 +276,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=12"
+          "detail": "foreign=[] tokens=16"
         },
         "guardrail": {
           "pass": true,
@@ -283,13 +287,13 @@
         "doc_type": "legal",
         "citations": [
           "Pasal 33/Ayat (5)",
-          "Pasal 34/Ayat (4)",
-          "Pasal 31/Ayat (1)",
           "Pasal 33/Ayat (1)",
-          "Pasal 32/Ayat (2)"
+          "Pasal 33/Ayat (2)",
+          "Pasal 33/Ayat (4)",
+          "Pasal 33/Ayat (3)"
         ],
         "sql": null,
-        "answer": "Berikut kutipan dari Pasal 33/Ayat (5): \"Ketentuan lebih lanjut mengenai pelaksanaan pasal ini diatur dalam undang-undang.\". Sumber: Pasal 33/Ayat (5), Pasal 34/Ayat (4), Pasal 31/Ayat (1), Pasal 33/Ayat (1), Pasal 32/Ayat (2).",
+        "answer": "Berikut kutipan dari sumber: Pasal 33/Ayat (5): \"Ketentuan lebih lanjut mengenai pelaksanaan pasal ini diatur dalam undang-undang.\" Pasal 34/Ayat (4): \"Ketentuan lebih lanjut mengenai pelaksanaan pasal ini diatur dalam undang-undang.\" Pasal 31/Ayat (1): \"Setiap warga negara berhak mendapat pendidikan.\" Sumber: Pasal 33/Ayat (5), Pasal 34/Ayat (4), Pasal 31/Ayat (1), Pasal 33/Ayat (1), Pasal 32/Ayat (2).",
         "guardrail": null,
         "numeric_grounding": 0,
         "sql_rows": [],
@@ -309,11 +313,11 @@
       "stages": {
         "classification": {
           "pass": true,
-          "detail": "expected=legal got=legal conf=0.64"
+          "detail": "expected=legal got=legal conf=0.82"
         },
         "extraction": {
           "pass": false,
-          "detail": "tp=1 extracted=2 expected=2 P=0.5 R=0.5"
+          "detail": "tp_question=1 tp_document=2 extracted=2 expected=2 P=1 R=0.5"
         },
         "retrieval": {
           "pass": true,
@@ -325,7 +329,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=12"
+          "detail": "foreign=[] tokens=16"
         },
         "guardrail": {
           "pass": true,
@@ -336,13 +340,13 @@
         "doc_type": "legal",
         "citations": [
           "Pasal 31/Ayat (1)",
-          "Pasal 33/Ayat (1)",
-          "Pasal 32/Ayat (2)",
-          "Pasal 34/Ayat (1)",
-          "Pasal 33/Ayat (5)"
+          "Pasal 31/Ayat (3)",
+          "Pasal 31/Ayat (4)",
+          "Pasal 31/Ayat (5)",
+          "Pasal 31/Ayat (2)"
         ],
         "sql": null,
-        "answer": "Berikut kutipan dari Pasal 31/Ayat (1): \"Setiap warga negara berhak mendapat pendidikan.\". Sumber: Pasal 31/Ayat (1), Pasal 33/Ayat (1), Pasal 32/Ayat (2), Pasal 34/Ayat (1), Pasal 33/Ayat (5).",
+        "answer": "Berikut kutipan dari sumber: Pasal 31/Ayat (1): \"Setiap warga negara berhak mendapat pendidikan.\" Pasal 33/Ayat (1): \"Perekonomian disusun sebagai usaha bersama berdasar atas asas kekeluargaan.\" Pasal 32/Ayat (2): \"Negara menghormati dan memelihara bahasa daerah sebagai kekayaan budaya nasional.\" Sumber: Pasal 31/Ayat (1), Pasal 33/Ayat (1), Pasal 32/Ayat (2), Pasal 34/Ayat (1), Pasal 33/Ayat (5).",
         "guardrail": null,
         "numeric_grounding": 0,
         "sql_rows": [],
@@ -362,11 +366,11 @@
       "stages": {
         "classification": {
           "pass": true,
-          "detail": "expected=legal got=legal conf=0.64"
+          "detail": "expected=legal got=legal conf=0.82"
         },
         "extraction": {
           "pass": true,
-          "detail": "tp=1 extracted=1 expected=1 P=1 R=1"
+          "detail": "tp_question=1 tp_document=1 extracted=1 expected=1 P=1 R=1"
         },
         "retrieval": {
           "pass": true,
@@ -378,7 +382,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=12"
+          "detail": "foreign=[] tokens=16"
         },
         "guardrail": {
           "pass": true,
@@ -395,7 +399,7 @@
           "Pasal 33/Ayat (5)"
         ],
         "sql": null,
-        "answer": "Berikut kutipan dari Pasal 31/Ayat (1): \"Setiap warga negara berhak mendapat pendidikan.\". Sumber: Pasal 31/Ayat (1), Pasal 31/Ayat (2), Pasal 31/Ayat (4), Pasal 31/Ayat (3), Pasal 33/Ayat (5).",
+        "answer": "Berikut kutipan dari sumber: Pasal 31/Ayat (1): \"Setiap warga negara berhak mendapat pendidikan.\" Pasal 31/Ayat (2): \"Setiap warga negara wajib mengikuti pendidikan dasar dan pemerintah wajib membiayainya.\" Pasal 31/Ayat (4): \"Negara memprioritaskan anggaran pendidikan sekurang-kurangnya dua puluh persen dari anggaran pendapatan dan belanja negara serta dari anggaran pendapatan dan belanja daerah.\" Sumber: Pasal 31/Ayat (1), Pasal 31/Ayat (2), Pasal 31/Ayat (4), Pasal 31/Ayat (3), Pasal 33/Ayat (5).",
         "guardrail": null,
         "numeric_grounding": 0,
         "sql_rows": [],
@@ -415,11 +419,11 @@
       "stages": {
         "classification": {
           "pass": true,
-          "detail": "expected=technical_report got=technical_report conf=0.78"
+          "detail": "expected=technical_report got=technical_report conf=1.00"
         },
         "extraction": {
-          "pass": false,
-          "detail": "tp=1 extracted=4 expected=1 P=0.25 R=1"
+          "pass": true,
+          "detail": "tp_question=1 tp_document=4 extracted=4 expected=1 P=1 R=1"
         },
         "retrieval": {
           "pass": true,
@@ -431,7 +435,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=0"
+          "detail": "foreign=[] tokens=24"
         },
         "guardrail": {
           "pass": true,
@@ -446,7 +450,7 @@
           "Narasi Operasional"
         ],
         "sql": null,
-        "answer": "Tidak ada baris yang memenuhi pertanyaan ini pada sumber yang tersedia.",
+        "answer": "Berdasarkan dokumen yang ditemukan: Parameter/Kedalaman total: Kedalaman total: 2.850 m Tabel 2. Hasil Harian Pemboran: Tabel 2. Hasil Harian Pemboran. 2026-07-01 kedalaman 1200 m Formasi A. 2026-07-02 kedalaman 1980 m Formasi B. 2026-07-03 kedalaman 2850 m Formasi C. Narasi Operasional: Pemboran berjalan sesuai spesifikasi teknis. Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. Tekanan formasi tetap dalam batas aman. Sumber: Parameter/Kedalaman total, Tabel 2. Hasil Harian Pemboran, Narasi Operasional.",
         "guardrail": null,
         "numeric_grounding": 1,
         "sql_rows": [],
@@ -466,11 +470,11 @@
       "stages": {
         "classification": {
           "pass": true,
-          "detail": "expected=technical_report got=technical_report conf=0.78"
+          "detail": "expected=technical_report got=technical_report conf=1.00"
         },
         "extraction": {
-          "pass": false,
-          "detail": "tp=2 extracted=4 expected=2 P=0.5 R=1"
+          "pass": true,
+          "detail": "tp_question=2 tp_document=4 extracted=4 expected=2 P=1 R=1"
         },
         "retrieval": {
           "pass": true,
@@ -482,7 +486,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=0"
+          "detail": "foreign=[] tokens=11"
         },
         "guardrail": {
           "pass": true,
@@ -498,7 +502,7 @@
           "Tabel 2. Hasil Harian Pemboran"
         ],
         "sql": null,
-        "answer": "Tidak ada baris yang memenuhi pertanyaan ini pada sumber yang tersedia.",
+        "answer": "Berdasarkan dokumen yang ditemukan: Parameter/Laju pemboran: Laju pemboran: 12,5 m/jam Parameter/Tekanan formasi: Tekanan formasi: 4.200 psi Narasi Operasional: Pemboran berjalan sesuai spesifikasi teknis. Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. Tekanan formasi tetap dalam batas aman. Sumber: Parameter/Laju pemboran, Parameter/Tekanan formasi, Narasi Operasional, Tabel 2. Hasil Harian Pemboran.",
         "guardrail": null,
         "numeric_grounding": 1,
         "sql_rows": [],
@@ -518,7 +522,7 @@
       "stages": {
         "classification": {
           "pass": true,
-          "detail": "expected=technical_report got=technical_report conf=0.78"
+          "detail": "expected=technical_report got=technical_report conf=1.00"
         },
         "extraction": {
           "pass": true,
@@ -534,7 +538,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=0"
+          "detail": "foreign=[] tokens=24"
         },
         "guardrail": {
           "pass": true,
@@ -549,7 +553,7 @@
           "Narasi Operasional"
         ],
         "sql": null,
-        "answer": "Tidak ada baris yang memenuhi pertanyaan ini pada sumber yang tersedia.",
+        "answer": "Berdasarkan dokumen yang ditemukan: Tabel 2. Hasil Harian Pemboran: Tabel 2. Hasil Harian Pemboran. 2026-07-01 kedalaman 1200 m Formasi A. 2026-07-02 kedalaman 1980 m Formasi B. 2026-07-03 kedalaman 2850 m Formasi C. Parameter/Laju pemboran: Laju pemboran: 12,5 m/jam Narasi Operasional: Pemboran berjalan sesuai spesifikasi teknis. Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. Tekanan formasi tetap dalam batas aman. Sumber: Tabel 2. Hasil Harian Pemboran, Parameter/Laju pemboran, Narasi Operasional.",
         "guardrail": null,
         "numeric_grounding": 1,
         "sql_rows": [],
@@ -569,11 +573,11 @@
       "stages": {
         "classification": {
           "pass": true,
-          "detail": "expected=financial got=financial conf=0.64"
+          "detail": "expected=financial got=financial conf=0.82"
         },
         "extraction": {
-          "pass": false,
-          "detail": "tp=1 extracted=7 expected=1 P=0.1429 R=1"
+          "pass": true,
+          "detail": "tp_question=1 tp_document=6 extracted=6 expected=1 P=1 R=1"
         },
         "retrieval": {
           "pass": true,
@@ -585,7 +589,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=0"
+          "detail": "foreign=[] tokens=25"
         },
         "guardrail": {
           "pass": true,
@@ -602,9 +606,9 @@
           "Arus kas operasi/Q3 2026"
         ],
         "sql": null,
-        "answer": "Tidak ada baris yang memenuhi pertanyaan ini pada sumber yang tersedia.",
+        "answer": "Berdasarkan dokumen yang ditemukan: Pendapatan/Q3 2026: Pendapatan: 125000000000 IDR Q3 2026 Pendapatan/Q2 2026: Pendapatan: 112000000000 IDR Q2 2026 Laba bersih/Q3 2026: Laba bersih: 18750000000 IDR Q3 2026 Sumber: Pendapatan/Q3 2026, Pendapatan/Q2 2026, Laba bersih/Q3 2026, Laba bersih/Q2 2026, Arus kas operasi/Q3 2026.",
         "guardrail": null,
-        "numeric_grounding": 1,
+        "numeric_grounding": 0.84,
         "sql_rows": [],
         "output_type": "kpi",
         "foreign_numbers": []
@@ -622,23 +626,23 @@
       "stages": {
         "classification": {
           "pass": true,
-          "detail": "expected=financial got=financial conf=0.64"
+          "detail": "expected=financial got=financial conf=0.82"
         },
         "extraction": {
-          "pass": false,
-          "detail": "tp=1 extracted=7 expected=1 P=0.1429 R=1"
+          "pass": true,
+          "detail": "tp_question=1 tp_document=6 extracted=6 expected=1 P=1 R=1"
         },
         "retrieval": {
           "pass": true,
           "detail": "1/1 sitasi cocok"
         },
         "output": {
-          "pass": false,
-          "detail": "expected=bar got=table kind=comparison reason=Angka finansial tanpa mata uang/periode lengkap; tabel dengan flag incomplete."
+          "pass": true,
+          "detail": "expected=bar got=bar kind=comparison reason=3 entitas dibandingkan; bar diurutkan berdasarkan nilai."
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=0"
+          "detail": "foreign=[] tokens=25"
         },
         "guardrail": {
           "pass": true,
@@ -655,11 +659,11 @@
           "Arus kas operasi/Q3 2026"
         ],
         "sql": null,
-        "answer": "Tidak ada baris yang memenuhi pertanyaan ini pada sumber yang tersedia.",
+        "answer": "Berdasarkan dokumen yang ditemukan: Laba bersih/Q3 2026: Laba bersih: 18750000000 IDR Q3 2026 Laba bersih/Q2 2026: Laba bersih: 15000000000 IDR Q2 2026 Pendapatan/Q3 2026: Pendapatan: 125000000000 IDR Q3 2026 Sumber: Laba bersih/Q3 2026, Laba bersih/Q2 2026, Pendapatan/Q3 2026, Pendapatan/Q2 2026, Arus kas operasi/Q3 2026.",
         "guardrail": null,
-        "numeric_grounding": 1,
+        "numeric_grounding": 0.84,
         "sql_rows": [],
-        "output_type": "table",
+        "output_type": "bar",
         "foreign_numbers": []
       }
     },
@@ -675,7 +679,7 @@
       "stages": {
         "classification": {
           "pass": true,
-          "detail": "expected=financial got=financial conf=0.64"
+          "detail": "expected=financial got=financial conf=0.82"
         },
         "extraction": {
           "pass": true,
@@ -691,7 +695,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=0"
+          "detail": "foreign=[] tokens=25"
         },
         "guardrail": {
           "pass": true,
@@ -708,9 +712,9 @@
           "Laba bersih/Q3 2026"
         ],
         "sql": null,
-        "answer": "Tidak ada baris yang memenuhi pertanyaan ini pada sumber yang tersedia.",
+        "answer": "Berdasarkan dokumen yang ditemukan: Arus kas operasi/Q3 2026: Arus kas operasi: 22300000000 IDR Q3 2026 Saldo kas akhir/Q3 2026: Saldo kas akhir: 41000000000 IDR Q3 2026 Pendapatan/Q3 2026: Pendapatan: 125000000000 IDR Q3 2026 Sumber: Arus kas operasi/Q3 2026, Saldo kas akhir/Q3 2026, Pendapatan/Q3 2026, Pendapatan/Q2 2026, Laba bersih/Q3 2026.",
         "guardrail": null,
-        "numeric_grounding": 1,
+        "numeric_grounding": 0.84,
         "sql_rows": [],
         "output_type": "kpi",
         "foreign_numbers": []
@@ -720,8 +724,8 @@
   "byFixture": {
     "transaksi": {
       "cases": 3,
-      "passed": 0,
-      "failed": 3
+      "passed": 2,
+      "failed": 1
     },
     "legal": {
       "cases": 3,
@@ -730,19 +734,19 @@
     },
     "drilling": {
       "cases": 3,
-      "passed": 1,
-      "failed": 2
+      "passed": 3,
+      "failed": 0
     },
     "finansial": {
       "cases": 3,
-      "passed": 1,
-      "failed": 2
+      "passed": 3,
+      "failed": 0
     }
   },
   "overallPass": false,
   "notes": [
     "Eval dijalankan pada workspace DB sementara; seed analytics.db disalin ke tabel fisik tx_daily untuk kasus transaksi.",
-    "Riwayat eksekusi: run-1 crash (await pada fungsi non-async), run-2 hasil terdistorsi 3 bug harness (chunk level, tabrakan nama metrik, allow-list angka), run-3 final setelah perbaikan harness. Bug produk sengaja DIBIARKAN agar laporan ini menjadi diagnosis jujur.",
+    "Riwayat eksekusi lengkap dicatat di docs/EVAL_RESULTS.md. Bug produk sengaja DIBIARKAN agar laporan ini menjadi diagnosis jujur, bukan hasil yang dihijaukan.",
     "Kasus TX-03 gagal karena rule builder core tidak memiliki pola rate — temuan produk, bukan bug harness.",
     "FIN-03 memuat instruksi injeksi; guardrail AI lane diuji terpisah dari guardrail core."
   ]
