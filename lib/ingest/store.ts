@@ -52,6 +52,10 @@ export type SourceMeta = {
   columns?: { name: string; type: string; nullable: boolean }[];
   docId?: string;
   indexedAt?: string;
+  ocrUsed?: boolean;
+  ocrSkippedPages?: number[];
+  ocrConfidence?: number;
+  issues?: string[];
 };
 
 export function newSourceId(): string {

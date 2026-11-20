@@ -1,7 +1,8 @@
 import mammoth from 'mammoth';
 import { getDocumentProxy } from 'unpdf';
 import { unprocessable } from '@/lib/errors';
-import type { ExtractedPage, ExtractedSection } from '@/lib/ingest/types';
+import type { ExtractedPage, ExtractedSection, OcrMark } from '@/lib/ingest/types';
+import { LOW_TEXT_THRESHOLD, UNREADABLE_PAGE_TEXT, ocrPage, type OcrOutcome } from '@/lib/ingest/ocr';
 
 const PAGE_ARTIFACT = /dokumen dummy untuk technical test ai engineer halaman \d+/i;
 const NUMBERED_HEADING = /^(\d{1,2})[.)]\s+([A-Z0-9][^.]{1,79})$/;
@@ -36,12 +37,28 @@ export async function extractPages(format: string, buffer: Buffer): Promise<Extr
         text += item.str;
         if (item.hasEOL) text += '\n';
       }
-      pages.push({ page: i, text });
+      // Text layer dipakai lebih dulu. OCR hanya untuk halaman kosong/rendah,
+      // satu halaman per proses, berurutan (konkuren = 1), timeout 15s di ocrPage.
+      if (text.trim().length < LOW_TEXT_THRESHOLD) {
+        const outcome: OcrOutcome = await ocrPage(i);
+        if (outcome.skipped) {
+          pages.push({
+            page: i,
+            text: UNREADABLE_PAGE_TEXT,
+            ocr: { used: outcome.used, skipped: true, confidence: 0, reason: outcome.reason },
+          });
+        } else {
+          pages.push({
+            page: i,
+            text: outcome.text,
+            ocr: { used: true, skipped: false, confidence: outcome.confidence },
+          });
+        }
+      } else {
+        pages.push({ page: i, text });
+      }
     }
-    const chars = pages.reduce((sum, p) => sum + p.text.trim().length, 0);
-    if (chars < 40) {
-      throw unprocessable('PDF tidak memiliki text layer yang dapat diekstrak', { reason: 'NO_TEXT_LAYER' });
-    }
+    // Halaman gagal OCR tidak menggagalkan dokumen: ditandai jujur di bawah.
     return pages;
   }
 
@@ -61,7 +78,7 @@ export async function extractPages(format: string, buffer: Buffer): Promise<Extr
   throw unprocessable(`Format dokumen .${format} tidak didukung`);
 }
 
-type Draft = { no: number | null; title: string; page: number | null; lines: string[] };
+type Draft = { no: number | null; title: string; page: number | null; lines: string[]; ocr?: OcrMark };
 
 function lineSections(pages: ExtractedPage[], fallbackTitle: string, markdown: boolean): ExtractedSection[] {
   const drafts: Draft[] = [];
@@ -80,12 +97,13 @@ function lineSections(pages: ExtractedPage[], fallbackTitle: string, markdown: b
           title,
           page: page.page,
           lines: [],
+          ocr: page.ocr,
         };
         drafts.push(current);
         continue;
       }
       if (!current) {
-        current = { no: null, title: fallbackTitle, page: page.page, lines: [] };
+        current = { no: null, title: fallbackTitle, page: page.page, lines: [], ocr: page.ocr };
         drafts.push(current);
       }
       current.lines.push(line);
@@ -93,7 +111,7 @@ function lineSections(pages: ExtractedPage[], fallbackTitle: string, markdown: b
   }
 
   return drafts
-    .map((d) => ({ no: d.no, title: d.title, page: d.page, text: d.lines.join('\n').trim() }))
+    .map((d) => ({ no: d.no, title: d.title, page: d.page, text: d.lines.join('\n').trim(), ocr: d.ocr }))
     .filter((s) => s.text.length > 0 || s.no !== null);
 }
 
@@ -101,7 +119,13 @@ function pageSections(pages: ExtractedPage[]): ExtractedSection[] {
   return pages
     .map((page) => {
       const lines = page.text.split(/\r?\n/).map(cleanLine).filter(Boolean);
-      return { no: page.page, title: `Halaman ${page.page}`, page: page.page, text: lines.join('\n').trim() };
+      return {
+        no: page.page,
+        title: `Halaman ${page.page}`,
+        page: page.page,
+        text: lines.join('\n').trim(),
+        ocr: page.ocr,
+      };
     })
     .filter((s) => s.text.length > 0);
 }
@@ -120,5 +144,7 @@ export function sectionsFromPages(pages: ExtractedPage[], format: string, docTit
   const byPage = pageSections(pages);
   if (byPage.length) return byPage;
   const whole = pages.map((p) => p.text).join('\n').trim();
-  return whole ? [{ no: null, title: docTitle, page: pages[0]?.page ?? 1, text: whole }] : [];
+  return whole
+    ? [{ no: null, title: docTitle, page: pages[0]?.page ?? 1, text: whole, ocr: pages[0]?.ocr }]
+    : [];
 }

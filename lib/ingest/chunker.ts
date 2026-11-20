@@ -96,6 +96,8 @@ export function chunkSections(
       chunkIndex: index,
       content: text,
       charCount: text.length,
+      ocrSkipped: section.ocr?.skipped === true,
+      confidence: section.ocr?.confidence ?? 1,
     });
     index += 1;
   };

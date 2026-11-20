@@ -1,10 +1,19 @@
-export type ExtractedPage = { page: number; text: string };
+/** Penanda jujur untuk halaman yang tidak bisa dibaca text-layer/OCR. */
+export type OcrMark = {
+  used: boolean;
+  skipped: boolean;
+  confidence: number;
+  reason?: string;
+};
+
+export type ExtractedPage = { page: number; text: string; ocr?: OcrMark };
 
 export type ExtractedSection = {
   no: number | null;
   title: string;
   page: number | null;
   text: string;
+  ocr?: OcrMark;
 };
 
 export type ExtractedDocumentJson = {
@@ -30,6 +39,9 @@ export type DocumentChunk = {
   chunkIndex: number;
   content: string;
   charCount: number;
+  /** true bila halaman asal gagal dibaca → confidence rendah, jujur di UI. */
+  ocrSkipped?: boolean;
+  confidence?: number;
 };
 
 export function docSourceId(docId: string): string {
