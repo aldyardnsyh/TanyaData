@@ -120,6 +120,7 @@ export default function LandingPage() {
                 value={total?.value ?? null}
                 format="number"
                 delta={delta(total)}
+                goodDirection="up"
                 note={period?.label}
                 meta={dataset ? `SQL · ${formatNumber(dataset.rowCount)} ROWS` : undefined}
                 loading={loading}
@@ -127,10 +128,10 @@ export default function LandingPage() {
               />
             </div>
             <div className="lg:col-span-2">
-              <KpiCard label="Tingkat keberhasilan" value={successRate?.value ?? null} format="percent" delta={delta(successRate)} loading={loading} />
+              <KpiCard label="Tingkat keberhasilan" value={successRate?.value ?? null} format="percent" delta={delta(successRate)} goodDirection="up" loading={loading} />
             </div>
             <div className="lg:col-span-2">
-              <KpiCard label="Transaksi Gagal" value={failed?.value ?? null} format="number" delta={delta(failed)} loading={loading} />
+              <KpiCard label="Transaksi Gagal" value={failed?.value ?? null} format="number" delta={delta(failed)} goodDirection="down" loading={loading} />
             </div>
             <div className="lg:col-span-2">
               <div className="flex min-h-40 flex-col rounded-card border border-border-hairline bg-surface p-5">

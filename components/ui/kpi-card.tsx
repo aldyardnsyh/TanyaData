@@ -21,6 +21,8 @@ export interface KpiCardProps {
   value: number | null;
   format?: KpiFormat;
   delta?: { pct: number | null; direction: 'up' | 'down' | 'flat' | null; compareValue: number | null } | null;
+  /** Arah perubahan yang dianggap baik. Volume/success = 'up', failure = 'down'. */
+  goodDirection?: 'up' | 'down';
   note?: string;
   tooltip?: string;
   loading?: boolean;
@@ -64,6 +66,7 @@ export function KpiCard({
   value,
   format = 'number',
   delta,
+  goodDirection = 'up',
   note,
   tooltip,
   loading,
@@ -97,23 +100,28 @@ export function KpiCard({
     );
   }
 
-  const direction = delta?.direction ?? null;
+  const pct = delta?.pct ?? null;
+  // Audit P0: perubahan di bawah 1% dibaca netral, bukan sinyal naik/turun.
+  const neutral = pct !== null && Math.abs(pct) < 1;
+  const direction = neutral ? 'flat' : (delta?.direction ?? null);
+  // Warna mengikuti arah "baik" per metrik, bukan arah mentah (audit P0).
+  const isGood = direction === 'up' ? goodDirection === 'up' : direction === 'down' ? goodDirection === 'down' : null;
   const word = direction === 'up' ? 'naik' : direction === 'down' ? 'turun' : 'stabil';
-  const deltaChip = delta && delta.pct !== null && direction ? (
+  const deltaChip = delta && pct !== null && direction ? (
     <span
       className={cn(
         'inline-flex min-h-11 items-center gap-1 rounded-control px-2 font-body text-body-sm',
-        direction === 'up' && 'text-error-text',
-        direction === 'down' && 'text-primary',
-        direction === 'flat' && 'text-ink-muted-strong',
+        isGood === true && 'text-primary',
+        isGood === false && 'text-error-text',
+        isGood === null && 'text-ink-muted-strong',
       )}
     >
       <span
         className={cn(
           'state-dot',
-          direction === 'up' && 'state-dot-error',
-          direction === 'down' && 'state-dot-active',
-          direction === 'flat' && 'state-dot-empty',
+          isGood === true && 'state-dot-active',
+          isGood === false && 'state-dot-error',
+          isGood === null && 'state-dot-empty',
         )}
         aria-hidden="true"
       />
