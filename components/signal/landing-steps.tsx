@@ -49,7 +49,7 @@ const ANSWER_ROWS: [string, string][] = [
 ];
 
 /** Durasi per fase (ms): fase menyusun jawaban paling panjang agar baris terbaca. */
-const PHASE_MS = [2000, 2200, 3200, 2600];
+const PHASE_MS = [1400, 1600, 2400, 1800];
 
 export function LandingSteps() {
   const [phase, setPhase] = useState(3);
@@ -236,7 +236,7 @@ export function LandingSteps() {
               header berubah menjadi selesai, lalu chip bagikan muncul dengan pop. */}
           <div
             className={`w-full max-w-72 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
-              phase >= 2 ? 'translate-y-0 opacity-100 shadow-float' : 'translate-y-1 opacity-30'
+              phase >= 2 ? 'translate-y-0 opacity-100 shadow-float' : 'pointer-events-none translate-y-2 opacity-0'
             }`}
           >
             <p className="mono-meta">
@@ -250,7 +250,7 @@ export function LandingSteps() {
                     phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
                   }`}
                   style={{
-                    transitionDelay: phase >= 2 ? `${index * 140}ms` : '0ms',
+                    transitionDelay: phase >= 2 ? `${index * 120}ms` : '0ms',
                   }}
                 >
                   <span className="whitespace-nowrap text-ink-72">{kanal}</span>
@@ -262,7 +262,7 @@ export function LandingSteps() {
               className={`mono-meta mt-s2 inline-flex items-center gap-s1 transition-all duration-[var(--motion-expand)] ${
                 phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
               }`}
-              style={{ transitionDelay: phase >= 2 ? '560ms' : '0ms' }}
+              style={{ transitionDelay: phase >= 2 ? '480ms' : '0ms' }}
             >
               <span className="state-dot state-dot-active" aria-hidden="true" />
               SITASI · FAQ CUSTOMER SUPPORT
