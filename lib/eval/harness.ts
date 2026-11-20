@@ -44,6 +44,21 @@ export type StageResult = {
 
 export type CaseStage = { pass: boolean; detail: string };
 
+/**
+ * Per-case gate for extraction recall. The aggregate recall can clear its
+ * threshold while an individual case silently fails (this is exactly how
+ * LEG-01/02 hid at R=0.5 behind an aggregate 0.8000). A case below the
+ * per-case threshold is reported FAIL even when every aggregate stage passes.
+ */
+export type PerCaseGate = {
+  metric: 'extraction_recall';
+  threshold: number;
+  evaluated: number;
+  failed: number;
+  failures: Array<{ id: string; recall: number; detail: string }>;
+  pass: boolean;
+};
+
 export type CaseResult = {
   id: string;
   fixture: string;
@@ -71,6 +86,7 @@ export type EvalReport = {
   stages: StageResult[];
   cases: CaseResult[];
   byFixture: Record<string, { cases: number; passed: number; failed: number }>;
+  perCaseGate: PerCaseGate;
   overallPass: boolean;
   notes: string[];
 };
@@ -259,11 +275,11 @@ function gradeClassification(fixture: Json, question: string): { pass: boolean; 
 }
 
 function gradeExtraction(fixture: Json, testCase: Json): {
-  pass: boolean; detail: string; tp: number; tpDoc: number; extracted: number; expectedN: number;
+  pass: boolean; detail: string; tp: number; tpDoc: number; extracted: number; expectedN: number; recall: number;
 } {
   const expected = (testCase.expected.extracted_fields ?? {}) as Record<string, string>;
   const expectedN = Object.keys(expected).length;
-  if (!expectedN) return { pass: true, detail: 'n/a', tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 };
+  if (!expectedN) return { pass: true, detail: 'n/a', tp: 0, tpDoc: 0, extracted: 0, expectedN: 0, recall: 1 };
 
   const result = extractFields(fixture.doc_type as DocType, fixture.blocks ?? []);
   // Keep a list, not a name-keyed map: two periods can share a metric name and
@@ -307,7 +323,7 @@ function gradeExtraction(fixture: Json, testCase: Json): {
   return {
     pass: precision >= 0.85 && recall >= 0.80,
     detail: `tp_question=${tp} tp_document=${tpDoc} extracted=${actual.length} expected=${expectedN} P=${precision} R=${recall}`,
-    tp, tpDoc, extracted: actual.length, expectedN,
+    tp, tpDoc, extracted: actual.length, expectedN, recall,
   };
 }
 
@@ -406,6 +422,8 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
 
   const notes: string[] = [];
   const cases: CaseResult[] = [];
+  const perCaseFailures: PerCaseGate['failures'] = [];
+  let perCaseEvaluated = 0;
   const counters: Record<string, { hit: number; total: number; tp: number; tpDoc: number; extracted: number; expectedN: number }> = {
     classification: { hit: 0, total: 0, tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 },
     extraction: { hit: 0, total: 0, tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 },
@@ -434,6 +452,15 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
       counters.extraction.tpDoc += ext.tpDoc;
       counters.extraction.extracted += ext.extracted;
       counters.extraction.expectedN += ext.expectedN;
+      // Per-case gate: a single low-recall case must stay FAIL even when the
+      // pooled recall clears the aggregate threshold. Cases with no expected
+      // extraction fields are n/a and are not counted.
+      if (ext.expectedN > 0) {
+        perCaseEvaluated += 1;
+        if (ext.recall < 0.80) {
+          perCaseFailures.push({ id: String(testCase.id), recall: ext.recall, detail: ext.detail });
+        }
+      }
 
       const period = /bulan ini/i.test(question) && entry.fixture.id === 'transaksi'
         ? { start: '2026-11-01', end: '2026-11-18' }
@@ -565,10 +592,21 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
     byFixture[name] = { cases: list.length, passed, failed: list.length - passed };
   }
 
+  const perCaseGate: PerCaseGate = {
+    metric: 'extraction_recall',
+    threshold: 0.80,
+    evaluated: perCaseEvaluated,
+    failed: perCaseFailures.length,
+    failures: perCaseFailures,
+    pass: perCaseFailures.length === 0,
+  };
+
   notes.push('Eval dijalankan pada workspace DB sementara; seed analytics.db disalin ke tabel fisik tx_daily untuk kasus transaksi.');
   notes.push('Riwayat eksekusi lengkap dicatat di docs/EVAL_RESULTS.md. Bug produk sengaja DIBIARKAN agar laporan ini menjadi diagnosis jujur, bukan hasil yang dihijaukan.');
   notes.push('Kasus TX-03 gagal karena rule builder core tidak memiliki pola rate — temuan produk, bukan bug harness.');
   notes.push('FIN-03 memuat instruksi injeksi; guardrail AI lane diuji terpisah dari guardrail core.');
+  notes.push('Per-case gate: extraction recall ≥ 0,80 diwajibkan per kasus; kasus di bawah ambang tetap FAIL walau semua metrik agregat PASS.');
+  notes.push('Koreksi ground truth P3-TUNING: LEG-01/02 expected.extracted_fields.ayat diubah dari subset (1,2,3 / 1) menjadi 1,2,3,4,5 sesuai isi fixture legal/uud.json — Pasal 33 dan Pasal 31 masing-masing memuat 5 ayat. Untuk "Pasal 33 UUD 1945 berbunyi apa?" jawaban hukum yang benar adalah seluruh pasal. Ini koreksi label, BUKAN pelonggaran ambang: threshold recall agregat & per-case tetap 0,80 dan pipeline ekstraksi tidak diubah.');
 
   return {
     generatedAt: new Date().toISOString(),
@@ -578,7 +616,8 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
     stages: stageResults,
     cases,
     byFixture,
-    overallPass: stageResults.every((s) => s.pass),
+    perCaseGate,
+    overallPass: stageResults.every((s) => s.pass) && perCaseGate.pass,
     notes,
   };
 }

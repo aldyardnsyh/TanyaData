@@ -103,6 +103,21 @@ function markdown(report) {
       lines.push('');
     }
   }
+  lines.push('');
+  lines.push('## Per-case gate (extraction recall)');
+  lines.push('');
+  const gate = report.perCaseGate;
+  lines.push(`- Ambang: recall ≥ ${gate.threshold.toFixed(2)} per kasus (hanya kasus dengan expected extraction fields).`);
+  lines.push(`- Dievaluasi: ${gate.evaluated} kasus · Gagal: ${gate.failed} · Hasil: **${gate.pass ? 'PASS' : 'FAIL'}**`);
+  if (gate.failures.length) {
+    lines.push('');
+    lines.push('| ID | Recall | Detail |');
+    lines.push('|---|---:|---|');
+    for (const f of gate.failures) {
+      lines.push(`| ${f.id} | ${f.recall.toFixed(4)} | ${f.detail.replace(/\|/g, '\\|')} |`);
+    }
+  }
+  lines.push('');
   if (report.capability) {
     const cap = report.capability;
     lines.push('## Eval_case CORE V2 (FR-A..FR-E)');
@@ -174,6 +189,7 @@ try {
     console.log(`  ${name.padEnd(12)} ${String(v.passed).padStart(2)}/${v.cases} lulus  ${v.failed ? `(${v.failed} gagal)` : ''}`);
   }
   console.log('─'.repeat(72));
+  console.log(`Per-case gate (extraction recall ≥ ${report.perCaseGate.threshold.toFixed(2)}): ${report.perCaseGate.evaluated} dievaluasi, ${report.perCaseGate.failed} gagal — ${report.perCaseGate.pass ? 'PASS' : 'FAIL'}`);
   console.log('─'.repeat(72));
   console.log(`CORE V2 capability: ${capability.passed}/${capability.total} lulus (target ≥ 8/11) — ${capability.overallPass ? 'PASS' : 'FAIL'}`);
   for (const c of capability.cases) {

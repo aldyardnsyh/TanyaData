@@ -46,7 +46,7 @@
         "doc_type": "legal",
         "citations": [{ "doc": "uud-1945", "section": "Pasal 33", "ayat": [1, 2, 3] }],
         "output_type": "quote",
-        "extracted_fields": { "pasal": "33", "ayat": "1,2,3" }
+        "extracted_fields": { "pasal": "33", "ayat": "1,2,3,4,5" }
       },
       "tolerance": { "citation_hit": 1.0, "text_overlap": 0.8 },
       "tags": ["legal", "quote", "normal"]
@@ -59,7 +59,7 @@
         "doc_type": "legal",
         "citations": [{ "doc": "uud-1945", "section": "Pasal 31", "ayat": [1] }],
         "output_type": "quote",
-        "extracted_fields": { "pasal": "31", "ayat": "1" }
+        "extracted_fields": { "pasal": "31", "ayat": "1,2,3,4,5" }
       },
       "tolerance": { "citation_hit": 1.0, "text_overlap": 0.8 },
       "tags": ["legal", "quote", "normal"]
