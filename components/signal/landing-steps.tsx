@@ -114,26 +114,52 @@ export function LandingSteps() {
         onPointerLeave={() => setPaused(false)}
       >
         <div className="flex flex-col items-center gap-s3 lg:flex-row lg:justify-center lg:gap-0">
-          {/* Sisi masukan: dua chip berkas. Menonjol saat fase unggah/tanya. */}
+          {/* Sisi masukan: visual dokumen (kertas berisi garis teks) dan tabel data,
+              bukan tombol berbingkai. Menonjol saat fase unggah, meredup setelahnya. */}
           <div
-            className={`flex flex-col items-center gap-s1 lg:items-start transition-all duration-[var(--motion-slow)] ${
-              phase <= 1 ? 'opacity-100' : 'opacity-60'
+            className={`flex items-start gap-s3 transition-all duration-[var(--motion-slow)] ${
+              phase === 0 ? 'opacity-100' : 'opacity-50'
             }`}
           >
-            <span
-              className={`inline-flex items-center rounded-chip border px-s3 py-1 font-mono text-caption uppercase tracking-[0.06em] transition-colors duration-[var(--motion-slow)] ${
-                phase === 0 ? 'border-lime text-porcelain' : 'border-hairline-dark text-dark-muted'
-              }`}
-            >
-              LAPORAN-OKT.PDF
-            </span>
-            <span
-              className={`inline-flex items-center rounded-chip border px-s3 py-1 font-mono text-caption uppercase tracking-[0.06em] transition-colors duration-[var(--motion-slow)] ${
-                phase === 0 ? 'border-lime text-porcelain' : 'border-hairline-dark text-dark-muted'
-              }`}
-            >
-              TRANSACTIONS.CSV
-            </span>
+            <div className="flex flex-col items-center gap-s2">
+              <div
+                className={`relative w-20 rotate-[-3deg] rounded-control bg-porcelain p-s2 shadow-lift transition-transform duration-[var(--motion-slow)] motion-reduce:rotate-0 ${
+                  phase === 0 ? 'scale-100' : 'scale-95'
+                }`}
+              >
+                <div className="mb-s2 h-1.5 w-10 rounded-full bg-forest" />
+                <div className="grid gap-1">
+                  <span className="block h-1 w-full rounded-full bg-[color-mix(in_srgb,var(--color-ink)_18%,transparent)]" />
+                  <span className="block h-1 w-3/4 rounded-full bg-[color-mix(in_srgb,var(--color-ink)_18%,transparent)]" />
+                  <span className="block h-1 w-full rounded-full bg-[color-mix(in_srgb,var(--color-ink)_18%,transparent)]" />
+                  <span className="block h-1 w-2/3 rounded-full bg-[color-mix(in_srgb,var(--color-ink)_18%,transparent)]" />
+                </div>
+                <span className="absolute -right-s1 -top-s1 rounded-chip bg-forest px-s2 py-0.5 font-mono text-[10px] uppercase text-porcelain">
+                  PDF
+                </span>
+              </div>
+              <span className="mono-meta">LAPORAN-OKT.PDF</span>
+            </div>
+            <div className="flex flex-col items-center gap-s2 translate-y-2">
+              <div
+                className={`relative w-20 rotate-[2deg] rounded-control bg-porcelain p-s1 shadow-lift transition-transform duration-[var(--motion-slow)] motion-reduce:rotate-0 ${
+                  phase === 0 ? 'scale-100' : 'scale-95'
+                }`}
+              >
+                <div className="grid grid-cols-3 gap-px overflow-hidden rounded-[4px] bg-[var(--hairline-dark)]">
+                  <span className="h-3 bg-forest-08" />
+                  <span className="h-3 bg-forest-08" />
+                  <span className="h-3 bg-forest-08" />
+                  <span className="h-3 bg-porcelain" />
+                  <span className="h-3 bg-porcelain" />
+                  <span className="h-3 bg-porcelain" />
+                </div>
+                <span className="absolute -right-s1 -top-s1 rounded-chip bg-forest px-s2 py-0.5 font-mono text-[10px] uppercase text-porcelain">
+                  CSV
+                </span>
+              </div>
+              <span className="mono-meta">TRANSACTIONS.CSV</span>
+            </div>
           </div>
 
           <div aria-hidden="true" className={trackClass(phase >= 1)}>
