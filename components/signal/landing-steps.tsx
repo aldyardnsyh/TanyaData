@@ -95,7 +95,7 @@ const QA_PAIRS: {
 ];
 
 /** Durasi per fase (ms): fase menyusun jawaban paling panjang agar baris terbaca. */
-const PHASE_MS = [1400, 1600, 2400, 1800];
+const PHASE_MS = [1000, 1200, 2000, 1200];
 
 export function LandingSteps() {
   const [phase, setPhase] = useState(3);
@@ -130,7 +130,7 @@ export function LandingSteps() {
       return;
     }
     setDocsShown(false);
-    const timer = window.setTimeout(() => setDocsShown(true), 300);
+    const timer = window.setTimeout(() => setDocsShown(true), 180);
     return () => window.clearTimeout(timer);
   }, [phase]);
 
@@ -158,12 +158,12 @@ export function LandingSteps() {
   const pair = QA_PAIRS[pairIndex] ?? QA_PAIRS[0];
 
   const trackClass = (active: boolean) =>
-    `relative hidden h-px flex-none w-14 lg:w-32 transition-all duration-[var(--motion-slow)] lg:block ${
+    `relative hidden h-px flex-none w-14 lg:w-32 transition-all duration-[var(--motion-expand)] lg:block ${
       active ? 'bg-lime opacity-100' : 'opacity-0'
     }`;
   // Alur vertikal untuk viewport < lg: penghubung antar node supaya alur tetap terbaca.
   const trackVerticalClass = (active: boolean) =>
-    `relative h-10 w-px flex-none transition-all duration-[var(--motion-slow)] lg:hidden ${
+    `relative h-10 w-px flex-none transition-all duration-[var(--motion-expand)] lg:hidden ${
       active ? 'bg-lime opacity-100' : 'opacity-0'
     }`;
 
@@ -197,14 +197,14 @@ export function LandingSteps() {
               Dokumen pop masuk di fase unggah lalu TETAP ADA sampai siklus
               berikutnya menyembunyikannya kembali (docsShown). */}
           <div
-            className={`flex items-start gap-s2 transition-all duration-[var(--motion-slow)] ${
+            className={`flex items-start gap-s2 transition-all duration-[var(--motion-expand)] ${
               docsShown ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
             }`}
           >
             {/* PDF: kertas dengan strip judul merah dan garis teks. */}
             <div className="flex flex-col items-center gap-s2">
               <div
-                className={`relative w-16 rotate-[-4deg] rounded-control bg-porcelain p-s2 shadow-lift transition-transform duration-[var(--motion-slow)] motion-reduce:rotate-0 ${
+                className={`relative w-16 rotate-[-4deg] rounded-control bg-porcelain p-s2 shadow-lift transition-transform duration-[var(--motion-expand)] motion-reduce:rotate-0 ${
                   phase === 0 ? 'scale-100' : 'scale-95'
                 }`}
               >
@@ -224,7 +224,7 @@ export function LandingSteps() {
             {/* CSV: kartu tabel dengan baris header hijau. */}
             <div className="flex flex-col items-center gap-s2 translate-y-2">
               <div
-                className={`relative w-16 rotate-[2deg] rounded-control bg-porcelain p-s1 shadow-lift transition-transform duration-[var(--motion-slow)] motion-reduce:rotate-0 ${
+                className={`relative w-16 rotate-[2deg] rounded-control bg-porcelain p-s1 shadow-lift transition-transform duration-[var(--motion-expand)] motion-reduce:rotate-0 ${
                   phase === 0 ? 'scale-100' : 'scale-95'
                 }`}
               >
@@ -245,7 +245,7 @@ export function LandingSteps() {
             {/* DOCX: kertas biru Word dengan blok judul dan paragraf menjorok. */}
             <div className="flex flex-col items-center gap-s2">
               <div
-                className={`relative w-16 rotate-[3deg] rounded-control bg-porcelain p-s2 shadow-lift transition-transform duration-[var(--motion-slow)] motion-reduce:rotate-0 ${
+                className={`relative w-16 rotate-[3deg] rounded-control bg-porcelain p-s2 shadow-lift transition-transform duration-[var(--motion-expand)] motion-reduce:rotate-0 ${
                   phase === 0 ? 'scale-100' : 'scale-95'
                 }`}
               >
@@ -265,7 +265,7 @@ export function LandingSteps() {
                 warna brand, digambar SVG agar elips atas dan garis piringan rapi. */}
             <div className="flex flex-col items-center gap-s2 translate-y-2">
               <div
-                className={`relative rounded-control bg-porcelain p-s1 shadow-lift transition-transform duration-[var(--motion-slow)] ${
+                className={`relative rounded-control bg-porcelain p-s1 shadow-lift transition-transform duration-[var(--motion-expand)] ${
                   phase === 0 ? 'scale-100' : 'scale-95'
                 }`}
               >
@@ -310,14 +310,14 @@ export function LandingSteps() {
 
           <div aria-hidden="true" className={trackClass(phase >= 1)}>
             <span
-              className={`absolute right-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
+              className={`absolute right-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-expand)] ${
                 phase >= 1 ? 'opacity-100' : 'opacity-0'
               }`}
             />
           </div>
           <div aria-hidden="true" className={trackVerticalClass(phase >= 1)}>
             <span
-              className={`absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
+              className={`absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-expand)] ${
                 phase >= 1 ? 'opacity-100' : 'opacity-0'
               }`}
             />
@@ -327,7 +327,7 @@ export function LandingSteps() {
               memproses, lalu tenang di fase bagikan. Tanpa bayang-bayang: node
               tidak terlihat sebelum gilirannya (aturan muncul satu per satu). */}
           <div
-            className={`relative flex h-16 w-16 flex-none flex-col items-center justify-center rounded-card-lg border transition-all duration-[var(--motion-slow)] ${
+            className={`relative flex h-16 w-16 flex-none flex-col items-center justify-center rounded-card-lg border transition-all duration-[var(--motion-expand)] ${
               phase === 0 ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100'
             } ${
               phase >= 1 && phase <= 2
@@ -337,7 +337,7 @@ export function LandingSteps() {
           >
             <span
               aria-hidden="true"
-              className={`absolute bottom-full left-1/2 mb-s2 w-max max-w-[80vw] -translate-x-1/2 transition-all duration-[var(--motion-slow)] ${
+              className={`absolute bottom-full left-1/2 mb-s2 w-max max-w-[80vw] -translate-x-1/2 transition-all duration-[var(--motion-expand)] ${
                 phase === 1
                   ? 'translate-y-0 opacity-100'
                   : 'pointer-events-none translate-y-1 opacity-0'
@@ -368,14 +368,14 @@ export function LandingSteps() {
 
           <div aria-hidden="true" className={trackClass(phase >= 2)}>
             <span
-              className={`absolute right-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
+              className={`absolute right-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-expand)] ${
                 phase >= 2 ? 'opacity-100' : 'opacity-0'
               }`}
             />
           </div>
           <div aria-hidden="true" className={trackVerticalClass(phase >= 2)}>
             <span
-              className={`absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
+              className={`absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-expand)] ${
                 phase >= 2 ? 'opacity-100' : 'opacity-0'
               }`}
             />
@@ -385,7 +385,7 @@ export function LandingSteps() {
               aktif (rows / bars / donut) dan menyusun bertahap saat fase periksa;
               header berubah menjadi selesai di fase akhir. */}
           <div
-            className={`w-full max-w-68 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
+            className={`w-full max-w-68 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-expand)] ${
               phase >= 2 ? 'translate-y-0 opacity-100 shadow-float' : 'pointer-events-none translate-y-2 opacity-0'
             }`}
           >
@@ -406,7 +406,7 @@ export function LandingSteps() {
                     <span className="whitespace-nowrap font-body text-caption text-ink-72">{label}</span>
                     <span className="h-1.5 w-full overflow-hidden rounded-full bg-forest-08">
                       <span
-                        className={`block h-full rounded-full transition-transform duration-[var(--motion-slow)] ease-[var(--ease-smooth)] ${
+                        className={`block h-full rounded-full transition-transform duration-[var(--motion-expand)] ease-[var(--ease-smooth)] ${
                           index === 0 ? 'bg-forest' : 'bg-terracotta'
                         } ${phase >= 2 ? 'scale-x-100' : 'scale-x-0'} origin-left motion-reduce:scale-x-100`}
                         style={{ width: `${BAR_WIDTHS[index] ?? 20}%` }}
@@ -459,7 +459,7 @@ export function LandingSteps() {
                       phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
                     }`}
                     style={{
-                      transitionDelay: phase >= 2 ? `${index * 120}ms` : '0ms',
+                      transitionDelay: phase >= 2 ? `${index * 90}ms` : '0ms',
                     }}
                   >
                     <span className="whitespace-nowrap text-ink-72">{kanal}</span>
@@ -472,7 +472,7 @@ export function LandingSteps() {
               className={`mono-meta mt-s3 inline-flex items-center gap-s1 transition-all duration-[var(--motion-expand)] ${
                 phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
               }`}
-              style={{ transitionDelay: phase >= 2 ? '480ms' : '0ms' }}
+              style={{ transitionDelay: phase >= 2 ? '320ms' : '0ms' }}
             >
               <span className="state-dot state-dot-active" aria-hidden="true" />
               {`SITASI · ${pair.source}`}
@@ -481,14 +481,14 @@ export function LandingSteps() {
 
           <div aria-hidden="true" className={trackClass(phase >= 3)}>
             <span
-              className={`absolute right-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
+              className={`absolute right-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-expand)] ${
                 phase >= 3 ? 'opacity-100' : 'opacity-0'
               }`}
             />
           </div>
           <div aria-hidden="true" className={trackVerticalClass(phase >= 3)}>
             <span
-              className={`absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
+              className={`absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-expand)] ${
                 phase >= 3 ? 'opacity-100' : 'opacity-0'
               }`}
             />
@@ -497,7 +497,7 @@ export function LandingSteps() {
           {/* Tahap keempat berdiri sendiri: halaman bagikan muncul pop dengan
               cincin lime saat fase bagikan. */}
           <div
-            className={`w-full max-w-44 flex-none rounded-card-lg border transition-all duration-[var(--motion-slow)] ${
+            className={`w-full max-w-44 flex-none rounded-card-lg border transition-all duration-[var(--motion-expand)] ${
               phase >= 3
                 ? 'scale-100 border-lime glow-lime bg-forest-08 opacity-100'
                 : 'pointer-events-none scale-90 border-hairline-dark bg-forest-08 opacity-0'
@@ -536,14 +536,14 @@ export function LandingSteps() {
               }`}
             >
               <span
-                className={`font-mono text-stat-lg transition-colors duration-[var(--motion-slow)] ${
+                className={`font-mono text-stat-lg transition-colors duration-[var(--motion-expand)] ${
                   active ? 'text-lime text-glow-lime' : 'text-dark-muted'
                 }`}
               >
                 {step.no}
               </span>
               <h3
-                className={`mt-s1 font-display text-label font-semibold transition-colors duration-[var(--motion-slow)] ${
+                className={`mt-s1 font-display text-label font-semibold transition-colors duration-[var(--motion-expand)] ${
                   active ? 'text-porcelain' : 'text-dark-muted'
                 }`}
               >
