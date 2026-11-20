@@ -95,6 +95,7 @@
   --animate-border-orbit: border-orbit var(--motion-sweep) var(--ease-linear) 1;
   --animate-tab-indicator: tab-indicator var(--motion-normal) var(--ease-sharp) both;
   --animate-phrase-in: phrase-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-fade-in: fade-in var(--motion-normal) var(--ease-smooth) both;
   --animate-node-in: node-in var(--motion-node) var(--ease-smooth) both;
   --animate-grid-expand: grid-expand var(--motion-expand) var(--ease-smooth) both;
   --animate-modal-in: modal-in var(--motion-modal) var(--ease-smooth) both;
@@ -107,6 +108,8 @@
   @keyframes border-orbit { to { --border-angle: 360deg; } }
   @keyframes tab-indicator { from { opacity: 0.6; } to { opacity: 1; } }
   @keyframes phrase-in { from { opacity: 0; } to { opacity: 1; } }
+  /* Entrance section landing (M1/C-01: masuk 160ms opacity only, tanpa stagger). */
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
   @keyframes node-in { from { opacity: 0; } to { opacity: 1; } }
   @keyframes grid-expand { from { opacity: 0.7; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
   @keyframes modal-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
@@ -371,33 +374,19 @@
   --animate-message-in: phrase-in var(--motion-fast) var(--ease-smooth) both;
   --animate-share-enter: phrase-in var(--motion-fast) var(--ease-smooth) both;
   --animate-share-stagger: phrase-in var(--motion-fast) var(--ease-smooth) both;
-  --animate-toast-in: toast-in var(--motion-toast) var(--ease-smooth) both;
-  --animate-typing-dot: typing-dot 1.2s var(--ease-smooth) infinite;
-  --animate-skeleton: skeleton-pulse 1.2s var(--ease-smooth) infinite;
   --ease-out-expo: var(--ease-smooth);
   --ease-spring: var(--ease-smooth);
   --ease-out-quart: var(--ease-sharp);
 }
 
-/* Utility lama yang masih dipakai halaman sebelum Batch 2. */
+/* Utility lama yang masih dipakai modul lain (drawer, answer-card, share). */
 @utility measurement-rule {
   border-bottom: 1px solid var(--border-hairline);
 }
 @utility measurement-rule-share {
   border-bottom: 1px solid var(--border-hairline);
 }
-@utility chip-scroll {
-  scroll-snap-type: x mandatory;
-}
 @utility motion-ripple-host { position: relative; overflow: hidden; isolation: isolate; }
-@utility w-sidebar { width: 232px; }
-@utility w-sidebar-rail { width: 72px; }
-@utility pl-sidebar { padding-left: 232px; }
-@utility pl-sidebar-rail { padding-left: 72px; }
-@utility ml-sidebar { margin-left: 232px; }
-@utility ml-sidebar-rail { margin-left: 72px; }
-@utility h-dropzone { height: 148px; }
-@utility h-dropzone-mobile { height: 120px; }
 @utility z-sticky { z-index: var(--z-sticky); }
 @utility z-drawer { z-index: var(--z-drawer); }
 @utility z-dropdown { z-index: var(--z-dropdown); }

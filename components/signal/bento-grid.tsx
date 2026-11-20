@@ -2,6 +2,7 @@
 
 import type { ComponentState, StateCopy } from '@/lib/ui/component-state';
 import { DEFAULT_STATE_COPY } from '@/lib/ui/component-state';
+import { IconTooltip } from '@/components/ui/icon-tooltip';
 
 /**
  * C-01 Signal Bento (dari Bento Grid).
@@ -15,6 +16,8 @@ export interface BentoItem {
   /** Sudah diformat dari result_json. Komponen tidak menghitung angka. */
   value: string;
   source?: string;
+  /** C-12: tooltip menjelaskan sumber angka. Hanya muncul saat hover/fokus, tidak pernah terlihat saat halaman dibuka (§6 aturan 6). */
+  tooltip?: string;
   span?: 'hero' | 'support';
   active?: boolean;
 }
@@ -41,7 +44,13 @@ function Cell({ item, state }: { item: BentoItem; state: ComponentState }) {
       </div>
       <div>
         <p className="font-body text-metric tabular text-ink">{item.value}</p>
-        {item.source && <p className="mono-meta mt-s1">{item.source}</p>}
+        {item.source && item.tooltip ? (
+          <IconTooltip label={item.tooltip}>
+            <span className="mono-meta mt-s1 inline-flex min-h-11 items-center">{item.source}</span>
+          </IconTooltip>
+        ) : (
+          item.source && <p className="mono-meta mt-s1">{item.source}</p>
+        )}
       </div>
     </div>
   );
