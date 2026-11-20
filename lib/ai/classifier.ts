@@ -2,8 +2,9 @@
  * Document-type classifier (P3-CORE) — docs/CORE_AI_SPEC.md §3.
  *
  * Weighted deterministic signals: keyword + heading structure + table shape +
- * metadata. Optional LLM hint is accepted but never required; when absent its
- * weight is redistributed proportionally over the deterministic signals.
+ * metadata. Optional LLM hint is accepted but never required. Final scores are
+ * normalised by the sum of weights that actually fired, so a document with only
+ * one strong signal can still clear the acceptance threshold.
  *
  * No domain-specific intent ids, channel names or codes live here. The keyword
  * sets describe document *genres*, not one business domain.
@@ -136,17 +137,26 @@ export function classifyDocument(input: ClassifyInput): ClassificationResult {
   const md = metadataScores(input.metadata ?? {});
 
   const hasHint = Boolean(input.llmHint && DOC_TYPES.includes(input.llmHint.doc_type));
-  const hintWeight = hasHint ? 0.10 : 0;
-  const scale = hasHint ? 1 : 1 / 0.9; // redistribute the unused 0.10 proportionally
 
   const scores = emptyScores();
   const signals: Signal[] = [];
   const weights: { source: Signal['source']; weight: number; table: Record<DocType, number> }[] = [
-    { source: 'keyword', weight: 0.35 * scale, table: kw },
-    { source: 'heading', weight: 0.25 * scale, table: hd },
-    { source: 'table', weight: 0.20 * scale, table: tb },
-    { source: 'metadata', weight: 0.10 * scale, table: md },
+    { source: 'keyword', weight: 0.35, table: kw },
+    { source: 'heading', weight: 0.25, table: hd },
+    { source: 'table', weight: 0.20, table: tb },
+    { source: 'metadata', weight: 0.10, table: md },
   ];
+
+  // Normalise AFTER accumulation by the sum of weights that actually fired.
+  // The previous approach scaled every weight by 1/0.9 when no LLM hint was
+  // present, which capped a keyword-only document at 0.35/0.9 = 0.389 — below
+  // the 0.60 acceptance threshold no matter how strong the keyword signal was.
+  let activeWeight = 0;
+  for (const { weight, table } of weights) {
+    if (DOC_TYPES.some((t) => table[t] > 0)) activeWeight += weight;
+  }
+  if (hasHint) activeWeight += 0.10;
+  const denominator = activeWeight > 0 ? activeWeight : 1;
 
   for (const { source, weight, table } of weights) {
     for (const t of DOC_TYPES) {
@@ -163,6 +173,9 @@ export function classifyDocument(input: ClassifyInput): ClassificationResult {
     scores[h.doc_type] += 0.10 * c;
     signals.push({ source: 'llm', name: h.doc_type, weight: 0.10, score: c });
   }
+
+  for (const t of DOC_TYPES) scores[t] = Math.max(0, Math.min(1, scores[t] / denominator));
+  for (const signal of signals) signal.weight = signal.weight / denominator;
 
   const ranked = [...DOC_TYPES].sort((a, b) => scores[b] - scores[a]);
   const top = ranked[0];
