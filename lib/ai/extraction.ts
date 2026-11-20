@@ -176,6 +176,10 @@ function extractFinancial(blocks: Block[]): Pick<
         page: b.page,
       });
     }
+    // A document title such as "Laporan Keuangan Ringkas Q3 2026" also matches
+    // the metric shape (name + trailing year). Headings are structure, not
+    // measurements, so they must never become metrik fields.
+    if (b.kind === 'heading' || b.kind === 'title') continue;
     for (const { text, page } of linesOf([b])) {
       const m = text.match(METRIC_LINE_RE);
       if (m) {

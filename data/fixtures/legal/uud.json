@@ -2,6 +2,16 @@
   "id": "uud-1945",
   "title": "Undang-Undang Dasar Negara Republik Indonesia Tahun 1945 (cuplikan)",
   "doc_type": "legal",
+  "ground_truth_fields": [
+    { "name": "pasal", "sig": "31" },
+    { "name": "pasal", "sig": "32" },
+    { "name": "pasal", "sig": "33" },
+    { "name": "pasal", "sig": "34" },
+    { "name": "ayat", "sig": "1,2,3,4,5" },
+    { "name": "ayat", "sig": "1,2" },
+    { "name": "ayat", "sig": "1,2,3,4,5" },
+    { "name": "ayat", "sig": "1,2,3,4" }
+  ],
   "sample_text": "Undang-Undang Dasar Negara Republik Indonesia Tahun 1945. Bab XIII Pendidikan dan Kebudayaan. Pasal 31, Pasal 32, Pasal 33, dan Pasal 34 beserta ayat-ayatnya. Ketentuan ini mengatur hak warga negara, perekonomian, dan kesejahteraan yang dikuasai oleh negara.",
   "metadata": {
     "nomor": "UUD 1945",

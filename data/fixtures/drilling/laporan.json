@@ -2,6 +2,12 @@
   "id": "drilling-q3",
   "title": "Laporan Pemboran Sumur Eksplorasi X-1 — Kuartal III 2026",
   "doc_type": "technical_report",
+  "ground_truth_fields": [
+    { "name": "Kedalaman total", "sig": "2850|m" },
+    { "name": "Tekanan formasi", "sig": "4200|psi" },
+    { "name": "Laju pemboran", "sig": "12.5|m/jam" },
+    { "name": "Volume lumpur", "sig": "1200|bbl" }
+  ],
   "sample_text": "Laporan teknis pemboran sumur X-1. Tabel 1 parameter meliputi kedalaman total, tekanan formasi, laju pemboran, dan volume lumpur dengan satuan m, psi, m/jam, dan bbl. Tabel 2 memuat hasil harian pemboran tanggal 2026-07-01 sampai 2026-07-03 beserta formasi yang ditembus. Spesifikasi teknis dan narasi operasional disertakan.",
   "metadata": {
     "well_id": "X-1",

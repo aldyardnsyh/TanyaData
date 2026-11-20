@@ -2,6 +2,14 @@
   "id": "fin-q3-2026",
   "title": "Laporan Keuangan Ringkas Q3 2026",
   "doc_type": "financial",
+  "ground_truth_fields": [
+    { "name": "Pendapatan", "sig": "125000000000|IDR|Q3 2026" },
+    { "name": "Laba bersih", "sig": "18750000000|IDR|Q3 2026" },
+    { "name": "Pendapatan", "sig": "112000000000|IDR|Q2 2026" },
+    { "name": "Laba bersih", "sig": "15000000000|IDR|Q2 2026" },
+    { "name": "Arus kas operasi", "sig": "22300000000|IDR|Q3 2026" },
+    { "name": "Saldo kas akhir", "sig": "41000000000|IDR|Q3 2026" }
+  ],
   "sample_text": "Laporan keuangan ringkas. Mata uang IDR. Periode pelaporan Q3 2026 dan Q2 2026. Menampilkan pendapatan, laba bersih, arus kas operasi, saldo, neraca, dan catatan manajemen untuk setiap periode.",
   "metadata": {
     "periode": "Q3 2026",

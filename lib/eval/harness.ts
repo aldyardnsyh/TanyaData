@@ -289,15 +289,23 @@ function gradeExtraction(fixture: Json, testCase: Json): {
     }
   }
 
+  // Precision is measured against the FULL document ground truth, not only the
+  // fields asked in this question. Otherwise every correct extra field in the
+  // document is punished as a false positive (the original 0.2963 result).
+  // Recall stays question-scoped: did we find the fields this question needs?
+  const documentTruth = (fixture.ground_truth_fields ?? []) as Array<{ name: string; sig: string }>;
   let tp = 0;
   for (const [key, value] of Object.entries(expected)) {
     if (actual.some((a) => a.name === key && a.sig === value)) tp += 1;
   }
-  const precision = ratio(tp, actual.length);
+  const tpDoc = documentTruth.length
+    ? actual.filter((a) => documentTruth.some((g) => g.name === a.name && g.sig === a.sig)).length
+    : tp;
+  const precision = ratio(tpDoc, actual.length);
   const recall = ratio(tp, expectedN);
   return {
     pass: precision >= 0.85 && recall >= 0.80,
-    detail: `tp=${tp} extracted=${actual.length} expected=${expectedN} P=${precision} R=${recall}`,
+    detail: `tp_question=${tp} tp_document=${tpDoc} extracted=${actual.length} expected=${expectedN} P=${precision} R=${recall}`,
     tp, extracted: actual.length, expectedN,
   };
 }
