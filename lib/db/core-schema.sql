@@ -62,7 +62,13 @@ CREATE TABLE IF NOT EXISTS core_chunks(
   char_count INTEGER NOT NULL DEFAULT 0,
   level TEXT NOT NULL CHECK(level IN ('child','parent')),
   parent_id INTEGER,
-  embedding_json TEXT
+  embedding_json TEXT,
+  content_hash TEXT,
+  page_span TEXT,
+  clean_version INTEGER NOT NULL DEFAULT 0,
+  clean_flags TEXT NOT NULL DEFAULT '[]',
+  ocr_status TEXT NOT NULL DEFAULT 'ok',
+  confidence REAL NOT NULL DEFAULT 1
 );
 CREATE INDEX IF NOT EXISTS ix_core_chunks_dataset ON core_chunks(dataset_id, level);
 CREATE INDEX IF NOT EXISTS ix_core_chunks_doc ON core_chunks(document_id);
@@ -116,7 +122,12 @@ CREATE TABLE IF NOT EXISTS core_citations(
   section_path TEXT NOT NULL,
   page INTEGER,
   quote TEXT,
-  score REAL
+  score REAL,
+  page_end INTEGER,
+  rev TEXT,
+  deep_link TEXT,
+  status TEXT NOT NULL DEFAULT 'valid',
+  reject_reason TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_core_citations_query ON core_citations(query_id);
 
@@ -140,3 +151,79 @@ CREATE TABLE IF NOT EXISTS core_ingestion_steps(
   updated_at TEXT NOT NULL,
   PRIMARY KEY(dataset_id, step)
 );
+
+-- CORE V2 (DECISION-016) — tabel aditif. Semua idempoten via IF NOT EXISTS.
+
+CREATE TABLE IF NOT EXISTS core_attachments(
+  id TEXT PRIMARY KEY,
+  dataset_id TEXT NOT NULL REFERENCES core_datasets(id) ON DELETE CASCADE,
+  source_id TEXT,
+  name TEXT NOT NULL,
+  doc_type TEXT NOT NULL DEFAULT 'general',
+  status TEXT NOT NULL DEFAULT 'UPLOADED',
+  active_in_conversation TEXT,
+  quality_report_ref TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE(dataset_id, source_id)
+);
+CREATE INDEX IF NOT EXISTS ix_core_attachments_dataset ON core_attachments(dataset_id, status);
+
+CREATE TABLE IF NOT EXISTS core_readjustment_ops(
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL,
+  query_id TEXT,
+  seq INTEGER NOT NULL,
+  op_type TEXT NOT NULL CHECK(op_type IN ('filter','group_by','classify','report')),
+  input_fragment TEXT NOT NULL,
+  resolved_filters TEXT NOT NULL DEFAULT '{}',
+  resolved_columns TEXT NOT NULL DEFAULT '[]',
+  before_json TEXT,
+  after_json TEXT,
+  reason TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_core_readjustment_conv ON core_readjustment_ops(conversation_id, seq);
+
+CREATE TABLE IF NOT EXISTS core_report_jobs(
+  id TEXT PRIMARY KEY,
+  query_id TEXT NOT NULL,
+  conversation_id TEXT,
+  doc_type TEXT NOT NULL DEFAULT 'general',
+  format TEXT NOT NULL CHECK(format IN ('pdf','xlsx')),
+  status TEXT NOT NULL CHECK(status IN ('QUEUED','DONE','FAILED')),
+  result_json_ref TEXT NOT NULL,
+  chart_spec TEXT NOT NULL DEFAULT '{}',
+  identity_json TEXT NOT NULL DEFAULT '{}',
+  row_cap INTEGER NOT NULL DEFAULT 500,
+  artifact_path TEXT,
+  error TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_core_report_jobs_query ON core_report_jobs(query_id);
+
+CREATE TABLE IF NOT EXISTS core_share_snapshots(
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  options TEXT NOT NULL DEFAULT '{}',
+  byte_size INTEGER NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_core_share_created ON core_share_snapshots(created_at);
+
+CREATE TABLE IF NOT EXISTS core_citation_deeplinks(
+  id TEXT PRIMARY KEY,
+  query_id TEXT,
+  chunk_id INTEGER,
+  document_id TEXT,
+  page INTEGER,
+  page_end INTEGER,
+  section_path TEXT,
+  quote TEXT,
+  rev TEXT,
+  deep_link TEXT NOT NULL,
+  status TEXT NOT NULL CHECK(status IN ('valid','rejected')),
+  reject_reason TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_core_deeplinks_query ON core_citation_deeplinks(query_id);

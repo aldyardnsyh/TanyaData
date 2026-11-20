@@ -18,6 +18,16 @@ export type SourceType = 'csv' | 'xlsx' | 'sqlite' | 'pdf' | 'docx' | 'txt' | 'm
 export type DatasetStatus = 'UPLOADED' | 'PROCESSING' | 'READY' | 'FAILED';
 export type DocType = 'legal' | 'technical_report' | 'financial' | 'general' | 'unknown';
 
+export type OcrPageStatus = {
+  page: number;
+  status: 'ok' | 'ocr_skipped' | 'ocr_review' | 'not_attempted';
+  confidence: number;
+  latencyMs: number;
+  reason?: string;
+  width?: number;
+  height?: number;
+};
+
 export type QualityReport = {
   parsedPages: number;
   tablesFound: number;
@@ -27,6 +37,13 @@ export type QualityReport = {
   rowsRejected: number;
   duplicateRows: number;
   missingByColumn: Record<string, number>;
+  /** CORE V2 — aditif; aman untuk DB/eval lama. */
+  ocrPages?: number[];
+  ocrStatuses?: OcrPageStatus[];
+  peakRssBytes?: number;
+  pageLabels?: Array<{ page: number; label: string; needsOcr: boolean }>;
+  cleaningLog?: Array<{ kind: string; before: string; after: string; reason: string }>;
+  cleanFlags?: string[];
 };
 
 export type Dataset = {
@@ -129,6 +146,13 @@ export type Chunk = {
   level: ChunkLevel;
   parent_id: number | null;
   embedding: number[] | null;
+  /** CORE V2 — aditif. */
+  content_hash?: string | null;
+  page_span?: [number, number] | null;
+  clean_version?: number;
+  clean_flags?: string[];
+  ocr_status?: string;
+  confidence?: number;
 };
 
 export type Citation = {

@@ -6,6 +6,7 @@ import { docSourceId, type DocumentsJson } from '@/lib/ingest/types';
 import { nowJakartaIso } from '@/lib/date';
 import { conflict } from '@/lib/errors';
 import { registerSeedDataset } from '@/lib/core/registry';
+import { ensureCoreV2Columns } from '@/lib/db/migrate-v2';
 
 export const SCHEMA_VERSION = 1;
 const SETTINGS_KEY = 'app';
@@ -155,6 +156,7 @@ export function ensureWorkspaceReady(): DB {
   }
 
   upsertMeta(db, 'schema_version', String(SCHEMA_VERSION));
+  ensureCoreV2Columns(db);
   ensureSettings(db);
   ensureSeedSource(db);
   registerSeedDataset(db);

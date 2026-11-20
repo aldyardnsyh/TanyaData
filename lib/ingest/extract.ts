@@ -38,9 +38,9 @@ export async function extractPages(format: string, buffer: Buffer): Promise<Extr
         if (item.hasEOL) text += '\n';
       }
       // Text layer dipakai lebih dulu. OCR hanya untuk halaman kosong/rendah,
-      // satu halaman per proses, berurutan (konkuren = 1), timeout 15s di ocrPage.
+      // satu halaman per proses, berurutan (konkuren = 1), timeout 5s di ocrPage.
       if (text.trim().length < LOW_TEXT_THRESHOLD) {
-        const outcome: OcrOutcome = await ocrPage(i);
+        const outcome: OcrOutcome = await ocrPage({ page: i, docId: `src_${i}`, pdf });
         if (outcome.skipped) {
           pages.push({
             page: i,

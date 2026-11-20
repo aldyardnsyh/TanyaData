@@ -19,6 +19,7 @@ import type {
   DocType,
   DocumentSection,
   QualityReport,
+  OcrPageStatus,
   SchemaJson,
   SchemaTable,
   SourceType,
@@ -26,6 +27,9 @@ import type {
 import { emptyQualityReport, newDocumentId, recordStep } from '@/lib/core/registry';
 import { invalidateQueryCache } from '@/lib/core/cache';
 import { normalizeForFts } from '@/lib/core/store';
+import { LOW_TEXT_THRESHOLD, UNREADABLE_PAGE_TEXT, ocrPage, type OcrStatus } from '@/lib/ingest/ocr';
+import { detectPages, type PageLabel } from '@/lib/ingest/scan-detect';
+import { sampleRss } from '@/lib/ingest/watchdog';
 import {
   buildSchemaJson,
   detectPeriod,
@@ -166,9 +170,43 @@ export function classifySource(input: {
 
 /* ------------------------------------------------------------ stage 3: parse */
 
-type ParsedPage = { page: number; text: string };
+type ParsedPage = {
+  page: number;
+  text: string;
+  unreadable?: boolean;
+  ocrStatus?: OcrStatus;
+  ocrConfidence?: number;
+  ocrLatencyMs?: number;
+  label?: PageLabel;
+};
 
-async function extractPages(format: SourceType, buffer: Buffer): Promise<ParsedPage[]> {
+export type ExtractOutcome = {
+  pages: ParsedPage[];
+  ocrUsed: boolean;
+  ocrPages: number[];
+  ocrStatuses: OcrPageStatus[];
+  pageLabels: Array<{ page: number; label: string; needsOcr: boolean }>;
+  peakRssBytes: number;
+};
+
+/**
+ * Ekstraksi teks dengan OCR on-demand (ADR-11). Text layer didahulukan; OCR
+ * hanya untuk halaman yang terdeteksi butuh, dipanggil BERURUTAN (konkurensi 1).
+ * Watchdog RSS dicek tiap halaman; bila lewat 1,2 GB ingest dibatalkan.
+ */
+async function extractPages(format: SourceType, buffer: Buffer, docId: string): Promise<ExtractOutcome> {
+  const base: ExtractOutcome = {
+    pages: [],
+    ocrUsed: false,
+    ocrPages: [],
+    ocrStatuses: [],
+    pageLabels: [],
+    peakRssBytes: 0,
+  };
+  const trackRss = () => {
+    base.peakRssBytes = Math.max(base.peakRssBytes, sampleRss().rssBytes);
+  };
+
   if (format === 'pdf') {
     let pdf: Awaited<ReturnType<typeof getDocumentProxy>>;
     try {
@@ -176,7 +214,7 @@ async function extractPages(format: SourceType, buffer: Buffer): Promise<ParsedP
     } catch {
       throw unprocessable('PDF tidak dapat dibaca (rusak atau terenkripsi)', { reason: 'PARSE_ERROR' });
     }
-    const pages: ParsedPage[] = [];
+    const texts: string[] = [];
     for (let i = 1; i <= pdf.numPages; i += 1) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
@@ -188,19 +226,66 @@ async function extractPages(format: SourceType, buffer: Buffer): Promise<ParsedP
           if (item.hasEOL) text += '\n';
         }
       }
-      pages.push({ page: i, text });
+      texts.push(text);
     }
-    return pages;
+
+    const signals = await detectPages(pdf, texts);
+    base.pageLabels = signals.map((s) => ({ page: s.page, label: s.label, needsOcr: s.needsOcr }));
+
+    for (let i = 0; i < texts.length; i += 1) {
+      trackRss();
+      const signal = signals[i];
+      const pageNo = i + 1;
+      // Pemicu OCR: sinyal deteksi ATAU fallback char-count lama (< 40).
+      const needsOcr = signal?.needsOcr || texts[i].replace(/\s/g, '').length < LOW_TEXT_THRESHOLD;
+      if (!needsOcr) {
+        base.pages.push({ page: pageNo, text: texts[i], label: signal?.label });
+        continue;
+      }
+      base.ocrUsed = true;
+      base.ocrPages.push(pageNo);
+      const outcome = await ocrPage({ page: pageNo, docId, pdf });
+      trackRss();
+      base.ocrStatuses.push({
+        page: pageNo,
+        status: outcome.status,
+        confidence: outcome.confidence,
+        latencyMs: outcome.latencyMs,
+        ...(outcome.reason ? { reason: outcome.reason } : {}),
+        ...(outcome.width ? { width: outcome.width, height: outcome.height } : {}),
+      });
+      if (outcome.skipped) {
+        base.pages.push({
+          page: pageNo,
+          text: UNREADABLE_PAGE_TEXT,
+          unreadable: true,
+          ocrStatus: 'ocr_skipped',
+          ocrConfidence: outcome.confidence,
+          ocrLatencyMs: outcome.latencyMs,
+          label: signal?.label,
+        });
+      } else {
+        base.pages.push({
+          page: pageNo,
+          text: outcome.text,
+          ocrStatus: outcome.status,
+          ocrConfidence: outcome.confidence,
+          ocrLatencyMs: outcome.latencyMs,
+          label: signal?.label,
+        });
+      }
+    }
+    return base;
   }
   if (format === 'docx') {
     try {
       const result = await mammoth.extractRawText({ buffer });
-      return [{ page: 1, text: result.value }];
+      return { ...base, pages: [{ page: 1, text: result.value }] };
     } catch {
       throw unprocessable('DOCX tidak dapat dibaca', { reason: 'PARSE_ERROR' });
     }
   }
-  return [{ page: 1, text: buffer.toString('utf8') }];
+  return { ...base, pages: [{ page: 1, text: buffer.toString('utf8') }] };
 }
 
 const HEADING_PATTERNS: Array<{ re: RegExp; kind: string }> = [
@@ -212,22 +297,46 @@ const HEADING_PATTERNS: Array<{ re: RegExp; kind: string }> = [
   { re: /^(\d{1,2})[.)]\s+(.+)$/, kind: 'numbered' },
 ];
 
-export type ParsedSection = DocumentSection & { text: string };
+export type ParsedSection = DocumentSection & {
+  text: string;
+  ocrStatus?: OcrStatus;
+  ocrConfidence?: number;
+  unreadable?: boolean;
+  pageSpan?: [number, number];
+  cleanFlags?: string[];
+};
 
 /** Struktur dokumen generik → sections dengan section_path hierarkis. */
 export function sectionsFromPages(pages: ParsedPage[], title: string): ParsedSection[] {
   const sections: ParsedSection[] = [];
   let currentPath = title || 'Dokumen';
   let currentPage = pages[0]?.page ?? 1;
+  let currentOcr: OcrStatus | undefined;
+  let currentConfidence: number | undefined;
+  let currentUnreadable = false;
   let buffer: string[] = [];
 
   const flush = () => {
     const text = buffer.join('\n').replace(/[ \t]+/g, ' ').trim();
-    if (text) sections.push({ section_path: currentPath, page: currentPage, char_count: text.length, text });
+    if (text) {
+      sections.push({
+        section_path: currentPath,
+        page: currentPage,
+        char_count: text.length,
+        text,
+        ...(currentOcr ? { ocrStatus: currentOcr } : {}),
+        ...(currentConfidence !== undefined ? { ocrConfidence: currentConfidence } : {}),
+        ...(currentUnreadable ? { unreadable: true } : {}),
+        pageSpan: [currentPage, currentPage],
+      });
+    }
     buffer = [];
   };
 
   for (const page of pages) {
+    currentOcr = page.ocrStatus;
+    currentConfidence = page.ocrConfidence;
+    currentUnreadable = page.unreadable === true;
     for (const rawLine of page.text.split(/\r?\n/)) {
       const line = rawLine.trim();
       if (!line) continue;
@@ -326,6 +435,9 @@ export function chunkSections(
         level: 'parent',
         parent_id: null,
         embedding: null,
+        ocr_status: section.ocrStatus ?? 'ok',
+        confidence: section.ocrConfidence ?? 1,
+        page_span: section.pageSpan ?? [section.page ?? 1, section.page ?? 1],
       });
       seq += 1;
       splitText(parentText, CHILD_TARGET, CHILD_OVERLAP).forEach((childText, childIndex) => {
@@ -342,6 +454,9 @@ export function chunkSections(
           level: 'child',
           parent_id: null,
           embedding: null,
+          ocr_status: section.ocrStatus ?? 'ok',
+          confidence: section.ocrConfidence ?? 1,
+          page_span: section.pageSpan ?? [section.page ?? 1, section.page ?? 1],
         });
       });
     }
@@ -450,15 +565,40 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
       else if (format === 'xlsx') rawTables = [await parseXlsx(buffer)];
       else if (format === 'sqlite') rawTables = parseSqlite(options.storagePath ?? '');
       else {
-        const pages = await extractPages(format, buffer);
-        quality.parsedPages = pages.length;
-        sections = sectionsFromPages(pages, dataset.name);
-        const chars = sections.reduce((sum, s) => sum + s.text.trim().length, 0);
-        if (chars < 40) {
-          if (process.env.OCR_ENABLED === 'true') {
-            recordStep(db, dataset.id, 'ocr', 'SKIPPED', 0, 'OCR adapter tidak tersedia; teks tidak dipaksa');
-          }
-          throw unprocessable('Dokumen tidak memiliki text layer yang dapat diekstrak', { reason: 'NO_TEXT_LAYER' });
+        const extracted = await extractPages(format, buffer, dataset.id);
+        quality.parsedPages = extracted.pages.length;
+        quality.ocrUsed = extracted.ocrUsed;
+        quality.ocrPages = extracted.ocrPages;
+        quality.ocrStatuses = extracted.ocrStatuses;
+        quality.pageLabels = extracted.pageLabels;
+        quality.peakRssBytes = extracted.peakRssBytes;
+        const unreadable = extracted.pages.filter((p) => p.unreadable).map((p) => p.page);
+        if (unreadable.length) {
+          quality.issues.push(`unreadable_pages=${JSON.stringify(unreadable)}`);
+          recordStep(
+            db,
+            dataset.id,
+            'ocr',
+            'DONE',
+            extracted.ocrStatuses.reduce((sum, s) => sum + s.latencyMs, 0),
+            `halaman tidak terbaca: ${unreadable.join(', ')}`,
+          );
+        } else if (extracted.ocrUsed) {
+          recordStep(db, dataset.id, 'ocr', 'DONE', extracted.ocrStatuses.reduce((sum, s) => sum + s.latencyMs, 0));
+        } else {
+          recordStep(db, dataset.id, 'ocr', 'SKIPPED', 0, 'text layer mencukupi; OCR tidak dipanggil');
+        }
+        sections = sectionsFromPages(extracted.pages, dataset.name);
+        const readableChars = sections
+          .filter((s) => !s.unreadable)
+          .reduce((sum, s) => sum + s.text.trim().length, 0);
+        // Semua halaman gagal → FAILED jujur, bukan jawaban diam-diam.
+        if (readableChars < LOW_TEXT_THRESHOLD) {
+          throw unprocessable('Dokumen tidak memiliki text layer yang dapat diekstrak', {
+            reason: 'NO_TEXT_LAYER',
+            ocrPages: extracted.ocrPages,
+            unreadablePages: unreadable,
+          });
         }
       }
     });
@@ -519,40 +659,37 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
       const parentIds = new Map<string, number>();
       const insert = db.prepare(
         `INSERT INTO core_chunks
-           (document_id, dataset_id, section_path, page, text, token_count, char_count, level, parent_id, embedding_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (document_id, dataset_id, section_path, page, text, token_count, char_count, level, parent_id, embedding_json,
+            content_hash, page_span, clean_version, clean_flags, ocr_status, confidence)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       );
+      const values = (draft: ChunkDraft, parentId: number | null) => [
+        draft.document_id,
+        draft.dataset_id,
+        draft.section_path,
+        draft.page,
+        draft.text,
+        draft.token_count,
+        draft.char_count,
+        draft.level,
+        parentId,
+        null,
+        draft.content_hash ?? null,
+        draft.page_span ? JSON.stringify(draft.page_span) : null,
+        draft.clean_version ?? 0,
+        JSON.stringify(draft.clean_flags ?? []),
+        draft.ocr_status ?? 'ok',
+        draft.confidence ?? 1,
+      ];
       db.transaction(() => {
         for (const draft of drafts) {
           if (draft.level !== 'parent') continue;
-          const result = insert.run(
-            draft.document_id,
-            draft.dataset_id,
-            draft.section_path,
-            draft.page,
-            draft.text,
-            draft.token_count,
-            draft.char_count,
-            draft.level,
-            null,
-            null,
-          );
+          const result = insert.run(...values(draft, null));
           parentIds.set(draft.key, Number(result.lastInsertRowid));
         }
         for (const draft of drafts) {
           if (draft.level !== 'child') continue;
-          insert.run(
-            draft.document_id,
-            draft.dataset_id,
-            draft.section_path,
-            draft.page,
-            draft.text,
-            draft.token_count,
-            draft.char_count,
-            draft.level,
-            draft.parentKey ? parentIds.get(draft.parentKey) ?? null : null,
-            null,
-          );
+          insert.run(...values(draft, draft.parentKey ? parentIds.get(draft.parentKey) ?? null : null));
         }
       })();
     });
