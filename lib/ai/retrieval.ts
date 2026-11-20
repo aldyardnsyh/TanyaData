@@ -6,6 +6,8 @@
  * {kind:'document', sourceId, docTitle, sectionNo, section, page, quote, chunkId, score}.
  */
 import type { DB } from '@/lib/db/client';
+import type { Citation as CoreCitation } from '@/lib/core/contracts';
+import { searchChunks } from '@/lib/core/store';
 import type { Lang, SourceCitation } from '@/lib/contracts/http';
 import { allRows, num, str } from '@/lib/analytics/sql';
 import { normalizeText, stopwordTokens } from '@/lib/ai/normalize';
@@ -430,27 +432,22 @@ export interface RerankableCitation {
  * that was never in the candidate list.
  */
 export function rerankCitations<T extends RerankableCitation>(question: string, citations: T[]): T[] {
-  const q = String(question ?? '');
-  const pasalNumbers = [...q.matchAll(/pasal\s*(\d+)/gi)].map((m) => m[1]);
-  const ayatNumbers = [...q.matchAll(/ayat\s*\(?(\d+)\)?/gi)].map((m) => Number(m[1]));
-  const range = q.match(/ayat\s*(\d+)\s*(?:-|–|s\.?d\.?|to)\s*(\d+)/i);
-  if (range) {
-    const from = Number(range[1]);
-    const to = Number(range[2]);
-    for (let n = from; n <= to && n - from < 20; n += 1) ayatNumbers.push(n);
-  }
+  const entities = extractRetrievalEntities(question);
 
   return citations
     .map((citation, index) => {
       const section = String(citation.section_path ?? '');
+      const hay = section.toLowerCase();
       let boost = 0;
-      if (pasalNumbers.length && pasalNumbers.some((p) =>
+      if (entities.pasal.length && entities.pasal.some((p) =>
         new RegExp(`pasal\\s*0*${p}\\b`, 'i').test(section))) {
         boost += 0.6;
       }
-      for (const n of new Set(ayatNumbers)) {
+      for (const n of entities.ayat) {
         if (section.includes(`Ayat (${n})`) || section.includes(`ayat ${n}`)) boost += 0.25;
       }
+      if (entities.failureCodes.some((c) => hay.includes(c.toLowerCase()))) boost += 0.4;
+      if (entities.channels.some((c) => hay.includes(c.toLowerCase()))) boost += 0.3;
       const base = typeof citation.score === 'number' && Number.isFinite(citation.score)
         ? citation.score
         : 0;
@@ -458,4 +455,28 @@ export function rerankCitations<T extends RerankableCitation>(question: string, 
     })
     .sort((a, b) => b.rank - a.rank || a.index - b.index)
     .map((x) => x.citation);
+}
+
+/**
+ * Model-free reranker entry point for the core FTS5 store. Entities parsed
+ * from the question become `boostSection` / `boostPage` on `searchChunks`, so
+ * the store widens its candidate pool and lifts matching section paths BEFORE
+ * top-k is cut. No embedding, no local model, no extra memory footprint —
+ * only deterministic metadata scoring on chunks FTS5 already returned.
+ */
+export function retrieveWithEntityBoost(
+  db: DB,
+  datasetId: string,
+  question: string,
+  limit = 5,
+  knownChannels: string[] = [],
+): CoreCitation[] {
+  const entities = extractRetrievalEntities(question, knownChannels);
+  return searchChunks(db, {
+    datasetId,
+    question,
+    limit,
+    boostSection: entities.boostSection,
+    boostPage: entities.boostPage,
+  });
 }

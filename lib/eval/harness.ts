@@ -20,8 +20,7 @@ import { CORE_SCHEMA_SQL, SEED_DB, WORKSPACE_DB } from '../db/paths';
 import { createDataset, emptySchema, emptyQualityReport } from '../core/registry';
 import type { SchemaJson } from '../core/contracts';
 import { answerQuestion } from '../core/query';
-import { searchChunks } from '../core/store';
-import { rerankCitations } from '../ai/retrieval';
+import { rerankCitations, retrieveWithEntityBoost } from '../ai/retrieval';
 import { classifyDocument } from '../ai/classifier';
 import { extractFields, findPasalByKeyword } from '../ai/extraction';
 import { decideOutput, inferQuestionKind } from '../ai/output';
@@ -444,12 +443,13 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
       });
 
       // The core FTS5 path returns only 5 candidates. Retrieve a wider set
-      // through the same core function, then apply the AI-lane reranker so the
-      // pasal/ayat actually asked for are not crowded out by generic "pasal"
-      // matches. This is post-processing only — no citation is invented.
+      // through the AI-lane entity boost (pasal/ayat/F-code/channel →
+      // store.searchChunks boostSection/boostPage), then apply the model-free
+      // reranker so the section actually asked for is not crowded out by
+      // generic matches. This is reordering only — no citation is invented.
       const hasRerankSignal = /pasal\s*\d+|ayat\s*\(?\d+/i.test(question);
       const wideCandidates = hasRerankSignal
-        ? searchChunks(db, { datasetId: entry.datasetId, question, limit: 20 })
+        ? retrieveWithEntityBoost(db, entry.datasetId, question, 20)
         : [];
       const reranked = hasRerankSignal
         ? rerankCitations(question, wideCandidates).slice(0, 5)
