@@ -206,17 +206,23 @@ export function buildRuleSql(input: RuleInput): SqlPlan {
   const assumptions: string[] = [];
   if (where.length) assumptions.push(`periode=${period}`);
 
-  // rate pattern: "<value> rate" resolved from a dimension enum, never hardcoded
-  if (/\brate\b|\brasio\b|persentase/i.test(q) && dim) {
-    const enumValue = matchEnumValue(question, dim);
-    if (enumValue && measure) {
+  // Rate pattern: "<value> rate" resolved from a dimension enum, never hardcoded.
+  // The question need not name the dimension ("success rate" implies a status
+  // dimension), so fall back to any enumerated dimension in the active schema.
+  if (/\brate\b|\brasio\b|persentase/i.test(q)) {
+    const rateDim = dim ?? allColumns(schema).find(
+      (c) => c.semantic_role === 'dimension'
+        && ((c.enum?.length ?? 0) > 0 || (c.sample_values?.length ?? 0) > 0),
+    ) ?? null;
+    const enumValue = rateDim ? matchEnumValue(question, rateDim) : null;
+    if (rateDim && enumValue && measure) {
       bindings.unshift(enumValue);
       params.match = enumValue;
-      const sql = `SELECT ROUND(100.0 * SUM(CASE WHEN ${dim.name} = ? THEN ${measure.name} ELSE 0 END) / SUM(${measure.name}), 2) AS rate FROM ${table.name}${whereSql}`;
+      const sql = `SELECT ROUND(100.0 * SUM(CASE WHEN ${rateDim.name} = ? THEN ${measure.name} ELSE 0 END) / SUM(${measure.name}), 2) AS rate FROM ${table.name}${whereSql}`;
       return {
         sql, explanation: `Menghitung rasio ${enumValue} terhadap total ${measure.name} pada ${table.name}${where.length ? ` (${where.join(', ')})` : ''}.`,
         confidence: 0.82, referenced_tables: [table.name],
-        referenced_columns: [dim.name, measure.name], params, bindings,
+        referenced_columns: [rateDim.name, measure.name], params, bindings,
         mode: 'limited', reason: 'rule_based', supported_patterns: ['count', 'group', 'filter', 'rate', 'time'],
       };
     }
