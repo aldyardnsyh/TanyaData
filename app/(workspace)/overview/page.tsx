@@ -232,8 +232,11 @@ export default function OverviewPage() {
     ? points.reduce((best, point, index) => (point.failed > points[best].failed ? index : best), 0)
     : -1;
   const peakPoint = peakIndex >= 0 ? points[peakIndex] : null;
-  const shownIndex = activeBar ?? peakIndex;
-  const shownPoint = shownIndex >= 0 ? points[shownIndex] : null;
+  // Tooltip hanya mengikuti hover/fokus pengguna. Tidak ada fallback ke peakIndex
+  // lagi: dulu fallback inilah yang membuat tooltip "12 Nov / Total Vol 587" nempel
+  // permanen dan menutupi chart (bug visual P0).
+  const shownIndex = activeBar;
+  const shownPoint = shownIndex !== null && shownIndex >= 0 ? points[shownIndex] : null;
   const axis = [0, 0.2, 0.4, 0.6, 0.8, 1].map((fraction) => {
     const index = points.length
       ? Math.min(points.length - 1, Math.round(fraction * (points.length - 1)))
@@ -242,11 +245,14 @@ export default function OverviewPage() {
   });
 
   const channelItems = channels.data?.items ?? [];
-  const lowestFailure = channelItems.length
-    ? Math.min(...channelItems.map((item) => item.failureRate))
-    : null;
+  // Badge memakai metrik yang jelas: merah hanya untuk failure rate tertinggi
+  // (sinyal risiko), volume tertinggi bersifat netral/informatif. Label "Lowest"
+  // dihapus karena merah pada failure terendah menyesatkan.
   const highestFailure = channelItems.length
     ? Math.max(...channelItems.map((item) => item.failureRate))
+    : null;
+  const topVolume = channelItems.length
+    ? Math.max(...channelItems.map((item) => item.total))
     : null;
 
   const categoryItems = categories.data?.items ?? [];
@@ -662,13 +668,15 @@ export default function OverviewPage() {
                     key={point.bucket}
                     className="flex-1 flex flex-col items-center justify-end h-full relative cursor-pointer group/bar"
                     onMouseEnter={() => setActiveBar(index)}
+                    onMouseLeave={() => setActiveBar(null)}
                     onFocus={() => setActiveBar(index)}
+                    onBlur={() => setActiveBar(null)}
                     tabIndex={0}
                     role="img"
                     aria-label={`${point.label}: ${num(point.total)} transactions, ${num(point.failed)} failed`}
                   >
                     {isShown && shownPoint && (
-                      <div className="absolute -top-24 left-1/2 -translate-x-1/2 z-tooltip bg-surface-container-lowest border border-outline-variant shadow-lg rounded-lg p-2.5 w-56 flex flex-col gap-1 pointer-events-none">
+                      <div className="absolute -top-24 left-1/2 -translate-x-1/2 z-tooltip bg-surface-container-lowest border border-outline-variant shadow-lg rounded-lg p-2.5 w-56 flex flex-col gap-1 pointer-events-none animate-[crossfade_var(--motion-tooltip)_ease-out_both]">
                         <div className="flex items-center justify-between pb-1 border-b border-surface-variant">
                           <span className="font-label-sm text-label-sm text-on-surface font-bold">{shownPoint.label}</span>
                           <span
@@ -711,13 +719,13 @@ export default function OverviewPage() {
                     )}
                     {!hidden.failed && (
                       <div
-                        className={`w-full ${isPeak ? 'max-w-[16px] ring-1 ring-white' : 'max-w-[14px]'} bg-[#CF7656] rounded-t-sm`}
+                        className={`w-full transition-opacity duration-[var(--motion-focus)] ${activeBar !== null && !isShown ? 'opacity-40' : 'opacity-100'} ${isPeak ? 'max-w-[16px] ring-1 ring-white' : 'max-w-[14px]'} bg-[#CF7656] rounded-t-sm`}
                         style={{ height: `${failedHeight}px` }}
                       />
                     )}
                     {!hidden.success && (
                       <div
-                        className={`w-full ${isPeak ? 'max-w-[16px]' : 'max-w-[14px]'} bg-primary`}
+                        className={`w-full transition-opacity duration-[var(--motion-focus)] ${activeBar !== null && !isShown ? 'opacity-40' : 'opacity-100'} ${isPeak ? 'max-w-[16px]' : 'max-w-[14px]'} bg-primary`}
                         style={{ height: `${successHeight}px` }}
                       />
                     )}
@@ -856,14 +864,14 @@ export default function OverviewPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <span className="font-label-md text-label-md text-on-surface font-semibold">{channel.channelName}</span>
-                      {channel.failureRate === lowestFailure && (
-                        <span className="font-label-sm text-label-sm px-1 rounded bg-[#CF7656]/20 text-[#CF7656] font-bold">
-                          Lowest
+                      {channel.failureRate === highestFailure && (
+                        <span className="font-label-sm text-label-sm px-1 rounded bg-error-container text-on-error-container font-bold">
+                          Highest failure
                         </span>
                       )}
-                      {channel.failureRate === highestFailure && (
-                        <span className="font-label-sm text-label-sm px-1 rounded bg-[#C5D94B] text-on-surface font-bold">
-                          Highest
+                      {channel.total === topVolume && (
+                        <span className="font-label-sm text-label-sm px-1 rounded bg-surface-container text-on-surface-variant font-bold">
+                          Top volume
                         </span>
                       )}
                     </div>

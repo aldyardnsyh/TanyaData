@@ -248,6 +248,8 @@
 
 :root {
   --motion-fast: 120ms;
+  --motion-tooltip: 120ms;
+  --motion-focus: 150ms;
   --motion-base: 180ms;
   --motion-slow: 320ms;
   --motion-chart: 400ms;
