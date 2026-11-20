@@ -5,14 +5,17 @@ import { shouldAnimate } from '@/lib/motion-tokens';
 
 /**
  * Cara kerja sebagai diagram alur interaktif: berkas & data -> inti TanyaData ->
- * jawaban bersumber + chip bagikan. Empat fase berputar otomatis dan keempat
+ * jawaban yang disusun bertahap -> chip bagikan. Empat fase berputar otomatis
+ * (durasi tiap fase berbeda: fase menyusun jawaban lebih panjang) dan keempat
  * langkah di bawah menyala sinkron dengan fase; mengklik langkah melompat ke
- * fase tersebut (interaksi nyata, bukan dekorasi).
- * Purpose Gate: menggambarkan sistem bekerja sehingga alur terasa, bukan sekadar
- * dibaca. Loop dihentikan saat tab tersembunyi; hover menjeda; reduced-motion
- * menampilkan diagram final statis tanpa putaran.
- * Server merender fase akhir (semua elemen terlihat) supaya no-JS dan screenshot
- * full-page tetap utuh.
+ * fase tersebut.
+ * Penempatan sesuai fase: bubble pertanyaan menempel di atas inti TanyaData
+ * (pertanyaan datang ke mesin), kartu jawaban menyusun baris demi baris saat
+ * fase periksa, dan chip bagikan muncul dengan pop sendiri di fase akhir.
+ * Interaksi nyata: mengklik langkah melompat ke fase; hover menjeda; loop
+ * berhenti saat tab tersembunyi; reduced-motion menampilkan diagram final
+ * statis. Server merender fase akhir (semua terlihat) supaya no-JS dan
+ * screenshot full-page tetap utuh.
  */
 
 const STEPS = [
@@ -38,7 +41,15 @@ const STEPS = [
   },
 ];
 
-const PHASE_MS = 2000;
+const ANSWER_ROWS: [string, string][] = [
+  ['Virtual Account', '3 hari kerja'],
+  ['E-Wallet', 'maksimal 2 x 24 jam'],
+  ['QRIS', '2 hari kerja'],
+  ['Kartu Kredit', '7 sampai 14 hari kerja'],
+];
+
+/** Durasi per fase (ms): fase menyusun jawaban paling panjang agar baris terbaca. */
+const PHASE_MS = [2000, 2200, 3200, 2600];
 
 export function LandingSteps() {
   const [phase, setPhase] = useState(3);
@@ -60,9 +71,12 @@ export function LandingSteps() {
 
   useEffect(() => {
     if (!shouldAnimate() || paused || manual || tabHidden) return;
-    const timer = window.setInterval(() => setPhase((p) => (p + 1) % 4), PHASE_MS);
-    return () => window.clearInterval(timer);
-  }, [paused, manual, tabHidden]);
+    const timer = window.setTimeout(
+      () => setPhase((p) => (p + 1) % 4),
+      PHASE_MS[phase] ?? 2000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [phase, paused, manual, tabHidden]);
 
   const jump = (index: number) => {
     setPhase(index);
@@ -78,6 +92,8 @@ export function LandingSteps() {
     `relative h-10 w-px flex-none transition-colors duration-[var(--motion-slow)] lg:hidden ${
       active ? 'bg-lime' : 'bg-[var(--hairline-dark)]'
     }`;
+
+  const composing = phase === 2;
 
   return (
     <>
@@ -97,17 +113,6 @@ export function LandingSteps() {
         onPointerEnter={() => setPaused(true)}
         onPointerLeave={() => setPaused(false)}
       >
-        <div
-          aria-hidden="true"
-          className={`flex justify-center transition-all duration-[var(--motion-slow)] ${
-            phase >= 1 ? 'translate-y-0 opacity-100' : 'h-0 translate-y-1 overflow-hidden opacity-0'
-          }`}
-        >
-          <span className="inline-flex items-center rounded-chip border border-hairline-dark bg-porcelain px-s3 py-1 font-body text-caption text-ink">
-            &quot;Berapa SLA pengembalian dana untuk tiap kanal?&quot;
-          </span>
-        </div>
-
         <div className="flex flex-col items-center gap-s3 lg:flex-row lg:justify-center lg:gap-0">
           {/* Sisi masukan: dua chip berkas. Menonjol saat fase unggah/tanya. */}
           <div
@@ -146,7 +151,8 @@ export function LandingSteps() {
             />
           </div>
 
-          {/* Inti TanyaData: menyala saat memproses, dengan indikator berpikir. */}
+          {/* Inti TanyaData: bubble pertanyaan menempel di atasnya (pertanyaan
+              datang ke mesin), menyala saat memproses, tenang saat selesai. */}
           <div
             className={`relative flex h-16 w-16 flex-none flex-col items-center justify-center rounded-card-lg border transition-all duration-[var(--motion-slow)] ${
               phase >= 1 && phase <= 2
@@ -154,9 +160,21 @@ export function LandingSteps() {
                 : 'border-hairline-dark bg-forest-08'
             }`}
           >
+            <span
+              aria-hidden="true"
+              className={`absolute bottom-full left-1/2 mb-s2 w-max max-w-[80vw] -translate-x-1/2 transition-all duration-[var(--motion-slow)] ${
+                phase >= 1
+                  ? 'translate-y-0 opacity-100'
+                  : 'pointer-events-none translate-y-1 opacity-0'
+              }`}
+            >
+              <span className="inline-flex items-center rounded-chip border border-hairline-dark bg-porcelain px-s3 py-1 font-body text-caption text-ink">
+                &quot;Berapa SLA pengembalian dana untuk tiap kanal?&quot;
+              </span>
+            </span>
             <span className="state-dot state-dot-active" aria-hidden="true" />
             <span className="mt-1 font-display text-caption font-bold text-porcelain">TanyaData</span>
-            {phase === 1 && (
+            {(phase === 1 || phase === 2) && (
               <span className="mt-1 flex gap-1" role="status" aria-label="Memproses pertanyaan">
                 <span className="animate-typing-dot state-dot state-dot-active" aria-hidden="true" />
                 <span
@@ -188,26 +206,51 @@ export function LandingSteps() {
             />
           </div>
 
-          {/* Sisi keluaran: jawaban + sitasi; chip bagikan muncul di fase akhir. */}
+          {/* Sisi keluaran: jawaban menyusun baris demi baris saat fase periksa,
+              header berubah menjadi selesai, lalu chip bagikan muncul dengan pop. */}
           <div
-            className={`w-full max-w-56 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
+            className={`w-full max-w-72 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
               phase >= 2 ? 'translate-y-0 opacity-100 shadow-float' : 'translate-y-1 opacity-30'
             }`}
           >
-            <p className="font-body text-caption leading-snug text-ink-72">
-              Virtual Account: 3 hari kerja
+            <p className="mono-meta">
+              {phase >= 3 ? 'SELESAI · DENGAN SITASI' : 'MENYUSUN JAWABAN'}
             </p>
-            <span className="mono-meta mt-s2 inline-flex items-center gap-s1">
+            <div className="mt-s2 grid gap-1 font-body text-body text-ink">
+              {ANSWER_ROWS.map(([kanal, sla], index) => (
+                <div
+                  key={kanal}
+                  className={`flex items-baseline justify-between gap-s3 transition-all duration-[var(--motion-expand)] ${
+                    phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
+                  }`}
+                  style={{
+                    transitionDelay: phase >= 2 ? `${index * 140}ms` : '0ms',
+                  }}
+                >
+                  <span className="whitespace-nowrap text-ink-72">{kanal}</span>
+                  <span className="whitespace-nowrap tabular">{sla}</span>
+                </div>
+              ))}
+            </div>
+            <span
+              className={`mono-meta mt-s2 inline-flex items-center gap-s1 transition-all duration-[var(--motion-expand)] ${
+                phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
+              }`}
+              style={{ transitionDelay: phase >= 2 ? '560ms' : '0ms' }}
+            >
               <span className="state-dot state-dot-active" aria-hidden="true" />
               SITASI · FAQ CUSTOMER SUPPORT
             </span>
             <span
-              className={`inline-flex items-center gap-s1 transition-all duration-[var(--motion-slow)] ${
-                phase >= 3 ? 'mt-s2 max-h-6 opacity-100' : 'max-h-0 opacity-0'
+              aria-hidden="true"
+              className={`mt-s2 flex justify-center transition-all duration-[var(--motion-slow)] ${
+                phase >= 3 ? 'scale-100 opacity-100' : 'pointer-events-none scale-90 opacity-0'
               }`}
             >
-              <span className="state-dot state-dot-active" aria-hidden="true" />
-              <span className="mono-meta">BAGIKAN · READ-ONLY</span>
+              <span className="inline-flex items-center gap-s1 rounded-chip bg-lime px-s3 py-1 font-mono text-caption uppercase tracking-[0.06em] text-ink shadow-float">
+                <span className="state-dot" aria-hidden="true" />
+                BAGIKAN · READ-ONLY
+              </span>
             </span>
           </div>
         </div>
