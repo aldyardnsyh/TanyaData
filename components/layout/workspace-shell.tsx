@@ -26,7 +26,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const datasetName =
     meta.data?.data.activeDataset.name ??
     settings.data?.datasets.find((d) => d.id === settings.data?.activeDatasetId)?.name ??
-    'n/a';
+    'Dataset aktif';
   const datasetChoices = meta.data?.data.datasetChoices ?? settings.data?.datasets ?? [];
   const activeDatasetId =
     settings.data?.activeDatasetId ?? meta.data?.data.activeDataset.id ?? 'seed';
@@ -41,16 +41,14 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         settings.retry();
         meta.retry();
       })
-      .catch(() => {
-        /* state lokal tetap; pengguna dapat mencoba lagi */
-      });
+      .catch(() => {});
   };
 
   return (
     <div className="min-h-screen bg-canvas">
       <a
         href="#konten-utama"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-toast focus:rounded-lg focus:bg-primary focus:px-space-md focus:py-space-xs focus:text-label-md focus:text-on-primary"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-toast focus:rounded-control focus:bg-primary focus:px-4 focus:py-2 focus:font-body focus:text-label-md focus:text-on-primary focus-ring-forest"
       >
         {t('shell.skipToContent')}
       </a>
@@ -79,7 +77,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         width="280px"
         title={appName}
       >
-        <nav className="flex-1 space-y-space-xs" aria-label="Primary mobile">
+        <nav className="flex-1 space-y-1" aria-label="Primary mobile">
           {NAV_ITEMS.map((item) => (
             <NavItemLink
               key={item.key}
@@ -91,7 +89,7 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
             />
           ))}
         </nav>
-        <div className="mt-space-md border-t border-outline-variant pt-space-sm">
+        <div className="mt-4 border-t border-border-hairline pt-2">
           <EngineBadge online={engineOnline} version={version} />
         </div>
       </Drawer>

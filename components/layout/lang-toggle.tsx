@@ -9,6 +9,7 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** DECISION-013 point 7: toggle bahasa tetap aktif (DECISION-011). Target 44px. */
 export function LangToggle() {
   const { lang, setLang, t } = useI18n();
 
@@ -19,17 +20,11 @@ export function LangToggle() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lang: next }),
-    }).catch(() => {
-      /* label UI tetap berubah walau penyimpanan server gagal */
-    });
+    }).catch(() => {});
   };
 
   return (
-    <div
-      role="group"
-      aria-label={t('shell.switchLanguage')}
-      className="flex items-center rounded-lg bg-surface-container-low p-0.5"
-    >
+    <div role="group" aria-label={t('shell.switchLanguage')} className="flex items-center rounded-control border border-border-hairline bg-surface p-0.5">
       {(['id', 'en'] as const).map((code) => (
         <button
           key={code}
@@ -37,10 +32,10 @@ export function LangToggle() {
           onClick={() => choose(code)}
           aria-pressed={lang === code}
           className={cn(
-            'min-w-9 rounded-md px-2 py-1 font-label-sm font-bold uppercase transition-colors focus-ring',
+            'flex min-h-11 min-w-11 items-center justify-center rounded-control px-2 font-body text-label-sm font-semibold uppercase transition-colors duration-[var(--motion-fast)] focus-ring',
             lang === code
-              ? 'bg-primary-container text-on-primary'
-              : 'text-on-surface-variant hover:text-on-surface',
+              ? 'bg-primary text-on-primary'
+              : 'text-ink-muted-strong hover:text-ink',
           )}
         >
           {code}

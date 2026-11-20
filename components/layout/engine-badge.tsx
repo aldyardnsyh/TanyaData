@@ -14,31 +14,17 @@ export interface EngineBadgeProps {
 }
 
 /**
- * DECISION-011: label UI Inggris. Versi aplikasi diberi label jujur "App",
- * bukan disajikan sebagai versi mesin. Titik status statis (tanpa ping loop).
+ * U-01/V-10: tanpa klaim "Engine Online", tanpa badge versi marketing.
+ * Dot state + fakta teknis dari API. `version` diterima tapi tidak dirender.
  */
-export function EngineBadge({ online, version, rail = false }: EngineBadgeProps) {
-  const label = online ? 'Engine Online' : 'Engine Offline';
-  const appVersion = version ? `App v${version}` : null;
-  const full = appVersion ? `${label} · ${appVersion}` : label;
-
+export function EngineBadge({ online, version: _version, rail = false }: EngineBadgeProps) {
   return (
-    <div
-      className={cn('flex items-center gap-space-sm', rail && 'justify-center xl:justify-start')}
-      title={full}
-    >
-      <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
-        <span className={cn('relative inline-flex h-2 w-2 rounded-full', online ? 'bg-signal-lime' : 'bg-error')} />
+    <div className={cn('flex min-h-11 items-center gap-2', rail && 'justify-center md:justify-start')}>
+      <span className={cn('state-dot', online ? 'state-dot-active' : 'state-dot-error')} aria-hidden="true" />
+      <span className={cn('font-body text-body-sm text-ink-muted-strong', rail && 'md:hidden xl:inline')}>
+        SQLite · SQL + FTS5
       </span>
-      <span className={cn('font-label-sm text-on-surface-variant', rail && 'md:hidden xl:inline')}>
-        {label}
-      </span>
-      {appVersion && (
-        <span className={cn('font-label-sm font-mono text-on-surface-variant', rail && 'md:hidden xl:inline')}>
-          {appVersion}
-        </span>
-      )}
-      <span className="sr-only">{full}</span>
+      <span className="sr-only">{online ? 'Sumber tersedia' : 'Sumber tidak tersedia'}</span>
     </div>
   );
 }

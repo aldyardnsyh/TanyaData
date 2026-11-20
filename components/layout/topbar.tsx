@@ -7,9 +7,6 @@ import type { DictionaryKey } from '@/lib/i18n/dictionary';
 import { DatasetChip, type DatasetChoice } from './dataset-chip';
 import { QuickSearch } from './quick-search';
 import { LangToggle } from './lang-toggle';
-import { NotificationMenu } from './notification-menu';
-import { UserMenu } from './user-menu';
-import { useRipple } from '@/lib/ui/ripple';
 
 export interface TopbarProps {
   activeKey: DictionaryKey;
@@ -22,42 +19,45 @@ export interface TopbarProps {
   onOpenMenu: () => void;
 }
 
+/** L-06: breadcrumb mengikuti rute aktif. U-03: satu CTA primer per layar. */
 export function Topbar({
+  activeKey,
   datasetName,
   datasetChoices,
   activeDatasetId,
   onSelectDataset,
-  engineOnline,
-  documents,
+  engineOnline: _engineOnline,
+  documents: _documents,
   onOpenMenu,
 }: TopbarProps) {
   const { t } = useI18n();
-  // Purpose Gate: ripple klik pada CTA utama; shimmer hover lewat utilitas CSS.
-  const askRipple = useRipple<HTMLAnchorElement>();
+  const currentLabel = t(activeKey);
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-sticky flex h-14 items-center justify-between gap-space-sm border-b border-border-structural bg-surface-container-lowest px-space-sm md:left-sidebar-rail md:px-space-md xl:left-sidebar">
-      <div className="flex min-w-0 items-center gap-space-sm">
+    <header className="fixed left-0 right-0 top-0 z-sticky flex h-14 items-center justify-between gap-3 border-b border-border-hairline bg-surface px-3 md:left-sidebar-rail md:px-4 xl:left-sidebar">
+      <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
           onClick={onOpenMenu}
           aria-label={t('shell.openMenu')}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container focus-ring md:hidden"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong transition-colors hover:bg-row-hover focus-ring md:hidden"
         >
           <Icon name="menu" className="text-[22px]" />
         </button>
-        {/* Breadcrumb hanya tampil di xl. Di 1024 sidebar rail 72px + topbar
-            membuat ruang breadcrumb terpotong mid-word ("PLATFORM" → "PL"),
-            jadi disembunyikan sampai ada ruang penuh. */}
-        <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-space-xs xl:flex">
-          <span className="font-label-sm uppercase tracking-wider text-on-surface-variant">
-            {t('shell.platform')}
-          </span>
-          <Icon name="chevron_right" className="text-[14px] text-on-surface-variant" />
-          <span className="font-label-sm uppercase tracking-wider text-on-surface">
-            {t('shell.telemetry')}
-          </span>
+
+        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2">
+          <span className="hidden font-body text-body-sm text-ink-muted-strong xl:inline">{t('shell.platform')}</span>
+          <Icon name="chevron_right" className="hidden text-[14px] text-ink-muted-strong xl:inline" aria-hidden="true" />
+          <Link
+            href="/overview"
+            aria-label="Kembali ke Platform"
+            className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong transition-colors hover:bg-row-hover focus-ring lg:flex xl:hidden"
+          >
+            <Icon name="arrow_back" className="text-[20px]" />
+          </Link>
+          <span className="truncate font-body text-label-md font-semibold text-ink">{currentLabel}</span>
         </nav>
+
         <DatasetChip
           name={datasetName}
           choices={datasetChoices}
@@ -66,19 +66,16 @@ export function Topbar({
         />
       </div>
 
-      <div className="flex shrink-0 items-center gap-space-xs">
+      <div className="flex shrink-0 items-center gap-2">
         <QuickSearch />
         <Link
           href="/assistant"
-          onPointerDown={askRipple}
-          className="motion-shimmer motion-ripple-host hidden items-center gap-space-xs rounded-lg bg-primary-container px-space-md py-2 font-label-md text-on-primary shadow-sm transition-all hover:bg-primary focus-ring sm:flex"
+          aria-label={t('shell.askTanyaData')}
+          className="flex h-11 w-11 items-center justify-center rounded-control bg-primary text-on-primary transition-colors duration-[var(--motion-fast)] hover:bg-[#0A3A2C] focus-ring-forest"
         >
-          <Icon name="bolt" className="text-[16px] text-secondary-fixed" />
-          <span>{t('shell.askTanyaData')}</span>
+          <Icon name="forum" className="text-[20px]" />
         </Link>
         <LangToggle />
-        <NotificationMenu engineOnline={engineOnline} documents={documents} />
-        <UserMenu />
       </div>
     </header>
   );
