@@ -344,9 +344,97 @@ const GROUP_RE = /berdasarkan|\bper\s+\w+|distribusi|\bgroup\b|\bby\b/i;
 const MONTH_RE = /per bulan|bulanan|monthly|tiap bulan/i;
 const YEAR_RE = /per tahun|tahunan|yearly|tiap tahun/i;
 const DAY_RE = /per hari|harian|daily|tiap hari/i;
+const RATE_RE =
+  /\b(success|failure|error|completion|approval|conversion|retention)\s*[- ]?\s*rate\b/i ||
+  /tingkat\s+(keberhasilan|kegagalan|sukses|gagal|penyelesaian)/i ||
+  /\b(rasio|persentase|percentage|ratio)\b/i ||
+  /\b[a-z]+\s+rate\b/i;
 
 function mentioned(column: SchemaColumn, lower: string): boolean {
   return lower.includes(column.name.toLowerCase()) || lower.includes(column.sourceName.toLowerCase());
+}
+
+/** Nilai kategori yang dihitung rate-nya, dipetakan ke enum dari schema_json. */
+function rateTarget(lower: string): RegExp | null {
+  if (/success|sukses|berhasil|keberhasilan/i.test(lower)) return /success|sukses|berhasil/i;
+  if (/fail|gagal|kegagalan|error/i.test(lower)) return /fail|gagal|error/i;
+  const generic = /\b([a-z]+)\s+rate\b/i.exec(lower);
+  return generic ? new RegExp(generic[1], 'i') : null;
+}
+
+/**
+ * Pola rate/rasio: persentase satu kategori terhadap seluruh baris.
+ * Kategori, kolom, dan bobot diambil dari schema_json — bukan dari daftar
+ * status atau nama tabel domain (CORE_ARCHITECTURE P-1).
+ */
+function buildRateCandidate(
+  question: string,
+  table: NonNullable<SchemaJson['tables'][number]>,
+  lower: string,
+  context: QueryContext | null,
+  time: SchemaColumn | null,
+): SqlCandidate | null {
+  if (!RATE_RE.test(question)) return null;
+  const target = rateTarget(lower);
+  if (!target) return null;
+
+  const dims = table.columns.filter((c) => c.semantic_role === 'dimension' || c.semantic_role === 'text');
+  const ordered = [...dims, ...table.columns.filter((c) => !dims.includes(c))];
+  let category: SchemaColumn | null = null;
+  let categoryValue: string | null = null;
+  for (const column of ordered) {
+    const values = column.sample_values.filter((v) => v !== null && v !== undefined).map(String);
+    const hit = values.find((v) => target.test(v));
+    if (hit) {
+      category = column;
+      categoryValue = hit;
+      break;
+    }
+  }
+  if (!category || categoryValue === null) return null;
+
+  const measures = table.columns.filter((c) => c.semantic_role === 'measure');
+  const weight = measures.find((c) => /count|jumlah|total|qty|volume|freq/i.test(c.name)) ?? measures[0] ?? null;
+
+  const params: Record<string, string | number | null> = { rateValue: categoryValue };
+  const whereParts: string[] = [];
+  for (const column of table.columns) {
+    if (column.semantic_role !== 'dimension' && column.semantic_role !== 'identifier') continue;
+    const hit = column.sample_values.find(
+      (v) => v !== null && typeof v !== 'boolean' && String(v).length >= 3 && lower.includes(String(v).toLowerCase()),
+    );
+    if (hit !== undefined) {
+      whereParts.push(`${column.name} = ?`);
+      params.filter = hit;
+      break;
+    }
+  }
+  if (context?.period?.start && time) {
+    whereParts.push(`${time.name} >= ?`);
+    params.periodStart = context.period.start;
+  }
+  if (context?.period?.end && time) {
+    whereParts.push(`${time.name} <= ?`);
+    params.periodEnd = context.period.end;
+  }
+
+  const numerator = weight
+    ? `SUM(CASE WHEN ${category.name} = ? THEN ${weight.name} ELSE 0 END)`
+    : `SUM(CASE WHEN ${category.name} = ? THEN 1 ELSE 0 END)`;
+  const denominator = weight ? `SUM(${weight.name})` : 'COUNT(*)';
+  const sql = `SELECT ROUND(${numerator} * 100.0 / NULLIF(${denominator}, 0), 2) AS value FROM ${table.name}${whereParts.length ? ` WHERE ${whereParts.join(' AND ')}` : ''}`;
+  const explanation = `Saya menghitung persentase "${categoryValue}" dari seluruh baris pada tabel ${table.sourceName}${whereParts.length ? ' pada rentang yang diminta' : ''}, dengan pembilang dan penyebut dihitung mesin dari data.`;
+
+  return {
+    sql,
+    explanation,
+    confidence: 0.6,
+    referenced_tables: [table.name],
+    referenced_columns: [category.name, ...(weight ? [weight.name] : []), ...(time ? [time.name] : [])],
+    params,
+    mode: 'limited',
+    reason: 'rule_based_rate',
+  };
 }
 
 /**
@@ -371,6 +459,9 @@ export function buildRuleBasedCandidate(
   const measure = measures.find((c) => mentioned(c, lower)) ?? measures[0] ?? null;
   const dim = dims.find((c) => mentioned(c, lower)) ?? dims[0] ?? null;
   const time = times.find((c) => mentioned(c, lower)) ?? times[0] ?? null;
+
+  const rate = buildRateCandidate(question, table, lower, context, time);
+  if (rate) return rate;
 
   let aggregate: 'count' | 'avg' | 'sum' | null = null;
   if (AVG_RE.test(lower) && measure) aggregate = 'avg';
@@ -400,7 +491,7 @@ export function buildRuleBasedCandidate(
   for (const column of table.columns) {
     if (column.semantic_role !== 'dimension' && column.semantic_role !== 'identifier') continue;
     const hit = column.sample_values.find(
-      (v) => v !== null && String(v).length >= 3 && lower.includes(String(v).toLowerCase()),
+      (v) => v !== null && typeof v !== 'boolean' && String(v).length >= 3 && lower.includes(String(v).toLowerCase()),
     );
     if (hit !== undefined) {
       whereParts.push(`${column.name} = ?`);
