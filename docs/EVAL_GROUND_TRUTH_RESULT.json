@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T13:48:47.027Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-8372-1795182525718\\tanyadata.db",
+  "generatedAt": "2026-11-20T14:59:16.122Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-6520-1795186754803\\tanyadata.db",
   "fixtures": [
     "transaksi",
     "uud-1945",
@@ -761,7 +761,7 @@
     "Koreksi ground truth P3-TUNING: LEG-01/02 expected.extracted_fields.ayat diubah dari subset (1,2,3 / 1) menjadi 1,2,3,4,5 sesuai isi fixture legal/uud.json — Pasal 33 dan Pasal 31 masing-masing memuat 5 ayat. Untuk \"Pasal 33 UUD 1945 berbunyi apa?\" jawaban hukum yang benar adalah seluruh pasal. Ini koreksi label, BUKAN pelonggaran ambang: threshold recall agregat & per-case tetap 0,80 dan pipeline ekstraksi tidak diubah."
   ],
   "capability": {
-    "generatedAt": "2026-11-20T13:48:47.037Z",
+    "generatedAt": "2026-11-20T14:59:16.137Z",
     "cases": [
       {
         "id": "EV-A01",
@@ -1040,7 +1040,7 @@
     ]
   },
   "perpres": {
-    "generatedAt": "2026-11-20T13:48:47.069Z",
+    "generatedAt": "2026-11-20T14:59:16.172Z",
     "groundTruthFile": "data\\fixtures\\perpres76\\chunks.jsonl",
     "groundTruthSha256": "bfbc5c822331bac3c4fe4e659f321a85f3b7f48b6106b4675ba74033c6d1a2f0",
     "groundTruthChunks": 42,

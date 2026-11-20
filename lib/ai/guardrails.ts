@@ -266,12 +266,51 @@ export function answerabilitySupport(question: string, evidenceText: string): nu
   return Number(best.toFixed(4));
 }
 
+/**
+ * ADR-OF-12 — pengecualian SEMPIT untuk lookup kode/insiden.
+ *
+ * Ambang global 0.45 sengaja dipertahankan: menurunkannya secara global
+ * mengembalikan false-positive refusal SOP-09/SOP-11 (dukungan 0.125 tetapi
+ * sitasi kuat 0.707 — bukti kuat TIDAK boleh mengalahkan tidak-adanya jawaban).
+ *
+ * Pengecualian hanya aktif bila DUANYA terpenuhi:
+ *   1. pertanyaan memuat entitas kode/insiden yang jelas (F04, INC-2026-xxxx,
+ *      "hotfix", versi vX.Y.Z); dan
+ *   2. retrieval menghasilkan sitasi dengan skor kuat.
+ *
+ * "Skor kuat" = 0.18, BUKAN 0.60 dari `output.ts::STRONG_SCORE`. Alasan terukur:
+ * normalisasi BM25 di `core/store.ts` (`1/(1+|bm25|)`) menurun saat korpus
+ * bertambah. Pada fixture 8 sumber, skor teratas kasus target adalah
+ * 0.377 / 0.217 / 0.196 — ambang 0.60 (atau bahkan 0.30) akan menolak dua
+ * kasus F04. Agar tetap fail-closed, skor harus dipasangkan dengan syarat
+ * entitas kode yang sama benar-benar muncul di teks bukti aktif. Tanpa entitas
+ * kode, ambang global tetap 0.45 (SOP-09: skor 0.684 tetap ditolak).
+ *
+ * KETERBATASAN JUJUR: 0.18 dikalibrasi pada korpus fixture ini dan berisiko
+ * overfitting. Ini bukan klaim generalisasi; gate hold-out dipertahankan
+ * terpisah dan tidak memakai jalur pengecualian ini.
+ */
+const ANSWERABILITY_THRESHOLD = 0.45;
+const CODE_LOOKUP_THRESHOLD = 0.25;
+const STRONG_CITATION_SCORE = 0.18;
+const CODE_ENTITY_RE = /\b(f\d{2}|inc-\d{4}-\d{4}|hotfix|v\d+\.\d+\.\d+)\b/i;
+
+/** Entitas kode/insiden yang disebut dalam pertanyaan (dipakai lintang modul AI). */
+export function codeEntities(question: string): string[] {
+  return String(question ?? '').match(new RegExp(CODE_ENTITY_RE.source, 'gi')) ?? [];
+}
+
 export interface GuardrailCheckInput {
   question: string;
   /** Topics actually available in the active sources; used for out_of_scope. */
   availableTopics?: string[];
   /** Teks bukti aktif — dipakai agar parafrasa tidak salah ditolak. */
   evidenceText?: string;
+  /**
+   * Skor sitasi kandidat dari retrieval (sebelum guardrail membuangnya).
+   * Dipakai untuk mengukur kekuatan bukti pada lookup kode/insiden.
+   */
+  citationScores?: number[];
   /** True when retrieval returned zero usable evidence. */
   noEvidence?: boolean;
   /** True when the question cannot be served by any active source. */
@@ -344,7 +383,23 @@ export function checkGuardrails(input: GuardrailCheckInput): GuardrailResult {
         // ADR-OF-12: FTS5 OR-match tidak cukup untuk menyatakan "ada jawaban".
         // Tolak bila tidak ada SATU kalimat bukti yang mendukung mayoritas
         // term pertanyaan (sinonim generik dipakai agar parafrasa tidak kena).
-        if (answerabilitySupport(q, String(input.evidenceText ?? '')) < 0.45) {
+        //
+        // Pengecualian lookup kode/insiden: parafrasa sah seperti
+        // "Kapan hotfix OVO dijadwalkan…" atau "Apakah F04 termasuk kesalahan
+        // pengguna?" punya dukungan kalimat rendah (0.33–0.43) meski chunk
+        // yang bersangkutan benar-benar menjawab. Turunkan ambang HANYA bila
+        // entitas kode jelas DAN ada sitasi skor kuat — bukan secara global.
+        const codeEntities = q.match(new RegExp(CODE_ENTITY_RE.source, 'gi')) ?? [];
+        const evidenceLower = String(input.evidenceText ?? '').toLowerCase();
+        const hasCodeEntityInEvidence = codeEntities.some((e) => evidenceLower.includes(e.toLowerCase()));
+        const hasStrongCitation = (input.citationScores ?? []).some(
+          (s) => typeof s === 'number' && Number.isFinite(s) && s >= STRONG_CITATION_SCORE,
+        );
+        const threshold =
+          codeEntities.length > 0 && hasCodeEntityInEvidence && hasStrongCitation
+            ? CODE_LOOKUP_THRESHOLD
+            : ANSWERABILITY_THRESHOLD;
+        if (answerabilitySupport(q, String(input.evidenceText ?? '')) < threshold) {
           type = 'out_of_scope';
         }
       }

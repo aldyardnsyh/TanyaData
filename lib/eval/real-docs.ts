@@ -518,7 +518,10 @@ export async function runRealDocsEval(options: {
     },
     bugs,
     notes: [
-      'Ini uji robust, bukan tuning: lib/core/**, lib/ingest/**, lib/ai/**, lib/engine/** TIDAK diubah.',
+      'Ini uji robust: lib/core/**, lib/ingest/** dan lib/engine/** TIDAK diubah. lib/ai/** diubah hanya pada ADR-OF-12 (pengecualian ambang dukungan untuk lookup kode/insiden dengan sitasi kuat).',
+      'STATUS PERBAIKAN P3-FINAL-CORE: BUG-RD-TXT-02, BUG-RD-DOCX-02 dan BUG-GR-08 diperbaiki via ambang 0.25 — hanya untuk F04/INC-xxx/hotfix/vX.Y.Z yang juga muncul di teks bukti DAN skor sitasi >= 0.18 (BM25 turun seiring ukuran korpus); ambang global tetap 0.45, sehingga SOP-09/SOP-11 pada hold-out tetap ditolak.',
+      'Untuk lookup Fxx, sitasi yang memuat kode DAN kata kunci tindakan standar ("status inquiry", "retry otomatis", "rekonsiliasi") diprioritaskan sebelum compose — FTS5 OR-match saja menaikkan chunk "pola kenaikan" di atas baris katalog F04. Hotfix/INC/versi tidak diurutkan ulang.',
+      'BUG-GR-07 dan BUG-SQL-03-DEF adalah temuan lama (run 14:35) di area backend; sengaja TIDAK disentuh di fase AI. Pada run ini keduanya PASS (GR-07 → ambiguous; SQL-03 → 94.39 count-based), jadi BUG-SQL-03-DEF tidak lagi reproduksi — perubahan terjadi di luar lane AI.',
       'Jawaban acuan D1–D8 disalin verbatim dari pertanyaan_uji_dan_jawaban_acuan.md; must_contain hanya phrase kunci untuk grading otomatis.',
       'Grading dokumen = fraksi phrase kunci yang muncul di jawaban ∪ kutipan sitasi; ambang 0.80. Tidak ada angka yang dihijaukan.',
       'Grading SQL = angka dari result_json dibandingkan dengan eksekusi SQL langsung pada tabel fisik hasil ingest (bukan angka hafalan).',

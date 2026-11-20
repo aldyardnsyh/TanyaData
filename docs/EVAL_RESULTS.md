@@ -1,8 +1,8 @@
 # EVAL_RESULTS — Ground Truth AI Core
 
-- Dijalankan: 2026-11-20T13:48:47.027Z
+- Dijalankan: 2026-11-20T14:59:16.122Z
 - Kasus: 12 legacy (3 per fixture) + 11 capability CORE V2 + 6 Perpres 76
-- Workspace: `C:\Users\aldya\AppData\Local\Temp\tanyadata-eval-8372-1795182525718\tanyadata.db` (sementara, dibuat ulang tiap run)
+- Workspace: `C:\Users\aldya\AppData\Local\Temp\tanyadata-eval-6520-1795186754803\tanyadata.db` (sementara, dibuat ulang tiap run)
 - Hasil keseluruhan: **PASS**
 
 ## Hasil per tahap
@@ -108,25 +108,6 @@ _Tidak ada kasus yang gagal._
 - **Sitasi deep-link** (`lib/ai/retrieval.ts` + `lib/ai/output.ts`): `docId#page=&section=&chunk=&rev=` divalidasi fail-closed (doc READY, chunk nyata & parseable, halaman/section/rev/kutipan cocok). Sitasi tanpa chunk ditolak; sitasi invalid tidak bisa menaikkan level ke `strong`.
 - **Scope per attachment** (`lib/ai/guardrails.ts`): hanya chunk/SQL dari attachment aktif yang boleh masuk; attachment belum `READY` dan referensi "dokumen sebelumnya" ditolak dengan pesan jujur.
 - **Keterbatasan jujur:** FR-A/FR-E pada eval ini menguji permukaan kontrak AI-lane (perencanaan OCR, notifikasi halaman gagal, validasi sitasi di snapshot). OCR sungguhan, PDF/Excel, dan halaman share tetap lane backend/frontend dan diverifikasi manual di P5. Tidak ada model lokal, tidak ada panggilan jaringan saat eval.
-
-## Hold-out generalization gate (ADR-OF-15) — P3-OVERFIT-FIX
-
-- Runner: `node scripts/eval-holdout.mjs --non-interactive` · exit **0** · `2026-11-20T13:48:29.980Z`
-- Kode: commit `5524041` · detail lengkap `docs/HOLDOUT_RESULT.json`, narasi `docs/HOLDOUT_RESULTS.md`
-
-| Metrik | SEBELUM | SESUDAH | Ambang | Hasil |
-|---|---:|---:|---:|---|
-| Hold-out answerable | 0.0000 (0/8) | **1.0000** (8/8) | ≥ 0.8000 | PASS |
-| Hold-out refusal | 0.3333 (1/3) | **1.0000** (3/3) | ≥ 0.8000 | PASS |
-| Hallucination rate | 0.9091 (artefak) | **0.0000** | ≤ 0.0200 | PASS |
-| Delta answerable (sejenis) | n/a (metrik beda jenis) | **0.0000** | ≤ 0.1500 | PASS |
-| Delta refusal (sejenis) | n/a | **0.0000** | ≤ 0.1500 | PASS |
-| `overallPass` | false | **true** | — | PASS |
-
-- Baseline sejenis diambil dari `perpres.cases` (answerable 5/5, refusal 1/1), **bukan** 0.9960 metrik struktur. Gate memakai `evaluateHoldoutGate` (`scripts/lib/holdout-gate.mjs`, pure + fail-closed).
-- Eval lama tetap **PASS 8/8 tahap + 11/11 eval_case + 6/6 Perpres**; skor Perpres 0.9960 tidak berubah (ADR-OF-13 menyatukan entry point tanpa mengubah aturan legal).
-- `typecheck` exit 0 · `build` exit 0 · `eval:ground-truth` exit 0 · `eval:holdout` exit 0.
-- Keterbatasan jujur: fixture 11 kasus masih kecil; ambang dukungan guardrail 0.45 dan sinonim generik perlu diuji pada dokumen hold-out kedua sebelum rilis. Lihat `docs/HOLDOUT_RESULTS.md`.
 
 ## Catatan
 

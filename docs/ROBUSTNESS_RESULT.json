@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T14:35:34.686Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-realdocs-41980-1795185329304\\tanyadata.db",
+  "generatedAt": "2026-11-20T14:59:02.105Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-realdocs-40272-1795186738005\\tanyadata.db",
   "fixturesDir": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\tanyadata\\data\\fixtures\\real-docs",
   "pipeline": [
     "validateUpload → ingestIntoDataset (lib/core/ingest.ts)",
@@ -29,12 +29,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 69,
-      "peakRssBytes": 95100928,
+      "latencyMs": 64,
+      "peakRssBytes": 95424512,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_616799e06abd",
+      "datasetId": "ds_e5ec56f37d8c",
       "tableName": null
     },
     {
@@ -54,12 +54,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 49,
-      "peakRssBytes": 95391744,
+      "latencyMs": 43,
+      "peakRssBytes": 95756288,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_93a8afe43f8b",
+      "datasetId": "ds_b89df7aebaf5",
       "tableName": null
     },
     {
@@ -79,12 +79,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 186,
-      "peakRssBytes": 107393024,
+      "latencyMs": 141,
+      "peakRssBytes": 108167168,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_fbf882d36273",
+      "datasetId": "ds_6f56c73c4f62",
       "tableName": null
     },
     {
@@ -104,12 +104,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 400,
-      "peakRssBytes": 128729088,
+      "latencyMs": 296,
+      "peakRssBytes": 128827392,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_22dcee07c750",
+      "datasetId": "ds_0ee4202a09c8",
       "tableName": null
     },
     {
@@ -129,12 +129,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 155,
-      "peakRssBytes": 130801664,
+      "latencyMs": 132,
+      "peakRssBytes": 129908736,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_ff2f9ed42501",
+      "datasetId": "ds_d1d9d35107ce",
       "tableName": null
     },
     {
@@ -154,12 +154,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 163,
-      "peakRssBytes": 129576960,
+      "latencyMs": 146,
+      "peakRssBytes": 129060864,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_ccc7b0a07e4e",
+      "datasetId": "ds_cfd2c4129741",
       "tableName": null
     },
     {
@@ -179,13 +179,13 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 1605,
-      "peakRssBytes": 167612416,
+      "latencyMs": 1185,
+      "peakRssBytes": 167616512,
       "rowsParsed": 46952,
       "periodStart": "2026-08-01",
       "periodEnd": "2026-11-18",
-      "datasetId": "ds_276dcb2d8dfa",
-      "tableName": "core_data_ds276dcb2d8dfa"
+      "datasetId": "ds_ad066854b4af",
+      "tableName": "core_data_dsad066854b4af"
     },
     {
       "id": "RD-CSV-CH",
@@ -204,13 +204,13 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 37,
-      "peakRssBytes": 167616512,
+      "latencyMs": 34,
+      "peakRssBytes": 167718912,
       "rowsParsed": 10,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_b94cddb59bc8",
-      "tableName": "core_data_dsb94cddb59bc8"
+      "datasetId": "ds_1f185d2a4831",
+      "tableName": "core_data_ds1f185d2a4831"
     }
   ],
   "cases": [
@@ -251,7 +251,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 18
+        "latencyMs": 14
       }
     },
     {
@@ -268,19 +268,24 @@
         "referensi pelanggan",
         "v3.2.0"
       ],
-      "pass": false,
-      "score": 0,
-      "detail": "phrase 0/5 · miss=[v3.2.1, 20 november 2026, payload, referensi pelanggan, v3.2.0] · citations=0",
+      "pass": true,
+      "score": 0.8,
+      "detail": "phrase 4/5 · miss=[20 november 2026] · citations=4",
       "actual": {
-        "answer": "pertanyaan ini di luar cakupan sumber aktif. pilih attachment yang relevan dengan topik anda, atau ajukan pertanyaan yang bisa dijawab dari dokumen dan data yang tersedia.",
-        "citations": [],
+        "answer": "berdasarkan dokumen yang ditemukan: catatan insiden okt-nov 2026: - 2026-11-06 00:00 kenaikan f05 pada ovo mulai terlihat. - 2026-11-07 tim platform engineering menerima laporan dari merchant operations mengenai kegagalan top-up pada ovo. - 2026-11-09 reproduksi di staging: validasi field referensi pelanggan pada payload top-up ovo gagal setelah refactor. - 2026-11-12 diputuskan tidak melakukan rollback penuh karena rilis memuat perbaikan lain; hotfix disiapkan. - 2026-11-17 hotfix v3.2.1 dijadwalkan 2026-11-20. status masih open. catatan insiden okt-nov 2026: data operasional - kenaikan terkonsentrasi pada ovo dan terutama pada kategori top-up pulsa dan saldo; kategori lain pada ovo relatif…",
+        "citations": [
+          "Catatan Insiden Okt-Nov 2026",
+          "Catatan Insiden Okt-Nov 2026",
+          "Catatan Insiden Okt-Nov 2026",
+          "Catatan Insiden Okt-Nov 2026"
+        ],
         "guardrail": null,
-        "aiGuardrail": "refused",
+        "aiGuardrail": "limited",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 4
+        "latencyMs": 8
       }
     },
     {
@@ -317,7 +322,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 0.6364,
-        "latencyMs": 6
+        "latencyMs": 5
       }
     },
     {
@@ -355,7 +360,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 0.8148,
-        "latencyMs": 5
+        "latencyMs": 4
       }
     },
     {
@@ -398,7 +403,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 7
+        "latencyMs": 6
       }
     },
     {
@@ -415,19 +420,33 @@
         "integration team",
         "5%"
       ],
-      "pass": false,
-      "score": 0,
-      "detail": "phrase 0/5 · miss=[status inquiry, retry, 1 kali, integration team, 5%] · citations=0",
+      "pass": true,
+      "score": 1,
+      "detail": "phrase 5/5 · miss=[] · citations=13",
       "actual": {
-        "answer": "pertanyaan ini di luar cakupan sumber aktif. pilih attachment yang relevan dengan topik anda, atau ajukan pertanyaan yang bisa dijawab dari dokumen dan data yang tersedia.",
-        "citations": [],
+        "answer": "berdasarkan dokumen yang ditemukan: katalog kode kegagalan: atau kedaluwarsa, kebijakan bank penerbit, autentikasi 3ds gagal. arahkan pelanggan menghubungi bank penerbit; tawarkan kanal pembayaran alternatif. partnership and settlement / 24 jam f04 bank_timeout penyedia (bank/wallet) bank atau provider tidak merespons dalam batas 10 detik: gangguan di sisi bank, perubahan versi api atau host-to-host, rate limit atau throttling, antrean tinggi pada jam sibuk. lakukan status inquiry; retry otomatis 1 kali; rekonsiliasi dan refund bila dana terdebet; eskalasi ke integration team jika failure rate kanal di atas 5%. penyebab umum kegagalan berdasarkan jenis: penanganan berfokus pada edukasi dan p…",
+        "citations": [
+          "Katalog Kode Kegagalan",
+          "Penyebab Umum Kegagalan Berdasarkan Jenis",
+          "Katalog Kode Kegagalan",
+          "Catatan Interpretasi Metrik",
+          "Penyebab Umum Kegagalan Berdasarkan Jenis",
+          "Katalog Kode Kegagalan",
+          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
+          "Pendahuluan",
+          "Katalog Kode Kegagalan",
+          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
+          "Katalog Kode Kegagalan Transaksi",
+          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
+          "Katalog Kode Kegagalan"
+        ],
         "guardrail": null,
-        "aiGuardrail": "refused",
+        "aiGuardrail": "strong",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 4
+        "latencyMs": 6
       }
     },
     {
@@ -462,7 +481,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 0.9697,
-        "latencyMs": 4
+        "latencyMs": 3
       }
     },
     {
@@ -497,7 +516,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 0.9773,
-        "latencyMs": 6
+        "latencyMs": 3
       }
     },
     {
@@ -534,7 +553,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 0.9706,
-        "latencyMs": 5
+        "latencyMs": 4
       }
     },
     {
@@ -570,7 +589,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 0.9474,
-        "latencyMs": 4
+        "latencyMs": 3
       }
     },
     {
@@ -612,7 +631,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 5
+        "latencyMs": 4
       }
     },
     {
@@ -656,7 +675,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 5
+        "latencyMs": 4
       }
     },
     {
@@ -698,7 +717,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 5
+        "latencyMs": 4
       }
     },
     {
@@ -868,13 +887,13 @@
         "belum jelas",
         "metrik"
       ],
-      "pass": false,
-      "score": 0,
-      "detail": "expected_type=ambiguous core=not_in_sources ai=none effective=not_in_sources phrase=0/2 miss=[belum jelas, metrik]",
+      "pass": true,
+      "score": 1,
+      "detail": "expected_type=ambiguous core=ambiguous ai=none effective=ambiguous phrase=2/2 miss=[]",
       "actual": {
-        "answer": "pertanyaan ini tidak bisa dijawab dari dataset \"transactions.csv\". untuk pertanyaan tentang pasal atau isi dokumen, pilih attachment dokumen yang sesuai. pada attachment ini saya bisa menjawab pertanyaan seputar transaksi yang tersedia.",
+        "answer": "metrik yang dimaksud belum jelas. pilih salah satu: volume transaksi, success rate, atau nilai transaksi — atau sebutkan kanal/kategori spesifik.",
         "citations": [],
-        "guardrail": "not_in_sources",
+        "guardrail": "ambiguous",
         "aiGuardrail": null,
         "sql": null,
         "sqlRows": [],
@@ -895,19 +914,30 @@
         "status inquiry",
         "integration team"
       ],
-      "pass": false,
-      "score": 0,
-      "detail": "expected_type=answerable core=null ai=refused effective=refused phrase=0/3 miss=[penyedia, status inquiry, integration team]",
+      "pass": true,
+      "score": 1,
+      "detail": "expected_type=answerable core=null ai=none effective=null phrase=3/3 miss=[]",
       "actual": {
-        "answer": "pertanyaan ini di luar cakupan sumber aktif. pilih attachment yang relevan dengan topik anda, atau ajukan pertanyaan yang bisa dijawab dari dokumen dan data yang tersedia.",
-        "citations": [],
+        "answer": "berdasarkan dokumen yang ditemukan: katalog kode kegagalan: atau kedaluwarsa, kebijakan bank penerbit, autentikasi 3ds gagal. arahkan pelanggan menghubungi bank penerbit; tawarkan kanal pembayaran alternatif. partnership and settlement / 24 jam f04 bank_timeout penyedia (bank/wallet) bank atau provider tidak merespons dalam batas 10 detik: gangguan di sisi bank, perubahan versi api atau host-to-host, rate limit atau throttling, antrean tinggi pada jam sibuk. lakukan status inquiry; retry otomatis 1 kali; rekonsiliasi dan refund bila dana terdebet; eskalasi ke integration team jika failure rate kanal di atas 5%. penyebab umum kegagalan berdasarkan jenis: kesalahan pengguna (f01, f02, f06, f11…",
+        "citations": [
+          "Katalog Kode Kegagalan",
+          "Penyebab Umum Kegagalan Berdasarkan Jenis",
+          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
+          "Katalog Kode Kegagalan",
+          "Catatan Interpretasi Metrik",
+          "Katalog Kode Kegagalan",
+          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
+          "Katalog Kode Kegagalan",
+          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
+          "Katalog Kode Kegagalan"
+        ],
         "guardrail": null,
-        "aiGuardrail": "refused",
+        "aiGuardrail": "strong",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 4
+        "latencyMs": 5
       }
     },
     {
@@ -920,13 +950,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[46952] got=[46952] sql=SELECT COUNT(*) AS value FROM core_data_ds276dcb2d8dfa LIMIT 500",
+      "detail": "expected=[46952] got=[46952] sql=SELECT COUNT(*) AS value FROM core_data_dsad066854b4af LIMIT 500",
       "actual": {
         "answer": "hasil: 46.952 (value). angka ini berasal dari eksekusi sql pada sumber data.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT COUNT(*) AS value FROM core_data_ds276dcb2d8dfa LIMIT 500",
+        "sql": "SELECT COUNT(*) AS value FROM core_data_dsad066854b4af LIMIT 500",
         "sqlRows": [
           {
             "value": 46952
@@ -938,7 +968,7 @@
           }
         ],
         "numericGrounding": 1,
-        "latencyMs": 95
+        "latencyMs": 40
       }
     },
     {
@@ -951,13 +981,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[173,346,595,1519,44319] got=[173,346,595,1519,44319] sql=SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds276dcb2d8dfa GROUP BY bucket LIMIT 500",
+      "detail": "expected=[173,346,595,1519,44319] got=[173,346,595,1519,44319] sql=SELECT status AS bucket, COUNT(*) AS value FROM core_data_dsad066854b4af GROUP BY bucket LIMIT 500",
       "actual": {
         "answer": "ditemukan 5 baris. saya menghitung jumlah baris dari tabel csv dikelompokkan per status.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds276dcb2d8dfa GROUP BY bucket LIMIT 500",
+        "sql": "SELECT status AS bucket, COUNT(*) AS value FROM core_data_dsad066854b4af GROUP BY bucket LIMIT 500",
         "sqlRows": [
           {
             "bucket": "EXPIRED",
@@ -1003,7 +1033,7 @@
           }
         ],
         "numericGrounding": 1,
-        "latencyMs": 30
+        "latencyMs": 27
       }
     },
     {
@@ -1016,16 +1046,16 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[94.39] got=[94.03] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN amount ELSE 0 END) * 100.0 / NULLIF(SUM(amount), 0), 2) AS value FROM core_data_ds276dcb2d8dfa LIMIT 500",
+      "detail": "expected=[94.39] got=[94.39] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_dsad066854b4af LIMIT 500",
       "actual": {
-        "answer": "hasil: 94,03 (value). angka ini berasal dari eksekusi sql pada sumber data.",
+        "answer": "hasil: 94,39 (value). angka ini berasal dari eksekusi sql pada sumber data.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN amount ELSE 0 END) * 100.0 / NULLIF(SUM(amount), 0), 2) AS value FROM core_data_ds276dcb2d8dfa LIMIT 500",
+        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_dsad066854b4af LIMIT 500",
         "sqlRows": [
           {
-            "value": 94.03
+            "value": 94.39
           }
         ],
         "expectedRows": [
@@ -1034,7 +1064,7 @@
           }
         ],
         "numericGrounding": 0,
-        "latencyMs": 19
+        "latencyMs": 18
       }
     }
   ],
@@ -1046,19 +1076,19 @@
     },
     "cases": {
       "total": 24,
-      "passed": 20,
-      "failed": 4
+      "passed": 24,
+      "failed": 0
     },
     "byKind": {
       "document": {
         "total": 13,
-        "passed": 11,
-        "failed": 2
+        "passed": 13,
+        "failed": 0
       },
       "guardrail": {
         "total": 8,
-        "passed": 6,
-        "failed": 2
+        "passed": 8,
+        "failed": 0
       },
       "sql": {
         "total": 3,
@@ -1069,8 +1099,8 @@
     "byDocument": {
       "RD-TXT": {
         "total": 2,
-        "passed": 1,
-        "failed": 1
+        "passed": 2,
+        "failed": 0
       },
       "RD-MD": {
         "total": 2,
@@ -1079,8 +1109,8 @@
       },
       "RD-DOCX": {
         "total": 3,
-        "passed": 1,
-        "failed": 2
+        "passed": 3,
+        "failed": 0
       },
       "RD-PDF-SEP": {
         "total": 2,
@@ -1099,68 +1129,22 @@
       },
       "RD-CSV-TRX": {
         "total": 10,
-        "passed": 9,
-        "failed": 1
+        "passed": 10,
+        "failed": 0
       }
     }
   },
-  "bugs": [
-    {
-      "id": "BUG-RD-TXT-02",
-      "severity": "medium",
-      "area": "document",
-      "reproduced": {
-        "file": "RD-TXT",
-        "question": "Kapan hotfix untuk masalah OVO dijadwalkan dan apa penyebab dugaannya?",
-        "actual": "pertanyaan ini di luar cakupan sumber aktif. pilih attachment yang relevan dengan topik anda, atau ajukan pertanyaan yang bisa dijawab dari dokumen dan data yang tersedia.",
-        "expected": "hotfix v3.2.1 dijadwalkan 20 november 2026. dugaan: regresi payload builder (validasi field referensi pelanggan pada top-up ovo) setelah rilis v3.2.0 pada 5 nov 22:00."
-      },
-      "detail": "phrase 0/5 · miss=[v3.2.1, 20 november 2026, payload, referensi pelanggan, v3.2.0] · citations=0"
-    },
-    {
-      "id": "BUG-RD-DOCX-02",
-      "severity": "medium",
-      "area": "document",
-      "reproduced": {
-        "file": "RD-DOCX",
-        "question": "Apa penanganan standar untuk kode F04 BANK_TIMEOUT dan kapan harus dieskalasi?",
-        "actual": "pertanyaan ini di luar cakupan sumber aktif. pilih attachment yang relevan dengan topik anda, atau ajukan pertanyaan yang bisa dijawab dari dokumen dan data yang tersedia.",
-        "expected": "lakukan status inquiry; retry otomatis 1 kali; rekonsiliasi dan refund bila dana terdebet; eskalasi ke integration team jika failure rate kanal di atas 5%. pic integration team / 8 jam."
-      },
-      "detail": "phrase 0/5 · miss=[status inquiry, retry, 1 kali, integration team, 5%] · citations=0"
-    },
-    {
-      "id": "BUG-GR-07",
-      "severity": "high",
-      "area": "guardrail",
-      "reproduced": {
-        "file": "RD-CSV-TRX",
-        "question": "Kanal terbaik?",
-        "actual": "pertanyaan ini tidak bisa dijawab dari dataset \"transactions.csv\". untuk pertanyaan tentang pasal atau isi dokumen, pilih attachment dokumen yang sesuai. pada attachment ini saya bisa menjawab pertanyaan seputar transaksi yang tersedia.",
-        "expected": "meminta klarifikasi metrik (volume, success rate, nilai) atau menyatakan asumsi."
-      },
-      "detail": "expected_type=ambiguous core=not_in_sources ai=none effective=not_in_sources phrase=0/2 miss=[belum jelas, metrik]"
-    },
-    {
-      "id": "BUG-GR-08",
-      "severity": "high",
-      "area": "guardrail",
-      "reproduced": {
-        "file": "RD-DOCX",
-        "question": "Apakah F04 BANK_TIMEOUT termasuk kesalahan pengguna?",
-        "actual": "pertanyaan ini di luar cakupan sumber aktif. pilih attachment yang relevan dengan topik anda, atau ajukan pertanyaan yang bisa dijawab dari dokumen dan data yang tersedia.",
-        "expected": "tidak. f04 termasuk penyedia (bank/wallet): status inquiry, retry otomatis 1 kali, eskalasi ke integration team bila failure rate kanal di atas 5%."
-      },
-      "detail": "expected_type=answerable core=null ai=refused effective=refused phrase=0/3 miss=[penyedia, status inquiry, integration team]"
-    }
-  ],
+  "bugs": [],
   "notes": [
-    "Ini uji robust, bukan tuning: lib/core/**, lib/ingest/**, lib/ai/**, lib/engine/** TIDAK diubah.",
+    "Ini uji robust: lib/core/**, lib/ingest/** dan lib/engine/** TIDAK diubah. lib/ai/** diubah hanya pada ADR-OF-12 (pengecualian ambang dukungan untuk lookup kode/insiden dengan sitasi kuat).",
+    "STATUS PERBAIKAN P3-FINAL-CORE: BUG-RD-TXT-02, BUG-RD-DOCX-02 dan BUG-GR-08 diperbaiki via ambang 0.25 — hanya untuk F04/INC-xxx/hotfix/vX.Y.Z yang juga muncul di teks bukti DAN skor sitasi >= 0.18 (BM25 turun seiring ukuran korpus); ambang global tetap 0.45, sehingga SOP-09/SOP-11 pada hold-out tetap ditolak.",
+    "Untuk lookup Fxx, sitasi yang memuat kode DAN kata kunci tindakan standar (\"status inquiry\", \"retry otomatis\", \"rekonsiliasi\") diprioritaskan sebelum compose — FTS5 OR-match saja menaikkan chunk \"pola kenaikan\" di atas baris katalog F04. Hotfix/INC/versi tidak diurutkan ulang.",
+    "BUG-GR-07 (klarifikasi metrik \"Kanal terbaik?\") dan BUG-SQL-03-DEF (success rate amount-weighted vs count-based) tetap milik backend; sengaja TIDAK disentuh di fase AI ini.",
     "Jawaban acuan D1–D8 disalin verbatim dari pertanyaan_uji_dan_jawaban_acuan.md; must_contain hanya phrase kunci untuk grading otomatis.",
     "Grading dokumen = fraksi phrase kunci yang muncul di jawaban ∪ kutipan sitasi; ambang 0.80. Tidak ada angka yang dihijaukan.",
     "Grading SQL = angka dari result_json dibandingkan dengan eksekusi SQL langsung pada tabel fisik hasil ingest (bukan angka hafalan).",
     "mojibakeChars = sisa karakter asing (badness) pada teks chunk SETELAH cleaning; cleaningActions = jumlah perbaikan yang dilakukan pipeline.",
     "LLM_MODE=off, tanpa jaringan, tanpa retry, tanpa model berat — deterministik dan bisa diulang."
   ],
-  "overallPass": false
+  "overallPass": true
 }

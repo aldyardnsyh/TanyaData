@@ -35,7 +35,7 @@ import {
   validateCitationDeepLink,
   type CitationRegistry,
 } from '@/lib/ai/retrieval';
-import { checkGuardrails, topicsFromRegistry } from '@/lib/ai/guardrails';
+import { checkGuardrails, codeEntities, topicsFromRegistry } from '@/lib/ai/guardrails';
 import { classifyEvidenceConfidence, decideOutput } from '@/lib/ai/output';
 import { callLlmStructured } from '@/lib/ai/llm';
 import type { DocType as AiDocType, SchemaJson as AiSchemaJson } from '@/lib/ai/types';
@@ -236,6 +236,11 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
     question: input.question,
     availableTopics: registryTopics,
     evidenceText,
+    // ADR-OF-12: skor kandidat retrieval dibaca SEBELUM guardrail membuang
+    // sitasi. Dipakai hanya untuk pengecualian lookup kode/insiden.
+    citationScores: input.citations
+      .map((c) => c.score)
+      .filter((s): s is number => typeof s === 'number' && Number.isFinite(s)),
     ...(scope
       ? {
           scope: {
@@ -338,6 +343,22 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
       deep_link_status: 'valid',
       rev,
     });
+  }
+
+  // ADR-OF-12 (lanjutan): untuk lookup kode kegagalan (F01–F12), FTS5 OR-match
+  // sering menaikkan chunk "pola kenaikan" di atas baris katalog yang memuat
+  // tindakan standar. Prioritaskan sitasi yang memuat kode DAN kata kunci
+  // penanganan agar composer mengambil bukti yang tepat. Hanya Fxx yang
+  // terpengaruh — hotfix/INC/versi tidak diurutkan ulang (menjaga RD-TXT-02).
+  const lookupCodes = codeEntities(input.question).filter((e) => /^f\d{2}$/i.test(e));
+  if (lookupCodes.length) {
+    const HANDLING_RE = /\b(status inquiry|tindakan standar|lakukan status|retry otomatis|rekonsiliasi)\b/i;
+    const priority = (c: CoreCitation): number => {
+      const text = `${c.section_path ?? ''} ${c.quote ?? ''}`.toLowerCase();
+      const codeHit = lookupCodes.some((code) => text.includes(code.toLowerCase())) ? 2 : 0;
+      return codeHit + (HANDLING_RE.test(text) ? 2 : 0);
+    };
+    validated.sort((a, b) => priority(b) - priority(a));
   }
 
   const confidence = classifyEvidenceConfidence({

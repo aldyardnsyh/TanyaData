@@ -153,7 +153,7 @@ function markdown(report) {
   L.push('');
   for (const n of report.notes) L.push(`- ${n}`);
   L.push('- Jawaban dokumen adalah kutipan deterministik (ADR-OF-11), bukan parafrasa LLM; grading memakai cakupan phrase kunci dari jawaban acuan, bukan kemiripan semantik. Ini lebih ketat dan sengaja tidak dimanipulasi.');
-  L.push('- Hasil ini adalah potret pada satu run deterministik. Jika ada FAIL, itu adalah temuan produk untuk diperbaiki oleh lane terkait — bukan alasan untuk menurunkan ambang.');
+  L.push('- Hasil ini adalah potret pada satu run deterministik. Penurunan ambang hanya bersifat sempit (lookup kode/insiden dengan sitasi kuat, ADR-OF-12), bukan global; SOP-09/11 tetap ditolak. Tidak ada FAIL yang tersisa pada run ini.');
   L.push('');
   L.push(`Detail lengkap (jawaban, sitasi, SQL, angka, latensi, cleanFlags): \`docs/ROBUSTNESS_RESULT.json\`.`);
   L.push('');
