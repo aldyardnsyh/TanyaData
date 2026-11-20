@@ -396,6 +396,10 @@ function gradeGuardrail(testCase: Json, question: string): { pass: boolean; deta
 
 export async function runEval(options: { fixturesDir: string; casesFile: string }): Promise<EvalReport> {
   const casesFile = readJson(options.casesFile);
+  // CORE V2 capability cases are graded by lib/eval/capability.ts with inline
+  // inputs. They have no fixture file and must not enter the legacy 8-stage
+  // baseline — filtering here keeps the original 12-case metrics untouched.
+  casesFile.cases = (casesFile.cases ?? []).filter((c: Json) => !c.capability);
   const prepared = prepareWorkspace(options.fixturesDir, casesFile);
   const db = new Database(WORKSPACE_DB, { readonly: true, fileMustExist: true });
   db.pragma('query_only = 1');

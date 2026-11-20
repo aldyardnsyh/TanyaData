@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "description": "12 ground-truth cases — 3 per fixture — docs/CORE_AI_SPEC.md §7.5",
+  "version": 2,
+  "description": "12 legacy ground-truth cases (docs/CORE_AI_SPEC.md §7.5) + 11 CORE V2 capability cases (docs/CORE_V2_SPEC.md §10). Cases with a `capability` field are graded by lib/eval/capability.ts and do not affect the legacy 8-stage baseline.",
   "cases": [
     {
       "id": "TX-01",
@@ -157,6 +157,349 @@
       },
       "tolerance": { "citation_hit": 1.0, "text_overlap": 0.8 },
       "tags": ["finansial", "kpi", "adversarial"]
+    },
+
+    {
+      "id": "EV-A01",
+      "fr": "A",
+      "capability": "ingest",
+      "question": "PDF scan 1 halaman, OCR timeout — halaman tidak boleh disitasi",
+      "input": {
+        "mode": "ocr_plan",
+        "pages": [
+          { "page": 1, "chars": 0, "imageCoverage": 0.92, "gibberishRatio": 0, "ocr_status": "ocr_skipped" }
+        ]
+      },
+      "expected": {
+        "ocr_pages": [],
+        "unreadable_pages": [1],
+        "ocrUsed": false,
+        "notice_contains": "tidak terbaca",
+        "notice_page": 1
+      },
+      "tolerance": { "detection": "exact", "citation_from_unreadable": 0 },
+      "tags": ["ingest", "ocr", "edge"]
+    },
+    {
+      "id": "EV-A02",
+      "fr": "A",
+      "capability": "ingest",
+      "question": "PDF campuran teks + scan — hanya halaman 2 masuk OCR, angka tidak hilang",
+      "input": {
+        "mode": "ocr_plan",
+        "pages": [
+          { "page": 1, "chars": 1200, "imageCoverage": 0.04, "gibberishRatio": 0.01 },
+          { "page": 2, "chars": 0, "imageCoverage": 0.85, "gibberishRatio": 0 }
+        ],
+        "numbers_before": ["2.850", "4200", "12.5"],
+        "numbers_after": ["2.850", "4200", "12.5"]
+      },
+      "expected": {
+        "ocr_pages": [2],
+        "unreadable_pages": [],
+        "ocrUsed": true,
+        "numeric_preserved": true
+      },
+      "tolerance": { "ocr_pages": "exact", "numeric_checksum": "identical" },
+      "tags": ["ingest", "mixed", "normal"]
+    },
+    {
+      "id": "EV-A03",
+      "fr": "A",
+      "capability": "ingest",
+      "question": "Kalimat bersambung halaman 1→2 digabung jadi satu chunk tanpa duplikat",
+      "input": {
+        "mode": "stitch",
+        "pages": [
+          { "page": 1, "text": "Kalimat ini bersambung ke halaman berikutnya", "section_path": "Bab I" },
+          { "page": 2, "text": "dan berakhir di sini.", "section_path": "Bab I" }
+        ]
+      },
+      "expected": { "chunk_count": 1, "page_spans": [[1, 2]] },
+      "tolerance": { "boundary_fidelity": 0.9, "duplicate_hash": 0 },
+      "tags": ["ingest", "stitch", "edge"]
+    },
+
+    {
+      "id": "EV-B01",
+      "fr": "B",
+      "capability": "readjustment",
+      "question": "Dari data itu cuma tampilkan bagian Pasal 33 lalu group by kanal",
+      "input": {
+        "question": "Dari data itu cuma tampilkan bagian Pasal 33 lalu group by kanal",
+        "question_invalid": "Dari data itu group by kanal_asing",
+        "registry": {
+          "columns": ["kanal", "status", "jumlah"],
+          "sectionPaths": ["Pasal 31", "Pasal 33", "Pasal 34"],
+          "docIds": ["uud-1945"]
+        }
+      },
+      "expected": {
+        "ops": [
+          {
+            "op_type": "filter",
+            "resolved_filters": { "section_path": "Pasal 33" },
+            "resolved_columns": null,
+            "categories": null,
+            "needs_clarification": false,
+            "source": "section_registry"
+          },
+          {
+            "op_type": "group_by",
+            "resolved_filters": null,
+            "resolved_columns": ["kanal"],
+            "categories": null,
+            "needs_clarification": false,
+            "source": "schema_json"
+          }
+        ],
+        "needs_clarification": false,
+        "invalid_ops": [
+          {
+            "op_type": "group_by",
+            "resolved_filters": null,
+            "resolved_columns": null,
+            "categories": null,
+            "needs_clarification": true,
+            "source": "schema_json"
+          }
+        ]
+      },
+      "tolerance": { "sql_execution_match": 0.9, "audit_steps": 2, "foreign_numbers": 0 },
+      "tags": ["readjustment", "filter", "group_by", "normal"]
+    },
+    {
+      "id": "EV-B02",
+      "fr": "B",
+      "capability": "readjustment",
+      "question": "Buatkan report PDF dan Excel dari hasil analitik ini",
+      "input": {
+        "question": "Buatkan report PDF dan Excel dari hasil analitik ini",
+        "registry": { "columns": ["kanal", "status"], "sectionPaths": [], "docIds": [] }
+      },
+      "expected": {
+        "ops": [
+          {
+            "op_type": "report",
+            "resolved_filters": null,
+            "resolved_columns": null,
+            "categories": null,
+            "needs_clarification": false,
+            "source": "result_json"
+          }
+        ],
+        "needs_clarification": false
+      },
+      "tolerance": { "numeric_drift": 0, "source": "result_json" },
+      "tags": ["readjustment", "report", "normal"]
+    },
+
+    {
+      "id": "EV-C01",
+      "fr": "C",
+      "capability": "scope",
+      "question": "Dua attachment berisi angka berbeda; tanya di A — bukti dari B harus ditolak",
+      "input": {
+        "question": "Berapa total di attachment A?",
+        "active": { "id": "att-a", "dataset_id": "ds-a", "source_id": "doc-a", "name": "Laporan A", "status": "READY" },
+        "evidence": [
+          { "kind": "chunk", "dataset_id": "ds-a", "source_id": "doc-a" },
+          { "kind": "sql", "dataset_id": "ds-b", "source_id": "doc-b" }
+        ]
+      },
+      "expected": {
+        "allowed": false,
+        "type": "scope_violation",
+        "violations": ["EVIDENCE_LEAK:sql:dataset=ds-b", "EVIDENCE_LEAK:sql:source=doc-b"]
+      },
+      "tolerance": { "context_leak": 0, "active_attachment_named": true },
+      "tags": ["scope", "attachment", "adversarial"]
+    },
+    {
+      "id": "EV-C02",
+      "fr": "C",
+      "capability": "scope",
+      "question": "Referensi 'dokumen sebelumnya' di scope B tidak boleh menarik konteks A",
+      "input": {
+        "question": "Berapa angka dari dokumen sebelumnya?",
+        "active": { "id": "att-b", "dataset_id": "ds-b", "source_id": "doc-b", "name": "Laporan B", "status": "READY" }
+      },
+      "expected": {
+        "allowed": false,
+        "type": "cross_attachment_ref",
+        "violations": ["CROSS_ATTACHMENT_REFERENCE"]
+      },
+      "tolerance": { "context_leak": 0, "ask_user_to_choose": true },
+      "tags": ["scope", "multi_turn", "edge"]
+    },
+
+    {
+      "id": "EV-D01",
+      "fr": "D",
+      "capability": "citation",
+      "question": "Klik sitasi membuka halaman+bagian+potongan; sitasi tanpa chunk ditolak",
+      "input": {
+        "registry": {
+          "documents": { "uud-1945": { "status": "READY", "pageCount": 10, "rev": "a1b2c3d4" } },
+          "chunks": {
+            "chk-33": {
+              "document_id": "uud-1945",
+              "section_path": "Pasal 33/Ayat (1)",
+              "page": 10,
+              "text": "Perekonomian disusun sebagai usaha bersama berdasar atas asas kekeluargaan.",
+              "parse_ok": true,
+              "ocr_status": null,
+              "rev": "a1b2c3d4"
+            }
+          }
+        },
+        "cases": [
+          {
+            "parts": { "docId": "uud-1945", "page": 10, "section": "Pasal 33/Ayat (1)", "chunk": "chk-33", "rev": "a1b2c3d4" },
+            "quote": "Perekonomian disusun sebagai usaha bersama"
+          },
+          {
+            "parts": { "docId": "uud-1945", "page": 10, "section": "Pasal 33/Ayat (1)", "chunk": "", "rev": "a1b2c3d4" }
+          }
+        ]
+      },
+      "expected": {
+        "results": [
+          { "valid": true },
+          { "valid": false, "reason": "MISSING_CHUNK" }
+        ]
+      },
+      "tolerance": { "citation_hit": 0.9, "fake_citation": 0 },
+      "tags": ["citation", "deep_link", "normal"]
+    },
+    {
+      "id": "EV-D02",
+      "fr": "D",
+      "capability": "citation",
+      "question": "Tanpa bukti valid → refused; kutipan diubah dan rev lama ditolak",
+      "input": {
+        "registry": {
+          "documents": { "fin-q3-2026": { "status": "READY", "pageCount": 2, "rev": "deadbeef" } },
+          "chunks": {
+            "fin-aruskas": {
+              "document_id": "fin-q3-2026",
+              "section_path": "Arus kas operasi/Q3 2026",
+              "page": 2,
+              "text": "Arus kas operasi: 22300000000 IDR Q3 2026",
+              "parse_ok": true,
+              "rev": "deadbeef"
+            }
+          }
+        },
+        "cases": [
+          {
+            "parts": { "docId": "fin-q3-2026", "page": 2, "section": "Arus kas operasi/Q3 2026", "chunk": "fin-aruskas", "rev": "deadbeef" },
+            "quote": "999999"
+          },
+          {
+            "parts": { "docId": "fin-q3-2026", "page": 2, "section": "Arus kas operasi/Q3 2026", "chunk": "fin-aruskas", "rev": "wrongrev" }
+          }
+        ]
+      },
+      "expected": {
+        "results": [
+          { "valid": false, "reason": "QUOTE_MISMATCH" },
+          { "valid": false, "reason": "REV_MISMATCH" }
+        ]
+      },
+      "tolerance": { "refusal_correctness": 0.95, "foreign_numbers": 0, "false_guardrail": 0.02 },
+      "tags": ["citation", "refused", "adversarial"]
+    },
+
+    {
+      "id": "EV-E01",
+      "fr": "E",
+      "capability": "share",
+      "question": "Share link dibuka tanpa login — sitasi tetap bisa diklik",
+      "input": {
+        "registry": {
+          "documents": { "fin-q3-2026": { "status": "READY", "pageCount": 2, "rev": "deadbeef" } },
+          "chunks": {
+            "fin-pendapatan-q3": {
+              "document_id": "fin-q3-2026",
+              "section_path": "Pendapatan/Q3 2026",
+              "page": 1,
+              "text": "Pendapatan: 125000000000 IDR Q3 2026",
+              "parse_ok": true,
+              "rev": "deadbeef"
+            }
+          }
+        },
+        "scenarios": [
+          {
+            "citations": [
+              {
+                "deep_link": "fin-q3-2026#page=1&section=Pendapatan%2FQ3%202026&chunk=fin-pendapatan-q3&rev=deadbeef",
+                "quote": "Pendapatan: 125000000000 IDR Q3 2026"
+              }
+            ],
+            "snapshot": { "id": "sh_a1b2c3d4e5f6", "requires_login": false, "link_created": true, "self_contained": true }
+          }
+        ]
+      },
+      "expected": {
+        "results": [
+          {
+            "citations_valid": true,
+            "rejected": 0,
+            "requires_login": false,
+            "link_created": true,
+            "self_contained": true,
+            "id_pattern": "^sh_[a-f0-9]{12}$"
+          }
+        ]
+      },
+      "tolerance": { "login_required": 0, "content_drift": 0, "unique_id": 1 },
+      "tags": ["share", "read_only", "normal"]
+    },
+    {
+      "id": "EV-E02",
+      "fr": "E",
+      "capability": "share",
+      "question": "Konfirmasi dibatalkan vs dilanjutkan; attachment dihapus → snapshot tetap terbaca",
+      "input": {
+        "registry": {
+          "documents": { "fin-q3-2026": { "status": "READY", "pageCount": 2, "rev": "deadbeef" } },
+          "chunks": {
+            "fin-pendapatan-q3": {
+              "document_id": "fin-q3-2026",
+              "section_path": "Pendapatan/Q3 2026",
+              "page": 1,
+              "text": "Pendapatan: 125000000000 IDR Q3 2026",
+              "parse_ok": true,
+              "rev": "deadbeef"
+            }
+          }
+        },
+        "scenarios": [
+          {
+            "citations": [],
+            "snapshot": { "id": "", "requires_login": false, "link_created": false, "self_contained": false }
+          },
+          {
+            "citations": [
+              {
+                "deep_link": "fin-q3-2026#page=1&section=Pendapatan%2FQ3%202026&chunk=fin-pendapatan-q3&rev=deadbeef",
+                "quote": "Pendapatan: 125000000000 IDR Q3 2026"
+              }
+            ],
+            "snapshot": { "id": "sh_998877665544", "requires_login": false, "link_created": true, "self_contained": true }
+          }
+        ]
+      },
+      "expected": {
+        "results": [
+          { "citations_valid": true, "rejected": 0, "link_created": false },
+          { "citations_valid": true, "rejected": 0, "link_created": true, "self_contained": true }
+        ]
+      },
+      "tolerance": { "exposure_before_confirm": 0, "content_drift": 0 },
+      "tags": ["share", "confirmation", "edge"]
     }
   ]
 }

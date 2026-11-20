@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T08:59:48.229Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-23632-1795165187491\\tanyadata.db",
+  "generatedAt": "2026-11-20T09:30:53.767Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-17360-1795167052752\\tanyadata.db",
   "fixtures": [
     "transaksi",
     "uud-1945",
@@ -749,5 +749,284 @@
     "Riwayat eksekusi lengkap dicatat di docs/EVAL_RESULTS.md. Bug produk sengaja DIBIARKAN agar laporan ini menjadi diagnosis jujur, bukan hasil yang dihijaukan.",
     "Kasus TX-03 gagal karena rule builder core tidak memiliki pola rate — temuan produk, bukan bug harness.",
     "FIN-03 memuat instruksi injeksi; guardrail AI lane diuji terpisah dari guardrail core."
-  ]
+  ],
+  "capability": {
+    "generatedAt": "2026-11-20T09:30:53.773Z",
+    "cases": [
+      {
+        "id": "EV-A01",
+        "fr": "A",
+        "capability": "ingest",
+        "question": "PDF scan 1 halaman, OCR timeout — halaman tidak boleh disitasi",
+        "pass": true,
+        "detail": "ocr_pages=[] unreadable=[1] ocrUsed=false | notice_ok=true",
+        "observed": {
+          "ocr_pages": [],
+          "unreadable_pages": [
+            1
+          ],
+          "text_pages": [],
+          "ocrUsed": false,
+          "notice": "Halaman 1 tidak terbaca (OCR gagal/timeout). Halaman ini tidak dijadikan sitasi; halaman lain tetap dipakai."
+        }
+      },
+      {
+        "id": "EV-A02",
+        "fr": "A",
+        "capability": "ingest",
+        "question": "PDF campuran teks + scan — hanya halaman 2 masuk OCR, angka tidak hilang",
+        "pass": true,
+        "detail": "ocr_pages=[2] unreadable=[] ocrUsed=true | numeric_ok=true",
+        "observed": {
+          "ocr_pages": [
+            2
+          ],
+          "unreadable_pages": [],
+          "text_pages": [
+            1
+          ],
+          "ocrUsed": true,
+          "numeric_ok": true
+        }
+      },
+      {
+        "id": "EV-A03",
+        "fr": "A",
+        "capability": "ingest",
+        "question": "Kalimat bersambung halaman 1→2 digabung jadi satu chunk tanpa duplikat",
+        "pass": true,
+        "detail": "chunks=1 unique=true spans=[[1,2]]",
+        "observed": {
+          "chunks": 1,
+          "unique": true,
+          "spans": [
+            [
+              1,
+              2
+            ]
+          ],
+          "stitched": 1
+        }
+      },
+      {
+        "id": "EV-B01",
+        "fr": "B",
+        "capability": "readjustment",
+        "question": "Dari data itu cuma tampilkan bagian Pasal 33 lalu group by kanal",
+        "pass": true,
+        "detail": "ops=[{\"op_type\":\"filter\",\"resolved_filters\":{\"section_path\":\"Pasal 33\"},\"resolved_columns\":null,\"categories\":null,\"needs_clarification\":false,\"source\":\"section_registry\"},{\"op_type\":\"group_by\",\"resolved_filters\":null,\"resolved_columns\":[\"kanal\"],\"categories\":null,\"needs_clarification\":false,\"source\":\"schema_json\"}] clarification=false | invalid=[{\"op_type\":\"group_by\",\"resolved_filters\":null,\"resolved_columns\":null,\"categories\":null,\"needs_clarification\":true,\"source\":\"schema_json\"}]",
+        "observed": {
+          "ops": [
+            {
+              "op_type": "filter",
+              "resolved_filters": {
+                "section_path": "Pasal 33"
+              },
+              "resolved_columns": null,
+              "categories": null,
+              "needs_clarification": false,
+              "source": "section_registry"
+            },
+            {
+              "op_type": "group_by",
+              "resolved_filters": null,
+              "resolved_columns": [
+                "kanal"
+              ],
+              "categories": null,
+              "needs_clarification": false,
+              "source": "schema_json"
+            }
+          ],
+          "needs_clarification": false,
+          "invalid_ops": [
+            {
+              "op_type": "group_by",
+              "resolved_filters": null,
+              "resolved_columns": null,
+              "categories": null,
+              "needs_clarification": true,
+              "source": "schema_json"
+            }
+          ]
+        }
+      },
+      {
+        "id": "EV-B02",
+        "fr": "B",
+        "capability": "readjustment",
+        "question": "Buatkan report PDF dan Excel dari hasil analitik ini",
+        "pass": true,
+        "detail": "ops=[{\"op_type\":\"report\",\"resolved_filters\":null,\"resolved_columns\":null,\"categories\":null,\"needs_clarification\":false,\"source\":\"result_json\"}] clarification=false",
+        "observed": {
+          "ops": [
+            {
+              "op_type": "report",
+              "resolved_filters": null,
+              "resolved_columns": null,
+              "categories": null,
+              "needs_clarification": false,
+              "source": "result_json"
+            }
+          ],
+          "needs_clarification": false
+        }
+      },
+      {
+        "id": "EV-C01",
+        "fr": "C",
+        "capability": "scope",
+        "question": "Dua attachment berisi angka berbeda; tanya di A — bukti dari B harus ditolak",
+        "pass": true,
+        "detail": "allowed=false type=scope_violation violations=[\"EVIDENCE_LEAK:sql:dataset=ds-b\",\"EVIDENCE_LEAK:sql:source=doc-b\"]",
+        "observed": {
+          "allowed": false,
+          "type": "scope_violation",
+          "violations": [
+            "EVIDENCE_LEAK:sql:dataset=ds-b",
+            "EVIDENCE_LEAK:sql:source=doc-b"
+          ],
+          "message": "Bukti dari attachment lain ditolak. Hanya \"Laporan A\" yang dipakai."
+        }
+      },
+      {
+        "id": "EV-C02",
+        "fr": "C",
+        "capability": "scope",
+        "question": "Referensi 'dokumen sebelumnya' di scope B tidak boleh menarik konteks A",
+        "pass": true,
+        "detail": "allowed=false type=cross_attachment_ref violations=[\"CROSS_ATTACHMENT_REFERENCE\"]",
+        "observed": {
+          "allowed": false,
+          "type": "cross_attachment_ref",
+          "violations": [
+            "CROSS_ATTACHMENT_REFERENCE"
+          ],
+          "message": "Pertanyaan merujuk dokumen/attachment lain. Silakan pilih attachment yang dimaksud; scope aktif adalah \"Laporan B\"."
+        }
+      },
+      {
+        "id": "EV-D01",
+        "fr": "D",
+        "capability": "citation",
+        "question": "Klik sitasi membuka halaman+bagian+potongan; sitasi tanpa chunk ditolak",
+        "pass": true,
+        "detail": "valid | rejected:MISSING_CHUNK",
+        "observed": {
+          "results": [
+            {
+              "valid": true,
+              "reason": null,
+              "link": "uud-1945#page=10&section=Pasal%2033%2FAyat%20(1)&chunk=chk-33&rev=a1b2c3d4"
+            },
+            {
+              "valid": false,
+              "reason": "MISSING_CHUNK",
+              "link": null
+            }
+          ]
+        }
+      },
+      {
+        "id": "EV-D02",
+        "fr": "D",
+        "capability": "citation",
+        "question": "Tanpa bukti valid → refused; kutipan diubah dan rev lama ditolak",
+        "pass": true,
+        "detail": "rejected:QUOTE_MISMATCH | rejected:REV_MISMATCH",
+        "observed": {
+          "results": [
+            {
+              "valid": false,
+              "reason": "QUOTE_MISMATCH",
+              "link": "fin-q3-2026#page=2&section=Arus%20kas%20operasi%2FQ3%202026&chunk=fin-aruskas&rev=deadbeef"
+            },
+            {
+              "valid": false,
+              "reason": "REV_MISMATCH",
+              "link": "fin-q3-2026#page=2&section=Arus%20kas%20operasi%2FQ3%202026&chunk=fin-aruskas&rev=wrongrev"
+            }
+          ]
+        }
+      },
+      {
+        "id": "EV-E01",
+        "fr": "E",
+        "capability": "share",
+        "question": "Share link dibuka tanpa login — sitasi tetap bisa diklik",
+        "pass": true,
+        "detail": "scenario1:citations=true,link=true,self=true",
+        "observed": {
+          "results": [
+            {
+              "citations_valid": true,
+              "rejected": 0,
+              "link_created": true,
+              "self_contained": true,
+              "requires_login": false,
+              "id": "sh_a1b2c3d4e5f6"
+            }
+          ]
+        }
+      },
+      {
+        "id": "EV-E02",
+        "fr": "E",
+        "capability": "share",
+        "question": "Konfirmasi dibatalkan vs dilanjutkan; attachment dihapus → snapshot tetap terbaca",
+        "pass": true,
+        "detail": "scenario1:citations=true,link=false,self=false | scenario2:citations=true,link=true,self=true",
+        "observed": {
+          "results": [
+            {
+              "citations_valid": true,
+              "rejected": 0,
+              "link_created": false,
+              "self_contained": false,
+              "requires_login": false,
+              "id": ""
+            },
+            {
+              "citations_valid": true,
+              "rejected": 0,
+              "link_created": true,
+              "self_contained": true,
+              "requires_login": false,
+              "id": "sh_998877665544"
+            }
+          ]
+        }
+      }
+    ],
+    "passed": 11,
+    "total": 11,
+    "byFr": {
+      "A": {
+        "cases": 3,
+        "passed": 3
+      },
+      "B": {
+        "cases": 2,
+        "passed": 2
+      },
+      "C": {
+        "cases": 2,
+        "passed": 2
+      },
+      "D": {
+        "cases": 2,
+        "passed": 2
+      },
+      "E": {
+        "cases": 2,
+        "passed": 2
+      }
+    },
+    "overallPass": true,
+    "notes": [
+      "11 eval_case baru dari docs/CORE_V2_SPEC.md §10 (EV-A01…EV-E02).",
+      "FR-A/FR-E dinilai pada permukaan kontrak AI-lane; OCR penuh & share UI tetap lane backend/frontend (P5 manual).",
+      "Tidak ada model lokal, tidak ada jaringan, tidak ada retry; deterministik dan bisa diulang."
+    ]
+  }
 }

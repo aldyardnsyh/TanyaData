@@ -66,7 +66,7 @@ function markdown(report) {
   lines.push('# EVAL_RESULTS — Ground Truth AI Core');
   lines.push('');
   lines.push(`- Dijalankan: ${report.generatedAt}`);
-  lines.push(`- Kasus: ${report.caseCount} (3 per fixture)`);
+  lines.push(`- Kasus: ${report.caseCount} legacy (3 per fixture) + ${report.capability?.total ?? 0} capability CORE V2`);
   lines.push(`- Workspace: \`${report.workspaceDb}\` (sementara, dibuat ulang tiap run)`);
   lines.push(`- Hasil keseluruhan: **${report.overallPass ? 'PASS' : 'FAIL'}**`);
   lines.push('');
@@ -103,9 +103,38 @@ function markdown(report) {
       lines.push('');
     }
   }
+  if (report.capability) {
+    const cap = report.capability;
+    lines.push('## Eval_case CORE V2 (FR-A..FR-E)');
+    lines.push('');
+    lines.push(`- Hasil: **${cap.passed}/${cap.total} lulus** (target ≥ 8/11) — ${cap.overallPass ? 'PASS' : 'FAIL'}`);
+    lines.push('');
+    lines.push('| ID | FR | Kemampuan | Hasil | Bukti |');
+    lines.push('|---|---|---|---|---|');
+    for (const c of cap.cases) {
+      lines.push(`| ${c.id} | ${c.fr} | ${c.capability} | ${c.pass ? 'PASS' : 'FAIL'} | ${c.detail.replace(/\|/g, '\\|')} |`);
+    }
+    lines.push('');
+    lines.push('| FR | Kasus | Lulus |');
+    lines.push('|---|---:|---:|');
+    for (const [fr, v] of Object.entries(cap.byFr)) {
+      lines.push(`| ${fr} | ${v.cases} | ${v.passed} |`);
+    }
+    lines.push('');
+  }
+
+  lines.push('## Implementasi AI V2 (P3-CORE-V2)');
+  lines.push('');
+  lines.push('- **Readjustment deterministik** (`lib/ai/readjustment.ts`): regex → `ReadjustmentOp` (filter/group_by/classify/report) yang di-resolve terhadap `schema_json`/registry. Kolom atau bagian tak dikenal → `needs_clarification` + daftar nilai valid, bukan tebakan. `ReadjustmentOp` saat ini didefinisikan secara lokal karena `lib/core/contracts.ts` (milik backend) belum memilikinya; file itu sengaja tidak diubah.');
+  lines.push('- **Sitasi deep-link** (`lib/ai/retrieval.ts` + `lib/ai/output.ts`): `docId#page=&section=&chunk=&rev=` divalidasi fail-closed (doc READY, chunk nyata & parseable, halaman/section/rev/kutipan cocok). Sitasi tanpa chunk ditolak; sitasi invalid tidak bisa menaikkan level ke `strong`.');
+  lines.push('- **Scope per attachment** (`lib/ai/guardrails.ts`): hanya chunk/SQL dari attachment aktif yang boleh masuk; attachment belum `READY` dan referensi "dokumen sebelumnya" ditolak dengan pesan jujur.');
+  lines.push('- **Keterbatasan jujur:** FR-A/FR-E pada eval ini menguji permukaan kontrak AI-lane (perencanaan OCR, notifikasi halaman gagal, validasi sitasi di snapshot). OCR sungguhan, PDF/Excel, dan halaman share tetap lane backend/frontend dan diverifikasi manual di P5. Tidak ada model lokal, tidak ada panggilan jaringan saat eval.');
+  lines.push('');
+
   lines.push('## Catatan');
   lines.push('');
   for (const n of report.notes) lines.push(`- ${n}`);
+  if (report.capability) for (const n of report.capability.notes) lines.push(`- ${n}`);
   lines.push('');
   lines.push('Detail lengkap (jawaban, sitasi, SQL, angka, latensi) ada di `docs/EVAL_GROUND_TRUTH_RESULT.json`.');
   lines.push('');
@@ -119,11 +148,14 @@ const timer = setTimeout(() => {
 
 try {
   const { runEval } = await import('../lib/eval/harness.ts');
+  const { runCapabilityEval } = await import('../lib/eval/capability.ts');
   const report = await runEval({ fixturesDir, casesFile });
+  const capability = runCapabilityEval(casesFile);
+  const combined = { ...report, capability };
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
-  fs.writeFileSync(outFile, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
-  fs.writeFileSync(mdFile, markdown(report), 'utf8');
+  fs.writeFileSync(outFile, `${JSON.stringify(combined, null, 2)}\n`, 'utf8');
+  fs.writeFileSync(mdFile, markdown(combined), 'utf8');
 
   console.log('GROUND TRUTH EVAL — pass/fail per tahap');
   console.log('─'.repeat(72));
@@ -142,11 +174,18 @@ try {
     console.log(`  ${name.padEnd(12)} ${String(v.passed).padStart(2)}/${v.cases} lulus  ${v.failed ? `(${v.failed} gagal)` : ''}`);
   }
   console.log('─'.repeat(72));
-  console.log(`KESELURUHAN: ${report.overallPass ? 'PASS' : 'FAIL'}  |  ${report.caseCount} kasus  |  detail: ${path.relative(root, outFile)}`);
+  console.log('─'.repeat(72));
+  console.log(`CORE V2 capability: ${capability.passed}/${capability.total} lulus (target ≥ 8/11) — ${capability.overallPass ? 'PASS' : 'FAIL'}`);
+  for (const c of capability.cases) {
+    console.log(`  ${c.id.padEnd(7)} FR-${c.fr} ${c.capability.padEnd(12)} ${c.pass ? 'PASS' : 'FAIL'}  ${c.detail}`);
+  }
+  console.log('─'.repeat(72));
+  const overall = report.overallPass && capability.overallPass;
+  console.log(`KESELURUHAN: ${overall ? 'PASS' : 'FAIL'}  |  ${report.caseCount} legacy + ${capability.total} capability  |  detail: ${path.relative(root, outFile)}`);
   console.log(`Laporan: ${path.relative(root, mdFile)}`);
 
   clearTimeout(timer);
-  process.exit(report.overallPass ? 0 : 1);
+  process.exit(overall ? 0 : 1);
 } catch (error) {
   clearTimeout(timer);
   console.error('EVAL_ERROR', error instanceof Error ? error.stack : String(error));
