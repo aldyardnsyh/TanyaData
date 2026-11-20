@@ -125,6 +125,9 @@
   --motion-modal: 240ms;
   --motion-slow: 320ms;     /* batas atas perubahan data */
 
+  --scale-press: 0.98;
+  --scale-pop: 1.04;
+
   --z-sticky: 10;
   --z-drawer: 40;
   --z-dropdown: 50;
@@ -364,8 +367,6 @@
   --color-on-error-container: var(--color-ink);
   --color-outline: var(--color-muted);
   --color-outline-variant: var(--border-hairline);
-  --color-muted: var(--color-muted);
-  --color-terracotta: var(--color-terracotta);
   --color-graphite: var(--color-ink);
   --color-border-structural: var(--border-hairline);
 
