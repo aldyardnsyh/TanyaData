@@ -1,0 +1,82 @@
+CATATAN INSIDEN OPERASIONAL - OKTOBER s.d. NOVEMBER 2026
+Disusun oleh : Payment Operations (kompilasi dari kanal #ops-incident dan tiket)
+Terakhir diperbarui : 2026-11-17
+Catatan : dokumen kerja internal, format bebas
+
+=====================================================================
+INC-2026-1015 | Lonjakan timeout VA Mandiri
+Severity : High | Status : OPEN | Kanal : VA Mandiri (CH02) | Kode utama : F04 BANK_TIMEOUT
+=====================================================================
+Ringkasan
+Sejak 15 Oktober 2026, transaksi melalui Virtual Account Mandiri mengalami peningkatan kegagalan dengan kode F04 (BANK_TIMEOUT).
+Waktu respons dari bank naik signifikan (banyak permintaan menunggu 10 - 30 detik sebelum timeout), dan failure rate kanal meningkat jauh di atas normal (1% - 4%).
+
+Timeline
+- 2026-10-09  Partnership menerima email dari Bank Mandiri tentang rencana migrasi endpoint host-to-host (H2H) dari API versi 1 ke versi 2. Email tidak diteruskan ke tim operasional.
+- 2026-10-14 23:00  Bank Mandiri melakukan migrasi endpoint H2H ke versi 2 (informasi dari tiket bank, dikonfirmasi kemudian).
+- 2026-10-15 00:00  Kenaikan timeout mulai terlihat pada VA Mandiri. Kanal lain normal.
+- 2026-10-17  Customer Support melaporkan peningkatan keluhan "VA Mandiri gagal dibayar / saldo terdebet tapi belum masuk". Insiden resmi dibuka.
+- 2026-10-17  Verifikasi awal: kenaikan terkonsentrasi pada VA Mandiri; kanal VA lain (BCA, BNI, BRI) dan e-wallet normal. Tidak ada deployment internal pada periode 10 - 17 Oktober.
+- 2026-10-20  Tiket #BM-88213 dibuka ke Bank Mandiri.
+- 2026-10-24  Tim menambahkan retry otomatis 1 kali untuk F04. Dampak terbatas.
+- 2026-10-28  Timeout internal dinaikkan dari 10 detik ke 20 detik. Tidak menurunkan failure rate secara berarti.
+- 2026-11-03  Bank Mandiri menerapkan pembatasan rate limit pada endpoint v2 (informasi dari tiket). Failure rate VA Mandiri memburuk kembali, terutama pada jam sibuk.
+- 2026-11-10  Rencana mitigasi: connection pooling dan antrean permintaan; menunggu konfirmasi kapasitas dari Bank Mandiri.
+- 2026-11-17  Status masih OPEN. Belum ada perbaikan permanen dari sisi bank.
+
+Observasi dari analisis data operasional
+- Kegagalan didominasi kode F04 (sekitar 80% dari seluruh kegagalan VA Mandiri sejak 15 Oktober).
+- Terkonsentrasi pada jam 18:00 - 22:00 dan lebih tinggi pada hari kerja.
+- Kategori merchant yang paling terdampak: Tagihan dan Utilitas serta E-commerce (volume tinggi pada jam sibuk). Kategori lain relatif lebih rendah.
+- Processing time transaksi sukses di VA Mandiri naik sekitar 2 sampai 2,5 kali dibanding sebelum 15 Oktober.
+- Kanal VA lain tidak menunjukkan perubahan pola.
+
+Dampak
+- Pelanggan VA Mandiri gagal membayar tagihan dan pesanan e-commerce pada jam sibuk malam hari.
+- Sebagian pelanggan melaporkan dana terdebet tetapi transaksi tidak terkonfirmasi; ditangani melalui rekonsiliasi dan refund (SLA VA: 3 hari kerja).
+
+Tindak lanjut
+[ ] Eskalasi formal ke Head of Partnership - Bank Mandiri
+[ ] Evaluasi kanal cadangan: sarankan pelanggan memakai VA BCA atau e-wallet sementara waktu
+[ ] Perbarui alert: threshold failure rate per kanal agar memicu P2 lebih cepat
+[x] Tambah retry otomatis 1 kali (24 Okt)
+[x] Naikkan timeout internal (28 Okt)
+
+=====================================================================
+INC-2026-1106 | Lonjakan Gateway Error OVO pasca rilis v3.2.0
+Severity : High | Status : OPEN | Kanal : OVO (CH06) | Kode utama : F05 GATEWAY_ERROR
+=====================================================================
+Ringkasan
+Setelah rilis payment gateway versi 3.2.0 pada 5 November 2026 pukul 22:00 WIB, kegagalan pada kanal OVO meningkat dengan kode F05 (GATEWAY_ERROR).
+Kanal e-wallet lain (GoPay, DANA, ShopeePay) tidak menunjukkan kenaikan serupa.
+
+Timeline
+- 2026-11-05 22:00  Deployment gateway v3.2.0 (refactor payload builder untuk transaksi wallet, termasuk top-up).
+- 2026-11-06 00:00  Kenaikan F05 pada OVO mulai terlihat.
+- 2026-11-07  Tim Platform Engineering menerima laporan dari Merchant Operations mengenai kegagalan top-up pada OVO.
+- 2026-11-09  Reproduksi di staging: validasi field referensi pelanggan pada payload top-up OVO gagal setelah refactor.
+- 2026-11-12  Diputuskan tidak melakukan rollback penuh karena rilis memuat perbaikan lain; hotfix disiapkan.
+- 2026-11-17  Hotfix v3.2.1 dijadwalkan 2026-11-20. Status masih OPEN.
+
+Observasi dari analisis data operasional
+- Kenaikan terkonsentrasi pada OVO dan terutama pada kategori Top-up Pulsa dan Saldo; kategori lain pada OVO relatif lebih rendah.
+- Kode dominan F05; sebagian kecil F08 (konfigurasi merchant).
+- Mulai tepat setelah deployment 5 November, tidak terkait jam tertentu.
+- Processing time pada OVO naik sekitar 1,8 kali.
+
+=====================================================================
+INC-2026-1111 | Lonjakan trafik 11.11 (semua kanal)
+Severity : Medium | Status : RESOLVED | Kanal : semua
+=====================================================================
+- 2026-11-11 20:00  Trafik kampanye 11.11 melonjak; latency meningkat dan kegagalan F05/F04 naik sementara pada semua kanal.
+- 2026-11-11 21:30  Autoscaling menambah kapasitas; kondisi kembali normal.
+- Volume transaksi 11 November sekitar 1,7 kali hari biasa dan 12 November sekitar 1,35 kali.
+- Catatan: autoscaling terlambat 15 menit; threshold scale-up diturunkan.
+
+=====================================================================
+CATATAN LAIN (bukan insiden)
+=====================================================================
+- 2026-09-13 01:00 - 04:00  Pemeliharaan terjadwal VA BNI (INC-2026-0913), kode F12. Sudah diinformasikan ke merchant.
+- 2026-09-30 19:20 - 20:10  Gangguan jaringan switching QRIS (INC-2026-0930), kode F10. Resolved.
+- Rapat evaluasi bulanan dijadwalkan 24 November 2026, agenda: review INC-2026-1015 dan INC-2026-1106.
+- Pengingat: perbarui daftar kontak on-call Integration Team sebelum akhir bulan.
