@@ -49,8 +49,8 @@ export function KpiCard({ label, value, format = 'number', delta, note, tooltip,
     );
   }
 
-  // A-15: arah tidak hanya warna — kata naik/turun/tetap + konteks pembanding (§4.6).
-  const deltaWord = delta?.direction === 'up' ? 'naik' : delta?.direction === 'down' ? 'turun' : 'tetap';
+  // A-15: arah tidak hanya warna — kata up/down/flat + konteks pembanding (DECISION-011 English UI).
+  const deltaWord = delta?.direction === 'up' ? 'up' : delta?.direction === 'down' ? 'down' : 'flat';
   const deltaChip = delta && delta.pct !== null && delta.direction ? (
     <span
       className={cn(

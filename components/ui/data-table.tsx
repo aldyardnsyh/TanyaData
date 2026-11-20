@@ -91,7 +91,7 @@ export function DataTable<T extends Record<string, any>>({
             onClick={onRetry}
             className="rounded-md bg-surface-container-lowest border border-outline-variant px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
           >
-            Coba lagi
+            Retry
           </button>
         )}
       </div>

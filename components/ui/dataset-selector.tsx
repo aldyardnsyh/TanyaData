@@ -25,7 +25,7 @@ export function DatasetSelector({ datasets, value, onChange, className }: Datase
       )}
       role="button"
       tabIndex={0}
-      aria-label="Pilih dataset aktif"
+      aria-label="Select active dataset"
     >
       <Database className="h-4 w-4 text-primary" />
       <span className="max-w-[150px] truncate">{selected?.name ?? value}</span>

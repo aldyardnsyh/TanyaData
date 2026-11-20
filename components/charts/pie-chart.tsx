@@ -57,7 +57,7 @@ export function PieChart({ data, title, summary, emptyText, className, onClick, 
       <div className="w-full" style={{ height: isMobile ? 200 : 280 }}>
         {isEmpty ? (
           <div className="flex h-full items-center justify-center text-on-surface-variant font-body text-body-md">
-            {emptyText ?? 'Tidak ada data untuk filter ini.'}
+            {emptyText ?? 'No data for this filter.'}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

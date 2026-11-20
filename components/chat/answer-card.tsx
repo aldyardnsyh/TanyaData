@@ -186,6 +186,8 @@ export interface AnswerCardProps {
   savingReport?: boolean;
   onOpenSource?: (src: SourceCitation) => void;
   disabled?: boolean;
+  /** Bahasa konten jawaban AI (berasal dari settings), terpisah dari bahasa label UI. */
+  lang?: 'id' | 'en';
 }
 
 export function AnswerCard({
@@ -197,6 +199,7 @@ export function AnswerCard({
   savingReport,
   onOpenSource,
   disabled,
+  lang = 'en',
 }: AnswerCardProps) {
   const [sqlOpen, setSqlOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -236,6 +239,10 @@ export function AnswerCard({
           <span className="font-label-md text-label-md font-bold text-primary">TanyaData Intelligence</span>
           <span className="font-label-sm text-label-sm px-1.5 py-[0.2rem] rounded bg-surface-container-high text-on-surface-variant font-semibold">
             {modeLabel}
+          </span>
+          {/* Label jelas: konten jawaban mengikuti bahasa pilihan, bukan label UI. */}
+          <span className="font-label-sm text-label-sm px-1.5 py-[0.2rem] rounded bg-surface-container-high text-on-surface-variant font-semibold">
+            Answer language: {lang === 'id' ? 'Indonesian' : 'English'}
           </span>
           <span className="font-label-sm text-label-sm text-on-surface-variant">{timestamp}</span>
         </div>

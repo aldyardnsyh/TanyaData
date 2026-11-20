@@ -45,7 +45,7 @@ export function Drawer({ open, onOpenChange, side = 'left', width, title, childr
                 <button
                   type="button"
                   className="flex h-11 w-11 items-center justify-center rounded-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
-                  aria-label="Tutup"
+                  aria-label="Close"
                 >
                   <IconX className="h-5 w-5" />
                 </button>

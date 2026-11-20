@@ -15,7 +15,7 @@ export interface InlineErrorProps {
 }
 
 /** B-06 / §4.13: banner error inline — ikon + judul + pesan API + aksi retry. */
-export function InlineError({ title = 'Gagal memuat data', message, onRetry, className }: InlineErrorProps) {
+export function InlineError({ title = 'Failed to load data', message, onRetry, className }: InlineErrorProps) {
   return (
     <div
       role="alert"
@@ -31,7 +31,7 @@ export function InlineError({ title = 'Gagal memuat data', message, onRetry, cla
       </div>
       {onRetry && (
         <Button size="sm" variant="secondary" onClick={onRetry} className="shrink-0">
-          Coba lagi
+          Retry
         </Button>
       )}
     </div>

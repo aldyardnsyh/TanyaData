@@ -27,10 +27,10 @@ export function EngineIndicator({ online, label, href, className }: EngineIndica
       )}
     >
       <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', online ? 'bg-primary' : 'bg-error')} aria-hidden="true" />
-      {label ?? (online ? 'Mesin: SQLite · SQL + FTS5' : 'Mesin tidak tersedia')}
+      {label ?? (online ? 'Engine: SQLite · SQL + FTS5' : 'Engine unavailable')}
       {href && !online && (
         <Link href={href} className="ml-1 underline focus-ring">
-          Periksa sumber
+          Check sources
         </Link>
       )}
     </span>

@@ -44,7 +44,7 @@ export function Dialog({ open, onOpenChange, title, description, children, class
             <button
               type="button"
               className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
-              aria-label="Tutup"
+              aria-label="Close"
             >
               <IconX className="h-5 w-5" />
             </button>

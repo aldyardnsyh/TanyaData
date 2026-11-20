@@ -56,7 +56,7 @@ export function BarChart({ data, xKey, series, title, height = 280, summary, emp
       <div className="w-full" style={{ height: chartHeight }}>
         {isEmpty ? (
           <div className="flex h-full items-center justify-center text-on-surface-variant font-body text-body-md">
-            {emptyText ?? 'Tidak ada data untuk filter ini.'}
+            {emptyText ?? 'No data for this filter.'}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

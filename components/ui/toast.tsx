@@ -46,7 +46,7 @@ export function Toast({ status, message, action, onAction, onClose, className, c
         type="button"
         onClick={onClose}
         className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-inverse-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container-lowest/10 focus-ring"
-        aria-label="Tutup toast"
+        aria-label="Dismiss notification"
       >
         <IconX className="h-4 w-4" />
       </button>
