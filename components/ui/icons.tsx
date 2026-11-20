@@ -33,6 +33,7 @@ export {
   Minus as IconMinus,
   Plus as IconPlus,
   RefreshCw as IconRefresh,
+  Save as IconSave,
   ScanSearch as IconScanSearch,
   Search as IconSearch,
   Send as IconSend,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useId } from 'react';
-import { ChevronDown, Copy, Check, Database, FileText } from 'lucide-react';
+import { IconChevronDown, IconCopy, IconCheck, IconDatabase, IconFileText } from '@/components/ui/icons';
 import type { ChatMessage, SourceCitation } from '@/lib/contracts/http';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ function SourceChip({ src }: { src: SourceCitation }) {
   if (src.kind === 'dataset') {
     return (
       <span className="inline-flex max-w-full items-center gap-1 rounded-sm bg-surface-container-low px-1.5 py-0.5 font-mono text-label-sm text-primary">
-        <Database className="h-3 w-3 shrink-0" aria-hidden="true" />
+        <IconDatabase className="h-3 w-3 shrink-0" aria-hidden="true" />
         <span className="truncate">{src.table ?? src.sourceId}{src.period ? ` · ${src.period}` : ''}</span>
       </span>
     );
@@ -35,7 +35,7 @@ function SourceChip({ src }: { src: SourceCitation }) {
     .join(' · ');
   return (
     <span className="inline-flex max-w-full items-center gap-1 rounded-sm bg-surface-container-low px-1.5 py-0.5 font-body text-label-sm text-on-surface" title={src.quote}>
-      <FileText className="h-3 w-3 shrink-0 text-tertiary" aria-hidden="true" />
+      <IconFileText className="h-3 w-3 shrink-0 text-tertiary" aria-hidden="true" />
       <span className="truncate">{label}</span>
       {meta && <span className="shrink-0 text-on-surface-variant">{meta}</span>}
     </span>
