@@ -4,6 +4,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/ui/icons';
+import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { useI18n } from '@/lib/ui/i18n-provider';
 import type { SourcesListResponse, MetaResponse } from '@/lib/contracts/http';
@@ -75,16 +76,18 @@ export function QuickSearch() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={t('shell.quickSearch')}
-        className="flex h-11 min-h-11 min-w-11 items-center gap-2 rounded-control border border-border-control bg-surface px-3 text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:border-primary hover:text-ink focus-ring"
-      >
-        <Icon name="search" className="text-[20px]" />
-        <span className="hidden w-28 text-left font-body text-body-md lg:inline">Cari data…</span>
-        <kbd className="hidden rounded-control border border-border-hairline bg-canvas px-1.5 py-0.5 font-mono text-body-sm lg:inline">⌘K</kbd>
-      </button>
+      <IconTooltip label="Cari data dan aksi">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Cari data dan aksi"
+          className="flex h-11 min-h-11 min-w-11 items-center gap-2 rounded-control border border-border-control bg-surface px-3 text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:border-primary hover:text-ink focus-ring"
+        >
+          <Icon name="search" className="text-[20px]" />
+          <span className="hidden w-28 text-left font-body text-body-md lg:inline">Cari data…</span>
+          <kbd className="hidden rounded-control border border-border-hairline bg-canvas px-1.5 py-0.5 font-mono text-body-sm lg:inline">⌘K</kbd>
+        </button>
+      </IconTooltip>
 
       <DialogPrimitive.Root
         open={open}

@@ -3,6 +3,7 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { IconCheckCircle, IconAlertTriangle, IconInfo, IconX } from './icons';
+import { IconTooltip } from './icon-tooltip';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -49,14 +50,16 @@ export function Toast({ status, message, action, onAction, onClose, className, c
           {action}
         </button>
       )}
-      <button
-        type="button"
-        onClick={onClose}
-        className="ml-2 flex h-11 w-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:bg-row-hover focus-ring"
-        aria-label="Dismiss notification"
-      >
-        <IconX className="h-4 w-4" />
-      </button>
+      <IconTooltip label="Tutup notifikasi">
+        <button
+          type="button"
+          onClick={onClose}
+          className="ml-2 flex h-11 w-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:bg-row-hover focus-ring"
+          aria-label="Tutup notifikasi"
+        >
+          <IconX className="h-4 w-4" />
+        </button>
+      </IconTooltip>
     </div>
   );
 }

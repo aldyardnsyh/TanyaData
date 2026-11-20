@@ -5,6 +5,7 @@ import type { ChatMessage, SourceCitation, Visualization } from '@/lib/contracts
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 import { VisualizationView } from './visualization-view';
 import { Icon } from '@/components/ui/icons';
+import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { MonoMeta } from '@/components/ui/mono-meta';
 import { StatusDot } from '@/components/ui/status-dot';
 import { formatIdr, formatNumber, formatPercent } from '@/lib/ui/format';
@@ -166,14 +167,20 @@ export function AnswerCard({
           <StatusDot state="neutral" label={modeLabel} mono />
         </div>
         <div className="flex items-center gap-1">
-          <button type="button" aria-label="Salin jawaban" onClick={() => void copyText(message.answer ?? message.content, 'Jawaban disalin.')} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="content_copy" className="text-[16px]" aria-hidden="true" /></button>
-          <button type="button" aria-label="Salin tautan" onClick={() => {
-            const base = typeof window === 'undefined' ? '' : window.location.origin + window.location.pathname;
-            const query = conversationId ? `?conversation=${conversationId}&message=${message.id}` : '';
-            void copyText(`${base}${query}`, 'Tautan disalin.');
-          }} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="link" className="text-[16px]" aria-hidden="true" /></button>
+          <IconTooltip label="Salin">
+            <button type="button" aria-label="Salin jawaban" onClick={() => void copyText(message.answer ?? message.content, 'Jawaban disalin.')} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="content_copy" className="text-[16px]" aria-hidden="true" /></button>
+          </IconTooltip>
+          <IconTooltip label="Bagikan">
+            <button type="button" aria-label="Salin tautan" onClick={() => {
+              const base = typeof window === 'undefined' ? '' : window.location.origin + window.location.pathname;
+              const query = conversationId ? `?conversation=${conversationId}&message=${message.id}` : '';
+              void copyText(`${base}${query}`, 'Tautan disalin.');
+            }} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="link" className="text-[16px]" aria-hidden="true" /></button>
+          </IconTooltip>
           {onSaveReport && (
-            <button type="button" aria-label="Simpan sebagai laporan" disabled={disabled || savingReport} onClick={() => onSaveReport(message)} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring disabled:opacity-45"><Icon name="save" className="text-[16px]" aria-hidden="true" /></button>
+            <IconTooltip label="Simpan sebagai laporan">
+              <button type="button" aria-label="Simpan sebagai laporan" disabled={disabled || savingReport} onClick={() => onSaveReport(message)} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring disabled:opacity-45"><Icon name="save" className="text-[16px]" aria-hidden="true" /></button>
+            </IconTooltip>
           )}
         </div>
       </div>

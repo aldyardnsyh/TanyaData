@@ -6,6 +6,7 @@ import { useApi } from '@/lib/ui/fetch-hooks';
 import { useI18n } from '@/lib/ui/i18n-provider';
 import { STATUS_KEYS } from '@/lib/i18n/dictionary';
 import { Icon } from '@/components/ui/icons';
+import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { MonoMeta } from '@/components/ui/mono-meta';
 import { MeasurementRule } from '@/components/ui/measurement-rule';
 import { StatusDot } from '@/components/ui/status-dot';
@@ -189,10 +190,12 @@ export default function OverviewPage() {
         meta={dataset ? `SQL · FTS5 · ${formatNumber(dataset.rowCount)} ROWS` : undefined}
         metaShort="SQL · FTS5"
         actions={
-          <Button variant="secondary" size="sm" onClick={refresh} aria-label="Muat ulang data">
-            <Icon name="refresh" className="text-[18px]" aria-hidden="true" />
-            Muat ulang
-          </Button>
+          <IconTooltip label="Muat ulang data">
+            <Button variant="secondary" size="sm" onClick={refresh} aria-label="Muat ulang data">
+              <Icon name="refresh" className="text-[18px]" aria-hidden="true" />
+              Muat ulang
+            </Button>
+          </IconTooltip>
         }
       />
 
@@ -324,9 +327,11 @@ export default function OverviewPage() {
             )}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border-hairline pt-3">
               <MonoMeta>{points.length} BUCKET · {num(statusTotal)} TOTAL</MonoMeta>
-              <Button variant="ghost" size="sm" onClick={() => downloadCsv('tanyadata-tren.csv', [['Periode', 'Total', 'Sukses', 'Gagal'], ...points.map((p) => [p.label, p.total, p.successful, p.failed])])}>
-                <Icon name="download" className="text-[16px]" aria-hidden="true" /> Ekspor CSV
-              </Button>
+              <IconTooltip label="Unduh">
+                <Button variant="ghost" size="sm" onClick={() => downloadCsv('tanyadata-tren.csv', [['Periode', 'Total', 'Sukses', 'Gagal'], ...points.map((p) => [p.label, p.total, p.successful, p.failed])])}>
+                  <Icon name="download" className="text-[16px]" aria-hidden="true" /> Ekspor CSV
+                </Button>
+              </IconTooltip>
             </div>
           </div>
         </section>
@@ -401,9 +406,11 @@ export default function OverviewPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <input type="text" aria-label="Filter kategori" placeholder="Filter kategori…" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink placeholder:text-ink-muted-strong focus-ring" />
-              <Button variant="secondary" size="sm" onClick={() => downloadCsv('tanyadata-kategori.csv', [['Kategori', 'Total', 'Rata-rata', 'Sukses', 'Gagal'], ...visibleCategories.map((i) => [i.categoryName, i.total, i.avgTicket, i.successRate, i.failureRate])])}>
-                <Icon name="download" className="text-[16px]" aria-hidden="true" /> Ekspor CSV
-              </Button>
+              <IconTooltip label="Unduh">
+                <Button variant="secondary" size="sm" onClick={() => downloadCsv('tanyadata-kategori.csv', [['Kategori', 'Total', 'Rata-rata', 'Sukses', 'Gagal'], ...visibleCategories.map((i) => [i.categoryName, i.total, i.avgTicket, i.successRate, i.failureRate])])}>
+                  <Icon name="download" className="text-[16px]" aria-hidden="true" /> Ekspor CSV
+                </Button>
+              </IconTooltip>
             </div>
           </div>
         </header>

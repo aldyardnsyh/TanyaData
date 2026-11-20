@@ -18,6 +18,7 @@ import { useApi } from '@/lib/ui/fetch-hooks';
 import { useI18n } from '@/lib/ui/i18n-provider';
 import { formatNumber } from '@/lib/ui/format';
 import { Icon } from '@/components/ui/icons';
+import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { MonoMeta } from '@/components/ui/mono-meta';
 import { MeasurementRule } from '@/components/ui/measurement-rule';
 import { StatusDot } from '@/components/ui/status-dot';
@@ -396,9 +397,11 @@ export default function AssistantPage() {
                         <span className="block truncate font-body text-body-md font-semibold text-ink">{conv.title}</span>
                         {conv.preview && <span className="block truncate font-body text-body-sm text-ink-muted-strong">{conv.preview}</span>}
                       </button>
-                      <button type="button" aria-label={`Hapus ${conv.title}`} onClick={() => setDeleteTarget(conv)} className="flex h-11 w-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong hover:text-error-text focus-ring">
-                        <Icon name="delete" className="text-[16px]" aria-hidden="true" />
-                      </button>
+                      <IconTooltip label="Hapus percakapan">
+                        <button type="button" aria-label={`Hapus ${conv.title}`} onClick={() => setDeleteTarget(conv)} className="flex h-11 w-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong hover:text-error-text focus-ring">
+                          <Icon name="delete" className="text-[16px]" aria-hidden="true" />
+                        </button>
+                      </IconTooltip>
                     </div>
                   ))}
                 </div>
@@ -500,14 +503,18 @@ export default function AssistantPage() {
                     <span className="inline-flex min-h-11 items-center gap-2 rounded-control border border-border-hairline px-2">
                       <Icon name="table_chart" className="text-[14px] text-primary" aria-hidden="true" />
                       <span className="max-w-[160px] truncate font-body text-body-sm text-ink">{datasetName}</span>
-                      <button type="button" aria-label="Hapus konteks dataset" onClick={() => setAttachedDataset(false)} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:text-error-text focus-ring"><Icon name="close" className="text-[14px]" aria-hidden="true" /></button>
+                      <IconTooltip label="Hapus konteks dataset">
+                        <button type="button" aria-label="Hapus konteks dataset" onClick={() => setAttachedDataset(false)} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:text-error-text focus-ring"><Icon name="close" className="text-[14px]" aria-hidden="true" /></button>
+                      </IconTooltip>
                     </span>
                   )}
                   {attachedDocs && (
                     <span className="inline-flex min-h-11 items-center gap-2 rounded-control border border-border-hairline px-2">
                       <Icon name="description" className="text-[14px] text-primary" aria-hidden="true" />
                       <MonoMeta>{docCount} DOKUMEN</MonoMeta>
-                      <button type="button" aria-label="Hapus konteks dokumen" onClick={() => setAttachedDocs(false)} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:text-error-text focus-ring"><Icon name="close" className="text-[14px]" aria-hidden="true" /></button>
+                      <IconTooltip label="Hapus konteks dokumen">
+                        <button type="button" aria-label="Hapus konteks dokumen" onClick={() => setAttachedDocs(false)} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:text-error-text focus-ring"><Icon name="close" className="text-[14px]" aria-hidden="true" /></button>
+                      </IconTooltip>
                     </span>
                   )}
                 </div>
@@ -526,9 +533,13 @@ export default function AssistantPage() {
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-1">
                   <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt,.md" className="sr-only" aria-label="Lampirkan dokumen" onChange={(e) => void attachDocument(e)} />
-                  <button type="button" aria-label="Lampirkan dokumen" onClick={() => fileInputRef.current?.click()} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="attach_file" className="text-[20px]" aria-hidden="true" /></button>
+                  <IconTooltip label="Lampirkan dokumen">
+                    <button type="button" aria-label="Lampirkan dokumen" onClick={() => fileInputRef.current?.click()} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="attach_file" className="text-[20px]" aria-hidden="true" /></button>
+                  </IconTooltip>
                   <div className="relative">
-                    <button type="button" aria-label="Pilih dataset" aria-expanded={contextMenu === 'dataset'} onClick={() => setContextMenu(contextMenu === 'dataset' ? null : 'dataset')} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="database" className="text-[20px]" aria-hidden="true" /></button>
+                    <IconTooltip label="Ganti dataset">
+                      <button type="button" aria-label="Pilih dataset" aria-expanded={contextMenu === 'dataset'} onClick={() => setContextMenu(contextMenu === 'dataset' ? null : 'dataset')} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="database" className="text-[20px]" aria-hidden="true" /></button>
+                    </IconTooltip>
                     {contextMenu === 'dataset' && (
                       <div className="absolute bottom-full left-0 z-dropdown mb-1 w-60 rounded-card border border-border-hairline bg-surface p-2 shadow-overlay" role="listbox" aria-label="Pilih dataset">
                         {(meta.data?.data.datasetChoices ?? settings.data?.datasets ?? []).map((choice) => (
@@ -538,7 +549,9 @@ export default function AssistantPage() {
                     )}
                   </div>
                   <div className="relative">
-                    <button type="button" aria-label="Filter periode" aria-expanded={contextMenu === 'date'} onClick={() => setContextMenu(contextMenu === 'date' ? null : 'date')} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="date_range" className="text-[20px]" aria-hidden="true" /></button>
+                    <IconTooltip label="Pilih periode">
+                      <button type="button" aria-label="Filter periode" aria-expanded={contextMenu === 'date'} onClick={() => setContextMenu(contextMenu === 'date' ? null : 'date')} className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong hover:bg-row-hover focus-ring"><Icon name="date_range" className="text-[20px]" aria-hidden="true" /></button>
+                    </IconTooltip>
                     {contextMenu === 'date' && (
                       <div className="absolute bottom-full left-0 z-dropdown mb-1 w-60 space-y-2 rounded-card border border-border-hairline bg-surface p-3 shadow-overlay">
                         <label className="block font-body text-body-sm text-ink-muted-strong">Mulai<input type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="mt-1 min-h-11 w-full rounded-control border border-border-control bg-surface px-2 font-body text-body-md text-ink focus-ring" /></label>

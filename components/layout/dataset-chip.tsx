@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/icons';
+import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { Drawer } from '@/components/ui/drawer';
 import { MonoMeta } from '@/components/ui/mono-meta';
 import { useI18n } from '@/lib/ui/i18n-provider';
@@ -33,17 +34,19 @@ export function DatasetChip({ name, choices, activeId, onSelect, expanded = fals
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setDetailOpen(true)}
-        aria-label={t('label.activeDataset')}
-        className={`flex min-h-11 ${expanded ? 'max-w-full' : 'max-w-[240px]'} items-center gap-2 rounded-control border border-border-hairline bg-surface px-3 text-ink transition-colors duration-[var(--motion-fast)] hover:border-primary focus-ring`}
-      >
-        <Icon name="database" className="shrink-0 text-[16px] text-primary" aria-hidden="true" />
-        <span className={`min-w-0 font-body text-body-md ${expanded ? 'inline' : 'hidden md:inline'}`}>{name}</span>
-        <MonoMeta className={expanded ? 'inline' : 'inline md:hidden lg:inline'}>{rowsLabel}</MonoMeta>
-        <Icon name="expand_more" className="shrink-0 text-[16px] text-ink-muted-strong" aria-hidden="true" />
-      </button>
+      <IconTooltip label="Ganti dataset">
+        <button
+          type="button"
+          onClick={() => setDetailOpen(true)}
+          aria-label={t('label.activeDataset')}
+          className={`flex min-h-11 ${expanded ? 'max-w-full' : 'max-w-[240px]'} items-center gap-2 rounded-control border border-border-hairline bg-surface px-3 text-ink transition-colors duration-[var(--motion-fast)] hover:border-primary focus-ring`}
+        >
+          <Icon name="database" className="shrink-0 text-[16px] text-primary" aria-hidden="true" />
+          <span className={`min-w-0 font-body text-body-md ${expanded ? 'inline' : 'hidden md:inline'}`}>{name}</span>
+          <MonoMeta className={expanded ? 'inline' : 'inline md:hidden lg:inline'}>{rowsLabel}</MonoMeta>
+          <Icon name="expand_more" className="shrink-0 text-[16px] text-ink-muted-strong" aria-hidden="true" />
+        </button>
+      </IconTooltip>
 
       <Drawer open={detailOpen} onOpenChange={setDetailOpen} side="right" width="320px" title={t('label.activeDataset')}>
         <div className="space-y-4">

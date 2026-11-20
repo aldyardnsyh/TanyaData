@@ -4,6 +4,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { IconX } from './icons';
+import { IconTooltip } from './icon-tooltip';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -43,15 +44,17 @@ export function Dialog({ open, onOpenChange, title, description, children, class
             </DialogPrimitive.Description>
           )}
           <div className="mt-4 space-y-3">{children}</div>
-          <DialogPrimitive.Close asChild>
-            <button
-              type="button"
-              className="absolute right-2 top-2 flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:bg-row-hover focus-ring"
-              aria-label="Close"
-            >
-              <IconX className="h-5 w-5" />
-            </button>
-          </DialogPrimitive.Close>
+          <IconTooltip label="Tutup">
+            <DialogPrimitive.Close asChild>
+              <button
+                type="button"
+                className="absolute right-2 top-2 flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:bg-row-hover focus-ring"
+                aria-label="Tutup"
+              >
+                <IconX className="h-5 w-5" />
+              </button>
+            </DialogPrimitive.Close>
+          </IconTooltip>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

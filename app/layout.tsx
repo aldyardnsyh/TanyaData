@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { inter, jakarta } from '@/lib/fonts';
 import { MotionVisibility } from '@/lib/ui/motion-visibility';
+import { TooltipProvider } from '@/components/ui/icon-tooltip';
 
 export const metadata: Metadata = {
   title: {
@@ -16,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${jakarta.variable}`}>
       <body>
         <MotionVisibility />
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>
   );

@@ -4,6 +4,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { IconX } from './icons';
+import { IconTooltip } from './icon-tooltip';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -41,15 +42,17 @@ export function Drawer({ open, onOpenChange, side = 'left', width, title, childr
           {title && (
             <div className="measurement-rule flex h-14 items-center justify-between px-4">
               <span className="font-body text-headline-sm text-ink">{title}</span>
-              <DialogPrimitive.Close asChild>
-                <button
-                  type="button"
-                  className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:bg-row-hover focus-ring"
-                  aria-label="Close"
-                >
-                  <IconX className="h-5 w-5" />
-                </button>
-              </DialogPrimitive.Close>
+              <IconTooltip label="Tutup">
+                <DialogPrimitive.Close asChild>
+                  <button
+                    type="button"
+                    className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:bg-row-hover focus-ring"
+                    aria-label="Tutup"
+                  >
+                    <IconX className="h-5 w-5" />
+                  </button>
+                </DialogPrimitive.Close>
+              </IconTooltip>
             </div>
           )}
           <div className="flex-1 overflow-y-auto p-4">{children}</div>
