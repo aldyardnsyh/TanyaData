@@ -191,7 +191,7 @@ export default function OverviewPage() {
         metaShort="SQL · FTS5"
         actions={
           <IconTooltip label="Muat ulang data">
-            <Button variant="secondary" size="sm" onClick={refresh} aria-label="Muat ulang data">
+            <Button variant="secondary" size="sm" onClick={refresh} aria-label="Muat ulang data" title="Muat ulang data">
               <Icon name="refresh" className="text-[18px]" aria-hidden="true" />
               Muat ulang
             </Button>

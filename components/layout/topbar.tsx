@@ -89,6 +89,7 @@ export function Topbar({
             type="button"
             onClick={() => router.push('/assistant')}
             aria-label="Buka asisten"
+            title="Buka asisten"
             className="flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-control bg-primary text-on-primary transition-colors duration-[var(--motion-fast)] hover:bg-[#0A3A2C] focus-ring-forest"
           >
             <Icon name="forum" className="text-[20px]" />

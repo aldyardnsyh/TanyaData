@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T08:11:22.615Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-39832-1795162281921\\tanyadata.db",
+  "generatedAt": "2026-11-20T08:19:23.611Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-22284-1795162762373\\tanyadata.db",
   "fixtures": [
     "transaksi",
     "uud-1945",
@@ -48,11 +48,11 @@
     {
       "stage": "sql",
       "metric": "execution_match",
-      "value": 0.6667,
+      "value": 1,
       "threshold": 0.9,
       "direction": "min",
-      "pass": false,
-      "detail": "2/3 kasus SQL"
+      "pass": true,
+      "detail": "3/3 kasus SQL"
     },
     {
       "stage": "output",
@@ -216,8 +216,8 @@
           "detail": "n/a"
         },
         "sql": {
-          "pass": false,
-          "detail": "expected=[[92.76]] got=[[100]] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN count ELSE 0 END) * 100.0 / NULLIF(SUM(count), 0), 2) AS value FROM tx_daily WHERE status = ? AND period >= ? AND period <= ? LIMIT 500"
+          "pass": true,
+          "detail": "expected=[[92.76]] got=[[92.76]] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN count ELSE 0 END) * 100.0 / NULLIF(SUM(count), 0), 2) AS value FROM tx_daily WHERE period >= ? AND period <= ? LIMIT 500"
         },
         "output": {
           "pass": true,
@@ -235,13 +235,13 @@
       "observed": {
         "doc_type": "financial",
         "citations": [],
-        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN count ELSE 0 END) * 100.0 / NULLIF(SUM(count), 0), 2) AS value FROM tx_daily WHERE status = ? AND period >= ? AND period <= ? LIMIT 500",
-        "answer": "Hasil: 100 (value). Angka ini berasal dari eksekusi SQL pada sumber data.",
+        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN count ELSE 0 END) * 100.0 / NULLIF(SUM(count), 0), 2) AS value FROM tx_daily WHERE period >= ? AND period <= ? LIMIT 500",
+        "answer": "Hasil: 92,76 (value). Angka ini berasal dari eksekusi SQL pada sumber data.",
         "guardrail": null,
-        "numeric_grounding": 1,
+        "numeric_grounding": 0,
         "sql_rows": [
           [
-            100
+            92.76
           ]
         ],
         "output_type": "kpi",
@@ -724,8 +724,8 @@
   "byFixture": {
     "transaksi": {
       "cases": 3,
-      "passed": 2,
-      "failed": 1
+      "passed": 3,
+      "failed": 0
     },
     "legal": {
       "cases": 3,
@@ -743,7 +743,7 @@
       "failed": 0
     }
   },
-  "overallPass": false,
+  "overallPass": true,
   "notes": [
     "Eval dijalankan pada workspace DB sementara; seed analytics.db disalin ke tabel fisik tx_daily untuk kasus transaksi.",
     "Riwayat eksekusi lengkap dicatat di docs/EVAL_RESULTS.md. Bug produk sengaja DIBIARKAN agar laporan ini menjadi diagnosis jujur, bukan hasil yang dihijaukan.",

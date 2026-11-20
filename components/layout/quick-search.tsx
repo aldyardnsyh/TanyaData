@@ -81,6 +81,7 @@ export function QuickSearch() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Cari data dan aksi"
+          title="Cari data dan aksi"
           className="flex h-11 min-h-11 min-w-11 items-center gap-2 rounded-control border border-border-control bg-surface px-3 text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:border-primary hover:text-ink focus-ring"
         >
           <Icon name="search" className="text-[20px]" />

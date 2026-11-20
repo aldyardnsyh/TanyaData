@@ -39,6 +39,7 @@ export function DatasetChip({ name, choices, activeId, onSelect, expanded = fals
           type="button"
           onClick={() => setDetailOpen(true)}
           aria-label={t('label.activeDataset')}
+          title="Ganti dataset"
           className={`flex min-h-11 ${expanded ? 'max-w-full' : 'max-w-[240px]'} items-center gap-2 rounded-control border border-border-hairline bg-surface px-3 text-ink transition-colors duration-[var(--motion-fast)] hover:border-primary focus-ring`}
         >
           <Icon name="database" className="shrink-0 text-[16px] text-primary" aria-hidden="true" />
