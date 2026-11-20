@@ -137,18 +137,11 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* S4 Format yang diterima: panel gelap, tab dua kelompok (C-04 tone dark). */}
+        {/* S4 Format yang diterima: satu panel gelap penuh lebar berisi penjelasan
+            dan ubin per format dengan keterangannya (C-04 tone dark). */}
         <section id="format" className="page-container py-16 md:py-24">
           <ScrollReveal>
-            <p className="eyebrow">Format diterima</p>
-            <h2 className="mt-s2 font-display text-title text-ink">Enam format yang diterima</h2>
-            <p className="mt-s2 max-w-[68ch] font-body text-body text-ink-72">
-              Data terstruktur: CSV, XLSX, dan SQL. Dokumen: PDF, DOCX, dan TXT. Berkas MD diperlakukan
-              sebagai teks.
-            </p>
-            <div className="mt-s5 max-w-3xl">
-              <LandingFormatPanel />
-            </div>
+            <LandingFormatPanel />
           </ScrollReveal>
         </section>
 
