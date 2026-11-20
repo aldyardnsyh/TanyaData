@@ -2,18 +2,14 @@
 
 import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import type { ApiErrorCode, MetaResponse, PreviewResponse, SourceDetailResponse } from '@/lib/contracts/http';
-import { useApi } from '@/lib/ui/fetch-hooks';
+import type { ApiErrorCode, PreviewResponse, SourceDetailResponse } from '@/lib/contracts/http';
 import { formatNumber } from '@/lib/ui/format';
 import { Icon } from '@/components/ui/icons';
-import { MonoMeta } from '@/components/ui/mono-meta';
-import { MeasurementRule } from '@/components/ui/measurement-rule';
-import { StatusDot, type DotState } from '@/components/ui/status-dot';
-import { PageHeader } from '@/components/ui/page-header';
-import { Button } from '@/components/ui/button';
-import { Dialog } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeading } from '@/components/signal/page-heading';
+import { SectionRule } from '@/components/signal/section-rule';
+import { BentoGrid, type BentoItem } from '@/components/signal/bento-grid';
+import { StatusBadge } from '@/components/signal/status-badge';
+import type { DotTone } from '@/components/signal/status-dot';
 import { toast } from '@/components/ui/toaster';
 
 const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
@@ -26,15 +22,14 @@ const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   UNPROCESSABLE_SOURCE: 'File tidak dapat diproses.',
   INTERNAL_ERROR: 'Terjadi kesalahan internal. Silakan coba lagi.',
 };
-const num = (value: number | null | undefined) => (value == null ? '—' : formatNumber(value));
+const num = (v: number | null | undefined) => (v == null ? 'Belum dihitung' : formatNumber(v));
 function formatBytes(bytes: number | null | undefined): string {
   if (bytes == null) return '—';
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${bytes} B`;
 }
-function formatLabel(format: string): string { return format === 'seed-dataset' ? 'SEED' : format.toUpperCase(); }
-function statusState(status: string): DotState {
+function statusTone(status: string): DotTone {
   if (status === 'READY') return 'active';
   if (status === 'FAILED') return 'error';
   return 'loading';
@@ -48,7 +43,6 @@ function statusLabel(status: string): string {
 
 export default function DataSourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const meta = useApi<MetaResponse>('/api/meta');
   const [detail, setDetail] = useState<SourceDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -127,149 +121,144 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
   const previewColumns = preview?.columns ?? [];
   const previewRows = preview?.rows ?? [];
 
+  const summaryItems: BentoItem[] = detail ? [
+    { id: 'rows', label: 'Baris tersimpan', value: num(detail.source.rowCount), source: detail.source.format.toUpperCase(), span: 'support' },
+    { id: 'detail', label: isDocument ? 'Potongan terindeks' : 'Kolom', value: num(isDocument ? detail.source.chunkCount : 'schema' in detail ? detail.schema?.columns.length : null), source: isDocument ? `${num(detail.source.pageCount)} HALAMAN` : 'schema' in detail ? detail.schema?.tableName ?? '—' : '—', span: 'support' },
+    { id: 'size', label: 'Ukuran penyimpanan', value: formatBytes(detail.source.sizeBytes), source: 'SUMBER', span: 'support' },
+    { id: 'status', label: 'Status', value: statusLabel(detail.source.status), source: 'SQLITE · FTS5', span: 'support' },
+  ] : [];
+
   return (
-    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <PageHeader
-        title={loading ? 'Memuat…' : detail?.source.name ?? (notFound ? 'Sumber tidak ditemukan' : '—')}
-        subtitle="Periksa skema, kualitas data, dan konten terindeks dari sumber ini."
-        meta={detail ? `${formatLabel(detail.source.format)} · ${detail.source.status}` : undefined}
+    <div className="page-container py-s5">
+      <PageHeading
+        title={loading ? 'Memuat sumber' : detail?.source.name ?? (notFound ? 'Sumber tidak ditemukan' : 'Sumber')}
+        caption="Periksa skema, kualitas data, dan konten terindeks dari sumber ini."
+        meta={detail ? `${detail.source.kind.toUpperCase()} · ${detail.source.format.toUpperCase()} · ${detail.source.status}` : undefined}
         actions={
           <>
-            <Link href="/data-sources" className="inline-flex min-h-11 items-center gap-2 rounded-control border border-border-control bg-surface px-3 font-body text-label-md font-semibold text-ink transition-colors hover:border-primary focus-ring">
-              <Icon name="arrow_back" className="text-[16px]" aria-hidden="true" /> Kembali
-            </Link>
-            <Button variant="secondary" size="sm" onClick={() => void reindex()} disabled={!detail || loading}>Indeks ulang</Button>
-            <Button variant="danger" size="sm" onClick={() => setDeleteOpen(true)} disabled={!detail || id === 'seed'} title={id === 'seed' ? 'Dataset seed tidak dapat dihapus.' : undefined}>Hapus</Button>
+            <Link href="/data-sources" className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="arrow_back" className="text-[16px]" /> Kembali</Link>
+            <button type="button" onClick={() => void reindex()} disabled={!detail || loading} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring disabled:opacity-50"><Icon name="refresh" className="text-[16px]" /> Indeks ulang</button>
+            {detail && id !== 'seed' && <button type="button" onClick={() => setDeleteOpen(true)} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-terracotta px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="delete" className="text-[16px]" /> Hapus</button>}
           </>
         }
       />
 
       {notFound ? (
-        <EmptyState title="Sumber tidak ditemukan" description="Sumber ini mungkin sudah dihapus." action={<Link href="/data-sources" className="inline-flex min-h-11 items-center rounded-control bg-primary px-4 font-body text-label-md font-semibold text-on-primary focus-ring-forest">Kembali ke Sumber Data</Link>} />
-      ) : loading ? (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="rounded-card border border-border-hairline bg-surface p-5"><Skeleton className="h-16 w-full" /></div>)}</div>
-          <div className="rounded-card border border-border-hairline bg-surface p-5"><Skeleton className="h-64 w-full" /></div>
+        <div className="surface flex flex-col items-start gap-s2 p-s4">
+          <StatusBadge label="Tidak ditemukan" tone="error" />
+          <p className="font-body text-body text-ink">Sumber ini mungkin sudah dihapus.</p>
+          <Link href="/data-sources" className="touch-44 inline-flex items-center rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring">Kembali ke Sumber Data</Link>
         </div>
+      ) : loading ? (
+        <div className="space-y-s4" aria-busy="true"><div className="bento">{[0, 1, 2, 3].map((i) => <div key={i} data-cell data-span="support" className="surface p-s3"><div className="skeleton h-s2 w-2/3" /><div className="skeleton mt-s3 h-s5 w-1/2" /></div>)}</div><div className="skeleton h-64 w-full" /></div>
       ) : error ? (
-        <div className="rounded-card border border-signal-terracotta bg-surface p-4">
-          <p className="font-body text-body-md text-error-text">{error}</p>
-          <Button size="sm" onClick={() => void load()} className="mt-2">Coba lagi</Button>
+        <div className="flex flex-col items-start gap-s2 surface p-s4" role="alert">
+          <span className="inline-flex items-center gap-s2"><StatusBadge label="Gagal" tone="error" /><span className="font-body text-body text-ink">{error}</span></span>
+          <button type="button" onClick={() => void load()} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>
         </div>
       ) : detail ? (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { label: 'Baris tersimpan', value: num(detail.source.rowCount), meta: formatLabel(detail.source.format) },
-              { label: isDocument ? 'Potongan terindeks' : 'Kolom', value: num(isDocument ? detail.source.chunkCount : 'schema' in detail ? detail.schema?.columns.length : null), meta: isDocument ? `${num(detail.source.pageCount)} HALAMAN` : 'schema' in detail ? detail.schema?.tableName ?? '—' : '—' },
-              { label: 'Ukuran penyimpanan', value: formatBytes(detail.source.sizeBytes), meta: 'SUMBER' },
-            ].map((card) => (
-              <div key={card.label} className="flex min-h-40 flex-col rounded-card border border-border-hairline bg-surface p-5">
-                <p className="font-body text-label-sm uppercase text-ink-muted-strong">{card.label}</p>
-                <p className="mt-3 font-body text-metric-display tabular text-ink">{card.value}</p>
-                <div className="mt-auto pt-3"><MonoMeta>{card.meta}</MonoMeta></div>
-              </div>
-            ))}
-            <div className="flex min-h-40 flex-col rounded-card border border-border-hairline bg-surface p-5">
-              <p className="font-body text-label-sm uppercase text-ink-muted-strong">Status</p>
-              <div className="mt-3"><StatusDot state={statusState(detail.source.status)} label={statusLabel(detail.source.status)} /></div>
-              <div className="mt-auto pt-3"><MonoMeta>SQLITE · FTS5</MonoMeta></div>
-            </div>
-          </div>
+          <section aria-label="Metadata sumber" className="mb-s5"><BentoGrid items={summaryItems} /></section>
 
-          <section className="overflow-hidden rounded-card border border-border-hairline bg-surface">
-            <header className="measurement-rule px-5 pb-3 pt-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="font-body text-headline-sm text-ink">{detail.source.name}</h2>
-                  <p className="mt-1 font-body text-body-sm text-ink-muted-strong">Pratinjau baris pertama dari sumber ini.</p>
-                </div>
-                <MonoMeta>{num(preview?.rowCount)} BARIS</MonoMeta>
+          <section aria-labelledby="preview-heading" className="mb-s5">
+            <div className="mb-s3 flex flex-wrap items-end justify-between gap-s2">
+              <div>
+                <h2 id="preview-heading" className="font-display text-title text-ink">Pratinjau data</h2>
+                <p className="mt-s1 font-body text-caption text-ink-72">Baris pertama dari sumber ini. Angka berasal dari berkas asli.</p>
               </div>
-            </header>
-            <div className="flex flex-wrap gap-2 border-b border-border-hairline px-5 py-3">
-              {'schema' in detail && detail.schema
-                ? detail.schema.columns.map((column) => <MonoMeta key={column.name} className="!normal-case">{column.name} [{column.type}]</MonoMeta>)
-                : 'sections' in detail ? detail.sections.slice(0, 8).map((section, i) => <MonoMeta key={i} className="!normal-case">{section.title}</MonoMeta>) : null}
+              <span className="mono-meta">{num(preview?.rowCount)} BARIS</span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-canvas">
-                  <tr><th className="px-4 py-3 font-body text-label-sm uppercase text-ink-muted-strong">#</th>{previewColumns.map((column) => <th key={column.key} className="px-4 py-3 font-mono text-body-sm text-ink-muted-strong">{column.label}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {previewLoading && <tr><td colSpan={previewColumns.length + 1} className="px-4 py-4"><Skeleton className="h-6 w-full" /></td></tr>}
-                  {!previewLoading && previewError && <tr><td colSpan={previewColumns.length + 1} className="px-4 py-4 font-body text-body-md text-error-text">{previewError}</td></tr>}
-                  {!previewLoading && !previewError && previewRows.length === 0 && <tr><td colSpan={previewColumns.length + 1} className="px-4 py-8 text-center font-body text-body-md text-ink-muted-strong">Tidak ada baris untuk ditampilkan.</td></tr>}
-                  {!previewLoading && previewRows.map((row, rowIndex) => (
-                    <tr key={rowIndex} className="border-t border-border-hairline hover:bg-row-hover">
-                      <td className="px-4 py-3 font-body text-body-sm tabular text-ink-muted-strong">{rowIndex + 1}</td>
-                      {previewColumns.map((column) => {
-                        const value = row[column.key];
-                        const isStatus = column.key.toLowerCase().includes('status');
-                        const isAmount = column.key.toLowerCase().includes('amount') && typeof value === 'number';
-                        return <td key={column.key} className="px-4 py-3 font-mono text-body-sm text-ink">{isStatus ? <StatusDot state={String(value).toUpperCase() === 'FAILED' ? 'error' : 'active'} label={String(value ?? '—')} /> : value == null ? <span className="text-ink-muted-strong">null</span> : isAmount ? <span className="tabular">Rp {formatNumber(value as number)}</span> : <span className="tabular">{String(value)}</span>}</td>;
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-hairline px-5 py-3">
-              <MonoMeta>MENAMPILKAN {previewRows.length} DARI {num(preview?.rowCount)} BARIS</MonoMeta>
-              <div className="flex items-center gap-2">
-                <Button variant="secondary" size="sm" disabled={!preview?.truncated || previewLoading} onClick={() => void loadPreview(50)}>Muat 50 baris berikutnya</Button>
-                <Link href="/assistant" className="inline-flex min-h-11 items-center rounded-control bg-primary px-4 font-body text-label-md font-semibold text-on-primary transition-colors hover:bg-[#0A3A2C] focus-ring-forest">Tanya data ini</Link>
+            <SectionRule className="mb-s3" />
+            <div className="surface overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left">
+                  <caption className="sr-only">Pratinjau {detail.source.name}</caption>
+                  <thead><tr className="bg-forest-08"><th scope="col" className="px-s3 py-s2 font-body text-caption text-ink-72">#</th>{previewColumns.map((col) => <th key={col.key} scope="col" className="whitespace-nowrap px-s3 py-s2 font-body text-caption text-ink-72">{col.label}</th>)}</tr></thead>
+                  <tbody>
+                    {previewLoading && <tr><td colSpan={previewColumns.length + 1} className="px-s3 py-s4"><div className="skeleton h-s3 w-full" /></td></tr>}
+                    {!previewLoading && previewError && <tr><td colSpan={previewColumns.length + 1} className="px-s3 py-s4 font-body text-body text-ink">{previewError}</td></tr>}
+                    {!previewLoading && !previewError && previewRows.length === 0 && <tr><td colSpan={previewColumns.length + 1} className="px-s3 py-s4 font-body text-body text-ink-72">Tidak ada baris untuk ditampilkan.</td></tr>}
+                    {!previewLoading && previewRows.map((row, i) => (
+                      <tr key={i} className="border-t border-[var(--border-hairline)]">
+                        <td className="px-s3 py-s2 font-body text-caption tabular text-ink-72">{i + 1}</td>
+                        {previewColumns.map((col) => {
+                          const value = row[col.key];
+                          const isAmount = col.key.toLowerCase().includes('amount') && typeof value === 'number';
+                          return <td key={col.key} className="whitespace-nowrap px-s3 py-s2 font-body text-caption tabular text-ink">{isAmount ? `Rp ${formatNumber(value as number)}` : value == null ? <span className="text-ink-72">null</span> : String(value)}</td>;
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-s2 border-t border-[var(--border-hairline)] px-s3 py-s2">
+                <span className="mono-meta">MENAMPILKAN {previewRows.length} DARI {num(preview?.rowCount)} BARIS</span>
+                <div className="flex flex-wrap gap-s2">
+                  <button type="button" disabled={!preview?.truncated || previewLoading} onClick={() => void loadPreview(50)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring disabled:opacity-50">Muat 50 baris</button>
+                  <Link href="/assistant" className="touch-44 inline-flex items-center rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring">Tanya data ini</Link>
+                </div>
               </div>
             </div>
           </section>
 
+          {/* Skema & kualitas (dataset) atau metadata indeks (dokumen). */}
           {'schema' in detail && detail.quality && (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <section className="rounded-card border border-border-hairline bg-surface p-5">
-                <header className="measurement-rule -mx-5 -mt-5 mb-4 px-5 pb-3 pt-4"><h2 className="font-body text-headline-sm text-ink">Skema terdeteksi</h2></header>
+            <div className="grid-dashboard mb-s5">
+              <section className="surface col-span-4 p-s4 xl:col-span-6">
+                <h2 className="font-display text-title text-ink">Skema terdeteksi</h2>
+                <SectionRule className="mb-s3 mt-s2" />
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-canvas"><tr>{['Kolom', 'Tipe', 'Nullable'].map((h, i) => <th key={h} className={`px-4 py-3 font-body text-label-sm uppercase text-ink-muted-strong ${i === 2 ? 'text-right' : ''}`}>{h}</th>)}</tr></thead>
-                    <tbody>{detail.schema?.columns.map((column) => <tr key={column.name} className="border-t border-border-hairline"><td className="px-4 py-3 font-mono text-body-sm text-ink">{column.name}</td><td className="px-4 py-3 font-mono text-body-sm text-primary">{column.type}</td><td className="px-4 py-3 text-right font-body text-body-sm text-ink-muted-strong">{column.nullable ? 'Ya' : 'Tidak'}</td></tr>)}</tbody>
+                  <table className="w-full border-collapse text-left">
+                    <caption className="sr-only">Skema kolom</caption>
+                    <thead><tr className="bg-forest-08">{['Kolom', 'Tipe', 'Nullable'].map((h) => <th key={h} scope="col" className="px-s3 py-s2 font-body text-caption text-ink-72">{h}</th>)}</tr></thead>
+                    <tbody>{detail.schema?.columns.map((column) => <tr key={column.name} className="border-t border-[var(--border-hairline)]"><td className="px-s3 py-s2 font-body text-caption text-ink">{column.name}</td><td className="px-s3 py-s2 font-body text-caption text-forest">{column.type}</td><td className="px-s3 py-s2 font-body text-caption text-ink-72">{column.nullable ? 'Ya' : 'Tidak'}</td></tr>)}</tbody>
                   </table>
                 </div>
               </section>
-              <section className="rounded-card border border-border-hairline bg-surface p-5">
-                <header className="measurement-rule -mx-5 -mt-5 mb-4 px-5 pb-3 pt-4"><h2 className="font-body text-headline-sm text-ink">Kualitas data</h2></header>
-                <dl className="divide-y divide-border-hairline">
+              <section className="surface col-span-4 p-s4 xl:col-span-6">
+                <h2 className="font-display text-title text-ink">Kualitas data</h2>
+                <SectionRule className="mb-s3 mt-s2" />
+                <dl className="divide-y divide-[var(--border-hairline)]">
                   {[
                     ['Baris diproses', num(detail.quality.rowsParsed)],
                     ['Baris ditolak', num(detail.quality.rowsRejected)],
                     ['Baris duplikat', num(detail.quality.duplicateRows)],
                     ['Rentang tanggal', detail.bounds ? `${detail.bounds.minDate} – ${detail.bounds.maxDate}` : '—'],
-                  ].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-2 py-3 font-body text-body-md"><dt className="text-ink-muted-strong">{label}</dt><dd className="text-right font-mono tabular text-ink">{value}</dd></div>)}
+                  ].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-s2 py-s2 font-body text-caption"><dt className="text-ink-72">{label}</dt><dd className="text-right tabular text-ink">{value}</dd></div>)}
                 </dl>
               </section>
             </div>
           )}
           {'sections' in detail && (
-            <section className="rounded-card border border-border-hairline bg-surface p-5">
-              <header className="measurement-rule -mx-5 -mt-5 mb-4 px-5 pb-3 pt-4"><h2 className="font-body text-headline-sm text-ink">Metadata indeks</h2></header>
-              <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <section className="surface mb-s5 p-s4">
+              <h2 className="font-display text-title text-ink">Metadata indeks</h2>
+              <SectionRule className="mb-s3 mt-s2" />
+              <dl className="grid grid-cols-1 gap-s2 sm:grid-cols-2">
                 {[
                   ['Terindeks', detail.index.indexed ? 'Ya' : 'Tidak'],
                   ['Mesin', detail.index.indexed ? detail.index.engine : '—'],
                   ['Waktu', detail.index.indexedAt ? detail.index.indexedAt.slice(0, 10) : '—'],
                   ['Potongan', num(detail.source.chunkCount)],
-                ].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-2 rounded-control border border-border-hairline p-3 font-body text-body-md"><dt className="text-ink-muted-strong">{label}</dt><dd className="font-mono text-ink">{value}</dd></div>)}
+                ].map(([label, value]) => <div key={label} className="flex items-center justify-between gap-s2 rounded-control border border-[var(--border-hairline)] p-s3 font-body text-caption"><dt className="text-ink-72">{label}</dt><dd className="tabular text-ink">{value}</dd></div>)}
               </dl>
             </section>
           )}
         </>
       ) : null}
 
-      <Dialog open={deleteOpen} onOpenChange={(open) => !open && setDeleteOpen(false)} title={detail ? `Hapus “${detail.source.name}”?` : 'Hapus sumber?'} description="Tindakan ini tidak dapat dibatalkan. Riwayat percakapan dan laporan tetap tersimpan.">
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" autoFocus onClick={() => setDeleteOpen(false)}>Batal</Button>
-          <Button variant="danger" loading={deleting} onClick={() => void confirmDelete()}>Hapus</Button>
+      {deleteOpen && (
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-s3">
+          <div className="animate-backdrop-in absolute inset-0 bg-ink/40" onClick={() => setDeleteOpen(false)} aria-hidden="true" />
+          <div className="animate-modal-in elevated relative w-full max-w-[480px] rounded-overlay border border-[var(--border-hairline)] bg-porcelain p-s4" role="dialog" aria-modal="true" aria-label="Hapus sumber">
+            <h2 className="font-display text-title text-ink">Hapus sumber?</h2>
+            <p className="mt-s2 font-body text-body text-ink-72">Tindakan ini tidak dapat dibatalkan. Riwayat percakapan dan laporan tetap tersimpan.</p>
+            <div className="mt-s4 flex justify-end gap-s2">
+              <button type="button" onClick={() => setDeleteOpen(false)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring">Batal</button>
+              <button type="button" onClick={() => void confirmDelete()} disabled={deleting} className="touch-44 rounded-control border border-terracotta px-s3 font-display text-label font-semibold text-ink focus-ring disabled:opacity-50">{deleting ? 'Menghapus' : 'Hapus'}</button>
+            </div>
+          </div>
         </div>
-      </Dialog>
+      )}
     </div>
   );
 }

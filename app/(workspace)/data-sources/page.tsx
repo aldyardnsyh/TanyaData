@@ -15,14 +15,14 @@ import type {
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { formatNumber } from '@/lib/ui/format';
 import { Icon } from '@/components/ui/icons';
-import { MonoMeta } from '@/components/ui/mono-meta';
-import { MeasurementRule } from '@/components/ui/measurement-rule';
-import { StatusDot, type DotState } from '@/components/ui/status-dot';
-import { PageHeader } from '@/components/ui/page-header';
-import { Button } from '@/components/ui/button';
-import { FilterChips } from '@/components/ui/filter-chips';
-import { Dialog } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeading } from '@/components/signal/page-heading';
+import { SectionRule } from '@/components/signal/section-rule';
+import { BentoGrid, type BentoItem } from '@/components/signal/bento-grid';
+import { AnimatedTabs } from '@/components/signal/animated-tabs';
+import { LayoutGrid, type RevealCard } from '@/components/signal/layout-grid';
+import { Dropzone } from '@/components/signal/dropzone';
+import { StatusBadge } from '@/components/signal/status-badge';
+import type { DotTone } from '@/components/signal/status-dot';
 import { toast } from '@/components/ui/toaster';
 
 const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
@@ -35,12 +35,10 @@ const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   UNPROCESSABLE_SOURCE: 'File tidak dapat diproses. Periksa format atau kolom wajibnya.',
   INTERNAL_ERROR: 'Terjadi kesalahan internal. Silakan coba lagi.',
 };
-
-const ACCEPT = '.csv,.xlsx,.pdf,.docx,.txt,.md';
 const DATASET_EXTS = ['.csv', '.xlsx'];
 const DOCUMENT_EXTS = ['.pdf', '.docx', '.txt', '.md'];
 const MAX_BYTES = 25 * 1024 * 1024;
-const num = (value: number | null | undefined) => (value == null ? '—' : formatNumber(value));
+const num = (v: number | null | undefined) => (v == null ? 'Belum dihitung' : formatNumber(v));
 
 function formatBytes(bytes: number | null | undefined): string {
   if (bytes == null) return '—';
@@ -48,12 +46,7 @@ function formatBytes(bytes: number | null | undefined): string {
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${bytes} B`;
 }
-function formatLabel(format: string): string { return format === 'seed-dataset' ? 'SEED' : format.toUpperCase(); }
-function sourceIcon(source: SourceListItem): string {
-  if (source.kind === 'document') return source.format === 'pdf' ? 'picture_as_pdf' : source.format === 'txt' || source.format === 'md' ? 'text_snippet' : 'description';
-  return source.format === 'xlsx' ? 'view_comfy_alt' : source.format === 'csv' ? 'table_chart' : 'dns';
-}
-function statusState(status: string): DotState {
+function statusTone(status: string): DotTone {
   if (status === 'READY') return 'active';
   if (status === 'FAILED') return 'error';
   return 'loading';
@@ -64,22 +57,17 @@ function statusLabel(status: string): string {
   if (status === 'PROCESSING' || status === 'UPLOADED') return 'Memproses';
   return status;
 }
-
 type JobState = { name: string; step: string | null; progress: number };
 
 export default function DataSourcesPage() {
   const sources = useApi<SourcesListResponse>('/api/sources');
   const meta = useApi<MetaResponse>('/api/meta');
 
-  const [formatFilter, setFormatFilter] = useState('all');
-  const [dragging, setDragging] = useState(false);
+  const [filter, setFilter] = useState('all');
   const [uploading, setUploading] = useState(false);
-  const [uploadName, setUploadName] = useState<string | null>(null);
   const [job, setJob] = useState<JobState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SourceListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
-
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [previewDetail, setPreviewDetail] = useState<SourceDetailResponse | null>(null);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
@@ -87,24 +75,25 @@ export default function DataSourcesPage() {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewLimit, setPreviewLimit] = useState(5);
 
-  const fileRef = useRef<HTMLInputElement>(null);
-
   const items = sources.data?.items ?? [];
   const counts = sources.data?.counts;
-  const datasetItems = items.filter((s) => s.kind === 'dataset');
-  const documentItems = items.filter((s) => s.kind === 'document');
   const totalBytes = items.reduce((sum, s) => sum + (s.sizeBytes ?? 0), 0);
   const totalRows = items.reduce((sum, s) => sum + (s.rowCount ?? 0), 0);
   const totalChunks = items.reduce((sum, s) => sum + (s.chunkCount ?? 0), 0);
-  const totalTables = items.reduce((sum, s) => sum + (s.tableCount ?? 0), 0);
-  const failedCount = counts?.failed ?? 0;
 
-  const datasetFormats = [...new Set(datasetItems.map((s) => s.format.toLowerCase()))];
-  const formatTabs = [
-    { id: 'all', label: `Semua (${datasetItems.length})` },
-    ...datasetFormats.map((format) => ({ id: format, label: `${formatLabel(format)} (${datasetItems.filter((s) => s.format.toLowerCase() === format).length})` })),
+  const tabs = [
+    { id: 'all', label: `Semua (${items.length})` },
+    { id: 'dataset', label: `Dataset (${counts?.dataset ?? 0})` },
+    { id: 'document', label: `Dokumen (${counts?.document ?? 0})` },
+    { id: 'processing', label: `Memproses (${counts?.processing ?? 0})` },
+    { id: 'failed', label: `Gagal (${counts?.failed ?? 0})` },
   ];
-  const visibleDatasets = datasetItems.filter((s) => formatFilter === 'all' || s.format.toLowerCase() === formatFilter);
+  const visible = items.filter((s) => {
+    if (filter === 'all') return true;
+    if (filter === 'processing') return s.status === 'PROCESSING' || s.status === 'UPLOADED';
+    if (filter === 'failed') return s.status === 'FAILED';
+    return s.kind === filter;
+  });
 
   const processingSource = items.find((s) => s.status === 'PROCESSING' || s.status === 'UPLOADED');
   useEffect(() => {
@@ -122,8 +111,8 @@ export default function DataSourcesPage() {
       } catch { /* polling dilanjutkan */ }
     };
     void tick();
-    const interval = setInterval(() => void tick(), 1000);
-    return () => { cancelled = true; clearInterval(interval); };
+    const interval = window.setInterval(() => void tick(), 1000);
+    return () => { cancelled = true; window.clearInterval(interval); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [processingSource?.id, processingSource?.name]);
 
@@ -149,11 +138,13 @@ export default function DataSourcesPage() {
     void loadPreview(first.id, 5);
   }, [sources.loading, items, previewId, loadPreview]);
 
-  const upload = useCallback(async (file: File) => {
+  const upload = useCallback(async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
     const ext = `.${file.name.split('.').pop()?.toLowerCase() ?? ''}`;
     if (![...DATASET_EXTS, ...DOCUMENT_EXTS].includes(ext)) { toast({ status: 'error', message: ERROR_MESSAGES.UNSUPPORTED_MEDIA_TYPE }); return; }
     if (file.size > MAX_BYTES) { toast({ status: 'error', message: ERROR_MESSAGES.FILE_TOO_LARGE }); return; }
-    setUploading(true); setUploadName(file.name);
+    setUploading(true);
     try {
       const form = new FormData();
       form.append('file', file);
@@ -168,13 +159,10 @@ export default function DataSourcesPage() {
       sources.retry();
     } catch (err) {
       toast({ status: 'error', message: err instanceof Error ? err.message : 'Unggah gagal.' });
-    } finally { setUploading(false); setUploadName(null); }
+    } finally { setUploading(false); }
   }, [sources]);
 
-  const onFiles = (files: FileList | null) => { if (files && files.length > 0) void upload(files[0]); };
-
   const reindex = async (source: SourceListItem) => {
-    setOpenMenu(null);
     try {
       const res = await fetch(`/api/sources/${source.id}/reindex`, { method: 'POST' });
       const body = await res.json().catch(() => null);
@@ -209,225 +197,149 @@ export default function DataSourcesPage() {
     } finally { setDeleting(false); }
   };
 
-  const previewName = previewDetail?.source.name ?? '—';
+  const summaryItems: BentoItem[] = [
+    { id: 'storage', label: 'Total penyimpanan', value: sources.loading ? '…' : `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`, source: `${num(counts?.dataset)} DATASET`, span: 'support' },
+    { id: 'docs', label: 'Dokumen terindeks', value: sources.loading ? '…' : num(counts?.document), source: `${num(totalChunks)} POTONGAN`, span: 'support' },
+    { id: 'rows', label: 'Baris tersimpan', value: sources.loading ? '…' : num(totalRows), source: 'SQLITE · SQL', span: 'support' },
+    { id: 'status', label: 'Status pemrosesan', value: (counts?.failed ?? 0) > 0 ? `${counts?.failed} perlu diperiksa` : 'Semua siap', source: 'SQLITE · FTS5', span: 'support' },
+  ];
+
+  const cards: RevealCard[] = visible.map((source) => ({
+    id: source.id,
+    title: source.name,
+    meta: `${source.kind.toUpperCase()} · ${source.format.toUpperCase()} · ${formatBytes(source.sizeBytes)}`,
+    preview: (
+      <div className="flex flex-wrap items-center justify-between gap-s2">
+        <StatusBadge label={statusLabel(source.status)} tone={statusTone(source.status)} />
+        <span className="mono-meta">{source.kind === 'dataset' ? `${num(source.rowCount)} BARIS` : `${num(source.chunkCount)} POTONGAN`}</span>
+      </div>
+    ),
+    detail: (
+      <div className="flex flex-col gap-s2">
+        <p className="font-body text-caption text-ink-72">Dibuat {source.createdAt.slice(0, 10)}</p>
+        <div className="flex flex-wrap gap-s2">
+          <Link href={`/data-sources/${source.id}`} className="touch-44 inline-flex items-center rounded-control border border-forest px-s2 font-display text-label font-semibold text-forest focus-ring">Buka detail</Link>
+          <button type="button" onClick={() => void loadPreview(source.id, 5)} className="touch-44 inline-flex items-center rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink focus-ring">Pratinjau</button>
+          <button type="button" onClick={() => void reindex(source)} className="touch-44 inline-flex items-center rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink focus-ring">Indeks ulang</button>
+          {source.id !== 'seed' && <button type="button" onClick={() => setDeleteTarget(source)} className="touch-44 inline-flex items-center rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink focus-ring">Hapus</button>}
+        </div>
+      </div>
+    ),
+  }));
+
   const previewColumns = preview?.columns ?? [];
   const previewRows = preview?.rows ?? [];
 
   return (
-    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <PageHeader
+    <div className="page-container py-s5">
+      <PageHeading
         title="Sumber Data"
-        subtitle="Kelola dataset dan dokumen yang menjadi dasar setiap jawaban."
-        meta="SQLITE · SQL + FTS5"
-        actions={<Button variant="primary" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}><Icon name="upload_file" className="text-[18px]" aria-hidden="true" /> Unggah file</Button>}
+        caption="Kelola dataset dan dokumen yang menjadi dasar setiap jawaban."
+        meta={`SQLITE · SQL + ${meta.data?.capabilities.rag.toUpperCase() ?? 'FTS5'}`}
       />
-      <input ref={fileRef} type="file" accept={ACCEPT} className="sr-only" aria-label="Pilih file untuk diunggah" onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
 
-      {/* Ringkasan sumber. */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: 'Total penyimpanan', value: sources.loading ? null : `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`, meta: `${num(counts?.dataset)} DATASET` },
-          { label: 'Dokumen terindeks', value: sources.loading ? null : num(counts?.document), meta: `${num(totalChunks)} POTONGAN` },
-          { label: 'Baris tersimpan', value: sources.loading ? null : num(totalRows), meta: `${num(totalTables)} TABEL` },
-        ].map((card) => (
-          <div key={card.label} className="flex min-h-40 flex-col rounded-card border border-border-hairline bg-surface p-5">
-            <p className="font-body text-label-sm uppercase text-ink-muted-strong">{card.label}</p>
-            <p className="mt-3 font-body text-metric-display tabular text-ink">{card.value ?? <Skeleton className="h-8 w-24" />}</p>
-            <div className="mt-auto pt-3"><MonoMeta>{card.meta}</MonoMeta></div>
-          </div>
-        ))}
-        <div className="flex min-h-40 flex-col rounded-card border border-border-hairline bg-surface p-5">
-          <p className="font-body text-label-sm uppercase text-ink-muted-strong">Status pemrosesan</p>
-          <div className="mt-3"><StatusDot state={failedCount > 0 ? 'error' : 'active'} label={failedCount > 0 ? `${failedCount} perlu diperiksa` : 'Semua siap'} /></div>
-          <div className="mt-auto pt-3"><MonoMeta>SQLITE · FTS5</MonoMeta></div>
-        </div>
-      </div>
+      <section aria-label="Ringkasan sumber" className="mb-s5">
+        <BentoGrid items={summaryItems} state={sources.loading ? 'loading' : sources.error ? 'error' : 'default'} errorTitle="Ringkasan gagal dimuat." onRetry={sources.retry} />
+      </section>
 
-      {/* Zona unggah. */}
-      <section className="rounded-card border border-border-hairline bg-surface p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-body text-headline-sm text-ink">Unggah sumber</h2>
-          <MonoMeta>MAKS 25 MB</MonoMeta>
-        </div>
-        <MeasurementRule className="mb-5" />
-        <div
-          role="button" tabIndex={0}
-          aria-label="Letakkan file di sini atau pilih file untuk diunggah"
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => { e.preventDefault(); setDragging(false); onFiles(e.dataTransfer.files); }}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileRef.current?.click(); } }}
-          onClick={() => fileRef.current?.click()}
-          className={`flex h-dropzone-mobile flex-col items-center justify-center rounded-control border border-dashed border-border-control bg-canvas text-center transition-colors hover:border-primary focus-ring sm:h-dropzone ${dragging ? 'border-primary' : ''}`}
-        >
-          <Icon name="cloud_upload" className="text-[28px] text-primary" aria-hidden="true" />
-          <p className="mt-3 font-body text-body-md font-semibold text-ink">Letakkan file CSV, XLSX, PDF, DOCX, TXT, atau MD di sini</p>
-          <p className="mt-1 font-body text-body-sm text-ink-muted-strong">Skema dan potongan teks dibuat otomatis saat pengindeksan.</p>
-        </div>
+      <section aria-labelledby="dropzone-heading" className="mb-s5">
+        <h2 id="dropzone-heading" className="font-display text-title text-ink">Unggah sumber</h2>
+        <SectionRule className="mb-s3 mt-s2" />
+        <Dropzone onFiles={(files) => void upload(files)} busy={uploading} />
         {(uploading || job) && (
-          <div className="mt-4 rounded-control border border-border-hairline bg-canvas p-4">
-            <div className="flex items-center justify-between gap-2">
-              <span className="min-w-0 truncate font-body text-body-md text-ink">{uploading ? uploadName : job?.name}</span>
-              <MonoMeta>{uploading ? 'MENGUNGGAH' : `${job?.step ?? 'MEMPROSES'} · ${job?.progress ?? 0}%`}</MonoMeta>
+          <div className="mt-s3 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3">
+            <div className="flex items-center justify-between gap-s2">
+              <span className="min-w-0 truncate font-body text-body text-ink">{uploading ? 'Mengunggah berkas' : job?.name}</span>
+              <span className="mono-meta">{uploading ? 'MENGUNGGAH' : `${job?.step ?? 'MEMPROSES'} · ${job?.progress ?? 0}%`}</span>
             </div>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-control bg-row-hover" role="progressbar" aria-valuenow={uploading ? undefined : job?.progress} aria-valuemin={0} aria-valuemax={100}>
-              <div className="h-full bg-primary transition-[width] duration-[var(--motion-slow)]" style={{ width: uploading ? '33%' : `${job?.progress ?? 0}%` }} />
+            <div className="mt-s2 h-s2 w-full overflow-hidden rounded-control bg-forest-08" role="progressbar" aria-valuenow={uploading ? undefined : job?.progress} aria-valuemin={0} aria-valuemax={100}>
+              <div className="h-full bg-forest transition-[width] duration-[var(--motion-slow)]" style={{ width: uploading ? '33%' : `${job?.progress ?? 0}%` }} />
             </div>
           </div>
         )}
       </section>
 
-      {/* Dataset terstruktur. */}
-      <section className="overflow-hidden rounded-card border border-border-hairline bg-surface">
-        <header className="measurement-rule px-5 pb-3 pt-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <h2 className="font-body text-headline-sm text-ink">Dataset terstruktur</h2>
-            <FilterChips chips={formatTabs} value={formatFilter} onChange={setFormatFilter} label="Filter format dataset" />
-          </div>
-        </header>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-canvas">
-              <tr>{['Nama sumber', 'Format', 'Baris', 'Ukuran', 'Status', 'Aksi'].map((h, i) => <th key={h} className={`whitespace-nowrap px-4 py-3 font-body text-label-sm uppercase text-ink-muted-strong ${i === 2 || i === 3 ? 'text-right' : ''}`}>{h}</th>)}</tr>
-            </thead>
-            <tbody>
-              {sources.loading && <tr><td colSpan={6} className="px-4 py-4"><Skeleton className="h-8 w-full" /></td></tr>}
-              {!sources.loading && sources.error && <tr><td colSpan={6} className="px-4 py-4 font-body text-body-md text-error-text">{sources.error}</td></tr>}
-              {!sources.loading && !sources.error && visibleDatasets.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center font-body text-body-md text-ink-muted-strong">Belum ada dataset. Unggah file untuk menambah sumber.</td></tr>}
-              {visibleDatasets.map((source) => (
-                <tr key={source.id} className="border-t border-border-hairline hover:bg-row-hover">
-                  <td className="px-4 py-3 font-body text-body-md text-ink">
-                    <span className="inline-flex items-center gap-2"><Icon name={sourceIcon(source)} className="text-[18px] text-primary" aria-hidden="true" /><Link href={`/data-sources/${source.id}`} className="font-semibold hover:underline focus-ring">{source.name}</Link></span>
-                  </td>
-                  <td className="px-4 py-3"><MonoMeta>{formatLabel(source.format)}</MonoMeta></td>
-                  <td className="px-4 py-3 text-right font-body text-body-md tabular text-ink">{num(source.rowCount)}</td>
-                  <td className="px-4 py-3 text-right font-body text-body-sm tabular text-ink-muted-strong">{formatBytes(source.sizeBytes)}</td>
-                  <td className="px-4 py-3"><StatusDot state={statusState(source.status)} label={statusLabel(source.status)} /></td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => void loadPreview(source.id, 5)}>Pratinjau</Button>
-                      <Button variant="ghost" size="sm" onClick={() => void reindex(source)}>Indeks ulang</Button>
-                      {source.id !== 'seed' && <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(source)} aria-label={`Hapus ${source.name}`}><Icon name="delete" className="text-[16px]" aria-hidden="true" /></Button>}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <section aria-labelledby="sumber-heading" className="mb-s5">
+        <div className="mb-s3 flex flex-wrap items-end justify-between gap-s2">
+          <h2 id="sumber-heading" className="font-display text-title text-ink">Sumber terdaftar</h2>
+          <span className="mono-meta">{visible.length} SUMBER</span>
         </div>
-        <div className="border-t border-border-hairline px-4 py-2"><MonoMeta>{visibleDatasets.length} DATASET</MonoMeta></div>
+        <AnimatedTabs tabs={tabs} activeId={filter} onChange={setFilter} className="mb-s3" />
+        <LayoutGrid
+          cards={cards}
+          state={sources.loading ? 'loading' : sources.error ? 'error' : visible.length === 0 ? 'empty' : 'default'}
+          emptyTitle="Belum ada sumber pada filter ini. Unggah berkas untuk menambah sumber."
+          emptyAction={{ label: 'Unggah berkas', onClick: () => document.getElementById('dropzone-heading')?.scrollIntoView({ behavior: 'smooth' }) }}
+          errorTitle="Daftar sumber gagal dimuat."
+          onRetry={sources.retry}
+        />
       </section>
 
-      {/* Dokumen. */}
-      <section className="overflow-hidden rounded-card border border-border-hairline bg-surface">
-        <header className="measurement-rule px-5 pb-3 pt-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <h2 className="font-body text-headline-sm text-ink">Dokumen</h2>
-            <MonoMeta>INDEKS · {meta.data?.capabilities.rag ?? 'FTS5'}</MonoMeta>
+      {/* Tabel validasi / pratinjau. */}
+      <section aria-labelledby="validasi-heading">
+        <div className="mb-s3 flex flex-wrap items-end justify-between gap-s2">
+          <div>
+            <h2 id="validasi-heading" className="font-display text-title text-ink">Pratinjau validasi</h2>
+            <p className="mt-s1 font-body text-caption text-ink-72">Baris pertama dari sumber yang dipilih. Angka berasal dari berkas asli.</p>
           </div>
-        </header>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-canvas">
-              <tr>{['Nama dokumen', 'Format', 'Ukuran', 'Potongan', 'Status', 'Aksi'].map((h, i) => <th key={h} className={`whitespace-nowrap px-4 py-3 font-body text-label-sm uppercase text-ink-muted-strong ${i === 2 || i === 3 ? 'text-right' : ''}`}>{h}</th>)}</tr>
-            </thead>
-            <tbody>
-              {sources.loading && <tr><td colSpan={6} className="px-4 py-4"><Skeleton className="h-8 w-full" /></td></tr>}
-              {!sources.loading && !sources.error && documentItems.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center font-body text-body-md text-ink-muted-strong">Belum ada dokumen. Unggah PDF, DOCX, TXT, atau MD.</td></tr>}
-              {documentItems.map((source) => (
-                <tr key={source.id} className="border-t border-border-hairline hover:bg-row-hover">
-                  <td className="px-4 py-3 font-body text-body-md text-ink">
-                    <span className="inline-flex items-center gap-2"><Icon name={sourceIcon(source)} className="text-[18px] text-primary" aria-hidden="true" /><Link href={`/data-sources/${source.id}`} className="font-semibold hover:underline focus-ring">{source.name}</Link></span>
-                  </td>
-                  <td className="px-4 py-3"><MonoMeta>{formatLabel(source.format)}</MonoMeta></td>
-                  <td className="px-4 py-3 text-right font-body text-body-sm tabular text-ink-muted-strong">{formatBytes(source.sizeBytes)}</td>
-                  <td className="px-4 py-3 text-right font-body text-body-md tabular text-ink">{num(source.chunkCount)}</td>
-                  <td className="px-4 py-3"><StatusDot state={statusState(source.status)} label={statusLabel(source.status)} /></td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => void loadPreview(source.id, 5)}>Lihat</Button>
-                      <Button variant="ghost" size="sm" onClick={() => void reindex(source)}>Indeks ulang</Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {previewDetail && <span className="mono-meta">{previewDetail.source.name.toUpperCase()} · {num(preview?.rowCount)} BARIS</span>}
         </div>
-        <div className="border-t border-border-hairline px-4 py-2"><MonoMeta>{documentItems.length} DOKUMEN</MonoMeta></div>
+        <SectionRule className="mb-s3" />
+        {previewLoading ? (
+          <div className="skeleton h-40 w-full" aria-busy="true" />
+        ) : previewError ? (
+          <div className="flex flex-col items-start gap-s2 surface p-s4" role="alert">
+            <span className="inline-flex items-center gap-s2"><StatusBadge label="Gagal" tone="error" /><span className="font-body text-body text-ink">{previewError}</span></span>
+            {previewId && <button type="button" onClick={() => void loadPreview(previewId, previewLimit)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>}
+          </div>
+        ) : !previewDetail ? (
+          <div className="surface flex items-center gap-s2 p-s4"><StatusBadge label="Belum ada pratinjau" tone="neutral" /><span className="font-body text-body text-ink-72">Pilih sumber untuk melihat pratinjau.</span></div>
+        ) : previewRows.length === 0 ? (
+          <div className="surface flex items-center gap-s2 p-s4"><StatusBadge label="Kosong" tone="neutral" /><span className="font-body text-body text-ink-72">Tidak ada baris untuk ditampilkan.</span></div>
+        ) : (
+          <div className="surface overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left">
+                <caption className="sr-only">Pratinjau {previewDetail.source.name}</caption>
+                <thead><tr className="bg-forest-08"><th scope="col" className="px-s3 py-s2 font-body text-caption text-ink-72">#</th>{previewColumns.map((col) => <th key={col.key} scope="col" className="whitespace-nowrap px-s3 py-s2 font-body text-caption text-ink-72">{col.label}</th>)}</tr></thead>
+                <tbody>
+                  {previewRows.map((row, i) => (
+                    <tr key={i} className="border-t border-[var(--border-hairline)]">
+                      <td className="px-s3 py-s2 font-body text-caption tabular text-ink-72">{i + 1}</td>
+                      {previewColumns.map((col) => {
+                        const value = row[col.key];
+                        const isAmount = col.key.toLowerCase().includes('amount') && typeof value === 'number';
+                        return <td key={col.key} className="whitespace-nowrap px-s3 py-s2 font-body text-caption tabular text-ink">{isAmount ? `Rp ${formatNumber(value as number)}` : value == null ? <span className="text-ink-72">null</span> : String(value)}</td>;
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-s2 border-t border-[var(--border-hairline)] px-s3 py-s2">
+              <span className="mono-meta">MENAMPILKAN {previewRows.length} DARI {num(preview?.rowCount)} BARIS</span>
+              <div className="flex flex-wrap gap-s2">
+                <button type="button" disabled={!preview?.truncated || previewLoading} onClick={() => previewId && void loadPreview(previewId, 50)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring disabled:opacity-50">Muat 50 baris</button>
+                <Link href="/assistant" className="touch-44 inline-flex items-center rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring">Tanya data ini</Link>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
-      {/* Pratinjau sumber. */}
-      {previewDetail && (
-        <section className="overflow-hidden rounded-card border border-border-hairline bg-surface">
-          <header className="measurement-rule px-5 pb-3 pt-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="font-body text-headline-sm text-ink">{previewName}</h2>
-                <p className="mt-1 font-body text-body-sm text-ink-muted-strong">Pratinjau baris pertama dari sumber yang dipilih.</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <MonoMeta>{num(preview?.rowCount)} BARIS</MonoMeta>
-                <Button variant="ghost" size="sm" aria-label="Ekspor sampel CSV" onClick={() => {
-                  const header = previewColumns.map((c) => c.label);
-                  const rows = previewRows.map((row) => previewColumns.map((c) => String(row[c.key] ?? '')));
-                  const csv = [header, ...rows].map((line) => line.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(',')).join('\n');
-                  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
-                  const anchor = document.createElement('a'); anchor.href = url; anchor.download = `tanyadata-${previewId}-sampel.csv`; anchor.click(); URL.revokeObjectURL(url);
-                }}><Icon name="download" className="text-[16px]" aria-hidden="true" /> Ekspor CSV</Button>
-              </div>
-            </div>
-          </header>
-          <div className="flex flex-wrap gap-2 border-b border-border-hairline px-5 py-3">
-            {'schema' in previewDetail && previewDetail.schema
-              ? previewDetail.schema.columns.map((column) => <MonoMeta key={column.name} className="!normal-case">{column.name} [{column.type}]</MonoMeta>)
-              : 'sections' in previewDetail
-                ? previewDetail.sections.slice(0, 8).map((section, i) => <MonoMeta key={i} className="!normal-case">{section.title}</MonoMeta>)
-                : null}
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-canvas">
-                <tr><th className="px-4 py-3 font-body text-label-sm uppercase text-ink-muted-strong">#</th>{previewColumns.map((column) => <th key={column.key} className="px-4 py-3 font-mono text-body-sm text-ink-muted-strong">{column.label}</th>)}</tr>
-              </thead>
-              <tbody>
-                {previewLoading && <tr><td colSpan={previewColumns.length + 1} className="px-4 py-4"><Skeleton className="h-6 w-full" /></td></tr>}
-                {!previewLoading && previewError && <tr><td colSpan={previewColumns.length + 1} className="px-4 py-4 font-body text-body-md text-error-text">{previewError}</td></tr>}
-                {!previewLoading && !previewError && previewRows.length === 0 && <tr><td colSpan={previewColumns.length + 1} className="px-4 py-8 text-center font-body text-body-md text-ink-muted-strong">Tidak ada baris untuk ditampilkan.</td></tr>}
-                {!previewLoading && previewRows.map((row, rowIndex) => (
-                  <tr key={rowIndex} className="border-t border-border-hairline hover:bg-row-hover">
-                    <td className="px-4 py-3 font-body text-body-sm tabular text-ink-muted-strong">{rowIndex + 1}</td>
-                    {previewColumns.map((column) => {
-                      const value = row[column.key];
-                      const isStatus = column.key.toLowerCase().includes('status');
-                      const isAmount = column.key.toLowerCase().includes('amount') && typeof value === 'number';
-                      return (
-                        <td key={column.key} className="px-4 py-3 font-mono text-body-sm text-ink">
-                          {isStatus ? <StatusDot state={String(value).toUpperCase() === 'FAILED' ? 'error' : 'active'} label={String(value ?? '—')} /> : value == null ? <span className="text-ink-muted-strong">null</span> : isAmount ? <span className="tabular">Rp {formatNumber(value as number)}</span> : <span className="tabular">{String(value)}</span>}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-hairline px-5 py-3">
-            <MonoMeta>MENAMPILKAN {previewRows.length} DARI {num(preview?.rowCount)} BARIS</MonoMeta>
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" disabled={!preview?.truncated || previewLoading} onClick={() => void loadPreview(previewId!, 50)}>Muat 50 baris berikutnya</Button>
-              <Link href="/assistant" className="inline-flex min-h-11 items-center rounded-control bg-primary px-4 font-body text-label-md font-semibold text-on-primary transition-colors hover:bg-[#0A3A2C] focus-ring-forest">Tanya data ini</Link>
+      {deleteTarget && (
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-s3">
+          <div className="animate-backdrop-in absolute inset-0 bg-ink/40" onClick={() => setDeleteTarget(null)} aria-hidden="true" />
+          <div className="animate-modal-in elevated relative w-full max-w-[480px] rounded-overlay border border-[var(--border-hairline)] bg-porcelain p-s4" role="dialog" aria-modal="true" aria-label="Hapus sumber">
+            <h2 className="font-display text-title text-ink">Hapus “{deleteTarget.name}”?</h2>
+            <p className="mt-s2 font-body text-body text-ink-72">Tindakan ini tidak dapat dibatalkan. Riwayat percakapan dan laporan tetap tersimpan.</p>
+            <div className="mt-s4 flex justify-end gap-s2">
+              <button type="button" onClick={() => setDeleteTarget(null)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring">Batal</button>
+              <button type="button" onClick={() => void confirmDelete()} disabled={deleting} className="touch-44 rounded-control border border-terracotta px-s3 font-display text-label font-semibold text-ink focus-ring disabled:opacity-50">{deleting ? 'Menghapus' : 'Hapus'}</button>
             </div>
           </div>
-        </section>
+        </div>
       )}
-
-      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)} title={deleteTarget ? `Hapus “${deleteTarget.name}”?` : 'Hapus sumber?'} description="Tindakan ini tidak dapat dibatalkan. Riwayat percakapan dan laporan tetap tersimpan.">
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" autoFocus onClick={() => setDeleteTarget(null)}>Batal</Button>
-          <Button variant="danger" loading={deleting} onClick={() => void confirmDelete()}>Hapus</Button>
-        </div>
-      </Dialog>
     </div>
   );
 }
