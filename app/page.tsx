@@ -99,21 +99,21 @@ export default function LandingPage() {
               <div className="mt-4 grid grid-cols-3 gap-3">
                 <div className="rounded-md bg-surface-container-low p-3">
                   <p className="font-body text-label-sm text-on-surface-variant uppercase">Transaksi</p>
-                  <p className="mt-1 font-display text-metric-xl font-bold text-on-surface tabular">
+                  <div className="mt-1 font-display text-metric-xl font-bold text-on-surface tabular">
                     {loading ? <Skeleton className="h-8 w-20" /> : formatNumber(txCount)}
-                  </p>
+                  </div>
                 </div>
                 <div className="rounded-md bg-surface-container-low p-3">
                   <p className="font-body text-label-sm text-on-surface-variant uppercase">Dokumen</p>
-                  <p className="mt-1 font-display text-metric-xl font-bold text-on-surface tabular">
+                  <div className="mt-1 font-display text-metric-xl font-bold text-on-surface tabular">
                     {loading ? <Skeleton className="h-8 w-20" /> : formatNumber(docCount)}
-                  </p>
+                  </div>
                 </div>
                 <div className="rounded-md bg-surface-container-low p-3">
                   <p className="font-body text-label-sm text-on-surface-variant uppercase">Periode</p>
-                  <p className="mt-1 font-display text-metric-xl font-bold text-on-surface tabular">
+                  <div className="mt-1 font-display text-metric-xl font-bold text-on-surface tabular">
                     {loading ? <Skeleton className="h-8 w-20" /> : summary?.period?.label ?? meta?.data?.periodDefaults?.label ?? '—'}
-                  </p>
+                  </div>
                 </div>
               </div>
               {/* 1 chart statis */}
