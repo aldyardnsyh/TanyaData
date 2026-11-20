@@ -99,13 +99,13 @@ export function LandingSteps() {
   };
 
   const trackClass = (active: boolean) =>
-    `relative hidden h-px flex-none w-14 lg:w-32 transition-colors duration-[var(--motion-slow)] lg:block ${
-      active ? 'bg-lime' : 'bg-[var(--hairline-dark)]'
+    `relative hidden h-px flex-none w-14 lg:w-32 transition-all duration-[var(--motion-slow)] lg:block ${
+      active ? 'bg-lime opacity-100' : 'opacity-0'
     }`;
   // Alur vertikal untuk viewport < lg: penghubung antar node supaya alur tetap terbaca.
   const trackVerticalClass = (active: boolean) =>
-    `relative h-10 w-px flex-none transition-colors duration-[var(--motion-slow)] lg:hidden ${
-      active ? 'bg-lime' : 'bg-[var(--hairline-dark)]'
+    `relative h-10 w-px flex-none transition-all duration-[var(--motion-slow)] lg:hidden ${
+      active ? 'bg-lime opacity-100' : 'opacity-0'
     }`;
 
   const composing = phase === 2;
@@ -264,10 +264,13 @@ export function LandingSteps() {
             />
           </div>
 
-          {/* Inti TanyaData: bubble pertanyaan menempel di atasnya (pertanyaan
-              datang ke mesin), menyala saat memproses, tenang saat selesai. */}
+          {/* Inti TanyaData: pop saat fase tanyakan (momen mesin), menyala sambil
+              memproses, lalu tenang di fase bagikan. Tanpa bayang-bayang: node
+              tidak terlihat sebelum gilirannya (aturan muncul satu per satu). */}
           <div
             className={`relative flex h-16 w-16 flex-none flex-col items-center justify-center rounded-card-lg border transition-all duration-[var(--motion-slow)] ${
+              phase === 0 ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100'
+            } ${
               phase >= 1 && phase <= 2
                 ? 'border-lime glow-lime bg-[color-mix(in_srgb,var(--color-forest)_72%,var(--color-lime)_10%)]'
                 : 'border-hairline-dark bg-forest-08'
