@@ -35,7 +35,7 @@ export function NotificationMenu({ engineOnline, documents }: NotificationMenuPr
             <div className="flex items-center justify-between font-label-sm text-on-surface-variant">
               <span>{t('shell.engineOnline')}</span>
               <span className={engineOnline ? 'text-primary' : 'text-error'}>
-                {engineOnline ? 'OK' : '—'}
+                {engineOnline ? 'OK' : 'n/a'}
               </span>
             </div>
             {typeof documents === 'number' && (

@@ -5,7 +5,7 @@
 @import "material-symbols/outlined.css";
 
 @theme {
-  /* Font — self-hosted via lib/fonts.ts. Stitch: Jakarta = headline/display,
+  /* Font: self-hosted via lib/fonts.ts. Stitch: Jakarta = headline/display,
      Inter = body/metric/label (blueprint §1.2). */
   --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-headline: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
@@ -164,7 +164,7 @@
   --radius-lg: 0.25rem;
   --radius-xl: 0.5rem;
   --radius-full: 0.75rem;
-  --radius-pill: 999px; /* legacy, bukan token Stitch — untuk pill eksplisit */
+  --radius-pill: 999px; /* legacy, bukan token Stitch; untuk pill eksplisit */
 
   /* ---- Spacing Stitch (blueprint §1.4) ---- */
   --spacing-space-xs: 0.25rem;

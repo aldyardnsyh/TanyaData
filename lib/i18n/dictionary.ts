@@ -4,7 +4,7 @@ const id = {
   appName: 'TanyaData',
   tagline: 'Tanyakan Datanya. Temukan Wawasannya.',
 
-  /* Shell bersama (blueprint §3) — label di-port dari Stitch, diterjemahkan untuk mode ID. */
+  /* Shell bersama (blueprint §3): label di-port dari Stitch, diterjemahkan untuk mode ID. */
   'shell.engineOnline': 'Mesin Aktif',
   'shell.engineOffline': 'Mesin Tidak Aktif',
   'shell.documentation': 'Dokumentasi',
@@ -156,7 +156,7 @@ const en: Record<keyof typeof id, string> = {
   appName: 'TanyaData',
   tagline: 'Ask the Data. Find the Insight.',
 
-  /* Shell bersama (blueprint §3) — bahasa label mengikuti Stitch persis. */
+  /* Shell bersama (blueprint §3): bahasa label mengikuti Stitch persis. */
   'shell.engineOnline': 'Engine Online',
   'shell.engineOffline': 'Engine Offline',
   'shell.documentation': 'Documentation',
