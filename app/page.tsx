@@ -146,44 +146,55 @@ export default function LandingPage() {
 
         <SectionRule className="page-container" />
 
-        {/* S5 FAQ: keberatan nyata pengguna produk sebelum CTA terakhir. */}
-        <section id="faq" className="page-container py-16 md:py-24">
-          <div className="grid gap-s5 lg:grid-cols-12">
-            <ScrollReveal className="lg:col-span-5">
-              <p className="eyebrow">Pertanyaan umum</p>
-              <h2 className="mt-s2 font-display text-title text-ink">
-                Hal yang biasa ditanyakan sebelum mulai
-              </h2>
-              <p className="mt-s2 max-w-[52ch] font-body text-body text-ink-72">
-                Masih ada yang ingin ditanyakan? Coba langsung dengan data contoh di workspace.
-              </p>
-            </ScrollReveal>
-            <ScrollReveal className="lg:col-span-7" delay={100}>
-              <div className="rounded-card-lg border border-[var(--border-hairline)] px-s4 py-s2 shadow-lift">
-                <FaqAccordion items={FAQ_ITEMS} />
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* S6 CTA akhir: band gelap penutup; CTA menyala lime di atas forest (satu per layar). */}
-        <section className="relative overflow-hidden bg-forest text-porcelain">
+        {/* S5 FAQ: band gelap (ritme selang-seling setelah workspace terang);
+            header kiri, accordion kanan dengan aksen lime saat terbuka. */}
+        <section id="faq" className="relative overflow-hidden bg-forest text-porcelain">
           <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
           <div
             aria-hidden="true"
-            className="glow-radial-lime absolute left-1/2 top-1/2 h-[380px] w-[640px] max-w-none -translate-x-1/2 -translate-y-1/2"
+            className="glow-radial-lime absolute -bottom-40 right-1/4 h-[300px] w-[480px] max-w-none"
           />
-          <div className="page-container relative flex flex-col items-center py-16 text-center md:py-24">
-            <ScrollReveal className="flex flex-col items-center">
-              <h2 className="text-title-cta max-w-[24ch] text-porcelain">Mulai dari data contoh</h2>
-              <p className="mt-s3 max-w-[52ch] font-body text-body text-dark-muted">
-                Buka workspace dengan dataset dan dokumen yang sudah siap. Tidak perlu setup untuk mencoba.
-              </p>
-              <div className="mt-s5">
-                <LandingCTA tone="dark" />
-              </div>
-            </ScrollReveal>
+          <div className="page-container relative py-16 md:py-24">
+            <div className="grid gap-s5 lg:grid-cols-12">
+              <ScrollReveal className="lg:col-span-5">
+                <p className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
+                  Pertanyaan umum
+                </p>
+                <h2 className="mt-s2 font-display text-title text-porcelain">
+                  Hal yang biasa ditanyakan sebelum mulai
+                </h2>
+                <p className="mt-s2 max-w-[52ch] font-body text-body text-dark-muted">
+                  Masih ada yang ingin ditanyakan? Coba langsung dengan data contoh di workspace.
+                </p>
+              </ScrollReveal>
+              <ScrollReveal className="lg:col-span-7" delay={100}>
+                <FaqAccordion items={FAQ_ITEMS} tone="dark" />
+              </ScrollReveal>
+            </div>
           </div>
+        </section>
+
+        {/* S6 CTA akhir: section terang berisi kartu CTA gelap (beda dari band gelap
+            FAQ di atasnya); CTA menyala lime tetap satu-satunya per layar. */}
+        <section className="page-container py-16 md:py-24">
+          <ScrollReveal>
+            <div className="relative overflow-hidden rounded-card-lg border border-hairline-dark bg-forest px-s4 py-12 text-center text-porcelain md:py-16">
+              <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
+              <div
+                aria-hidden="true"
+                className="glow-radial-lime absolute left-1/2 top-1/2 h-[320px] w-[560px] max-w-none -translate-x-1/2 -translate-y-1/2"
+              />
+              <div className="relative flex flex-col items-center">
+                <h2 className="text-title-cta max-w-[24ch] text-porcelain">Mulai dari data contoh</h2>
+                <p className="mt-s3 max-w-[52ch] font-body text-body text-dark-muted">
+                  Buka workspace dengan dataset dan dokumen yang sudah siap. Tidak perlu setup untuk mencoba.
+                </p>
+                <div className="mt-s5">
+                  <LandingCTA tone="dark" />
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
         </section>
 
         {/* S7 Footer: identitas + navigasi section yang nyata. Tagline dari PRD. */}
