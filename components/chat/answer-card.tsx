@@ -155,10 +155,11 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
             aria-controls={sqlPanelId}
             className="flex w-full items-center justify-between bg-surface-container-low px-3 py-2 text-left font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
           >
-            <span className="flex items-center gap-2">
-              <span className="font-mono text-label-sm text-primary">SQL</span>
-              Query Transparency · {formatNumber(message.sql.rowCount)} {t('label.rows')} · {message.sql.durationMs} ms
-            </span>
+              <span className="flex items-center gap-2">
+                <span className="font-mono text-label-sm text-primary">SQL</span>
+                {formatNumber(message.sql.rowCount)} {t('label.rows')} ·
+                <abbr title="Diukur sekali saat permintaan ini" className="cursor-help no-underline">SQL {message.sql.durationMs} ms</abbr>
+              </span>
             <ChevronDown className={`h-4 w-4 text-on-surface-variant transition-transform duration-[160ms] ${sqlOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
           {/* C-13: grid-rows 0fr→1fr, 160ms — tinggi beranimasi, bukan lompat (§4.11). */}
@@ -187,7 +188,8 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
       {meta && (
         <p className="font-body text-body-sm text-on-surface-variant">
           {meta.period ? `${meta.period.label}${meta.partial ? ' · parsial' : ''} · ` : ''}
-          {formatNumber(meta.rowCount)} {t('label.rows')} · {meta.mode} · {meta.latencyMs} ms
+          {formatNumber(meta.rowCount)} {t('label.rows')} · {meta.mode} ·
+          <abbr title="Diukur sekali saat permintaan ini" className="cursor-help">Pemrosesan {meta.latencyMs} ms</abbr>
           {meta.fallbackReason ? ' · jawaban deterministik' : ''}
         </p>
       )}

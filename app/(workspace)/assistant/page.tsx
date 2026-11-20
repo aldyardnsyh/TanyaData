@@ -26,11 +26,11 @@ import { AnswerCard } from '@/components/chat/answer-card';
 import { toast } from '@/components/ui/toaster';
 
 const DEMO_SCENARIOS: { id: string; label: string; question: string }[] = [
-  { id: 'A1', label: 'A1 · Total bulan ini', question: 'Berapa total transaksi pada bulan ini?' },
-  { id: 'B2', label: 'B2 · Tren 3 bulan', question: 'Apakah tingkat keberhasilan transaksi mengalami perubahan dalam tiga bulan terakhir?' },
-  { id: 'C1', label: 'C1 · Akar kegagalan', question: 'Mengapa tingkat kegagalan transaksi meningkat dibandingkan bulan sebelumnya?' },
-  { id: 'D1', label: 'D1 · SOP dokumen', question: 'Apa prosedur yang harus dilakukan ketika transaksi gagal?' },
-  { id: 'F2', label: 'F2 · Multi-turn', question: 'Kanal mana yang paling berkontribusi terhadap peningkatan kegagalan tersebut?' },
+  { id: 'total-bulan-ini', label: 'Total bulan ini', question: 'Berapa total transaksi pada bulan ini?' },
+  { id: 'tren-3-bulan', label: 'Tren 3 bulan', question: 'Apakah tingkat keberhasilan transaksi mengalami perubahan dalam tiga bulan terakhir?' },
+  { id: 'akar-kegagalan', label: 'Akar kegagalan', question: 'Mengapa tingkat kegagalan transaksi meningkat dibandingkan bulan sebelumnya?' },
+  { id: 'sop-dokumen', label: 'Prosedur SOP', question: 'Apa prosedur yang harus dilakukan ketika transaksi gagal?' },
+  { id: 'kontribusi-kanal', label: 'Kontribusi kanal', question: 'Kanal mana yang paling berkontribusi terhadap peningkatan kegagalan tersebut?' },
 ];
 
 function TypingIndicator() {
@@ -64,6 +64,8 @@ export default function AssistantPage() {
   const [deleting, setDeleting] = useState(false);
   const [savingReportId, setSavingReportId] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // Fokus pindah ke awal jawaban baru setelah selesai (§D.3), bukan saat sesi dibuka.
+  const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
 
   const threadRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -110,6 +112,16 @@ export default function AssistantPage() {
     const el = threadRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [detail?.messages.length, sending]);
+
+  // Fokus pindah ke awal jawaban baru setelah selesai (§D.3).
+  useEffect(() => {
+    if (!focusMessageId) return;
+    const el = document.getElementById(`msg-${focusMessageId}`);
+    if (el) {
+      el.focus({ preventScroll: true });
+      setFocusMessageId(null);
+    }
+  }, [focusMessageId]);
 
   const newConversation = useCallback(async (): Promise<string | null> => {
     try {
@@ -195,6 +207,7 @@ export default function AssistantPage() {
             messages: [...withoutTemp, realUser, json.message],
           };
         });
+        setFocusMessageId(json.message.id);
         list.retry();
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Jawaban gagal disusun.';
@@ -265,6 +278,16 @@ export default function AssistantPage() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       void send(draft);
+    }
+  };
+
+  const copyQuestion = async () => {
+    if (!lastFailed) return;
+    try {
+      await navigator.clipboard.writeText(lastFailed);
+      toast({ status: 'success', message: 'Pertanyaan tersalin.' });
+    } catch {
+      toast({ status: 'error', message: 'Gagal menyalin pertanyaan.' });
     }
   };
 
@@ -452,7 +475,7 @@ export default function AssistantPage() {
                     </div>
                   </div>
                 ) : (
-                  <div key={m.id} className="flex items-start gap-2.5">
+                  <div key={m.id} id={`msg-${m.id}`} tabIndex={-1} className="flex items-start gap-2.5 focus:outline-none">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary font-body text-label-sm font-bold text-on-primary" aria-hidden="true">
                       T
                     </span>
@@ -480,7 +503,10 @@ export default function AssistantPage() {
                 <p className="font-body text-body-md text-on-error-container">{sendError}</p>
                 <div className="mt-2 flex gap-2">
                   {lastFailed && (
-                    <Button size="sm" variant="secondary" onClick={() => void send(lastFailed)}>Coba lagi</Button>
+                    <>
+                      <Button size="sm" variant="secondary" onClick={() => void send(lastFailed)}>Coba lagi</Button>
+                      <Button size="sm" variant="ghost" onClick={() => void copyQuestion()}>Salin pertanyaan</Button>
+                    </>
                   )}
                 </div>
               </div>
