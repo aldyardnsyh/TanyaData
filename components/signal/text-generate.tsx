@@ -39,6 +39,7 @@ export function TextGenerate({
     }
     setVisible(0);
     let index = 0;
+    let timer = 0;
     const step = () => {
       index += 1;
       setVisible(Math.min(index, MAX_PHRASES));
@@ -46,7 +47,7 @@ export function TextGenerate({
         timer = window.setTimeout(step, motionTokens.duration.fast * 1000);
       }
     };
-    const timer = window.setTimeout(step, motionTokens.duration.fast * 1000);
+    timer = window.setTimeout(step, motionTokens.duration.fast * 1000);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, state]);

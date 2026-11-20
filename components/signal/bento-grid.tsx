@@ -69,7 +69,7 @@ export function BentoGrid({
     return (
       <div className={`bento ${className}`} aria-busy="true" aria-label="Memuat metrik">
         <SkeletonCell hero />
-        {[0, 1, 2, 3].map((i) => <SkeletonCell key={i} />)}
+        {[0, 1, 2, 3].map((i) => <SkeletonCell key={i} hero={false} />)}
       </div>
     );
   }

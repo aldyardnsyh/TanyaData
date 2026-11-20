@@ -84,7 +84,7 @@ export function AnimatedTabs({
             type="button"
             role="tab"
             aria-selected={selected}
-            disabled={tab.disabled || state === 'loading'}
+            disabled={tab.disabled}
             onClick={() => onChange(tab.id)}
             className={`touch-44 flex-1 px-s2 font-display text-label font-semibold transition-colors duration-[var(--motion-fast)] focus-ring ${
               selected ? 'text-forest' : 'text-ink-72 hover:text-forest'
