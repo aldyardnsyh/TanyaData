@@ -206,7 +206,7 @@ function QuoteBlock({ output }: { output: ShareOutput }) {
 
 function TimelineBlock({ output, onOpenCitation }: { output: ShareOutput; onOpenCitation?: (id: string) => void }) {
   const nodes: TimelineNode[] = output.events.map((event, i) => ({
-    id: `${output.id}-${i}`,
+    id: `node-${i}`,
     date: event.date,
     label: event.label,
     evidence: event.evidence ?? undefined,
@@ -303,7 +303,7 @@ export function AdaptiveOutputView({
   }
   return (
     <div className={`animate-phrase-in space-y-s3 ${className}`}>
-      {outputs.map((output) => <OutputBlock key={output.id} output={output} readOnly={readOnly} onOpenCitation={onOpenCitation} />)}
+      {outputs.map((output, index) => <OutputBlock key={`${output.type}-${index}`} output={output} readOnly={readOnly} onOpenCitation={onOpenCitation} />)}
     </div>
   );
 }
