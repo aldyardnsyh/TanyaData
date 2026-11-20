@@ -63,6 +63,9 @@ export type SourceCitation = {
   table?: string;
   period?: string;
   sql?: string;
+  /** CORE V2 — deep-link tervalidasi fail-closed oleh AI adapter. */
+  deep_link?: string | null;
+  deep_link_status?: 'valid' | 'invalid' | 'unchecked';
 };
 
 export type SupportingTableColumn = {
@@ -236,6 +239,10 @@ export type ChatMeta = {
   contextApplied?: ('period' | 'channel' | 'category' | 'failureCode')[];
   assumed?: boolean;
   fallbackReason?: 'llm_timeout' | 'llm_error' | 'llm_invalid' | 'sql_rejected';
+  /** CORE V2 — observability aditif dari Query.meta; tidak mengubah mode UI. */
+  aiActive?: boolean;
+  confidenceLevel?: 'strong' | 'limited' | 'refused';
+  alternativeKeywords?: string[];
 };
 
 export type ChatMessage = {
@@ -252,6 +259,8 @@ export type ChatMessage = {
   followUps?: string[];
   meta?: ChatMeta;
   guardrail?: { type: GuardrailType; explanation: string };
+  /** State follow-up untuk turn berikutnya (cermin AssistantContext). */
+  context?: AssistantContext | null;
 };
 
 export type ConversationSummary = {
