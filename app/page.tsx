@@ -66,7 +66,7 @@ export default function LandingPage() {
       <main>
         {/* S1 Hero: janji produk RAG dalam dua kolom. Kiri = unggah dan tanya;
             kanan = pratinjau antarmuka berlabel sebagai hook visual. */}
-        <section className="relative overflow-hidden bg-forest text-porcelain">
+        <section data-nav-theme="dark" className="relative overflow-hidden bg-forest text-porcelain">
           <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
           <div
             aria-hidden="true"
@@ -116,7 +116,7 @@ export default function LandingPage() {
         </section>
 
         {/* S2 Fitur utama: empat kemampuan inti produk. */}
-        <section id="fitur" className="page-container py-16 md:py-24">
+        <section id="fitur" data-nav-theme="light" className="page-container py-16 md:py-24">
           <ScrollReveal>
             <LandingFeatures />
           </ScrollReveal>
@@ -124,7 +124,7 @@ export default function LandingPage() {
 
         {/* S3 Cara kerja: band gelap (ritme selang-seling dengan fitur yang terang);
             empat langkah dalam kolom berpemisah garis, nomor lime besar. */}
-        <section id="cara-kerja" className="relative overflow-hidden bg-forest text-porcelain">
+        <section id="cara-kerja" data-nav-theme="dark" className="relative overflow-hidden bg-forest text-porcelain">
           <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
           <div
             aria-hidden="true"
@@ -138,7 +138,7 @@ export default function LandingPage() {
         </section>
 
         {/* S4 Di dalam workspace: enam halaman aplikasi yang nyata (rute asli). */}
-        <section id="workspace" className="page-container py-16 md:py-24">
+        <section id="workspace" data-nav-theme="light" className="page-container py-16 md:py-24">
           <ScrollReveal>
             <LandingWorkspace />
           </ScrollReveal>
@@ -148,7 +148,7 @@ export default function LandingPage() {
 
         {/* S5 FAQ: band gelap (ritme selang-seling setelah workspace terang);
             header kiri, accordion kanan dengan aksen lime saat terbuka. */}
-        <section id="faq" className="relative overflow-hidden bg-forest text-porcelain">
+        <section id="faq" data-nav-theme="dark" className="relative overflow-hidden bg-forest text-porcelain">
           <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
           <div
             aria-hidden="true"
@@ -176,7 +176,7 @@ export default function LandingPage() {
 
         {/* S6 CTA akhir: section terang berisi kartu CTA gelap (beda dari band gelap
             FAQ di atasnya); CTA menyala lime tetap satu-satunya per layar. */}
-        <section className="page-container py-16 md:py-24">
+        <section data-nav-theme="light" className="page-container py-16 md:py-24">
           <ScrollReveal>
             <div className="relative overflow-hidden rounded-card-lg border border-hairline-dark bg-forest px-s4 py-12 text-center text-porcelain md:py-16">
               <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
@@ -198,7 +198,7 @@ export default function LandingPage() {
         </section>
 
         {/* S7 Footer: identitas + navigasi section yang nyata. Tagline dari PRD. */}
-        <footer className="border-t border-[var(--border-hairline)]">
+        <footer data-nav-theme="light" className="border-t border-[var(--border-hairline)]">
           <div className="page-container py-s4">
             <div className="flex flex-wrap items-start justify-between gap-s4">
               <div>
