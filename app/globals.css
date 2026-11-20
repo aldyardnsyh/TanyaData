@@ -339,7 +339,14 @@
   --text-label-sm-legacy: var(--text-label-sm);
 }
 
-/* prefers-reduced-motion: 0ms, tanpa transform (DESIGN_DIRECTION §6.3.2). */
+/* §6.3.6: loop transient berhenti saat tab tersembunyi. */
+[data-tab-hidden="true"] .animate-skeleton,
+[data-tab-hidden="true"] .animate-typing-dot {
+  animation-play-state: paused !important;
+}
+
+/* prefers-reduced-motion: 0ms, tanpa transform berlebih (DESIGN_DIRECTION §6.3.2).
+   Transform untuk positioning (dialog -translate-x-1/2) sengaja tidak disentuh. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -347,7 +354,9 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .animate-skeleton { animation: none !important; }
+  .animate-skeleton,
+  .animate-typing-dot { animation: none !important; }
+  .motion-ripple-host::after { display: none !important; }
 }
 
 /* Hentikan loop saat tab tidak aktif (§6.3.6). */
