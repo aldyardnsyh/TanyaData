@@ -41,11 +41,57 @@ const STEPS = [
   },
 ];
 
-const ANSWER_ROWS: [string, string][] = [
-  ['Virtual Account', '3 hari kerja'],
-  ['E-Wallet', 'maksimal 2 x 24 jam'],
-  ['QRIS', '2 hari kerja'],
-  ['Kartu Kredit', '7 sampai 14 hari kerja'],
+/* Empat pasangan tanya-jawab dummy dengan konten dari korpus contoh produk
+ * (angka nyata dari dataset uji: 46.952, 44.319, 1.519, 3,30% vs 2,52%,
+ * VA Mandiri 6,03% di Laporan Okt 2026, prosedur SOP) dan BENTUK JAWABAN
+ * berbeda per pasangan (arah user): baris teks, bar chart distribusi, donut
+ * chart failure rate, dan baris kontributor. Tiap putaran penuh memilih
+ * pasangan secara acak tanpa mengulang yang terakhir. */
+const QA_PAIRS: {
+  question: string;
+  source: string;
+  visual: 'rows' | 'bars' | 'donut';
+  rows: [string, string][];
+}[] = [
+  {
+    question: 'Berapa SLA pengembalian dana untuk tiap kanal?',
+    source: 'FAQ CUSTOMER SUPPORT',
+    visual: 'rows',
+    rows: [
+      ['Virtual Account', '3 hari kerja'],
+      ['E-Wallet', 'maksimal 2 x 24 jam'],
+      ['QRIS', '2 hari kerja'],
+    ],
+  },
+  {
+    question: 'Bagaimana distribusi status transaksinya?',
+    source: 'TRANSACTIONS.CSV',
+    visual: 'bars',
+    rows: [
+      ['Sukses', '44.319'],
+      ['Gagal', '1.519'],
+      ['Lainnya', '1.114'],
+    ],
+  },
+  {
+    question: 'Bagaimana perbandingan dengan bulan sebelumnya?',
+    source: 'LAPORAN OKT 2026',
+    visual: 'donut',
+    rows: [
+      ['Failure rate Okt', '3,30%'],
+      ['September', '2,52%'],
+    ],
+  },
+  {
+    question: 'Kanal mana yang paling berkontribusi?',
+    source: 'LAPORAN OKT 2026',
+    visual: 'rows',
+    rows: [
+      ['Kontributor utama', 'VA Mandiri'],
+      ['Failure rate kanal', '6,03%'],
+      ['Sumber', 'Catatan manajemen'],
+    ],
+  },
 ];
 
 /** Durasi per fase (ms): fase menyusun jawaban paling panjang agar baris terbaca. */
@@ -57,9 +103,13 @@ export function LandingSteps() {
   const [manual, setManual] = useState(false);
   const [tabHidden, setTabHidden] = useState(false);
   const [docsShown, setDocsShown] = useState(true);
+  // Pasangan tanya-jawab aktif; diacak setelah hidrasi dan tiap putaran penuh.
+  const [pairIndex, setPairIndex] = useState(0);
 
+  // Pasangan pertama diacak di tiap load (setelah hidrasi, tanpa mismatch).
   // Loop hanya saat motion diizinkan; reduced-motion membiarkan fase akhir statis.
   useEffect(() => {
+    setPairIndex(Math.floor(Math.random() * QA_PAIRS.length));
     if (!shouldAnimate()) return;
     setPhase(0);
   }, []);
@@ -86,17 +136,26 @@ export function LandingSteps() {
 
   useEffect(() => {
     if (!shouldAnimate() || paused || manual || tabHidden) return;
-    const timer = window.setTimeout(
-      () => setPhase((p) => (p + 1) % 4),
-      PHASE_MS[phase] ?? 2000,
-    );
+    const timer = window.setTimeout(() => {
+      const next = (phase + 1) % 4;
+      if (next === 0) {
+        let i = pairIndex;
+        while (i === pairIndex) i = Math.floor(Math.random() * QA_PAIRS.length);
+        setPairIndex(i);
+      }
+      setPhase(next);
+    }, PHASE_MS[phase] ?? 1400);
     return () => window.clearTimeout(timer);
-  }, [phase, paused, manual, tabHidden]);
+  }, [phase, paused, manual, tabHidden, pairIndex]);
 
   const jump = (index: number) => {
     setPhase(index);
     setManual(true);
   };
+
+  // Lebar bar ilustratif distribusi status (sukses mendominasi, sisanya kecil).
+  const BAR_WIDTHS = [88, 8, 6];
+  const pair = QA_PAIRS[pairIndex] ?? QA_PAIRS[0];
 
   const trackClass = (active: boolean) =>
     `relative hidden h-px flex-none w-14 lg:w-32 transition-all duration-[var(--motion-slow)] lg:block ${
@@ -285,7 +344,7 @@ export function LandingSteps() {
               }`}
             >
               <span className="inline-flex items-center rounded-chip border border-hairline-dark bg-porcelain px-s3 py-1 font-body text-caption text-ink">
-                &quot;Berapa SLA pengembalian dana untuk tiap kanal?&quot;
+                &quot;{QA_PAIRS[pairIndex].question}&quot;
               </span>
             </span>
             <span className="state-dot state-dot-active" aria-hidden="true" />
@@ -322,9 +381,9 @@ export function LandingSteps() {
             />
           </div>
 
-          {/* Sisi keluaran: jawaban menyusun baris demi baris saat fase periksa,
-              header berubah menjadi selesai di fase akhir. Kartu max-w-68 supaya
-              baris kanal/SLA dengan nowrap tidak meluber keluar kartu. */}
+          {/* Sisi keluaran: bentuk jawaban mengikuti jenis pertanyaan pasangan
+              aktif (rows / bars / donut) dan menyusun bertahap saat fase periksa;
+              header berubah menjadi selesai di fase akhir. */}
           <div
             className={`w-full max-w-68 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
               phase >= 2 ? 'translate-y-0 opacity-100 shadow-float' : 'pointer-events-none translate-y-2 opacity-0'
@@ -333,30 +392,90 @@ export function LandingSteps() {
             <p className="mono-meta">
               {phase >= 3 ? 'SELESAI · DENGAN SITASI' : 'MENYUSUN JAWABAN'}
             </p>
-            <div className="mt-s2 grid gap-1 font-body text-body text-ink">
-              {ANSWER_ROWS.map(([kanal, sla], index) => (
-                <div
-                  key={kanal}
-                  className={`flex items-baseline justify-between gap-s3 transition-all duration-[var(--motion-expand)] ${
-                    phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
-                  }`}
-                  style={{
-                    transitionDelay: phase >= 2 ? `${index * 120}ms` : '0ms',
-                  }}
-                >
-                  <span className="whitespace-nowrap text-ink-72">{kanal}</span>
-                  <span className="whitespace-nowrap tabular">{sla}</span>
+            {pair.visual === 'bars' ? (
+              /* Bar chart distribusi status (SQL-02: 44.319 / 1.519 / 1.114). */
+              <div className="mt-s3 grid gap-s2">
+                {pair.rows.map(([label, value], index) => (
+                  <div
+                    key={label}
+                    className={`grid grid-cols-[64px,1fr,auto] items-center gap-s2 transition-all duration-[var(--motion-expand)] ${
+                      phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
+                    }`}
+                    style={{ transitionDelay: phase >= 2 ? `${index * 120}ms` : '0ms' }}
+                  >
+                    <span className="whitespace-nowrap font-body text-caption text-ink-72">{label}</span>
+                    <span className="h-1.5 w-full overflow-hidden rounded-full bg-forest-08">
+                      <span
+                        className={`block h-full rounded-full transition-transform duration-[var(--motion-slow)] ease-[var(--ease-smooth)] ${
+                          index === 0 ? 'bg-forest' : 'bg-terracotta'
+                        } ${phase >= 2 ? 'scale-x-100' : 'scale-x-0'} origin-left motion-reduce:scale-x-100`}
+                        style={{ width: `${BAR_WIDTHS[index] ?? 20}%` }}
+                      />
+                    </span>
+                    <span className="whitespace-nowrap font-mono text-caption tabular text-ink">{value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : pair.visual === 'donut' ? (
+              /* Donut failure rate 3,30% (RD-PDF-OKT-01) dengan pembanding Sep. */
+              <div
+                className={`mt-s3 flex items-center gap-s3 transition-all duration-[var(--motion-expand)] ${
+                  phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
+                }`}
+                style={{ transitionDelay: phase >= 2 ? '120ms' : '0ms' }}
+              >
+                <span className="relative inline-flex h-16 w-16 flex-none items-center justify-center">
+                  <svg viewBox="0 0 36 36" className="h-16 w-16 -rotate-90" aria-hidden="true">
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-forest-08)" strokeWidth="4" />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.5"
+                      fill="none"
+                      stroke="var(--color-terracotta)"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray="3.22 94.42"
+                      strokeDashoffset="-0"
+                    />
+                  </svg>
+                  <span className="absolute font-body text-caption font-semibold tabular text-ink">3,30%</span>
+                </span>
+                <div className="grid gap-1">
+                  {pair.rows.map(([label, value]) => (
+                    <div key={label} className="flex items-baseline justify-between gap-s3">
+                      <span className="whitespace-nowrap font-body text-caption text-ink-72">{label}</span>
+                      <span className="whitespace-nowrap font-mono text-caption tabular text-ink">{value}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="mt-s2 grid gap-1 font-body text-body text-ink">
+                {pair.rows.map(([kanal, sla], index: number) => (
+                  <div
+                    key={kanal}
+                    className={`flex items-baseline justify-between gap-s3 transition-all duration-[var(--motion-expand)] ${
+                      phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
+                    }`}
+                    style={{
+                      transitionDelay: phase >= 2 ? `${index * 120}ms` : '0ms',
+                    }}
+                  >
+                    <span className="whitespace-nowrap text-ink-72">{kanal}</span>
+                    <span className="whitespace-nowrap tabular">{sla}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <span
-              className={`mono-meta mt-s2 inline-flex items-center gap-s1 transition-all duration-[var(--motion-expand)] ${
+              className={`mono-meta mt-s3 inline-flex items-center gap-s1 transition-all duration-[var(--motion-expand)] ${
                 phase >= 2 ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0'
               }`}
               style={{ transitionDelay: phase >= 2 ? '480ms' : '0ms' }}
             >
               <span className="state-dot state-dot-active" aria-hidden="true" />
-              SITASI · FAQ CUSTOMER SUPPORT
+              {`SITASI · ${pair.source}`}
             </span>
           </div>
 
