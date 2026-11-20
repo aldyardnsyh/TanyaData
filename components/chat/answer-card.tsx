@@ -166,7 +166,7 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
                 {formatNumber(message.sql.rowCount)} {t('label.rows')} ·
                 <abbr title="Diukur sekali saat permintaan ini" className="cursor-help no-underline">SQL {message.sql.durationMs} ms</abbr>
               </span>
-            <ChevronDown className={`h-4 w-4 text-on-surface-variant transition-transform duration-[160ms] ${sqlOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+            <IconChevronDown className={`h-4 w-4 text-on-surface-variant transition-transform duration-[160ms] ${sqlOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
           {/* C-13: grid-rows 0fr→1fr, 160ms — tinggi beranimasi, bukan lompat (§4.11). */}
           <div
@@ -177,7 +177,7 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
               <div className="bg-surface-container-highest p-3">
                 <div className="mb-2 flex justify-end">
                   <Button size="sm" variant="ghost" onClick={copySql} tabIndex={sqlOpen ? 0 : -1}>
-                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copied ? <IconCheck className="h-3.5 w-3.5" /> : <IconCopy className="h-3.5 w-3.5" />}
                     {copied ? 'Tersalin' : 'Salin SQL'}
                   </Button>
                 </div>
