@@ -15,6 +15,7 @@ import type {
   SchemaJson,
   VizSpec,
 } from '@/lib/core/contracts';
+import { searchTerms } from '@/lib/core/store';
 
 const DESTRUCTIVE_RE = /\b(hapus|hancurkan|delete|drop|truncate|update|insert|ubah data|tulis data)\b/i;
 const PII_RE = /\b(email|e-mail|telepon|no\.?\s*hp|nik|npwp|nama pelanggan|alamat lengkap)\b/i;
@@ -176,6 +177,83 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
+/* ------------------------------------------------- ADR-OF-11 snippet window */
+
+/** Batas atas jendela bukti; pemotongan selalu di batas kalimat. */
+const SNIPPET_MAX_CHARS = 600;
+
+function escapeRe(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeForMatch(sentence: string): string {
+  return sentence
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Ekstrak jendela kalimat di sekitar term pertanyaan (ADR-OF-11).
+ *
+ * Deterministik, tanpa model/embedding/buffer residen (0 RAM tambahan):
+ *  1. pecah teks sitasi penuh menjadi kalimat;
+ *  2. skor tiap kalimat = jumlah query-term unik yang cocok (batas kata);
+ *  3. ambil kalimat skor-terbaik ± 1 tetangga;
+ *  4. sertakan kalimat lain yang juga cocok (urutan asli) supaya frasa kunci
+ *     tidak terlewat saat beberapa kalimat memiliki skor setara;
+ *  5. gabungkan dalam urutan asli, batasi ~600 char, akhiri di batas kalimat.
+ * Tie-break = urutan kalimat asli (skor `>` bukan `>=`).
+ */
+export function extractSnippetWindow(text: string, question: string): string {
+  const clean = String(text ?? '').replace(/\s+/g, ' ').trim();
+  if (!clean) return '';
+  const sentences = clean.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+  if (!sentences.length) return '';
+  if (sentences.length === 1) return sentences[0].slice(0, SNIPPET_MAX_CHARS);
+
+  const terms = searchTerms(question);
+  if (!terms.length) return sentences[0].slice(0, SNIPPET_MAX_CHARS);
+
+  const normalized = sentences.map(normalizeForMatch);
+  const scores = normalized.map((sentence) => {
+    let score = 0;
+    for (const term of terms) {
+      const needle = normalizeForMatch(term);
+      if (!needle) continue;
+      if (new RegExp(`(^|[^a-z0-9])${escapeRe(needle)}([^a-z0-9]|$)`).test(sentence)) score += 1;
+    }
+    return score;
+  });
+
+  let best = 0;
+  for (let i = 1; i < scores.length; i += 1) {
+    if (scores[i] > scores[best]) best = i; // tie → indeks terawal dipertahankan
+  }
+
+  const selected = new Set<number>();
+  for (let i = Math.max(0, best - 1); i <= Math.min(sentences.length - 1, best + 1); i += 1) {
+    selected.add(i);
+  }
+  scores.forEach((score, i) => {
+    if (score > 0) selected.add(i);
+  });
+
+  const parts: string[] = [];
+  let total = 0;
+  for (const i of [...selected].sort((a, b) => a - b)) {
+    const sentence = sentences[i];
+    const addition = parts.length ? 1 + sentence.length : sentence.length;
+    if (parts.length && total + addition > SNIPPET_MAX_CHARS) break;
+    parts.push(sentence);
+    total += addition;
+  }
+  return parts.join(' ') || sentences[best].slice(0, SNIPPET_MAX_CHARS);
+}
+
 export function composeDeterministicAnswer(input: {
   question: string;
   lang: 'id' | 'en';
@@ -187,9 +265,11 @@ export function composeDeterministicAnswer(input: {
 }): string {
   const { result, viz, citations, lang, sqlExplanation } = input;
   const refs = citations.map((c) => c.section_path).filter(Boolean);
+  // ADR-OF-11: searchChunks mengirim teks chunk penuh; pemotongan relevan
+  // terjadi di sini, di sekitar term pertanyaan — bukan 240/400 char pertama.
   const excerpts = citations
     .slice(0, 3)
-    .map((c) => ({ ref: c.section_path, text: (c.quote ?? '').replace(/\s+/g, ' ').trim().slice(0, 400) }))
+    .map((c) => ({ ref: c.section_path, text: extractSnippetWindow(c.quote ?? '', input.question) }))
     .filter((c) => c.text.length > 0);
 
   if (viz.type === 'quote' && citations.length) {

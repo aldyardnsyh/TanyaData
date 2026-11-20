@@ -254,7 +254,7 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
     const rows = db
       .prepare(
         `SELECT c.id AS chunk_id, c.document_id, c.section_path, c.page,
-                substr(c.text, 1, 240) AS quote, bm25(core_chunks_fts) AS raw_score
+                c.text AS quote, bm25(core_chunks_fts) AS raw_score
          FROM core_chunks_fts f
          JOIN core_chunks c ON c.id = f.rowid
          WHERE core_chunks_fts MATCH ? AND c.dataset_id = ? AND c.level = 'child'
@@ -281,7 +281,7 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
     const rows = db
       .prepare(
         `SELECT c.id AS chunk_id, c.document_id, c.section_path, c.page,
-                substr(c.text, 1, 240) AS quote
+                c.text AS quote
          FROM core_chunks c
          WHERE c.dataset_id = ? AND c.level = 'child' AND (${like})
          LIMIT ?`,
