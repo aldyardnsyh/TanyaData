@@ -59,17 +59,18 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="mx-auto flex min-h-[80vh] max-w-[1240px] flex-col items-center justify-center gap-8 px-6 py-24 text-center lg:flex-row lg:text-left">
           <div className="flex flex-col gap-6 lg:max-w-[640px]">
-            <span className="inline-flex items-center gap-2 rounded-pill bg-surface-container-high px-3 py-1 font-body text-label-sm font-semibold text-on-surface-variant">
+            {/* Purpose Gate: hero fade+rise 240ms sekali saat mount menandai halaman siap dibaca; stagger 30ms mengikuti urutan baca (§3.1/§3.2). */}
+            <span className="animate-[entrance_240ms_var(--ease-out-quart)_both] [animation-delay:0ms] inline-flex items-center gap-2 rounded-pill bg-surface-container-high px-3 py-1 font-body text-label-sm font-semibold text-on-surface-variant">
               <span className="h-2 w-2 rounded-full bg-secondary-container" aria-hidden="true" />
               Berjalan lokal · Tanpa login
             </span>
-            <h1 className="animate-[entrance_240ms_var(--ease-out-quart)_both] [animation-delay:80ms] font-display text-display-lg font-bold text-on-surface">
+            <h1 className="animate-[entrance_240ms_var(--ease-out-quart)_both] [animation-delay:30ms] font-display text-display-lg font-bold text-on-surface">
               Tanyakan datanya. <span className="italic text-primary">Temukan wawasannya.</span>
             </h1>
-            <p className="animate-[entrance_240ms_var(--ease-out-quart)_both] [animation-delay:160ms] max-w-[62ch] font-body text-body-lg text-on-surface-variant">
+            <p className="animate-[entrance_240ms_var(--ease-out-quart)_both] [animation-delay:60ms] max-w-[62ch] font-body text-body-lg text-on-surface-variant">
               TanyaData mengubah data transaksi Anda menjadi jawaban yang terukur, dengan bukti SQL dan kutipan dokumen yang bisa diaudit.
             </p>
-            <div className="animate-[entrance_240ms_var(--ease-out-quart)_both] [animation-delay:240ms] flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+            <div className="animate-[entrance_240ms_var(--ease-out-quart)_both] [animation-delay:90ms] flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <Link
                 href="/overview"
                 className="rounded-md bg-primary px-5 py-3 font-body text-label-md font-semibold text-on-primary transition-colors duration-[var(--motion-fast)] hover:bg-primary-container focus-ring"
@@ -86,7 +87,7 @@ export default function LandingPage() {
             </div>
           </div>
           {/* Preview produk — ilustratif; hanya di layar, bukan pembaca layar */}
-          <div className="w-full lg:w-[520px] animate-[entrance_240ms_var(--ease-out-quart)_both] [animation-delay:320ms]" aria-hidden="true">
+          <div className="w-full lg:w-[520px] animate-[entrance_240ms_var(--ease-out-quart)_both] [animation-delay:120ms]" aria-hidden="true">
             <Card className="rounded-xl shadow-sm">
               {/* Mini topbar */}
               <div className="flex flex-wrap items-center justify-between rounded-md bg-surface-container-low px-3 py-2 text-label-sm font-semibold text-on-surface">

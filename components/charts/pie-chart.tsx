@@ -37,6 +37,8 @@ export interface PieChartProps {
 
 export function PieChart({ data, title, summary, emptyText, className, onClick, tableData }: PieChartProps) {
   const isMobile = useMediaQuery('(max-width: 767px)');
+  // Purpose Gate: draw-in 400ms menandakan segmen adalah hasil query; mati saat reduced-motion.
+  const prefersReduced = useMediaQuery('(prefers-reduced-motion: reduce)');
   const isEmpty = data.length === 0 || data.every((d) => d.value === 0);
 
   return (
@@ -70,6 +72,8 @@ export function PieChart({ data, title, summary, emptyText, className, onClick, 
                 dataKey="value"
                 label={(entry) => `${entry.name}: ${(entry.percent ?? 0).toFixed(1)}%`}
                 labelLine={false}
+                animationDuration={400}
+                isAnimationActive={!prefersReduced}
               >
                 {data.map((d) => (
                   <Cell key={d.name} fill={STATUS_COLORS[d.name] ?? '#0b4433'} />

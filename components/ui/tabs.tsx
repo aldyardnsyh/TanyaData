@@ -70,10 +70,10 @@ export function Tabs({ tabs, value, onChange, idPrefix = 'tab', variant = 'under
               'shrink-0 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring',
               underline
                 ? cn(
-                    'relative h-10 border-b-2 px-1',
+                    'relative h-10 px-1',
                     active
-                      ? 'border-primary font-semibold text-primary'
-                      : 'border-transparent text-on-surface-variant hover:text-on-surface',
+                      ? 'font-semibold text-primary'
+                      : 'text-on-surface-variant hover:text-on-surface',
                   )
                 : cn(
                     'h-8 min-w-11 rounded-full px-3',
@@ -84,6 +84,16 @@ export function Tabs({ tabs, value, onChange, idPrefix = 'tab', variant = 'under
             )}
           >
             {tab.label}
+            {/* Purpose Gate: garis bawah tab tumbuh dari kiri 120ms menandai tab aktif (§4.4); transform-only, tanpa layout shift. */}
+            {underline && (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'absolute inset-x-0 bottom-0 h-0.5 origin-left bg-primary transition-transform duration-[var(--motion-fast)]',
+                  active ? 'scale-x-100' : 'scale-x-0',
+                )}
+              />
+            )}
           </button>
         );
       })}

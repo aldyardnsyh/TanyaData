@@ -34,12 +34,14 @@ const DEMO_SCENARIOS: { id: string; label: string; question: string }[] = [
 ];
 
 function TypingIndicator() {
+  // Purpose Gate: 3 dot stagger 120ms menandakan pemrosesan; loop transient,
+  // berhenti saat jawaban/error tiba. Reduced-motion dimatikan oleh globals.css.
   return (
     <div className="flex items-center gap-2" role="status" aria-live="polite">
       <span className="flex gap-1" aria-hidden="true">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-outline" />
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-outline [animation-delay:120ms]" />
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-outline [animation-delay:240ms]" />
+        <span className="h-1.5 w-1.5 animate-[typing-dot_1.2s_var(--ease-in-out-quart)_infinite] rounded-full bg-outline" />
+        <span className="h-1.5 w-1.5 animate-[typing-dot_1.2s_var(--ease-in-out-quart)_infinite] rounded-full bg-outline [animation-delay:120ms]" />
+        <span className="h-1.5 w-1.5 animate-[typing-dot_1.2s_var(--ease-in-out-quart)_infinite] rounded-full bg-outline [animation-delay:240ms]" />
       </span>
       <span className="font-body text-body-sm text-on-surface-variant">Menyusun jawaban…</span>
     </div>
@@ -470,12 +472,13 @@ export default function AssistantPage() {
               messages.map((m) =>
                 m.role === 'user' ? (
                   <div key={m.id} className="flex justify-end">
-                    <div className="max-w-[85%] rounded-lg rounded-br-sm bg-surface-container-high px-4 py-2.5 font-body text-body-md text-on-surface">
+                    {/* Purpose Gate: bubble masuk 180ms + 4px menjaga kontinuitas percakapan; pesan lama tidak dianimasikan ulang (key stabil). */}
+                    <div className="max-w-[85%] animate-[stagger-in_180ms_var(--ease-out-quart)_both] rounded-lg rounded-br-sm bg-surface-container-high px-4 py-2.5 font-body text-body-md text-on-surface">
                       {m.content}
                     </div>
                   </div>
                 ) : (
-                  <div key={m.id} id={`msg-${m.id}`} tabIndex={-1} className="flex items-start gap-2.5 focus:outline-none">
+                  <div key={m.id} id={`msg-${m.id}`} tabIndex={-1} className="flex animate-[stagger-in_180ms_var(--ease-out-quart)_both] items-start gap-2.5 focus:outline-none">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary font-body text-label-sm font-bold text-on-primary" aria-hidden="true">
                       T
                     </span>

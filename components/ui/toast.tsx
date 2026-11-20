@@ -17,14 +17,18 @@ export interface ToastProps {
   onAction?: () => void;
   onClose: () => void;
   className?: string;
+  /** Keluar 120ms setelah aksi/auto-dismiss (§3.2). */
+  closing?: boolean;
 }
 
-export function Toast({ status, message, action, onAction, onClose, className }: ToastProps) {
+export function Toast({ status, message, action, onAction, onClose, className, closing = false }: ToastProps) {
   return (
     <div
       role={status === 'error' ? 'alert' : 'status'}
       className={cn(
-        'fixed right-4 bottom-4 z-toast flex items-center gap-2 rounded-md bg-inverse-surface px-4 py-2 text-inverse-on-surface shadow-lg transition-all duration-[var(--motion-base)]',
+        'fixed right-4 bottom-4 z-toast flex items-center gap-2 rounded-md bg-inverse-surface px-4 py-2 text-inverse-on-surface shadow-lg',
+        // Purpose Gate: masuk 180ms / keluar 120ms sebagai umpan balik aksi (§3.2).
+        closing ? 'animate-[toast-out_120ms_ease-in_both]' : 'animate-[toast-in_180ms_var(--ease-out-quart)_both]',
         className,
       )}
     >

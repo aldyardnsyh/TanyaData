@@ -46,7 +46,8 @@ export function Button({
       disabled={disabled || loading}
       aria-busy={loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-md font-body font-medium transition-colors duration-[var(--motion-fast)]',
+        // Purpose Gate: tekan 1px ke bawah 120ms memberi umpan balik tanpa menggeser layout (§4.1).
+        'inline-flex items-center justify-center gap-2 rounded-md font-body font-medium transition-[transform,background-color,border-color,color] duration-[var(--motion-fast)] active:translate-y-px',
         variantClasses[variant],
         sizeClasses[size],
         variant === 'icon' && 'w-9 h-9 px-0',

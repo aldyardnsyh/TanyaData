@@ -129,6 +129,14 @@
   --animate-stagger: stagger-in 180ms var(--ease-out-quart) both;
   --animate-crossfade: crossfade 150ms ease-out both;
 
+  /* Purpose Gate §3.2:
+     - typing-dot: menandakan pemrosesan asisten (satu-satunya loop yang diizinkan
+       bersama dot mesin), berhenti saat jawaban/error tiba.
+     - toast-in/out: umpan balik aksi, masuk 180ms / keluar 120ms. */
+  --animate-typing-dot: typing-dot 1.2s var(--ease-in-out-quart) infinite;
+  --animate-toast-in: toast-in 180ms var(--ease-out-quart) both;
+  --animate-toast-out: toast-out 120ms ease-in both;
+
   @keyframes indeterminate {
     0% { transform: translateX(-120%); }
     100% { transform: translateX(360%); }
@@ -152,6 +160,21 @@
   @keyframes crossfade {
     from { opacity: 0.4; }
     to { opacity: 1; }
+  }
+
+  @keyframes typing-dot {
+    0%, 60%, 100% { opacity: 0.35; transform: scale(0.85); }
+    30% { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes toast-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(8px); }
   }
 }
 

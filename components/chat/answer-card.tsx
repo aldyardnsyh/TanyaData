@@ -92,11 +92,17 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
         <p className="font-body text-body-lg leading-relaxed text-on-surface">{message.content}</p>
       )}
 
+      {/* Purpose Gate: bukti (finding/table/viz/sumber) masuk bertingkat 30ms, maks 8 item —
+          mengikuti urutan baca tanpa menunda teks jawaban utama (§3.1/§3.2). */}
       {/* Key findings */}
       {message.keyFindings && message.keyFindings.length > 0 && (
         <ul className="space-y-1.5" aria-label={t('label.keyFindings')}>
           {message.keyFindings.map((kf, i) => (
-            <li key={i} className="flex items-start gap-2 font-body text-body-md text-on-surface">
+            <li
+              key={i}
+              className="flex animate-[stagger-in_180ms_var(--ease-out-quart)_both] items-start gap-2 font-body text-body-md text-on-surface"
+              style={{ animationDelay: `${Math.min(i, 7) * 30}ms` }}
+            >
               <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
               <span>{kf.text}</span>
             </li>
@@ -106,7 +112,7 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
 
       {/* Supporting table */}
       {message.supportingTable && message.supportingTable.rows.length > 0 && (
-        <div>
+        <div className="animate-[stagger-in_180ms_var(--ease-out-quart)_both] [animation-delay:60ms]">
           <p className="mb-1 font-body text-label-sm uppercase tracking-wider text-on-surface-variant">{t('label.supportingData')}</p>
           <DataTable
             columns={message.supportingTable.columns.map<DataTableColumn<Record<string, string | number | null>>>((c) => ({
@@ -128,7 +134,7 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
 
       {/* Visualizations */}
       {message.visualizations && message.visualizations.length > 0 && (
-        <div className="space-y-3">
+        <div className="animate-[stagger-in_180ms_var(--ease-out-quart)_both] [animation-delay:90ms] space-y-3">
           {message.visualizations.map((v) => (
             <VisualizationView key={v.id} viz={v} />
           ))}
@@ -137,7 +143,7 @@ export function AnswerCard({ message, onSaveReport, savingReport, onFollowUp, di
 
       {/* Sources */}
       {message.sources && message.sources.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5" aria-label={t('label.sources')}>
+        <div className="flex animate-[stagger-in_180ms_var(--ease-out-quart)_both] flex-wrap items-center gap-1.5 [animation-delay:120ms]" aria-label={t('label.sources')}>
           <span className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">{t('label.sources')}:</span>
           {message.sources.map((s, i) => (
             <SourceChip key={`${s.sourceId}-${i}`} src={s} />

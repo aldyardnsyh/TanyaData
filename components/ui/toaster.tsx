@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { Toast, type ToastStatus } from '@/components/ui/toast';
 
@@ -24,6 +24,20 @@ export function toast(item: Omit<ToastItem, 'id'>) {
 
 export function Toaster() {
   const [items, setItems] = useState<ToastItem[]>([]);
+  const [closingIds, setClosingIds] = useState<Set<number>>(new Set());
+
+  // Tandai `closing` dulu agar animasi keluar 120ms sempat berjalan, lalu buang dari daftar.
+  const beginClose = useCallback((id: number) => {
+    setClosingIds((prev) => new Set(prev).add(id));
+    setTimeout(() => {
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      setClosingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 120);
+  }, []);
 
   useEffect(() => {
     const timers = new Map<number, ReturnType<typeof setTimeout>>();
@@ -33,7 +47,7 @@ export function Toaster() {
         timers.set(
           item.id,
           setTimeout(() => {
-            setItems((prev) => prev.filter((i) => i.id !== item.id));
+            beginClose(item.id);
             timers.delete(item.id);
           }, 5000),
         );
@@ -45,9 +59,9 @@ export function Toaster() {
       timers.forEach((t) => clearTimeout(t));
       timers.clear();
     };
-  }, []);
+  }, [beginClose]);
 
-  const close = (id: number) => setItems((prev) => prev.filter((i) => i.id !== id));
+  const close = beginClose;
 
   return (
     <div className="pointer-events-none fixed bottom-4 right-4 z-toast flex flex-col items-end gap-2">
@@ -59,6 +73,7 @@ export function Toaster() {
             action={item.action}
             onAction={item.onAction}
             onClose={() => close(item.id)}
+            closing={closingIds.has(item.id)}
             className="static shadow-lg"
           />
         </div>
