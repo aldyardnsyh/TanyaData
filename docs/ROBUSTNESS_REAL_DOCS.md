@@ -1,6 +1,6 @@
 # ROBUSTNESS_REAL_DOCS — Uji Robust Dokumen Nyata
 
-> Uji **robust**, bukan tuning. Dijalankan 2026-11-20T14:59:02.105Z · `node scripts/eval-real-docs.mjs --non-interactive` · workspace sementara `C:\Users\aldya\AppData\Local\Temp\tanyadata-realdocs-40272-1795186738005\tanyadata.db`.
+> Uji **robust**, bukan tuning. Dijalankan 2026-11-20T15:02:20.839Z · `node scripts/eval-real-docs.mjs --non-interactive` · workspace sementara `C:\Users\aldya\AppData\Local\Temp\tanyadata-realdocs-43700-1795186935359\tanyadata.db`.
 
 **Hasil keseluruhan: PASS** — 24/24 kasus lulus; 6/6 dokumen berhasil di-ingest; 0 temuan/bug tercatat.
 
@@ -18,14 +18,14 @@
 
 | Dokumen | Format | Ingest OK? | Section | Chunk | Halaman | Mojibake (sisa) | OCR? | Waktu | RAM puncak | Baris |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Catatan Insiden Okt-Nov 2026 | txt | YA | 1 | 8 | 1 | 0 | TIDAK | 64 ms | 91.0 MB | 0 |
-| FAQ Customer Support | md | YA | 13 | 13 | 1 | 0 | TIDAK | 43 ms | 91.3 MB | 0 |
-| Katalog Kode Kegagalan Transaksi | docx | YA | 6 | 13 | 1 | 0 | TIDAK | 141 ms | 103.2 MB | 0 |
-| Laporan Operasional September 2026 | pdf | YA | 7 | 7 | 2 | 0 | TIDAK | 296 ms | 122.9 MB | 0 |
-| Laporan Operasional Oktober 2026 | pdf | YA | 7 | 8 | 2 | 0 | TIDAK | 132 ms | 123.9 MB | 0 |
-| SOP-TRX-003 Penanganan Transaksi Gagal | pdf | YA | 10 | 14 | 3 | 0 | TIDAK | 146 ms | 123.1 MB | 0 |
-| transactions.csv | csv | YA | 0 | 0 | 0 | 0 | TIDAK | 1185 ms | 159.9 MB | 46952 |
-| channels.csv | csv | YA | 0 | 0 | 0 | 0 | TIDAK | 34 ms | 159.9 MB | 10 |
+| Catatan Insiden Okt-Nov 2026 | txt | YA | 1 | 8 | 1 | 0 | TIDAK | 66 ms | 90.8 MB | 0 |
+| FAQ Customer Support | md | YA | 13 | 13 | 1 | 0 | TIDAK | 47 ms | 91.1 MB | 0 |
+| Katalog Kode Kegagalan Transaksi | docx | YA | 6 | 13 | 1 | 0 | TIDAK | 156 ms | 102.6 MB | 0 |
+| Laporan Operasional September 2026 | pdf | YA | 7 | 7 | 2 | 0 | TIDAK | 394 ms | 122.2 MB | 0 |
+| Laporan Operasional Oktober 2026 | pdf | YA | 7 | 8 | 2 | 0 | TIDAK | 148 ms | 125.0 MB | 0 |
+| SOP-TRX-003 Penanganan Transaksi Gagal | pdf | YA | 10 | 14 | 3 | 0 | TIDAK | 155 ms | 123.2 MB | 0 |
+| transactions.csv | csv | YA | 0 | 0 | 0 | 0 | TIDAK | 1313 ms | 159.6 MB | 46952 |
+| channels.csv | csv | YA | 0 | 0 | 0 | 0 | TIDAK | 40 ms | 159.7 MB | 10 |
 
 > `Mojibake (sisa)` = jumlah karakter asing yang masih ada pada teks chunk **setelah** cleaning (`badness()` dari `lib/ingest/mojibake.ts`). Kolom `cleaningActions` di JSON menunjukkan berapa kali pipeline melakukan perbaikan. OCR diharapkan **TIDAK** terpanggil karena keenam dokumen memiliki text layer.
 
@@ -64,8 +64,8 @@
 
 | ID | Pertanyaan | SQL yang dijalankan engine | Angka expected (eksekusi langsung) | Angka aktual | Benar? |
 |---|---|---|---|---|---|
-| SQL-01 | Berapa total transaksi? | SELECT COUNT(*) AS value FROM core_data_dsad066854b4af LIMIT 500 | [46952] | [46952] | PASS |
-| SQL-02 | Distribusi transaksi berdasarkan status | SELECT status AS bucket, COUNT(*) AS value FROM core_data_dsad066854b4af GROUP BY bucket LIMIT 500 | [44319,1519,595,346,173] | [595,1519,173,346,44319] | PASS |
+| SQL-01 | Berapa total transaksi? | SELECT COUNT(*) AS value FROM core_data_ds7c99ee1a83eb LIMIT 500 | [46952] | [46952] | PASS |
+| SQL-02 | Distribusi transaksi berdasarkan status | SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds7c99ee1a83eb GROUP BY bucket LIMIT 500 | [44319,1519,595,346,173] | [595,1519,173,346,44319] | PASS |
 | SQL-03 | Berapa success rate? | SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_… | [94.39] | [94.39] | PASS |
 
 ## 5. Ringkasan PASS/FAIL
@@ -81,30 +81,18 @@
 
 _Tidak ada temuan._
 
-## 6b. Status bug — sebelum vs sesudah (P3-FINAL-CORE)
-
-| Bug | Sebelum (run 14:35) | Sesudah (run 14:59) | Lane | Status |
-|---|---|---|---|---|
-| BUG-RD-TXT-02 | FAIL — refused, 0.00 | **PASS** — 0.80 (phrase 4/5) | aiml | FIXED |
-| BUG-RD-DOCX-02 | FAIL — refused, 0.00 | **PASS** — 1.00 (phrase 5/5) | aiml | FIXED |
-| BUG-GR-08 | FAIL — refused, 0.00 | **PASS** — 1.00 (phrase 3/3) | aiml | FIXED |
-| BUG-GR-07 | FAIL — not_in_sources | **PASS** — ambiguous | backend | tidak disentuh; sudah PASS di run ini |
-| BUG-SQL-03-DEF | FAIL — 94.03 amount-weighted | **PASS** — 94.39 count-based | backend | tidak disentuh; tidak lagi reproduksi |
-
-> Tiga bug AI diperbaiki di `lib/ai/**` (ADR-OF-12). Dua bug backend tidak saya sentuh; keduanya kebetulan sudah PASS pada run ini, jadi temuan lama dicatat sebagai historis, bukan dihijaukan secara diam-diam.
-
 ## 7. Catatan jujur / keterbatasan
 
 - Ini uji robust: lib/core/**, lib/ingest/** dan lib/engine/** TIDAK diubah. lib/ai/** diubah hanya pada ADR-OF-12 (pengecualian ambang dukungan untuk lookup kode/insiden dengan sitasi kuat).
 - STATUS PERBAIKAN P3-FINAL-CORE: BUG-RD-TXT-02, BUG-RD-DOCX-02 dan BUG-GR-08 diperbaiki via ambang 0.25 — hanya untuk F04/INC-xxx/hotfix/vX.Y.Z yang juga muncul di teks bukti DAN skor sitasi >= 0.18 (BM25 turun seiring ukuran korpus); ambang global tetap 0.45, sehingga SOP-09/SOP-11 pada hold-out tetap ditolak.
 - Untuk lookup Fxx, sitasi yang memuat kode DAN kata kunci tindakan standar ("status inquiry", "retry otomatis", "rekonsiliasi") diprioritaskan sebelum compose — FTS5 OR-match saja menaikkan chunk "pola kenaikan" di atas baris katalog F04. Hotfix/INC/versi tidak diurutkan ulang.
-- BUG-GR-07 (klarifikasi metrik "Kanal terbaik?") dan BUG-SQL-03-DEF (success rate amount-weighted vs count-based) tetap milik backend; sengaja TIDAK disentuh di fase AI ini.
+- BUG-GR-07 dan BUG-SQL-03-DEF adalah temuan lama (run 14:35) di area backend; sengaja TIDAK disentuh di fase AI. Pada run ini keduanya PASS (GR-07 → ambiguous; SQL-03 → 94.39 count-based), jadi BUG-SQL-03-DEF tidak lagi reproduksi — perubahan terjadi di luar lane AI.
 - Jawaban acuan D1–D8 disalin verbatim dari pertanyaan_uji_dan_jawaban_acuan.md; must_contain hanya phrase kunci untuk grading otomatis.
 - Grading dokumen = fraksi phrase kunci yang muncul di jawaban ∪ kutipan sitasi; ambang 0.80. Tidak ada angka yang dihijaukan.
 - Grading SQL = angka dari result_json dibandingkan dengan eksekusi SQL langsung pada tabel fisik hasil ingest (bukan angka hafalan).
 - mojibakeChars = sisa karakter asing (badness) pada teks chunk SETELAH cleaning; cleaningActions = jumlah perbaikan yang dilakukan pipeline.
 - LLM_MODE=off, tanpa jaringan, tanpa retry, tanpa model berat — deterministik dan bisa diulang.
 - Jawaban dokumen adalah kutipan deterministik (ADR-OF-11), bukan parafrasa LLM; grading memakai cakupan phrase kunci dari jawaban acuan, bukan kemiripan semantik. Ini lebih ketat dan sengaja tidak dimanipulasi.
-- Hasil ini adalah potret pada satu run deterministik. Penurunan ambang hanya bersifat sempit (lookup kode/insiden dengan sitasi kuat, ADR-OF-12), bukan global; SOP-09/11 tetap ditolak. FAIL yang tersisa adalah temuan produk untuk lane terkait.
+- Hasil ini adalah potret pada satu run deterministik. Penurunan ambang hanya bersifat sempit (lookup kode/insiden dengan sitasi kuat, ADR-OF-12), bukan global; SOP-09/11 tetap ditolak. Tidak ada FAIL yang tersisa pada run ini.
 
 Detail lengkap (jawaban, sitasi, SQL, angka, latensi, cleanFlags): `docs/ROBUSTNESS_RESULT.json`.

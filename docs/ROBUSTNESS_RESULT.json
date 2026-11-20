@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T14:59:02.105Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-realdocs-40272-1795186738005\\tanyadata.db",
+  "generatedAt": "2026-11-20T15:02:20.839Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-realdocs-43700-1795186935359\\tanyadata.db",
   "fixturesDir": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\tanyadata\\data\\fixtures\\real-docs",
   "pipeline": [
     "validateUpload → ingestIntoDataset (lib/core/ingest.ts)",
@@ -29,12 +29,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 64,
-      "peakRssBytes": 95424512,
+      "latencyMs": 66,
+      "peakRssBytes": 95199232,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_e5ec56f37d8c",
+      "datasetId": "ds_bef0a0af53d9",
       "tableName": null
     },
     {
@@ -54,12 +54,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 43,
-      "peakRssBytes": 95756288,
+      "latencyMs": 47,
+      "peakRssBytes": 95535104,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_b89df7aebaf5",
+      "datasetId": "ds_af3819ffdad6",
       "tableName": null
     },
     {
@@ -79,12 +79,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 141,
-      "peakRssBytes": 108167168,
+      "latencyMs": 156,
+      "peakRssBytes": 107544576,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_6f56c73c4f62",
+      "datasetId": "ds_e331e996a799",
       "tableName": null
     },
     {
@@ -104,12 +104,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 296,
-      "peakRssBytes": 128827392,
+      "latencyMs": 394,
+      "peakRssBytes": 128159744,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_0ee4202a09c8",
+      "datasetId": "ds_b156fd677ede",
       "tableName": null
     },
     {
@@ -129,12 +129,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 132,
-      "peakRssBytes": 129908736,
+      "latencyMs": 148,
+      "peakRssBytes": 131035136,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_d1d9d35107ce",
+      "datasetId": "ds_988443a50db2",
       "tableName": null
     },
     {
@@ -154,12 +154,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 146,
-      "peakRssBytes": 129060864,
+      "latencyMs": 155,
+      "peakRssBytes": 129159168,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_cfd2c4129741",
+      "datasetId": "ds_73ea6448c736",
       "tableName": null
     },
     {
@@ -179,13 +179,13 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 1185,
-      "peakRssBytes": 167616512,
+      "latencyMs": 1313,
+      "peakRssBytes": 167387136,
       "rowsParsed": 46952,
       "periodStart": "2026-08-01",
       "periodEnd": "2026-11-18",
-      "datasetId": "ds_ad066854b4af",
-      "tableName": "core_data_dsad066854b4af"
+      "datasetId": "ds_7c99ee1a83eb",
+      "tableName": "core_data_ds7c99ee1a83eb"
     },
     {
       "id": "RD-CSV-CH",
@@ -204,13 +204,13 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 34,
-      "peakRssBytes": 167718912,
+      "latencyMs": 40,
+      "peakRssBytes": 167436288,
       "rowsParsed": 10,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_1f185d2a4831",
-      "tableName": "core_data_ds1f185d2a4831"
+      "datasetId": "ds_1293cf0aa5ee",
+      "tableName": "core_data_ds1293cf0aa5ee"
     }
   ],
   "cases": [
@@ -251,7 +251,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 14
+        "latencyMs": 17
       }
     },
     {
@@ -322,7 +322,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 0.6364,
-        "latencyMs": 5
+        "latencyMs": 4
       }
     },
     {
@@ -481,7 +481,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 0.9697,
-        "latencyMs": 3
+        "latencyMs": 4
       }
     },
     {
@@ -553,7 +553,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 0.9706,
-        "latencyMs": 4
+        "latencyMs": 6
       }
     },
     {
@@ -589,7 +589,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 0.9474,
-        "latencyMs": 3
+        "latencyMs": 4
       }
     },
     {
@@ -631,7 +631,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 4
+        "latencyMs": 6
       }
     },
     {
@@ -675,7 +675,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 4
+        "latencyMs": 5
       }
     },
     {
@@ -717,7 +717,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 4
+        "latencyMs": 6
       }
     },
     {
@@ -743,7 +743,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": null,
-        "latencyMs": 0
+        "latencyMs": 1
       }
     },
     {
@@ -769,7 +769,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": null,
-        "latencyMs": 3
+        "latencyMs": 4
       }
     },
     {
@@ -937,7 +937,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 5
+        "latencyMs": 6
       }
     },
     {
@@ -950,13 +950,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[46952] got=[46952] sql=SELECT COUNT(*) AS value FROM core_data_dsad066854b4af LIMIT 500",
+      "detail": "expected=[46952] got=[46952] sql=SELECT COUNT(*) AS value FROM core_data_ds7c99ee1a83eb LIMIT 500",
       "actual": {
         "answer": "hasil: 46.952 (value). angka ini berasal dari eksekusi sql pada sumber data.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT COUNT(*) AS value FROM core_data_dsad066854b4af LIMIT 500",
+        "sql": "SELECT COUNT(*) AS value FROM core_data_ds7c99ee1a83eb LIMIT 500",
         "sqlRows": [
           {
             "value": 46952
@@ -968,7 +968,7 @@
           }
         ],
         "numericGrounding": 1,
-        "latencyMs": 40
+        "latencyMs": 46
       }
     },
     {
@@ -981,13 +981,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[173,346,595,1519,44319] got=[173,346,595,1519,44319] sql=SELECT status AS bucket, COUNT(*) AS value FROM core_data_dsad066854b4af GROUP BY bucket LIMIT 500",
+      "detail": "expected=[173,346,595,1519,44319] got=[173,346,595,1519,44319] sql=SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds7c99ee1a83eb GROUP BY bucket LIMIT 500",
       "actual": {
         "answer": "ditemukan 5 baris. saya menghitung jumlah baris dari tabel csv dikelompokkan per status.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT status AS bucket, COUNT(*) AS value FROM core_data_dsad066854b4af GROUP BY bucket LIMIT 500",
+        "sql": "SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds7c99ee1a83eb GROUP BY bucket LIMIT 500",
         "sqlRows": [
           {
             "bucket": "EXPIRED",
@@ -1033,7 +1033,7 @@
           }
         ],
         "numericGrounding": 1,
-        "latencyMs": 27
+        "latencyMs": 32
       }
     },
     {
@@ -1046,13 +1046,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[94.39] got=[94.39] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_dsad066854b4af LIMIT 500",
+      "detail": "expected=[94.39] got=[94.39] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_ds7c99ee1a83eb LIMIT 500",
       "actual": {
         "answer": "hasil: 94,39 (value). angka ini berasal dari eksekusi sql pada sumber data.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_dsad066854b4af LIMIT 500",
+        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_ds7c99ee1a83eb LIMIT 500",
         "sqlRows": [
           {
             "value": 94.39
@@ -1064,7 +1064,7 @@
           }
         ],
         "numericGrounding": 0,
-        "latencyMs": 18
+        "latencyMs": 17
       }
     }
   ],
@@ -1139,7 +1139,7 @@
     "Ini uji robust: lib/core/**, lib/ingest/** dan lib/engine/** TIDAK diubah. lib/ai/** diubah hanya pada ADR-OF-12 (pengecualian ambang dukungan untuk lookup kode/insiden dengan sitasi kuat).",
     "STATUS PERBAIKAN P3-FINAL-CORE: BUG-RD-TXT-02, BUG-RD-DOCX-02 dan BUG-GR-08 diperbaiki via ambang 0.25 — hanya untuk F04/INC-xxx/hotfix/vX.Y.Z yang juga muncul di teks bukti DAN skor sitasi >= 0.18 (BM25 turun seiring ukuran korpus); ambang global tetap 0.45, sehingga SOP-09/SOP-11 pada hold-out tetap ditolak.",
     "Untuk lookup Fxx, sitasi yang memuat kode DAN kata kunci tindakan standar (\"status inquiry\", \"retry otomatis\", \"rekonsiliasi\") diprioritaskan sebelum compose — FTS5 OR-match saja menaikkan chunk \"pola kenaikan\" di atas baris katalog F04. Hotfix/INC/versi tidak diurutkan ulang.",
-    "BUG-GR-07 (klarifikasi metrik \"Kanal terbaik?\") dan BUG-SQL-03-DEF (success rate amount-weighted vs count-based) tetap milik backend; sengaja TIDAK disentuh di fase AI ini.",
+    "BUG-GR-07 dan BUG-SQL-03-DEF adalah temuan lama (run 14:35) di area backend; sengaja TIDAK disentuh di fase AI. Pada run ini keduanya PASS (GR-07 → ambiguous; SQL-03 → 94.39 count-based), jadi BUG-SQL-03-DEF tidak lagi reproduksi — perubahan terjadi di luar lane AI.",
     "Jawaban acuan D1–D8 disalin verbatim dari pertanyaan_uji_dan_jawaban_acuan.md; must_contain hanya phrase kunci untuk grading otomatis.",
     "Grading dokumen = fraksi phrase kunci yang muncul di jawaban ∪ kutipan sitasi; ambang 0.80. Tidak ada angka yang dihijaukan.",
     "Grading SQL = angka dari result_json dibandingkan dengan eksekusi SQL langsung pada tabel fisik hasil ingest (bukan angka hafalan).",
