@@ -259,7 +259,7 @@ export function LandingSteps() {
             <span
               aria-hidden="true"
               className={`absolute bottom-full left-1/2 mb-s2 w-max max-w-[80vw] -translate-x-1/2 transition-all duration-[var(--motion-slow)] ${
-                phase >= 1
+                phase === 1
                   ? 'translate-y-0 opacity-100'
                   : 'pointer-events-none translate-y-1 opacity-0'
               }`}
@@ -303,9 +303,9 @@ export function LandingSteps() {
           </div>
 
           {/* Sisi keluaran: jawaban menyusun baris demi baris saat fase periksa,
-              header berubah menjadi selesai, lalu chip bagikan muncul dengan pop. */}
+              header berubah menjadi selesai di fase akhir. */}
           <div
-            className={`w-full max-w-72 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
+            className={`w-full max-w-60 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
               phase >= 2 ? 'translate-y-0 opacity-100 shadow-float' : 'pointer-events-none translate-y-2 opacity-0'
             }`}
           >
@@ -337,17 +337,42 @@ export function LandingSteps() {
               <span className="state-dot state-dot-active" aria-hidden="true" />
               SITASI · FAQ CUSTOMER SUPPORT
             </span>
+          </div>
+
+          <div aria-hidden="true" className={trackClass(phase >= 3)}>
             <span
-              aria-hidden="true"
-              className={`mt-s2 flex justify-center transition-all duration-[var(--motion-slow)] ${
-                phase >= 3 ? 'scale-100 opacity-100' : 'pointer-events-none scale-90 opacity-0'
+              className={`absolute right-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
+                phase >= 3 ? 'opacity-100' : 'opacity-0'
               }`}
-            >
-              <span className="inline-flex items-center gap-s1 rounded-chip bg-lime px-s3 py-1 font-mono text-caption uppercase tracking-[0.06em] text-ink shadow-float">
-                <span className="state-dot" aria-hidden="true" />
-                BAGIKAN · READ-ONLY
-              </span>
-            </span>
+            />
+          </div>
+          <div aria-hidden="true" className={trackVerticalClass(phase >= 3)}>
+            <span
+              className={`absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
+                phase >= 3 ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          </div>
+
+          {/* Tahap keempat berdiri sendiri: halaman bagikan muncul pop dengan
+              cincin lime saat fase bagikan. */}
+          <div
+            className={`w-full max-w-44 flex-none rounded-card-lg border transition-all duration-[var(--motion-slow)] ${
+              phase >= 3
+                ? 'scale-100 border-lime glow-lime bg-forest-08 opacity-100'
+                : 'pointer-events-none scale-90 border-hairline-dark bg-forest-08 opacity-0'
+            }`}
+          >
+            <div className="p-s3 text-porcelain">
+              <p className="mono-meta">HALAMAN BAGIKAN</p>
+              <p className="mt-s2 inline-flex items-center gap-s1 font-body text-caption text-porcelain">
+                <span className="state-dot state-dot-active" aria-hidden="true" />
+                TAUTAN · READ-ONLY
+              </p>
+              <p className="mt-s1 font-body text-caption text-dark-muted">
+                Tanpa login, salinan statis.
+              </p>
+            </div>
           </div>
         </div>
       </div>
