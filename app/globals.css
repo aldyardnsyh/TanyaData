@@ -4,326 +4,419 @@
 @import "material-symbols/outlined.css";
 
 /*
- * Precision Console — kontrak visual tunggal (DESIGN_DIRECTION.md / DECISION-013).
+ * UI_REFACTOR_DESIGN.md (DECISION-021) — kontrak visual tunggal baru.
+ * Enam hex lama adalah satu-satunya warisan. Tipografi, radius, spacing, grid,
+ * dan motion dibangun ulang dari nol. Dial: ENERGY 1 / RHYTHM 2 / MOTION 1.
  * Semua nilai berada di sini. Komponen dilarang hardcode warna/spacing/radius.
- * Dial: ENERGY 1 / RHYTHM 2 / MOTION 2.
  */
 @theme {
-  /* ---- Font: self-hosted via lib/fonts.ts ---- */
+  /* ---- Font: self-hosted via lib/fonts.ts (tidak diubah) ---- */
   --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  /* Metadata teknis (SQL/FTS5/ROWS/kode) memakai font-mono, bukan font-body. */
-  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Consolas", "JetBrains Mono", "Liberation Mono", monospace;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", "Consolas", "Liberation Mono", monospace;
 
-  /* ---- Warna (WCAG 2.1 terukur, lihat DESIGN_DIRECTION §2.1) ---- */
-  --color-canvas: #F5F6F1;
-  --color-surface: #FFFFFF;
+  /* ---- Enam warna absolut. Tidak ada hex ketujuh. ---- */
+  --color-forest: #0B4433;
+  --color-lime: #C5D94B;
+  --color-terracotta: #CF7656;
+  --color-porcelain: #F3F4EF;
   --color-ink: #1B211D;
-  --color-ink-muted: #6B746D;          /* HANYA di atas --surface (4,8:1) */
-  --color-ink-muted-strong: #636C65;   /* di atas --canvas (5,0:1) */
-  --color-primary: #0B4433;            /* forest */
-  --color-primary-dim: #A8C9B8;        /* seri data 2 (non-teks) */
-  --color-on-primary: #FFFFFF;
-  --color-signal-lime: #C5D94B;        /* HANYA state aktif/sinyal, maks 2/layar */
-  --color-signal-terracotta: #CF7656;  /* HANYA isian/border/dot error, bukan teks */
-  --color-error-text: #68270D;         /* teks error & label "Tertinggi" */
-  --color-border-hairline: #DDE2DA;    /* pemisah struktural 1px */
-  --color-border-control: #7E8880;     /* boundary kontrol */
-  --color-row-hover: #EEF1EA;          /* tint baris tabel saat hover */
+  --color-muted: #78817A;
 
-  /* ---- Tipografi (DESIGN_DIRECTION §2.2) ---- */
-  --text-display: 36px;
-  --text-display--line-height: 44px;
+  /* ---- Turunan: alpha dari enam token di atas, bukan hex baru. ---- */
+  --color-ink-72: color-mix(in srgb, var(--color-ink) 72%, var(--color-porcelain));
+  --color-forest-08: color-mix(in srgb, var(--color-forest) 8%, transparent);
+  --color-terracotta-16: color-mix(in srgb, var(--color-terracotta) 16%, transparent);
+
+  /* ---- Tipografi baru (§3.1). Alasan tiap token ada di kontrak. ---- */
+  --text-display: 40px;
+  --text-display--line-height: 48px;
   --text-display--font-weight: 700;
-  --text-display--letter-spacing: -0.025em;
+  --text-display--letter-spacing: -0.03em;
+  --text-display--font-family: var(--font-display);
 
-  --text-headline-lg: 24px;
-  --text-headline-lg--line-height: 32px;
-  --text-headline-lg--font-weight: 700;
-  --text-headline-lg--letter-spacing: -0.02em;
+  --text-title: 22px;
+  --text-title--line-height: 28px;
+  --text-title--font-weight: 650;
+  --text-title--letter-spacing: -0.02em;
+  --text-title--font-family: var(--font-display);
 
-  --text-headline-sm: 16px;
-  --text-headline-sm--line-height: 24px;
-  --text-headline-sm--font-weight: 600;
-  --text-headline-sm--letter-spacing: -0.01em;
+  --text-label: 14px;
+  --text-label--line-height: 20px;
+  --text-label--font-weight: 600;
+  --text-label--font-family: var(--font-display);
 
-  --text-body-lg: 15px;
-  --text-body-lg--line-height: 24px;
-  --text-body-lg--font-weight: 400;
+  --text-body: 14px;
+  --text-body--line-height: 22px;
+  --text-body--font-weight: 400;
+  --text-body--font-family: var(--font-body);
 
-  --text-body-md: 13px;
-  --text-body-md--line-height: 20px;
-  --text-body-md--font-weight: 400;
+  --text-caption: 12px;
+  --text-caption--line-height: 18px;
+  --text-caption--font-weight: 400;
+  --text-caption--font-family: var(--font-body);
 
-  --text-body-sm: 12px;
-  --text-body-sm--line-height: 18px;
-  --text-body-sm--font-weight: 400;
+  --text-metric: 28px;
+  --text-metric--line-height: 32px;
+  --text-metric--font-weight: 600;
+  --text-metric--letter-spacing: -0.01em;
+  --text-metric--font-family: var(--font-body);
 
-  --text-label-md: 12px;
-  --text-label-md--line-height: 16px;
-  --text-label-md--font-weight: 600;
-  --text-label-md--letter-spacing: 0.02em;
+  --text-mono: 11px;
+  --text-mono--line-height: 16px;
+  --text-mono--font-weight: 500;
+  --text-mono--letter-spacing: 0.06em;
+  --text-mono--font-family: var(--font-mono);
 
-  --text-label-sm: 12px;
-  --text-label-sm--line-height: 16px;
-  --text-label-sm--font-weight: 600;
-  --text-label-sm--letter-spacing: 0.06em;
-
-  --text-metric-display: 30px;
-  --text-metric-display--line-height: 34px;
-  --text-metric-display--font-weight: 600;
-  --text-metric-display--letter-spacing: -0.03em;
-
-  --text-metric-md: 24px;
-  --text-metric-md--line-height: 30px;
-  --text-metric-md--font-weight: 600;
-  --text-metric-md--letter-spacing: -0.01em;
-
-  --text-mono-meta: 12px;
-  --text-mono-meta--line-height: 18px;
-  --text-mono-meta--font-weight: 400;
-  --text-mono-meta--letter-spacing: 0.04em;
-
-  /* ---- Spacing: satu skala 4·8·12·16·24·32 ---- */
-  --spacing: 4px;
-  --spacing-space-1: 4px;
-  --spacing-space-2: 8px;
-  --spacing-space-3: 12px;
-  --spacing-space-4: 16px;
-  --spacing-space-5: 24px;
-  --spacing-space-6: 32px;
-
-  /* ---- Radius: skala eksplisit, tiga peran saja (audit presisi §2) ----
-   * 16px = kartu hero KPI / overlay (--radius-overlay, alias --radius-hero)
-   * 12px = kartu regular & kartu chart (--radius-card)
-   *  8px = control, button, input (--radius-control)
-   * 50% = state dot (--radius-dot)
-   * Dilarang nilai radius liar di komponen; pakai token di atas.
-   */
-  --radius-control: 8px;
-  --radius-card: 12px;
-  --radius-overlay: 16px;
-  --radius-hero: var(--radius-overlay);
+  /* ---- Radius (§3.2): tajam, tidak pill. ---- */
+  --radius-control: 6px;
+  --radius-surface: 10px;
+  --radius-overlay: 18px;
   --radius-dot: 50%;
 
-  /* ---- Elevasi: hanya 2 level ---- */
-  --shadow-overlay: 0 8px 24px rgb(27 33 29 / 0.12);
-  --shadow-drag: 0 16px 40px rgb(27 33 29 / 0.18);
+  /* ---- Spacing (§3.2): enam step, lompatan 2x. ---- */
+  --spacing: 4px;
+  --spacing-s1: 4px;
+  --spacing-s2: 8px;
+  --spacing-s3: 16px;
+  --spacing-s4: 24px;
+  --spacing-s5: 40px;
+  --spacing-s6: 64px;
 
-  /* ---- Motion token (DESIGN_DIRECTION §6.1) ---- */
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* ---- Motion (§6): semua durasi dari sini, bukan angka inline. ---- */
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-sharp: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-linear: linear;
 
-  --animate-ripple: ripple 120ms var(--ease-out-expo) both;
-  --animate-toast-in: toast-in 320ms var(--ease-spring) both;
-  --animate-nav-slide: nav-slide 180ms var(--ease-spring) both;
-  --animate-palette-in: palette-in 180ms var(--ease-out-expo) both;
-  --animate-message-in: message-in 180ms var(--ease-out-expo) both;
-  --animate-typing-dot: typing-dot 1.2s ease-in-out infinite;
-  --animate-skeleton: skeleton-pulse 1.2s ease-in-out infinite;
-  --animate-crossfade: crossfade 120ms ease-out both;
-  --animate-emphasis: emphasis 120ms var(--ease-out-expo) both;
-  /* Share page (SHARE_PAGE_SPEC §6): entrance 240ms tanpa transform, stagger 30ms × 8. */
-  --animate-share-enter: share-enter 240ms var(--ease-out-expo) both;
-  --animate-share-stagger: share-stagger 180ms var(--ease-out-expo) both;
+  --animate-spotlight-in: spotlight-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-border-orbit: border-orbit var(--motion-sweep) var(--ease-linear) 1;
+  --animate-tab-indicator: tab-indicator var(--motion-normal) var(--ease-sharp) both;
+  --animate-phrase-in: phrase-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-node-in: node-in var(--motion-node) var(--ease-smooth) both;
+  --animate-grid-expand: grid-expand var(--motion-expand) var(--ease-smooth) both;
+  --animate-modal-in: modal-in var(--motion-modal) var(--ease-smooth) both;
+  --animate-backdrop-in: backdrop-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-toast-in: toast-in var(--motion-toast) var(--ease-smooth) both;
+  --animate-skeleton: skeleton-pulse 1.2s var(--ease-smooth) infinite;
+  --animate-typing-dot: typing-dot 1.2s var(--ease-smooth) infinite;
 
-  @keyframes ripple {
-    from { transform: scale(0); opacity: 0.5; }
-    to { transform: scale(1); opacity: 0; }
-  }
-  @keyframes toast-in {
-    from { opacity: 0; transform: translateX(24px) scale(0.98); }
-    to { opacity: 1; transform: translateX(0) scale(1); }
-  }
-  @keyframes nav-slide {
-    from { transform: translateY(-4px); opacity: 0.6; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-  @keyframes palette-in {
-    from { opacity: 0; transform: scale(0.98); filter: blur(4px); }
-    to { opacity: 1; transform: scale(1); filter: blur(0); }
-  }
-  @keyframes message-in {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes typing-dot {
-    0%, 60%, 100% { opacity: 0.35; transform: scale(0.85); }
-    30% { opacity: 1; transform: scale(1); }
-  }
-  @keyframes skeleton-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.55; }
-  }
-  @keyframes crossfade {
-    from { opacity: 0.4; }
-    to { opacity: 1; }
-  }
-  @keyframes emphasis {
-    from { opacity: 0.55; }
-    to { opacity: 1; }
-  }
-  @keyframes share-enter {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes share-stagger {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  @keyframes spotlight-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes border-orbit { to { --border-angle: 360deg; } }
+  @keyframes tab-indicator { from { opacity: 0.6; } to { opacity: 1; } }
+  @keyframes phrase-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes node-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes grid-expand { from { opacity: 0.7; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+  @keyframes modal-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+  @keyframes typing-dot { 0%, 60%, 100% { opacity: 0.35; } 30% { opacity: 1; } }
 }
 
-@layer base {
-  html, body { margin: 0; padding: 0; }
-  body {
-    overscroll-behavior: none;
-    background: var(--color-canvas);
-    color: var(--color-ink);
-    font-family: var(--font-body);
-    font-size: 13px;
-    line-height: 20px;
-    -webkit-font-smoothing: antialiased;
-  }
-  main > :first-child { margin-top: 0 !important; }
-  main > :last-child { margin-bottom: 0 !important; }
-  ::selection { background: var(--color-signal-lime); color: var(--color-ink); }
-}
-
-::-webkit-scrollbar { display: none; }
-
+/* Durasi numerik (§6). Dipakai utility & komponen lewat var(), bukan angka inline. */
 :root {
-  --motion-instant: 80ms;
-  --motion-fast: 120ms;
-  --motion-base: 180ms;
-  /* Share entrance 240ms (SHARE_PAGE_SPEC §6). Token terpisah agar tidak
-     mengubah --motion-base global yang dipakai workspace. */
-  --motion-share-entrance: 240ms;
-  --motion-slow: 320ms;
+  --motion-instant: 80ms;   /* tooltip, focus ring */
+  --motion-fast: 120ms;     /* spotlight, halo, backdrop */
+  --motion-normal: 160ms;   /* tab indicator, dock, bento masuk */
+  --motion-node: 200ms;     /* timeline node, toast */
+  --motion-toast: 200ms;
+  --motion-expand: 220ms;   /* reveal grid */
+  --motion-sweep: 240ms;    /* attention border, modal */
+  --motion-modal: 240ms;
+  --motion-slow: 320ms;     /* batas atas perubahan data */
+
   --z-sticky: 10;
   --z-drawer: 40;
   --z-dropdown: 50;
   --z-modal: 60;
   --z-toast: 70;
   --z-tooltip: 80;
+
+  --border-hairline: color-mix(in srgb, var(--color-muted) 40%, transparent);
 }
 
-/* Angka selalu tabular + cv05 (DESIGN_DIRECTION §2.2). */
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@layer base {
+  html, body { margin: 0; padding: 0; }
+  body {
+    overscroll-behavior: none;
+    background: var(--color-porcelain);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 22px;
+    -webkit-font-smoothing: antialiased;
+  }
+  main > :first-child { margin-top: 0 !important; }
+  main > :last-child { margin-bottom: 0 !important; }
+  ::selection { background: var(--color-lime); color: var(--color-ink); }
+  :focus-visible { outline: 2px solid var(--color-lime); outline-offset: 2px; }
+}
+
+::-webkit-scrollbar { display: none; }
+
+/* ---- Utility baru (§2, §3, §6) ---- */
+
+/* Angka selalu tabular + format id-ID di komponen. */
 @utility tabular {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv05" 1;
 }
 
-/* Signature 3.2: label metadata teknis. Tidak beranimasi. */
+/* Teks sekunder: ink-72, bukan muted. */
+@utility text-secondary {
+  color: var(--color-ink-72);
+}
+
+/* Metadata teknis: HANYA SQL, ID, row count, path. Bukan gaya estetik. */
 @utility mono-meta {
   font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 18px;
-  letter-spacing: 0.04em;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--color-ink-muted-strong);
+  color: var(--color-ink-72);
   font-variant-numeric: tabular-nums;
 }
 
-/* Signature 3.1: satu garis 1px penuh + tick konsisten di awal/akhir saja. */
-@utility measurement-rule {
-  position: relative;
-  border-bottom: 1px solid var(--color-border-hairline);
-  &::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
-    height: 4px;
-    background:
-      linear-gradient(var(--color-border-control), var(--color-border-control)) left / 1px 4px no-repeat,
-      linear-gradient(var(--color-border-control), var(--color-border-control)) right / 1px 4px no-repeat;
+/* Permukaan flat: border 1px muted alpha 40%, tanpa shadow. */
+@utility surface {
+  background: var(--color-porcelain);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-surface);
+}
+
+/* Bento (C-01): satu metrik utama span 6, pendukung span 3, tinggi 148px. */
+@utility bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--spacing-s3);
+  & > [data-span="hero"] { grid-column: span 6; }
+  & > [data-span="support"] { grid-column: span 3; }
+  & > [data-cell] { min-height: 148px; }
+  @media (max-width: 1023px) {
+    & > [data-span="hero"], & > [data-span="support"] { grid-column: span 4; }
+  }
+  @media (max-width: 389px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    & > [data-span="hero"], & > [data-span="support"] { grid-column: span 4; }
   }
 }
 
-/* SHARE_PAGE_SPEC §2: measurement rule tiga tick, tick tengah --primary.
-   Varian share dipakai agar komponen workspace yang sudah ada tidak berubah. */
-@utility measurement-rule-share {
+/* Spotlight (C-02): halo radial forest-08, hanya di dalam kartu, mengikuti pointer. */
+@utility spotlight-host {
   position: relative;
-  border-bottom: 1px solid var(--color-border-hairline);
-  &::after {
+  overflow: hidden;
+  isolation: isolate;
+  --spot-x: 50%;
+  --spot-y: 50%;
+  --spot-opacity: 0;
+}
+@utility spotlight-halo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--spot-opacity);
+  background: radial-gradient(220px circle at var(--spot-x) var(--spot-y), var(--color-forest-08), transparent 70%);
+  transition: opacity var(--motion-fast) var(--ease-smooth);
+}
+
+/* Attention border (C-03): sweep tipis mengelilingi border saat hover/fokus. */
+@utility attention-border {
+  position: relative;
+  border: 1px solid var(--color-forest);
+  border-radius: var(--radius-control);
+  &::before {
     content: "";
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
-    height: 4px;
-    background:
-      linear-gradient(var(--color-border-control), var(--color-border-control)) left / 1px 4px no-repeat,
-      linear-gradient(var(--color-primary), var(--color-primary)) center / 1px 4px no-repeat,
-      linear-gradient(var(--color-border-control), var(--color-border-control)) right / 1px 4px no-repeat;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(from var(--border-angle), transparent 0deg 300deg, var(--color-lime) 340deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    pointer-events: none;
+  }
+  &:hover::before, &:focus-visible::before {
+    opacity: 1;
+    animation: var(--animate-border-orbit);
   }
 }
 
-/* Signature 3.4: state dot 6px. Label teks selalu menyertai dot di komponen. */
+/* Glow (C-03/C-05): satu aksen lime, maksimal dua kemunculan per layar. */
+@utility glow-lime {
+  box-shadow: 0 0 0 2px var(--color-porcelain), 0 0 0 4px var(--color-lime);
+}
+
+/* Focus ring dua konteks, :focus-visible saja. Tidak pernah outline:none tanpa ganti. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-lime);
+    outline-offset: 2px;
+  }
+}
+@utility focus-ring-forest {
+  &:focus-visible {
+    outline: 2px solid var(--color-forest);
+    outline-offset: 2px;
+  }
+}
+
+/* Area sentuh minimum 44px, visual bisa lebih kecil. */
+@utility touch-44 {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Skeleton: forest-08, bukan spinner. */
+@utility skeleton {
+  background: var(--color-forest-08);
+  border-radius: var(--radius-control);
+  animation: var(--animate-skeleton);
+}
+
+/* Dot status 6px. Label teks selalu menyertai dot. */
 @utility state-dot {
   display: inline-block;
   width: 6px;
   height: 6px;
   flex: none;
   border-radius: var(--radius-dot);
-  background: var(--color-primary);
+  background: var(--color-forest);
 }
-@utility state-dot-active {
-  background: var(--color-signal-lime);
-  box-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 3px var(--color-primary);
-}
-@utility state-dot-error {
-  background: var(--color-signal-terracotta);
-}
-@utility state-dot-empty {
-  background: transparent;
-  border: 1px solid var(--color-border-control);
+@utility state-dot-active { background: var(--color-lime); }
+@utility state-dot-error { background: var(--color-terracotta); }
+@utility state-dot-empty { background: transparent; border: 1px solid var(--color-muted); }
+
+/* Grid dashboard: 4 / 8 / 12 kolom sesuai breakpoint §3.3. */
+@utility grid-dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--spacing-s2);
+  @media (min-width: 768px) { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: var(--spacing-s2); }
+  @media (min-width: 1280px) { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--spacing-s3); }
 }
 
-/* Signature 3.5: focus ring dua konteks, :focus-visible saja. */
-@utility focus-ring {
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #0B4433;
-  }
-}
-@utility focus-ring-forest {
-  &:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px #F5F6F1, 0 0 0 4px #C5D94B;
-  }
+/* Container konten: max-width 1600, margin-inline auto, padding per breakpoint. */
+@utility page-container {
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+  padding-inline: var(--spacing-s3);
+  @media (min-width: 1024px) { padding-inline: var(--spacing-s4); }
+  @media (min-width: 1280px) { padding-inline: var(--spacing-s5); }
 }
 
-/* Area sentuh 44px dengan visual lebih kecil (S-05). */
-@utility touch-44 {
-  position: relative;
-  &::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 100%;
-    height: 44px;
-    min-height: 44px;
-    transform: translate(-50%, -50%);
-  }
+/* Elevasi HANYA untuk modal, drawer, tooltip. */
+@utility elevated {
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-ink) 12%, transparent);
 }
 
-/* Host ripple WAAPI (motion #7). */
-@utility motion-ripple-host {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
+/* Dimensi shell baru (§3.3). */
+@utility w-rail { width: 72px; }
+@utility w-rail-expanded { width: 232px; }
+@utility h-dock { height: 64px; }
+
+/* ---- Kompatibilitas sementara: alias token lama → token baru. ----
+ * File yang belum direbuild (Batch 2) tetap terlihat konsisten. Bukan nilai baru.
+ */
+@theme {
+  --color-canvas: var(--color-porcelain);
+  --color-surface: var(--color-porcelain);
+  --color-on-primary: var(--color-porcelain);
+  --color-primary: var(--color-forest);
+  --color-primary-dim: var(--color-forest-08);
+  --color-signal-lime: var(--color-lime);
+  --color-signal-terracotta: var(--color-terracotta);
+  --color-error-text: var(--color-ink);
+  --color-border-hairline: var(--border-hairline);
+  --color-border-control: var(--color-muted);
+  --color-row-hover: var(--color-forest-08);
+  --color-ink-muted: var(--color-ink-72);
+  --color-ink-muted-strong: var(--color-ink-72);
+  --color-background: var(--color-porcelain);
+  --color-surface-container-lowest: var(--color-porcelain);
+  --color-surface-container-low: var(--color-porcelain);
+  --color-surface-container: var(--color-porcelain);
+  --color-surface-container-high: var(--color-forest-08);
+  --color-on-surface: var(--color-ink);
+  --color-on-surface-variant: var(--color-ink-72);
+  --color-on-primary-container: var(--color-forest);
+  --color-primary-container: var(--color-forest);
+  --color-primary-fixed: var(--color-lime);
+  --color-primary-fixed-dim: var(--color-forest-08);
+  --color-on-primary-fixed: var(--color-ink);
+  --color-on-primary-fixed-variant: var(--color-ink);
+  --color-secondary-container: var(--color-lime);
+  --color-secondary-fixed: var(--color-lime);
+  --color-tertiary: var(--color-ink);
+  --color-tertiary-fixed: var(--color-forest-08);
+  --color-on-tertiary-fixed-variant: var(--color-ink);
+  --color-error: var(--color-terracotta);
+  --color-error-container: var(--color-terracotta-16);
+  --color-on-error-container: var(--color-ink);
+  --color-outline: var(--color-muted);
+  --color-outline-variant: var(--border-hairline);
+  --color-muted: var(--color-muted);
+  --color-terracotta: var(--color-terracotta);
+  --color-graphite: var(--color-ink);
+  --color-border-structural: var(--border-hairline);
+
+  --radius-sm: var(--radius-control);
+  --radius-md: var(--radius-control);
+  --radius-lg: var(--radius-surface);
+  --radius-xl: var(--radius-overlay);
+  --radius-hero: var(--radius-surface);
+  --radius-full: var(--radius-dot);
+  --radius-pill: var(--radius-control);
+  --radius-card: var(--radius-surface);
+
+  --text-headline-lg: var(--text-title);
+  --text-headline-sm: var(--text-label);
+  --text-body-lg: var(--text-body);
+  --text-body-md: var(--text-body);
+  --text-body-sm: var(--text-caption);
+  --text-label-md: var(--text-label);
+  --text-label-sm: var(--text-caption);
+  --text-metric-display: var(--text-metric);
+  --text-metric-md: var(--text-metric);
+  --text-mono-meta: var(--text-mono);
+  --text-label-sm-legacy: var(--text-caption);
+
+  --animate-message-in: phrase-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-share-enter: phrase-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-share-stagger: phrase-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-toast-in: toast-in var(--motion-toast) var(--ease-smooth) both;
+  --animate-typing-dot: typing-dot 1.2s var(--ease-smooth) infinite;
+  --animate-skeleton: skeleton-pulse 1.2s var(--ease-smooth) infinite;
+  --animate-crossfade: phrase-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-emphasis: phrase-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-ripple: phrase-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-nav-slide: phrase-in var(--motion-fast) var(--ease-smooth) both;
+  --animate-palette-in: phrase-in var(--motion-fast) var(--ease-smooth) both;
+  --ease-out-expo: var(--ease-smooth);
+  --ease-spring: var(--ease-smooth);
+  --ease-out-quart: var(--ease-sharp);
 }
 
-/* Chip filter scroll-snap + fade kanan 24px (§4). */
+/* Utility lama yang masih dipakai halaman sebelum Batch 2. */
+@utility measurement-rule {
+  border-bottom: 1px solid var(--border-hairline);
+}
+@utility measurement-rule-share {
+  border-bottom: 1px solid var(--border-hairline);
+}
 @utility chip-scroll {
   scroll-snap-type: x mandatory;
-  mask-image: linear-gradient(to right, black calc(100% - 24px), transparent);
 }
-
-/* Dimensi shell. */
+@utility motion-ripple-host { position: relative; overflow: hidden; isolation: isolate; }
 @utility w-sidebar { width: 232px; }
 @utility w-sidebar-rail { width: 72px; }
 @utility pl-sidebar { padding-left: 232px; }
@@ -332,7 +425,6 @@
 @utility ml-sidebar-rail { margin-left: 72px; }
 @utility h-dropzone { height: 148px; }
 @utility h-dropzone-mobile { height: 120px; }
-
 @utility z-sticky { z-index: var(--z-sticky); }
 @utility z-drawer { z-index: var(--z-drawer); }
 @utility z-dropdown { z-index: var(--z-dropdown); }
@@ -340,73 +432,27 @@
 @utility z-toast { z-index: var(--z-toast); }
 @utility z-tooltip { z-index: var(--z-tooltip); }
 
-/* Kompatibilitas: nama lama dipetakan ke token baru. Tidak ada nilai lama yang
-   tersisa; ini hanya alias agar file yang belum direbuild tidak merusak build. */
-@theme {
-  --color-background: var(--color-canvas);
-  --color-surface-container-lowest: var(--color-surface);
-  --color-surface-container-low: var(--color-canvas);
-  --color-surface-container: var(--color-canvas);
-  --color-surface-container-high: var(--color-row-hover);
-  --color-on-surface: var(--color-ink);
-  --color-on-surface-variant: var(--color-ink-muted-strong);
-  --color-on-primary-container: var(--color-primary-dim);
-  --color-primary-container: var(--color-primary);
-  --color-primary-fixed: var(--color-signal-lime);
-  --color-primary-fixed-dim: var(--color-primary-dim);
-  --color-on-primary-fixed: var(--color-ink);
-  --color-on-primary-fixed-variant: var(--color-ink);
-  --color-secondary-container: var(--color-signal-lime);
-  --color-secondary-fixed: var(--color-signal-lime);
-  --color-tertiary: var(--color-error-text);
-  --color-tertiary-fixed: var(--color-row-hover);
-  --color-on-tertiary-fixed-variant: var(--color-error-text);
-  --color-error: var(--color-error-text);
-  --color-error-container: var(--color-row-hover);
-  --color-on-error-container: var(--color-error-text);
-  --color-outline: var(--color-border-control);
-  --color-outline-variant: var(--color-border-hairline);
-  --color-muted: var(--color-ink-muted-strong);
-  --color-terracotta: var(--color-signal-terracotta);
-  --color-graphite: var(--color-ink);
-  --color-border-structural: var(--color-border-hairline);
-  --radius-sm: var(--radius-control);
-  --radius-md: var(--radius-control);
-  --radius-lg: var(--radius-card);
-  --radius-xl: var(--radius-overlay);
-  --radius-full: var(--radius-dot);
-  --radius-pill: var(--radius-control);
-  --text-label-sm-legacy: var(--text-label-sm);
-}
-
-/* §6.3.6: loop transient berhenti saat tab tersembunyi. */
+/* Hentikan loop transient saat tab tersembunyi (§6 aturan 7). */
 [data-tab-hidden="true"] .animate-skeleton,
-[data-tab-hidden="true"] .animate-typing-dot,
-[data-tab-hidden="true"] .animate-share-enter,
-[data-tab-hidden="true"] .animate-share-stagger {
+[data-tab-hidden="true"] .animate-typing-dot {
   animation-play-state: paused !important;
 }
 
-/* prefers-reduced-motion: 0ms, tanpa transform berlebih (DESIGN_DIRECTION §6.3.2).
-   Transform untuk positioning (dialog -translate-x-1/2) sengaja tidak disentuh. */
+/* prefers-reduced-motion: 0ms, tanpa transform, fallback opacity maks 200ms. Tanpa kecuali. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: 0ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0ms !important;
     scroll-behavior: auto !important;
   }
-  .animate-skeleton,
-  .animate-typing-dot { animation: none !important; }
-  /* Share: 0ms, tanpa transform, fallback opacity langsung tampil. */
-  .animate-share-enter,
-  .animate-share-stagger { animation: none !important; opacity: 1 !important; transform: none !important; }
-  .motion-ripple-host::after { display: none !important; }
+  .animate-skeleton, .animate-typing-dot { animation: none !important; }
+  .attention-border::before { animation: none !important; opacity: 0 !important; }
+  [data-motion] { transform: none !important; }
 }
 
-/* Hentikan loop saat tab tidak aktif (§6.3.6). */
 @media print {
-  body { background: #ffffff !important; }
+  body { background: var(--color-porcelain) !important; }
   aside, header, nav, .print-no-print { display: none !important; }
   main { margin-left: 0 !important; padding-left: 0 !important; }
   .print-document {
@@ -414,13 +460,13 @@
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
-    background: #ffffff !important;
-    color: #000000 !important;
+    background: var(--color-porcelain) !important;
+    color: var(--color-ink) !important;
   }
   .print-document * {
     background: transparent !important;
-    color: #000000 !important;
-    border-color: #000000 !important;
+    color: var(--color-ink) !important;
+    border-color: var(--color-ink) !important;
     box-shadow: none !important;
   }
   .print-document h2 { break-before: page; }
@@ -428,8 +474,8 @@
   .print-document pre {
     white-space: pre-wrap !important;
     overflow-wrap: anywhere;
-    border: 1px solid #000000 !important;
+    border: 1px solid var(--color-ink) !important;
   }
   .print-document table { width: 100% !important; border-collapse: collapse; }
-  .print-document th, .print-document td { border: 1px solid #000000 !important; }
+  .print-document th, .print-document td { border: 1px solid var(--color-ink) !important; }
 }
