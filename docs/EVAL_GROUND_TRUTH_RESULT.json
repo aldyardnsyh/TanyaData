@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T13:00:49.623Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-41724-1795179648886\\tanyadata.db",
+  "generatedAt": "2026-11-20T13:48:47.027Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-8372-1795182525718\\tanyadata.db",
   "fixtures": [
     "transaksi",
     "uud-1945",
@@ -435,7 +435,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=24"
+          "detail": "foreign=[] tokens=23"
         },
         "guardrail": {
           "pass": true,
@@ -450,7 +450,7 @@
           "Narasi Operasional"
         ],
         "sql": null,
-        "answer": "Berdasarkan dokumen yang ditemukan: Parameter/Kedalaman total: Kedalaman total: 2.850 m Tabel 2. Hasil Harian Pemboran: Tabel 2. Hasil Harian Pemboran. 2026-07-01 kedalaman 1200 m Formasi A. 2026-07-02 kedalaman 1980 m Formasi B. 2026-07-03 kedalaman 2850 m Formasi C. Narasi Operasional: Pemboran berjalan sesuai spesifikasi teknis. Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. Tekanan formasi tetap dalam batas aman. Sumber: Parameter/Kedalaman total, Tabel 2. Hasil Harian Pemboran, Narasi Operasional.",
+        "answer": "Berdasarkan dokumen yang ditemukan: Parameter/Kedalaman total: Kedalaman total: 2.850 m Tabel 2. Hasil Harian Pemboran: Hasil Harian Pemboran. 2026-07-01 kedalaman 1200 m Formasi A. 2026-07-02 kedalaman 1980 m Formasi B. 2026-07-03 kedalaman 2850 m Formasi C. Narasi Operasional: Pemboran berjalan sesuai spesifikasi teknis. Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. Tekanan formasi tetap dalam batas aman. Sumber: Parameter/Kedalaman total, Tabel 2. Hasil Harian Pemboran, Narasi Operasional.",
         "guardrail": null,
         "numeric_grounding": 1,
         "sql_rows": [],
@@ -538,7 +538,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=24"
+          "detail": "foreign=[] tokens=16"
         },
         "guardrail": {
           "pass": true,
@@ -553,7 +553,7 @@
           "Narasi Operasional"
         ],
         "sql": null,
-        "answer": "Berdasarkan dokumen yang ditemukan: Tabel 2. Hasil Harian Pemboran: Tabel 2. Hasil Harian Pemboran. 2026-07-01 kedalaman 1200 m Formasi A. 2026-07-02 kedalaman 1980 m Formasi B. 2026-07-03 kedalaman 2850 m Formasi C. Parameter/Laju pemboran: Laju pemboran: 12,5 m/jam Narasi Operasional: Pemboran berjalan sesuai spesifikasi teknis. Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. Tekanan formasi tetap dalam batas aman. Sumber: Tabel 2. Hasil Harian Pemboran, Parameter/Laju pemboran, Narasi Operasional.",
+        "answer": "Berdasarkan dokumen yang ditemukan: Tabel 2. Hasil Harian Pemboran: Tabel 2. Hasil Harian Pemboran. 2026-07-01 kedalaman 1200 m Formasi A. Parameter/Laju pemboran: Laju pemboran: 12,5 m/jam Narasi Operasional: Pemboran berjalan sesuai spesifikasi teknis. Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. Sumber: Tabel 2. Hasil Harian Pemboran, Parameter/Laju pemboran, Narasi Operasional.",
         "guardrail": null,
         "numeric_grounding": 1,
         "sql_rows": [],
@@ -761,7 +761,7 @@
     "Koreksi ground truth P3-TUNING: LEG-01/02 expected.extracted_fields.ayat diubah dari subset (1,2,3 / 1) menjadi 1,2,3,4,5 sesuai isi fixture legal/uud.json — Pasal 33 dan Pasal 31 masing-masing memuat 5 ayat. Untuk \"Pasal 33 UUD 1945 berbunyi apa?\" jawaban hukum yang benar adalah seluruh pasal. Ini koreksi label, BUKAN pelonggaran ambang: threshold recall agregat & per-case tetap 0,80 dan pipeline ekstraksi tidak diubah."
   ],
   "capability": {
-    "generatedAt": "2026-11-20T13:00:49.629Z",
+    "generatedAt": "2026-11-20T13:48:47.037Z",
     "cases": [
       {
         "id": "EV-A01",
@@ -1040,12 +1040,12 @@
     ]
   },
   "perpres": {
-    "generatedAt": "2026-11-20T13:00:49.644Z",
+    "generatedAt": "2026-11-20T13:48:47.069Z",
     "groundTruthFile": "data\\fixtures\\perpres76\\chunks.jsonl",
     "groundTruthSha256": "bfbc5c822331bac3c4fe4e659f321a85f3b7f48b6106b4675ba74033c6d1a2f0",
     "groundTruthChunks": 42,
     "baseline": {
-      "label": "baseline: chunkSections (flat, satu level)",
+      "label": "baseline: chunkDocument(docType=general) — flat, satu level",
       "outputCount": 32,
       "metrics": [
         {
@@ -1162,7 +1162,7 @@
       ]
     },
     "tuned": {
-      "label": "tuning: chunkLegalDocument (structure-aware)",
+      "label": "tuning: chunkDocument(docType=legal) — structure-aware",
       "outputCount": 42,
       "metrics": [
         {
