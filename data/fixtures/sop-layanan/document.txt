@@ -1,0 +1,8 @@
+Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.
+Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.
+Bila berkas tidak lengkap, pemohon diberi pemberitahuan tertulis dalam tempo dua hari kerja.
+Berkas yang lengkap diteruskan ke unit yang diminta setelah verifikasi kelengkapan berkas.
+Permintaan diterima melalui formulir elektronik atau loket fisik.
+Prosedur ini tidak berlaku untuk permintaan yang berkaitan dengan data pribadi pihak ketiga yang belum memperoleh persetujuan tertulis.
+SLA Penyelesaian adalah batas waktu maksimal penyelesaian permintaan, yaitu dua hari kerja sejak permintaan dicatat.
+Hasil akhir disampaikan kepada pemohon dan dicatat pada Sistem Tiket.

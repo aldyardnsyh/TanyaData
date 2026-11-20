@@ -1,0 +1,243 @@
+{
+  "generatedAt": "2026-11-20T13:24:40.773Z",
+  "documentFile": "data\\fixtures\\sop-layanan\\document.txt",
+  "documentSha256": "ad85b81404452dd30a77f213ea36d82ee3f61de0a15c458f39240404a456b95f",
+  "documentChars": 763,
+  "chunkCount": 1,
+  "chunkPreview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+  "pipeline": [
+    "sectionsFromPages(txt) → chunkSections  [lib/ingest/chunker.ts — TIDAK diubah]",
+    "core_chunks + core_chunks_fts trigger  [lib/db/core-schema.sql]",
+    "searchChunks via answerQuestion  [lib/core/store.ts — TIDAK diubah]",
+    "detectGuardrail / notInSourcesGuardrail  [lib/core/answer.ts — TIDAK diubah]",
+    "composeDeterministicAnswer  [lib/core/answer.ts — TIDAK diubah]"
+  ],
+  "metrics": {
+    "answerable_accuracy": 0,
+    "refusal_accuracy": 0.3333,
+    "hallucination_rate": 0.9091,
+    "overall_accuracy": 0.0909
+  },
+  "thresholds": {
+    "answerable": 0.9,
+    "refusal": 0.9,
+    "hallucination": 0.02
+  },
+  "cases": [
+    {
+      "id": "SOP-01",
+      "question": "Berapa lama batas waktu maksimal penyelesaian permintaan informasi?",
+      "kind": "answerable",
+      "expected": "dua hari kerja sejak permintaan dicatat",
+      "pass": false,
+      "answer": "Berdasarkan dokumen yang ditemukan: Halaman 1: Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat. Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja. Bila berkas tidak lengkap, pemohon diberi pemberi Sumber: Halaman 1.",
+      "guardrail_type": null,
+      "ai_guardrail_type": null,
+      "citations": [
+        "Halaman 1"
+      ],
+      "quote_preview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+      "foreign_numbers": [
+        "1",
+        "1"
+      ],
+      "detail": "substring=\"dua hari kerja sejak permintaan dicatat\" hit=true guardrail=none foreign=2 sitasi=1"
+    },
+    {
+      "id": "SOP-02",
+      "question": "Siapa yang bertanggung jawab mencatat setiap permintaan?",
+      "kind": "answerable",
+      "expected": "Receiving Officer wajib mencatat setiap permintaan",
+      "pass": false,
+      "answer": "Berdasarkan dokumen yang ditemukan: Halaman 1: Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat. Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja. Bila berkas tidak lengkap, pemohon diberi pemberi Sumber: Halaman 1.",
+      "guardrail_type": null,
+      "ai_guardrail_type": "out_of_scope",
+      "citations": [
+        "Halaman 1"
+      ],
+      "quote_preview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+      "foreign_numbers": [
+        "1",
+        "1"
+      ],
+      "detail": "substring=\"Receiving Officer wajib mencatat setiap permintaan\" hit=true guardrail=none foreign=2 sitasi=1"
+    },
+    {
+      "id": "SOP-03",
+      "question": "Apa yang dilakukan Receiving Officer saat berkas yang diterima belum lengkap?",
+      "kind": "answerable",
+      "expected": "pemohon diberi pemberitahuan tertulis",
+      "pass": false,
+      "answer": "Berdasarkan dokumen yang ditemukan: Halaman 1: Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat. Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja. Bila berkas tidak lengkap, pemohon diberi pemberi Sumber: Halaman 1.",
+      "guardrail_type": null,
+      "ai_guardrail_type": null,
+      "citations": [
+        "Halaman 1"
+      ],
+      "quote_preview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+      "foreign_numbers": [
+        "1",
+        "1"
+      ],
+      "detail": "substring=\"pemohon diberi pemberitahuan tertulis\" hit=false guardrail=none foreign=2 sitasi=1"
+    },
+    {
+      "id": "SOP-04",
+      "question": "Kapan berkas yang lengkap diteruskan ke unit yang diminta?",
+      "kind": "answerable",
+      "expected": "diteruskan ke unit yang diminta setelah verifikasi kelengkapan berkas",
+      "pass": false,
+      "answer": "Berdasarkan dokumen yang ditemukan: Halaman 1: Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat. Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja. Bila berkas tidak lengkap, pemohon diberi pemberi Sumber: Halaman 1.",
+      "guardrail_type": null,
+      "ai_guardrail_type": null,
+      "citations": [
+        "Halaman 1"
+      ],
+      "quote_preview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+      "foreign_numbers": [
+        "1",
+        "1"
+      ],
+      "detail": "substring=\"diteruskan ke unit yang diminta setelah verifikasi kelengkapan berkas\" hit=false guardrail=none foreign=2 sitasi=1"
+    },
+    {
+      "id": "SOP-05",
+      "question": "Permintaan informasi bisa masuk lewat jalur apa saja?",
+      "kind": "answerable",
+      "expected": "formulir elektronik atau loket fisik",
+      "pass": false,
+      "answer": "Berdasarkan dokumen yang ditemukan: Halaman 1: Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat. Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja. Bila berkas tidak lengkap, pemohon diberi pemberi Sumber: Halaman 1.",
+      "guardrail_type": null,
+      "ai_guardrail_type": "out_of_scope",
+      "citations": [
+        "Halaman 1"
+      ],
+      "quote_preview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+      "foreign_numbers": [
+        "1",
+        "1"
+      ],
+      "detail": "substring=\"formulir elektronik atau loket fisik\" hit=false guardrail=none foreign=2 sitasi=1"
+    },
+    {
+      "id": "SOP-06",
+      "question": "Apakah prosedur ini berlaku untuk permintaan data pribadi pihak ketiga?",
+      "kind": "answerable",
+      "expected": "tidak berlaku untuk permintaan yang berkaitan dengan data pribadi pihak ketiga",
+      "pass": false,
+      "answer": "Berdasarkan dokumen yang ditemukan: Halaman 1: Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat. Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja. Bila berkas tidak lengkap, pemohon diberi pemberi Sumber: Halaman 1.",
+      "guardrail_type": null,
+      "ai_guardrail_type": "pii",
+      "citations": [
+        "Halaman 1"
+      ],
+      "quote_preview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+      "foreign_numbers": [
+        "1",
+        "1"
+      ],
+      "detail": "substring=\"tidak berlaku untuk permintaan yang berkaitan dengan data pribadi pihak ketiga\" hit=false guardrail=none foreign=2 sitasi=1"
+    },
+    {
+      "id": "SOP-07",
+      "question": "Apa itu SLA Penyelesaian?",
+      "kind": "answerable",
+      "expected": "SLA Penyelesaian adalah batas waktu maksimal",
+      "pass": false,
+      "answer": "Berdasarkan dokumen yang ditemukan: Halaman 1: Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat. Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja. Bila berkas tidak lengkap, pemohon diberi pemberi Sumber: Halaman 1.",
+      "guardrail_type": null,
+      "ai_guardrail_type": null,
+      "citations": [
+        "Halaman 1"
+      ],
+      "quote_preview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+      "foreign_numbers": [
+        "1",
+        "1"
+      ],
+      "detail": "substring=\"SLA Penyelesaian adalah batas waktu maksimal\" hit=false guardrail=none foreign=2 sitasi=1"
+    },
+    {
+      "id": "SOP-08",
+      "question": "Bagaimana hasil akhir permintaan disampaikan dan dicatat?",
+      "kind": "answerable",
+      "expected": "Hasil akhir disampaikan kepada pemohon dan dicatat pada Sistem Tiket",
+      "pass": false,
+      "answer": "Berdasarkan dokumen yang ditemukan: Halaman 1: Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat. Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja. Bila berkas tidak lengkap, pemohon diberi pemberi Sumber: Halaman 1.",
+      "guardrail_type": null,
+      "ai_guardrail_type": "out_of_scope",
+      "citations": [
+        "Halaman 1"
+      ],
+      "quote_preview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+      "foreign_numbers": [
+        "1",
+        "1"
+      ],
+      "detail": "substring=\"Hasil akhir disampaikan kepada pemohon dan dicatat pada Sistem Tiket\" hit=false guardrail=none foreign=2 sitasi=1"
+    },
+    {
+      "id": "SOP-09",
+      "question": "Bagaimana cara uploading berkas ke sistem tiket?",
+      "kind": "refusal",
+      "expected": null,
+      "pass": false,
+      "answer": "Berdasarkan dokumen yang ditemukan: Halaman 1: Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat. Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja. Bila berkas tidak lengkap, pemohon diberi pemberi Sumber: Halaman 1.",
+      "guardrail_type": null,
+      "ai_guardrail_type": null,
+      "citations": [
+        "Halaman 1"
+      ],
+      "quote_preview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+      "foreign_numbers": [
+        "1",
+        "1"
+      ],
+      "detail": "guardrail=none ai_guardrail=none refused=false foreign=2 sitasi=1"
+    },
+    {
+      "id": "SOP-10",
+      "question": "Berapa biaya pengajuan informasi layanan?",
+      "kind": "refusal",
+      "expected": null,
+      "pass": true,
+      "answer": "Pertanyaan ini tidak bisa dijawab dari dokumen \"SOP Layanan\". Untuk pertanyaan seputar transaksi, pilih attachment dataset transaksi. Pada attachment ini saya bisa menjawab pertanyaan seputar isi dokumen yang tersedia.",
+      "guardrail_type": "not_in_sources",
+      "ai_guardrail_type": "not_in_sources",
+      "citations": [],
+      "quote_preview": "",
+      "foreign_numbers": [],
+      "detail": "guardrail=not_in_sources ai_guardrail=not_in_sources refused=true foreign=0 sitasi=0"
+    },
+    {
+      "id": "SOP-11",
+      "question": "Siapa kepala unit kerja yang menandatangani persetujuan?",
+      "kind": "refusal",
+      "expected": null,
+      "pass": false,
+      "answer": "Berdasarkan dokumen yang ditemukan: Halaman 1: Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat. Receiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja. Bila berkas tidak lengkap, pemohon diberi pemberi Sumber: Halaman 1.",
+      "guardrail_type": null,
+      "ai_guardrail_type": "out_of_scope",
+      "citations": [
+        "Halaman 1"
+      ],
+      "quote_preview": "Batas waktu maksimal penyelesaian adalah dua hari kerja sejak permintaan dicatat.\nReceiving Officer wajib mencatat setiap permintaan pada Sistem Tiket dalam waktu paling lama satu jam kerja.\nBila berkas tidak lengkap, pemohon diberi pemberi",
+      "foreign_numbers": [
+        "1",
+        "1"
+      ],
+      "detail": "guardrail=none ai_guardrail=out_of_scope refused=false foreign=2 sitasi=1"
+    }
+  ],
+  "passed": 1,
+  "total": 11,
+  "overallPass": false,
+  "notes": [
+    "Uji buta: dokumen SOP layanan TIDAK dipakai saat kalibrasi Perpres 76. Aturan chunker/retriever/guardrail tidak diubah.",
+    "Dokumen direkonstruksi verbatim dari 8 frasa ground_truth; 3 kasus \"TIDAK ADA JAWABAN\" sengaja TIDAK ditambahkan ke dokumen.",
+    "Satu halaman .txt tanpa heading → pageSections → satu section → satu chunk (perilaku produksi sectionsFromPages + chunkSections).",
+    "confidenceLevel=\"refused\" adalah konsep lapisan AI-adapter; jalur deterministik produksi memakai query.guardrail. Keduanya dicatat.",
+    "Guardrail AI-lane (checkGuardrails) hanya diagnostik; penilaian refusal memakai guardrail produksi dari answerQuestion.",
+    "Tidak ada model lokal, tidak ada jaringan, tidak ada retry; deterministik dan bisa diulang."
+  ]
+}

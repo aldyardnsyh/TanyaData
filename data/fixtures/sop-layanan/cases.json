@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "description": "Blind hold-out ground truth — 11 pertanyaan untuk contoh-sop-layanan.md (BUKAN Perpres 76). Rekonstruksi verbatim dari 8 frasa ground_truth; 3 kasus 'TIDAK ADA JAWABAN' tidak ditambahkan ke dokumen. Dipakai oleh lib/eval/holdout.ts lewat pipeline produksi yang sama (chunkSections -> core_chunks/FTS5 -> searchChunks -> detectGuardrail -> answerQuestion).",
+  "document": "sop-layanan/document.txt",
+  "source_dataset": "D:/Riset Pribadi/RAG - Intelegence Document System/backend/evaluation/dataset.json",
+  "cases": [
+    {
+      "id": "SOP-01",
+      "question": "Berapa lama batas waktu maksimal penyelesaian permintaan informasi?",
+      "expected": { "answer_substring": "dua hari kerja sejak permintaan dicatat", "expected_refusal": false },
+      "tags": ["sop-layanan", "answerable", "normal"]
+    },
+    {
+      "id": "SOP-02",
+      "question": "Siapa yang bertanggung jawab mencatat setiap permintaan?",
+      "expected": { "answer_substring": "Receiving Officer wajib mencatat setiap permintaan", "expected_refusal": false },
+      "tags": ["sop-layanan", "answerable", "normal"]
+    },
+    {
+      "id": "SOP-03",
+      "question": "Apa yang dilakukan Receiving Officer saat berkas yang diterima belum lengkap?",
+      "expected": { "answer_substring": "pemohon diberi pemberitahuan tertulis", "expected_refusal": false },
+      "tags": ["sop-layanan", "answerable", "normal"]
+    },
+    {
+      "id": "SOP-04",
+      "question": "Kapan berkas yang lengkap diteruskan ke unit yang diminta?",
+      "expected": { "answer_substring": "diteruskan ke unit yang diminta setelah verifikasi kelengkapan berkas", "expected_refusal": false },
+      "tags": ["sop-layanan", "answerable", "normal"]
+    },
+    {
+      "id": "SOP-05",
+      "question": "Permintaan informasi bisa masuk lewat jalur apa saja?",
+      "expected": { "answer_substring": "formulir elektronik atau loket fisik", "expected_refusal": false },
+      "tags": ["sop-layanan", "answerable", "normal"]
+    },
+    {
+      "id": "SOP-06",
+      "question": "Apakah prosedur ini berlaku untuk permintaan data pribadi pihak ketiga?",
+      "expected": { "answer_substring": "tidak berlaku untuk permintaan yang berkaitan dengan data pribadi pihak ketiga", "expected_refusal": false },
+      "tags": ["sop-layanan", "answerable", "edge"]
+    },
+    {
+      "id": "SOP-07",
+      "question": "Apa itu SLA Penyelesaian?",
+      "expected": { "answer_substring": "SLA Penyelesaian adalah batas waktu maksimal", "expected_refusal": false },
+      "tags": ["sop-layanan", "answerable", "normal"]
+    },
+    {
+      "id": "SOP-08",
+      "question": "Bagaimana hasil akhir permintaan disampaikan dan dicatat?",
+      "expected": { "answer_substring": "Hasil akhir disampaikan kepada pemohon dan dicatat pada Sistem Tiket", "expected_refusal": false },
+      "tags": ["sop-layanan", "answerable", "normal"]
+    },
+    {
+      "id": "SOP-09",
+      "question": "Bagaimana cara uploading berkas ke sistem tiket?",
+      "expected": { "answer_substring": null, "expected_refusal": true },
+      "tags": ["sop-layanan", "refusal", "edge"]
+    },
+    {
+      "id": "SOP-10",
+      "question": "Berapa biaya pengajuan informasi layanan?",
+      "expected": { "answer_substring": null, "expected_refusal": true },
+      "tags": ["sop-layanan", "refusal", "normal"]
+    },
+    {
+      "id": "SOP-11",
+      "question": "Siapa kepala unit kerja yang menandatangani persetujuan?",
+      "expected": { "answer_substring": null, "expected_refusal": true },
+      "tags": ["sop-layanan", "refusal", "edge"]
+    }
+  ]
+}
