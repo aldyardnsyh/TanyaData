@@ -163,6 +163,15 @@ export interface Citation {
   quote: string;
   score?: number;
   ayat?: number[];
+  /** Additive deep-link fields (CORE_V2 FR-D.1). Absent = legacy citation. */
+  deep_link?: string | null;
+  deep_link_status?: 'valid' | 'invalid' | 'unchecked';
+  deep_link_reason?: string | null;
+  rev?: string | null;
+  dataset_id?: string | null;
+  source_id?: string | null;
+  parse_ok?: boolean;
+  ocr_status?: string | null;
 }
 
 export interface RetrievalScore {

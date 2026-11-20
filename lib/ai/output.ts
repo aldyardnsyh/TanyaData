@@ -7,7 +7,10 @@
  * donut for two categories, no forced visualisation for prose.
  */
 import type { EvidenceConfidenceLevel } from '@/lib/core/contracts';
-import { extractRetrievalEntities, queryTerms } from './retrieval';
+import {
+  extractRetrievalEntities, queryTerms, validateCitationDeepLink,
+  type CitationRegistry,
+} from './retrieval';
 import type { DataType, DocType, OutputDecision, OutputType, QuestionKind } from './types';
 
 export interface DecideInput {
@@ -177,9 +180,17 @@ export interface EvidenceConfidenceInput {
     score?: number | null;
     section_path?: string | null;
     quote?: string | null;
+    /** Additive FR-D fields. Invalid deep links never count as strong evidence. */
+    deep_link?: string | null;
+    deep_link_status?: 'valid' | 'invalid' | 'unchecked';
+    chunk_id?: string | null;
+    doc?: string | null;
+    page?: number | null;
   }>;
   /** Known channel names, when the caller has a seed/schema to resolve them. */
   knownChannels?: string[];
+  /** Optional registry: re-validate every deep link before grading. */
+  citationRegistry?: CitationRegistry | null;
 }
 
 export interface EvidenceConfidence {
@@ -217,18 +228,68 @@ export function classifyEvidenceConfidence(input: EvidenceConfidenceInput): Evid
   const terms = queryTerms(input.question, 8);
   const alternatives = [...new Set([...entities.keywords, ...terms])].slice(0, 6);
 
-  if (!citations.length) {
+  // FR-D.1: a citation that carries an invalid/unverifiable deep link is not
+  // evidence at all. Legacy citations without deep-link fields keep the old
+  // behaviour, so existing callers and the 8/8 baseline are unaffected.
+  const usable = citations.filter((c) => {
+    if (c.deep_link_status === 'invalid') return false;
+    if (c.deep_link_status === 'valid') return true;
+    if (c.deep_link) {
+      if (!input.citationRegistry) return false;
+      return validateCitationDeepLink(c.deep_link, input.citationRegistry, c.quote ?? null).valid;
+    }
+    return true;
+  });
+
+  if (!usable.length) {
     return { confidenceLevel: 'refused', alternativeKeywords: alternatives };
   }
 
-  const topScore = Math.max(0, ...citations.map((c) =>
+  const topScore = Math.max(0, ...usable.map((c) =>
     typeof c.score === 'number' && Number.isFinite(c.score) ? c.score : 0));
-  const precise = citations.some((c) =>
+  const precise = usable.some((c) =>
     sectionIsPrecise(`${c.section_path ?? ''} ${c.quote ?? ''}`, entities, terms));
 
   if (topScore >= STRONG_SCORE && precise) {
     return { confidenceLevel: 'strong', alternativeKeywords: [] };
   }
   return { confidenceLevel: 'limited', alternativeKeywords: alternatives };
+}
+
+/* ------------------------------------------------- share snapshot citations */
+
+export interface ShareCitation {
+  deep_link?: string | null;
+  section_path?: string | null;
+  quote?: string | null;
+  chunk_id?: string | null;
+  doc?: string | null;
+  page?: number | null;
+}
+
+export interface ShareCitationValidation {
+  valid: boolean;
+  rejected: Array<{ index: number; reason: string }>;
+}
+
+/**
+ * AC-E.2.2: every citation embedded in a share snapshot must still resolve to
+ * a real chunk. The snapshot is static, so validation happens at creation —
+ * not when the (possibly deleted) attachment is opened later.
+ */
+export function validateShareCitations(
+  citations: ShareCitation[],
+  registry: CitationRegistry,
+): ShareCitationValidation {
+  const rejected: Array<{ index: number; reason: string }> = [];
+  (citations ?? []).forEach((c, index) => {
+    if (!c.deep_link) {
+      rejected.push({ index, reason: 'MISSING_CHUNK' });
+      return;
+    }
+    const verdict = validateCitationDeepLink(c.deep_link, registry, c.quote ?? null);
+    if (!verdict.valid) rejected.push({ index, reason: verdict.reason ?? 'INVALID' });
+  });
+  return { valid: rejected.length === 0, rejected };
 }
 

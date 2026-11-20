@@ -110,6 +110,13 @@ export interface HybridRetrieveInput {
   schemaText?: string;
   sqlText?: string;
   instructionText?: string;
+  /**
+   * When supplied, every evidence citation must resolve to a READY document
+   * and a parseable, non-skipped chunk with a matching rev. Invalid citations
+   * are dropped (fail-closed) and the status is downgraded. Absent = legacy
+   * behaviour, so existing callers are unaffected.
+   */
+  citationRegistry?: CitationRegistry | null;
 }
 
 const GENERAL_STOPWORDS = new Set([
@@ -331,7 +338,7 @@ export function retrieveHybrid(input: HybridRetrieveInput): RetrievalResult {
 
   // small-to-big: expand child → parent, deduplicate by parent id
   const seenParents = new Set<string>();
-  const evidence: Citation[] = [];
+  let evidence: Citation[] = [];
   for (const { row, final } of ranked) {
     const child = byRowid.get(row.rowid);
     if (!child) continue;
@@ -351,9 +358,36 @@ export function retrieveHybrid(input: HybridRetrieveInput): RetrievalResult {
     });
   }
 
+  // FR-D.1: fail-closed deep-link validation before a citation is rendered.
+  // A citation without a real chunk id, from a non-READY document, or with a
+  // stale rev is dropped — never shown to the user as if it were grounded.
+  let droppedCitations = 0;
+  if (input.citationRegistry) {
+    const kept: Citation[] = [];
+    for (const c of evidence) {
+      const rev = input.citationRegistry.documents[c.doc]?.rev ?? null;
+      const link = rev ? buildCitationDeepLink({
+        docId: c.doc,
+        page: c.page ?? 1,
+        section: c.section_path,
+        chunk: c.chunk_id,
+        rev,
+      }) : null;
+      const verdict = link
+        ? validateCitationDeepLink(link, input.citationRegistry, c.quote)
+        : { valid: false, reason: 'MISSING_CHUNK' };
+      if (verdict.valid && link) {
+        kept.push({ ...c, deep_link: link, deep_link_status: 'valid', rev });
+      } else {
+        droppedCitations += 1;
+      }
+    }
+    evidence = kept;
+  }
+
   const status: RetrievalResult['status'] = evidence.length === 0
     ? 'no_evidence'
-    : (ranked[0]?.final ?? 0) < 0.25 ? 'evidence_limited' : 'ok';
+    : (droppedCitations > 0 || (ranked[0]?.final ?? 0) < 0.25) ? 'evidence_limited' : 'ok';
 
   const contextBundle = buildContextBundle({
     evidence,
@@ -479,4 +513,244 @@ export function retrieveWithEntityBoost(
     boostSection: entities.boostSection,
     boostPage: entities.boostPage,
   });
+}
+
+/* ========================================================================== */
+/* CORE V2 — citation deep link + deterministic evidence helpers (FR-A/FR-D)   */
+/* docs/CORE_V2_SPEC.md §5 · docs/RAG_ROBUSTNESS_RESEARCH.md §7               */
+/* ========================================================================== */
+
+export interface CitationDeepLinkParts {
+  /** Immutable source_id, never a file name. */
+  docId: string;
+  /** 1-indexed page (PDF viewer compatible). */
+  page: number;
+  pageEnd?: number | null;
+  /** URL-encoded section_path; '/' is the hierarchy separator. */
+  section: string;
+  /** CHILD chunk id — precision anchor. Absent ⇒ citation is rejected. */
+  chunk: string;
+  /** Prefix of the active content hash; prevents citing a stale revision. */
+  rev: string;
+}
+
+export interface CitationRegistry {
+  documents: Record<string, { status?: string; pageCount?: number; rev?: string }>;
+  chunks: Record<string, {
+    document_id: string;
+    section_path: string;
+    page: number | null;
+    page_end?: number | null;
+    text: string;
+    parse_ok?: boolean;
+    ocr_status?: string | null;
+    rev?: string | null;
+  }>;
+}
+
+export interface DeepLinkValidation {
+  valid: boolean;
+  reason: string | null;
+  docId: string | null;
+  chunkId: string | null;
+  parts: Partial<CitationDeepLinkParts> | null;
+}
+
+/**
+ * Build `docId#page=3&pageEnd=4&section=...&chunk=...&rev=...`.
+ * Returns null when a required anchor is missing — a citation without a real
+ * chunk id is never emitted (CORE_V2_SPEC AC-D.1.1 / task requirement).
+ */
+export function buildCitationDeepLink(parts: CitationDeepLinkParts): string | null {
+  if (!parts?.docId || !parts.chunk || !parts.section || !parts.rev) return null;
+  const page = Number(parts.page);
+  if (!Number.isInteger(page) || page < 1) return null;
+  const params = [`page=${page}`];
+  const pageEnd = parts.pageEnd == null ? null : Number(parts.pageEnd);
+  if (pageEnd !== null && Number.isInteger(pageEnd) && pageEnd >= page) {
+    params.push(`pageEnd=${pageEnd}`);
+  }
+  params.push(`section=${encodeURIComponent(parts.section)}`);
+  params.push(`chunk=${encodeURIComponent(parts.chunk)}`);
+  params.push(`rev=${encodeURIComponent(parts.rev)}`);
+  return `${parts.docId}#${params.join('&')}`;
+}
+
+/**
+ * Fail-closed validation of a deep link against the registry. Every check is
+ * deterministic and local — no network, no model, no extra memory. A single
+ * failure drops the citation; the answer degrades to `evidence_limited`.
+ */
+export function validateCitationDeepLink(
+  link: string,
+  registry: CitationRegistry,
+  quote?: string | null,
+): DeepLinkValidation {
+  const fail = (reason: string): DeepLinkValidation => ({
+    valid: false, reason, docId: null, chunkId: null, parts: null,
+  });
+  if (!link || typeof link !== 'string') return fail('MISSING_LINK');
+  if (/^(javascript|data|file):/i.test(link) || /^https?:\/\//i.test(link)) return fail('UNSAFE_SCHEME');
+  const hash = link.indexOf('#');
+  if (hash <= 0) return fail('MALFORMED_LINK');
+
+  const docId = link.slice(0, hash);
+  const params = new URLSearchParams(link.slice(hash + 1));
+  const pageRaw = params.get('page');
+  const sectionRaw = params.get('section');
+  const chunkRaw = params.get('chunk');
+  const revRaw = params.get('rev');
+
+  // "Sitasi tanpa chunk asal ditolak" — this is the first hard gate.
+  if (!chunkRaw) return fail('MISSING_CHUNK');
+  if (!pageRaw || !sectionRaw || !revRaw) return fail('MISSING_REQUIRED_PARAM');
+
+  const page = Number(pageRaw);
+  if (!Number.isInteger(page) || page < 1) return fail('INVALID_PAGE');
+
+  const doc = registry?.documents?.[docId];
+  if (!doc) return fail('UNKNOWN_DOC');
+  if (doc.status !== 'READY') return fail('DOC_NOT_READY');
+
+  const chunk = registry?.chunks?.[chunkRaw];
+  if (!chunk) return fail('UNKNOWN_CHUNK');
+  if (chunk.document_id !== docId) return fail('CHUNK_DOC_MISMATCH');
+  if (chunk.parse_ok === false) return fail('CHUNK_PARSE_FAILED');
+  if (chunk.ocr_status === 'ocr_skipped' || chunk.ocr_status === 'unreadable') return fail('CHUNK_UNREADABLE');
+  if (chunk.page !== page) return fail('PAGE_MISMATCH');
+
+  const pageEnd = params.has('pageEnd') ? Number(params.get('pageEnd')) : null;
+  if (pageEnd !== null && (!Number.isInteger(pageEnd) || pageEnd < page)) return fail('INVALID_PAGE_END');
+  if (doc.pageCount && pageEnd !== null && pageEnd > doc.pageCount) return fail('PAGE_OUT_OF_RANGE');
+
+  // URLSearchParams already decodes percent-escapes.
+  if (sectionRaw !== chunk.section_path) return fail('SECTION_MISMATCH');
+
+  const expectedRev = chunk.rev ?? doc.rev;
+  if (!expectedRev || revRaw !== expectedRev) return fail('REV_MISMATCH');
+
+  if (quote) {
+    const norm = (s: string) => s.replace(/\s+/g, ' ').trim().toLowerCase();
+    if (!norm(chunk.text).includes(norm(quote))) return fail('QUOTE_MISMATCH');
+  }
+
+  return {
+    valid: true,
+    reason: null,
+    docId,
+    chunkId: chunkRaw,
+    parts: {
+      docId, page, pageEnd, section: chunk.section_path, chunk: chunkRaw, rev: revRaw,
+    },
+  };
+}
+
+/* ------------------------------------------- deterministic ingest evidence */
+
+export interface PageSignal {
+  page: number;
+  chars: number;
+  imageCoverage?: number;
+  gibberishRatio?: number;
+  ocr_status?: string | null;
+}
+
+export interface OcrPlan {
+  ocr_pages: number[];
+  unreadable_pages: number[];
+  text_pages: number[];
+  ocrUsed: boolean;
+}
+
+/**
+ * Per-page OCR routing from signals already present at extraction time
+ * (RAG_ROBUSTNESS_RESEARCH §1–2). Pure: it never calls OCR and never mutates
+ * text. A page that failed OCR is `unreadable`, not silently cited.
+ */
+export function planOcrPages(pages: PageSignal[]): OcrPlan {
+  const ocr_pages: number[] = [];
+  const unreadable_pages: number[] = [];
+  const text_pages: number[] = [];
+  for (const p of pages ?? []) {
+    const needsOcr = p.chars < 40
+      || (p.imageCoverage ?? 0) >= 0.60
+      || (p.gibberishRatio ?? 0) > 0.15;
+    if (!needsOcr) {
+      text_pages.push(p.page);
+      continue;
+    }
+    if (p.ocr_status === 'ocr_skipped' || p.ocr_status === 'unreadable' || p.ocr_status === 'timeout') {
+      unreadable_pages.push(p.page);
+    } else {
+      ocr_pages.push(p.page);
+    }
+  }
+  return { ocr_pages, unreadable_pages, text_pages, ocrUsed: ocr_pages.length > 0 };
+}
+
+/** Numeric checksum: cleaning must not change any number or unit token. */
+export function numericChecksum(values: Array<string | number> | string): string {
+  const text = Array.isArray(values) ? values.join(' ') : String(values ?? '');
+  return (text.match(/\d+(?:[.,]\d+)*/g) ?? []).map((t) => t.replace(',', '.')).join('|');
+}
+
+/** FNV-1a over NFKD/lowercased/space-normalised text — dedup + `rev` prefix. */
+export function contentHash(text: string): string {
+  const s = String(text ?? '').toLowerCase().normalize('NFKD').replace(/\s+/g, ' ').trim();
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}
+
+export interface StitchPage {
+  page: number;
+  text: string;
+  section_path: string;
+  ocr_status?: string | null;
+}
+
+export interface StitchedChunk {
+  text: string;
+  page_span: [number, number];
+  section_path: string;
+  stitched: boolean;
+  ocr_status?: string | null;
+}
+
+/**
+ * Join only when EVERY hard rule holds (RAG_ROBUSTNESS_RESEARCH §4): same
+ * section, open sentence end, lowercase continuation, neither page unreadable.
+ * One wrong join changes meaning; one missed join is merely ugly.
+ */
+export function stitchPageTexts(pages: StitchPage[]): StitchedChunk[] {
+  const out: StitchedChunk[] = [];
+  for (const p of pages ?? []) {
+    const prev = out[out.length - 1];
+    const openEnd = !!prev
+      && !/[.!?]["')]?\s*$/.test(prev.text)
+      && !/-\s*$/.test(prev.text);
+    const openStart = /^[a-z]/.test(p.text)
+      && !/^(pasal|ayat|bab|halaman|page)\b/i.test(p.text);
+    const canJoin = !!prev && openEnd && openStart
+      && prev.section_path === p.section_path
+      && prev.ocr_status !== 'ocr_skipped' && p.ocr_status !== 'ocr_skipped';
+    if (canJoin) {
+      const hyphen = /-\s*$/.test(prev.text);
+      prev.text = `${prev.text.replace(/-\s*$/, '')}${hyphen ? '' : ' '}${p.text}`;
+      prev.page_span = [prev.page_span[0], p.page];
+      prev.stitched = true;
+    } else {
+      out.push({
+        text: p.text,
+        page_span: [p.page, p.page],
+        section_path: p.section_path,
+        stitched: false,
+        ocr_status: p.ocr_status ?? null,
+      });
+    }
+  }
+  return out;
 }
