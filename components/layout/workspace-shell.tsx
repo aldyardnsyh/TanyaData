@@ -11,6 +11,7 @@ import { NavItemLink } from './nav-item';
 import { EngineBadge } from './engine-badge';
 import { Sidebar } from './sidebar';
 import { Topbar } from './topbar';
+import { DatasetChip } from './dataset-chip';
 
 export function WorkspaceShell({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
@@ -66,7 +67,18 @@ export function WorkspaceShell({ children }: { children: React.ReactNode }) {
         onOpenMenu={() => setMobileOpen(true)}
       />
 
-      <main id="konten-utama" className="min-h-screen pt-14 md:pl-sidebar-rail xl:pl-sidebar">
+      {/* < 640px: dataset chip turun ke baris kedua, header cukup 5 elemen. */}
+      <div className="fixed left-0 right-0 top-14 z-sticky flex h-14 items-center border-b border-border-hairline bg-surface px-3 sm:hidden">
+        <DatasetChip
+          name={datasetName}
+          choices={datasetChoices}
+          activeId={activeDatasetId}
+          onSelect={selectDataset}
+          expanded
+        />
+      </div>
+
+      <main id="konten-utama" className="min-h-screen pt-[113px] sm:pt-14 md:pl-sidebar-rail xl:pl-sidebar">
         {children}
       </main>
 

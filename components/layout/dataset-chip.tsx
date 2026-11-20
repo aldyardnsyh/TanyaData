@@ -15,13 +15,16 @@ export interface DatasetChipProps {
   choices: DatasetChoice[];
   activeId: string;
   onSelect: (id: string) => void;
+  /** Baris kedua mobile: nama tampil penuh, tidak terpotong menjadi "analyt...". */
+  expanded?: boolean;
 }
 
 /**
  * §4: ≥1024 nama + row count; 768 nama saja; 390 row count saja + detail sheet.
+ * Mode `expanded` (baris kedua mobile) menampilkan nama penuh + row count.
  * Tanpa text-overflow ellipsis pada nama file (L-08).
  */
-export function DatasetChip({ name, choices, activeId, onSelect }: DatasetChipProps) {
+export function DatasetChip({ name, choices, activeId, onSelect, expanded = false }: DatasetChipProps) {
   const { t } = useI18n();
   const [detailOpen, setDetailOpen] = useState(false);
   const active = choices.find((c) => c.id === activeId);
@@ -34,11 +37,11 @@ export function DatasetChip({ name, choices, activeId, onSelect }: DatasetChipPr
         type="button"
         onClick={() => setDetailOpen(true)}
         aria-label={t('label.activeDataset')}
-        className="flex min-h-11 max-w-[240px] items-center gap-2 rounded-control border border-border-hairline bg-surface px-3 text-ink transition-colors duration-[var(--motion-fast)] hover:border-primary focus-ring"
+        className={`flex min-h-11 ${expanded ? 'max-w-full' : 'max-w-[240px]'} items-center gap-2 rounded-control border border-border-hairline bg-surface px-3 text-ink transition-colors duration-[var(--motion-fast)] hover:border-primary focus-ring`}
       >
         <Icon name="database" className="shrink-0 text-[16px] text-primary" aria-hidden="true" />
-        <span className="hidden min-w-0 font-body text-body-md md:inline">{name}</span>
-        <MonoMeta className="inline md:hidden lg:inline">{rowsLabel}</MonoMeta>
+        <span className={`min-w-0 font-body text-body-md ${expanded ? 'inline' : 'hidden md:inline'}`}>{name}</span>
+        <MonoMeta className={expanded ? 'inline' : 'inline md:hidden lg:inline'}>{rowsLabel}</MonoMeta>
         <Icon name="expand_more" className="shrink-0 text-[16px] text-ink-muted-strong" aria-hidden="true" />
       </button>
 

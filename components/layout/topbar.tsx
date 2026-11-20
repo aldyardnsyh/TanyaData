@@ -64,12 +64,15 @@ export function Topbar({
           <span className="truncate font-body text-label-md font-semibold text-ink">{currentLabel}</span>
         </nav>
 
-        <DatasetChip
-          name={datasetName}
-          choices={datasetChoices}
-          activeId={activeDatasetId}
-          onSelect={onSelectDataset}
-        />
+        {/* < 640px: chip pindah ke baris kedua (lihat WorkspaceShell) agar header ≤ 5 elemen. */}
+        <div className="hidden sm:block">
+          <DatasetChip
+            name={datasetName}
+            choices={datasetChoices}
+            activeId={activeDatasetId}
+            onSelect={onSelectDataset}
+          />
+        </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
