@@ -1,32 +1,33 @@
 import { Skeleton } from '@/components/ui/skeleton';
 
-/** B-04: kerangka Pengaturan: header + 5 kartu + bilah simpan. */
+/** Kerangka Pengaturan: header + bento + tab + panel + bilah simpan. Token baru, tanpa alias lama. */
 export default function SettingsLoading() {
   return (
-    <div className="mx-auto max-w-[720px] space-y-6 px-6 py-8" aria-hidden="true">
-      <div className="space-y-2">
-        <Skeleton className="h-9 w-36" />
-        <Skeleton className="h-4 w-72" />
+    <div className="page-container py-s5" aria-hidden="true" aria-busy="true">
+      <div className="mb-s3 flex flex-col gap-s2">
+        <Skeleton className="h-10 w-1/3" />
+        <Skeleton className="h-4 w-2/3" />
       </div>
-
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="rounded-xl border border-outline-variant bg-surface-container-lowest">
-          <div className="border-b border-outline-variant p-5">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="mt-1 h-3 w-56" />
+      <div className="mb-s4 grid grid-cols-1 gap-s3 md:grid-cols-3">
+        {[0, 1, 2].map((index) => (
+          <div key={index} className="surface flex h-37 flex-col justify-between p-s3">
+            <Skeleton className="h-s2 w-2/3" />
+            <Skeleton className="h-s4 w-1/2" />
           </div>
-          <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
+        ))}
+      </div>
+      <div className="mb-s4 flex gap-s2">
+        {[0, 1, 2, 3].map((index) => (
+          <Skeleton key={index} className="h-s5 w-24" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-s4 md:grid-cols-2">
+        {[0, 1, 2, 3].map((index) => (
+          <div key={index} className="surface flex flex-col gap-s2 p-s4">
+            <Skeleton className="h-s2 w-1/2" />
+            <Skeleton className="h-11 w-full" />
           </div>
-        </div>
-      ))}
-
-      <div className="sticky bottom-4 flex flex-col gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest p-3 shadow-md">
-        <div className="flex justify-end gap-2">
-          <Skeleton className="h-9 w-24" />
-          <Skeleton className="h-9 w-32" />
-        </div>
+        ))}
       </div>
     </div>
   );
