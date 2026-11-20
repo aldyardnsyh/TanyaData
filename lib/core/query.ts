@@ -22,6 +22,7 @@ import { getDataset } from '@/lib/core/registry';
 import { buildRuleBasedCandidate, runCandidate } from '@/lib/core/sql';
 import { searchChunks } from '@/lib/core/store';
 import {
+  ambiguousGuardrail,
   buildVizSpec,
   composeDeterministicAnswer,
   detectGuardrail,
@@ -175,13 +176,16 @@ export async function answerQuestion(
   }
 
   if (!query.generated_sql && !citations.length) {
+    // BUG-GR-07: klarifikasi metrik didahulukan sebelum not_in_sources.
+    // "Kanal terbaik?" bukan pertanyaan di luar sumber — ukurannya yang belum
+    // ditentukan. SQL yang benar-benar ditolak tetap lebih spesifik.
     const g: Guardrail = rejection
       ? {
           type: 'sql_rejected',
           answer: 'SQL tidak dapat dibuat atau divalidasi dari sumber yang tersedia.',
           explanation: `SQL ditolak: ${rejection}`,
         }
-      : notInSourcesGuardrail(dataset);
+      : ambiguousGuardrail(input.question) ?? notInSourcesGuardrail(dataset);
     query.guardrail = g;
     query.answer = g.answer ?? g.explanation;
     query.duration_ms = Math.round(performance.now() - started);

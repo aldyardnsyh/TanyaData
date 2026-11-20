@@ -96,6 +96,30 @@ export function notInSourcesGuardrail(dataset: Dataset): Guardrail {
   };
 }
 
+/**
+ * BUG-GR-07 — superlatif tanpa ukuran yang disebut ("Kanal terbaik?") tidak
+ * punya satu jawaban deterministik. Klarifikasi metrik harus didahulukan
+ * daripada `not_in_sources`: pertanyaan itu memang bisa dijawab dari sumber,
+ * hanya saja ukurannya belum dipilih. Superlatif yang disertai metrik eksplisit
+ * (volume, success rate, nilai, dll.) sengaja dilewati agar jalur SQL tetap
+ * berjalan.
+ */
+const AMBIGUOUS_SUPERLATIVE_RE =
+  /\b(terbaik|terburuk|paling\s+baik|paling\s+buruk|tertinggi|terendah|terbesar|terkecil|tercepat|terlama|best|worst|highest|lowest|most|least)\b/i;
+const EXPLICIT_METRIC_RE =
+  /\b(success|failure|error|completion|approval|conversion|retention|rate|rasio|persentase|percentage|volume|jumlah|total|nilai|nominal|amount|rata-rata|average|mean|processing|durasi|latency|waktu)\b/i;
+
+export function ambiguousGuardrail(question: string): Guardrail | null {
+  if (!AMBIGUOUS_SUPERLATIVE_RE.test(question)) return null;
+  if (EXPLICIT_METRIC_RE.test(question)) return null;
+  return {
+    type: 'ambiguous',
+    answer:
+      'Metrik yang dimaksud belum jelas. Pilih salah satu: volume transaksi, success rate, atau nilai transaksi — atau sebutkan kanal/kategori spesifik.',
+    explanation: 'Pertanyaan memerlukan klarifikasi metrik sebelum dapat dijawab dengan aman.',
+  };
+}
+
 /* ------------------------------------------------------------------- vizspec */
 
 function numericKeys(result: QueryResultJson): string[] {
