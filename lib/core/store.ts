@@ -193,16 +193,39 @@ export function searchTerms(question: string): string[] {
   )].slice(0, 12);
 }
 
+export type SearchChunksOptions = {
+  datasetId: string;
+  question: string;
+  limit?: number;
+  /** Opsi reranker opsional untuk aiml; tanpa keduanya perilaku default tidak berubah. */
+  boostSection?: string | null;
+  boostPage?: number | null;
+  boostWeight?: number;
+};
+
+function metadataBoost(citation: Citation, options: SearchChunksOptions): number {
+  const weight = options.boostWeight ?? 0.25;
+  let boost = 0;
+  if (options.boostSection) {
+    const needle = options.boostSection.toLowerCase();
+    if (citation.section_path.toLowerCase().includes(needle)) boost += weight;
+  }
+  if (options.boostPage != null && citation.page === options.boostPage) {
+    boost += weight * 0.6;
+  }
+  return boost;
+}
+
 /** FTS5 BM25 wajib; fallback LIKE bila FTS tidak tersedia. */
-export function searchChunks(
-  db: DB,
-  options: { datasetId: string; question: string; limit?: number },
-): Citation[] {
+export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
   const limit = Math.min(Math.max(options.limit ?? 5, 1), 20);
   const terms = searchTerms(options.question);
   if (!terms.length) return [];
   const match = terms.map((term) => `"${term.replace(/"/g, '""')}"`).join(' OR ');
+  const useBoost = Boolean(options.boostSection) || options.boostPage != null;
+  const fetchLimit = useBoost ? Math.min(limit * 4, 50) : limit;
 
+  let results: Citation[];
   try {
     const rows = db
       .prepare(
@@ -213,7 +236,7 @@ export function searchChunks(
          WHERE core_chunks_fts MATCH ? AND c.dataset_id = ? AND c.level = 'child'
          ORDER BY raw_score ASC LIMIT ?`,
       )
-      .all(match, options.datasetId, limit) as Array<{
+      .all(match, options.datasetId, fetchLimit) as Array<{
       chunk_id: number;
       document_id: string;
       section_path: string;
@@ -221,7 +244,7 @@ export function searchChunks(
       quote: string;
       raw_score: number;
     }>;
-    return rows.map((row) => ({
+    results = rows.map((row) => ({
       chunk_id: row.chunk_id,
       document_id: row.document_id,
       section_path: row.section_path,
@@ -239,15 +262,22 @@ export function searchChunks(
          WHERE c.dataset_id = ? AND c.level = 'child' AND (${like})
          LIMIT ?`,
       )
-      .all(options.datasetId, ...terms.map((t) => `%${t}%`), limit) as Array<{
+      .all(options.datasetId, ...terms.map((t) => `%${t}%`), fetchLimit) as Array<{
       chunk_id: number;
       document_id: string;
       section_path: string;
       page: number | null;
       quote: string;
     }>;
-    return rows.map((row) => ({ ...row, score: 0.5 }));
+    results = rows.map((row) => ({ ...row, score: 0.5 }));
   }
+
+  if (!useBoost) return results.slice(0, limit);
+  return results
+    .map((citation) => ({ citation, rank: citation.score + metadataBoost(citation, options) }))
+    .sort((a, b) => b.rank - a.rank)
+    .slice(0, limit)
+    .map((entry) => entry.citation);
 }
 
 /** Ambil teks induk (parent section) dari child chunk untuk context bundle. */

@@ -181,6 +181,7 @@ export function listDatasets(db: DB, options: { limit?: number; offset?: number;
 export type UpdateDatasetInput = Partial<{
   name: string;
   kind: DatasetKind;
+  source_type: SourceType;
   doc_type: DocType;
   status: DatasetStatus;
   schema_json: SchemaJson;
@@ -196,6 +197,7 @@ export type UpdateDatasetInput = Partial<{
 const COLUMN_BY_KEY: Record<keyof UpdateDatasetInput, string> = {
   name: 'name',
   kind: 'kind',
+  source_type: 'source_type',
   doc_type: 'doc_type',
   status: 'status',
   schema_json: 'schema_json',
