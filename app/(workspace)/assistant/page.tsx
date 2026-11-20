@@ -355,6 +355,7 @@ export default function AssistantPage() {
     <div className="flex w-full flex-col">
       <div className="page-container pt-s5">
         <PageHeading
+          eyebrow="Asisten · analisis percakapan"
           title="Asisten"
           caption="Ajukan pertanyaan metrik. Setiap jawaban menyertakan sumber yang mendasarinya."
           meta={`PERIODE · ${periodLabel.toUpperCase()} · ${modeLabel.toUpperCase()}`}
@@ -390,7 +391,7 @@ export default function AssistantPage() {
           )}
           <div className="flex flex-col gap-s1">
             {conversations.map((conv) => (
-              <div key={conv.id} className={`group flex items-start gap-s1 rounded-control ${activeId === conv.id ? 'bg-forest-08' : ''}`}>
+              <div key={conv.id} className={`group flex items-start gap-s1 rounded-control border transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none ${activeId === conv.id ? 'border-forest bg-forest-08' : 'border-[var(--border-hairline)] bg-porcelain'}`}>
                 <button type="button" onClick={() => void loadConversation(conv.id)} aria-current={activeId === conv.id ? 'page' : undefined} className="min-w-0 flex-1 rounded-control px-s2 py-s2 text-left focus-ring">
                   <span className="block truncate font-display text-label font-semibold text-ink">{conv.title}</span>
                   {conv.preview && <span className="block truncate font-body text-caption text-ink-72">{conv.preview}</span>}
@@ -405,16 +406,16 @@ export default function AssistantPage() {
 
         {/* Percakapan. */}
         <div className="flex w-full min-w-0 flex-col gap-s4 xl:w-[76%]">
-          {/* Header attachment aktif. */}
-          <div className="surface flex flex-wrap items-center justify-between gap-s2 p-s3">
+          {/* Header attachment aktif. Aksen mono chip (idiom landing-features); data tetap dari API. */}
+          <div className="surface rounded-card-lg flex flex-wrap items-center justify-between gap-s2 p-s3">
             <div className="flex min-w-0 flex-wrap items-center gap-s2">
-              <span className="inline-flex min-h-11 items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s2">
+              <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-[var(--border-hairline)] bg-forest-08 px-s3">
                 <Icon name="table_chart" className="text-[14px] text-forest" />
-                <span className="max-w-[180px] truncate font-body text-caption text-ink">{datasetName}</span>
+                <span className="max-w-[180px] truncate font-mono text-caption uppercase tracking-[0.06em] text-ink">{datasetName}</span>
               </span>
-              <span className="inline-flex min-h-11 items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s2">
+              <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-[var(--border-hairline)] px-s3">
                 <Icon name="description" className="text-[14px] text-forest" />
-                <span className="mono-meta">{docCount} DOKUMEN</span>
+                <span className="font-mono text-caption uppercase tracking-[0.06em] text-ink-72">{docCount} DOKUMEN</span>
               </span>
             </div>
             <span className="mono-meta">{activeTitle.toUpperCase()}</span>
@@ -422,7 +423,7 @@ export default function AssistantPage() {
 
           {/* Contoh pertanyaan saat kosong. */}
           {messages.length === 0 && !detailLoading && !sending && (
-            <div className="surface flex flex-col gap-s3 p-s4">
+            <div className="surface rounded-card-lg flex flex-col gap-s3 p-s4">
               <span className="mono-meta">CONTOH PERTANYAAN</span>
               <div className="grid grid-cols-1 gap-s2 sm:grid-cols-2">
                 {SUGGESTED.map((question) => (
@@ -441,7 +442,7 @@ export default function AssistantPage() {
               <div className="space-y-s3" aria-busy="true"><div className="skeleton h-40 w-2/3" /><div className="skeleton h-80 w-full" /><div className="skeleton h-48 w-full" /></div>
             )}
             {detailError && (
-              <div className="flex flex-col items-start gap-s2 surface p-s4" role="alert">
+              <div className="flex flex-col items-start gap-s2 surface rounded-card-lg p-s4" role="alert">
                 <span className="inline-flex items-center gap-s2"><StatusDot tone="error" /><span className="font-body text-body text-ink">{detailError}</span></span>
                 {activeId && <button type="button" onClick={() => void loadConversation(activeId)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>}
               </div>
@@ -490,7 +491,7 @@ export default function AssistantPage() {
             ))}
             {sending && <TypingIndicator />}
             {sendError && (
-              <div className="flex flex-col items-start gap-s2 surface p-s4" role="alert">
+              <div className="flex flex-col items-start gap-s2 surface rounded-card-lg p-s4" role="alert">
                 <span className="inline-flex items-center gap-s2"><StatusDot tone="error" /><span className="font-body text-body text-ink">{sendError}</span></span>
                 <div className="flex flex-wrap gap-s2">
                   {lastFailed && <><button type="button" onClick={() => void send(lastFailed)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button><button type="button" onClick={() => void copyQuestion()} className="touch-44 rounded-control px-s3 font-display text-label text-ink-72 focus-ring">Salin pertanyaan</button></>}
@@ -499,50 +500,59 @@ export default function AssistantPage() {
             )}
           </div>
 
-          {/* Composer sticky. Satu CTA primer (GlowingCTA). */}
+          {/* Composer sticky. Momen gelap modul: panel band forest + grid + glow lime (idiom hero landing,
+              tanpa efek scroll). Satu CTA primer (GlowingCTA, skin lime di atas gelap). */}
           <div className="sticky bottom-s3 z-sticky">
-            <div className="rounded-overlay border border-[var(--border-hairline)] bg-porcelain p-s3 elevated">
-              <div className="mb-s2 flex flex-wrap items-center justify-between gap-s2">
-                <div className="flex flex-wrap items-center gap-s2">
-                  <span className="inline-flex min-h-11 items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s2"><Icon name="table_chart" className="text-[14px] text-forest" /><span className="max-w-[140px] truncate font-body text-caption text-ink">{datasetName}</span></span>
-                  <span className="inline-flex min-h-11 items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s2"><Icon name="description" className="text-[14px] text-forest" /><span className="mono-meta">{docCount} DOKUMEN</span></span>
-                </div>
-                <button type="button" onClick={() => { setPeriodOverride(null); setDateStart(''); setDateEnd(''); }} className="touch-44 inline-flex items-center gap-s1 font-body text-caption text-ink-72 hover:text-ink focus-ring"><Icon name="close" className="text-[14px]" /> Hapus konteks</button>
+            <div className="relative rounded-card-lg border border-hairline-dark bg-forest p-s3 md:p-s4">
+              {/* Grid + glow diklip di lapisan terpisah: menu konteks dataset/periode pop ke atas
+                  panel dan tidak boleh terpotong oleh overflow-hidden pada panelnya. */}
+              <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-card-lg">
+                <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
+                <div aria-hidden="true" className="glow-radial-lime absolute -left-16 -bottom-20 h-[240px] w-[360px]" />
               </div>
-              <textarea
-                ref={textareaRef} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKeyDown}
-                rows={2} maxLength={2000} disabled={sending}
-                aria-label="Tanyakan sesuatu tentang data" placeholder="Tanyakan metrik, tren, anomali, atau prosedur"
-                className="w-full resize-none rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3 font-body text-body text-ink placeholder:text-ink-72 focus-ring"
-              />
-              <div className="mt-s2 flex flex-wrap items-center justify-between gap-s2">
-                <div className="flex items-center gap-s1">
-                  <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt,.md" className="sr-only" aria-label="Lampirkan dokumen" onChange={(e) => void attachDocument(e)} />
-                  <button type="button" aria-label="Lampirkan dokumen" onClick={() => fileInputRef.current?.click()} className="touch-44 flex items-center justify-center rounded-control text-ink-72 hover:bg-forest-08 focus-ring"><Icon name="attach_file" className="text-[20px]" /></button>
-                  <div className="relative">
-                    <button type="button" aria-label="Pilih dataset" aria-expanded={contextMenu === 'dataset'} onClick={() => setContextMenu(contextMenu === 'dataset' ? null : 'dataset')} className="touch-44 flex items-center justify-center rounded-control text-ink-72 hover:bg-forest-08 focus-ring"><Icon name="database" className="text-[20px]" /></button>
-                    {contextMenu === 'dataset' && (
-                      <div className="absolute bottom-full left-0 z-dropdown mb-s1 w-60 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s2 elevated" role="listbox" aria-label="Pilih dataset">
-                        {(meta.data?.data.datasetChoices ?? settings.data?.datasets ?? []).map((choice) => (
-                          <button key={choice.id} type="button" role="option" aria-selected={choice.id === activeDatasetId} onClick={() => selectDataset(choice.id)} className="block min-h-11 w-full rounded-control px-s2 text-left font-body text-caption text-ink hover:bg-forest-08 focus-ring">{choice.name}</button>
-                        ))}
-                      </div>
-                    )}
+              <div className="relative">
+                <div className="mb-s2 flex flex-wrap items-center justify-between gap-s2">
+                  <div className="flex flex-wrap items-center gap-s2">
+                    <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark bg-porcelain/10 px-s3"><Icon name="table_chart" className="text-[14px] text-dark-muted" /><span className="max-w-[140px] truncate font-mono text-caption uppercase tracking-[0.06em] text-porcelain">{datasetName}</span></span>
+                    <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark px-s3"><Icon name="description" className="text-[14px] text-dark-muted" /><span className="font-mono text-caption uppercase tracking-[0.06em] text-dark-muted">{docCount} DOKUMEN</span></span>
                   </div>
-                  <div className="relative">
-                    <button type="button" aria-label="Filter periode" aria-expanded={contextMenu === 'date'} onClick={() => setContextMenu(contextMenu === 'date' ? null : 'date')} className="touch-44 flex items-center justify-center rounded-control text-ink-72 hover:bg-forest-08 focus-ring"><Icon name="date_range" className="text-[20px]" /></button>
-                    {contextMenu === 'date' && (
-                      <div className="absolute bottom-full left-0 z-dropdown mb-s1 w-60 space-y-s2 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3 elevated">
-                        <label className="block font-body text-caption text-ink-72">Mulai<input type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="mt-s1 min-h-11 w-full rounded-control border border-[var(--border-hairline)] bg-porcelain px-s2 font-body text-caption text-ink focus-ring" /></label>
-                        <label className="block font-body text-caption text-ink-72">Akhir<input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className="mt-s1 min-h-11 w-full rounded-control border border-[var(--border-hairline)] bg-porcelain px-s2 font-body text-caption text-ink focus-ring" /></label>
-                        <button type="button" onClick={applyDateRange} className="touch-44 w-full rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Terapkan</button>
-                      </div>
-                    )}
-                  </div>
+                  <button type="button" onClick={() => { setPeriodOverride(null); setDateStart(''); setDateEnd(''); }} className="touch-44 inline-flex items-center gap-s1 font-body text-caption text-dark-muted transition-colors hover:text-porcelain focus-ring"><Icon name="close" className="text-[14px]" /> Hapus konteks</button>
                 </div>
-                <div className="flex items-center gap-s3">
-                  <span className="hidden font-body text-caption text-ink-72 sm:inline">Enter kirim · Shift+Enter baris baru</span>
-                  <GlowingCTA type="button" state={sending ? 'loading' : 'default'} onClick={() => void send(draft)} disabled={draft.trim().length === 0} loadingLabel="Mengirim">Kirim</GlowingCTA>
+                <textarea
+                  ref={textareaRef} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKeyDown}
+                  rows={2} maxLength={2000} disabled={sending}
+                  aria-label="Tanyakan sesuatu tentang data" placeholder="Tanyakan metrik, tren, anomali, atau prosedur"
+                  className="w-full resize-none rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3 font-body text-body text-ink placeholder:text-ink-72 focus-ring"
+                />
+                <div className="mt-s2 flex flex-wrap items-center justify-between gap-s2">
+                  <div className="flex items-center gap-s1">
+                    <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt,.md" className="sr-only" aria-label="Lampirkan dokumen" onChange={(e) => void attachDocument(e)} />
+                    <button type="button" aria-label="Lampirkan dokumen" onClick={() => fileInputRef.current?.click()} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="attach_file" className="text-[20px]" /></button>
+                    <div className="relative">
+                      <button type="button" aria-label="Pilih dataset" aria-expanded={contextMenu === 'dataset'} onClick={() => setContextMenu(contextMenu === 'dataset' ? null : 'dataset')} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="database" className="text-[20px]" /></button>
+                      {contextMenu === 'dataset' && (
+                        <div className="absolute bottom-full left-0 z-dropdown mb-s1 w-60 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s2 elevated" role="listbox" aria-label="Pilih dataset">
+                          {(meta.data?.data.datasetChoices ?? settings.data?.datasets ?? []).map((choice) => (
+                            <button key={choice.id} type="button" role="option" aria-selected={choice.id === activeDatasetId} onClick={() => selectDataset(choice.id)} className="block min-h-11 w-full rounded-control px-s2 text-left font-body text-caption text-ink hover:bg-forest-08 focus-ring">{choice.name}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <button type="button" aria-label="Filter periode" aria-expanded={contextMenu === 'date'} onClick={() => setContextMenu(contextMenu === 'date' ? null : 'date')} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="date_range" className="text-[20px]" /></button>
+                      {contextMenu === 'date' && (
+                        <div className="absolute bottom-full left-0 z-dropdown mb-s1 w-60 space-y-s2 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3 elevated">
+                          <label className="block font-body text-caption text-ink-72">Mulai<input type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="mt-s1 min-h-11 w-full rounded-control border border-[var(--border-hairline)] bg-porcelain px-s2 font-body text-caption text-ink focus-ring" /></label>
+                          <label className="block font-body text-caption text-ink-72">Akhir<input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className="mt-s1 min-h-11 w-full rounded-control border border-[var(--border-hairline)] bg-porcelain px-s2 font-body text-caption text-ink focus-ring" /></label>
+                          <button type="button" onClick={applyDateRange} className="touch-44 w-full rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Terapkan</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-s3">
+                    <span className="hidden font-body text-caption text-dark-muted sm:inline">Enter kirim · Shift+Enter baris baru</span>
+                    <GlowingCTA type="button" tone="dark" state={sending ? 'loading' : 'default'} onClick={() => void send(draft)} disabled={draft.trim().length === 0} loadingLabel="Mengirim">Kirim</GlowingCTA>
+                  </div>
                 </div>
               </div>
             </div>
@@ -562,7 +572,7 @@ export default function AssistantPage() {
             <button type="button" onClick={() => void newConversation()} className="touch-44 mb-s2 inline-flex items-center gap-s2 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring"><Icon name="add" className="text-[16px]" /> Percakapan baru</button>
             <div className="flex flex-col gap-s1">
               {conversations.map((conv) => (
-                <button key={conv.id} type="button" onClick={() => { void loadConversation(conv.id); setHistoryOpen(false); }} className="min-h-11 rounded-control px-s3 py-s2 text-left focus-ring">
+                <button key={conv.id} type="button" onClick={() => { void loadConversation(conv.id); setHistoryOpen(false); }} className="min-h-11 rounded-control border border-[var(--border-hairline)] bg-porcelain px-s3 py-s2 text-left transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none focus-ring">
                   <span className="block truncate font-display text-label font-semibold text-ink">{conv.title}</span>
                   {conv.preview && <span className="block truncate font-body text-caption text-ink-72">{conv.preview}</span>}
                 </button>
