@@ -160,7 +160,7 @@ export function LandingSteps() {
                   PDF
                 </span>
               </div>
-              <span className="mono-meta">LAPORAN-OKT.PDF</span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">LAPORAN-OKT.PDF</span>
             </div>
             {/* CSV: kartu tabel dengan baris header hijau. */}
             <div className="flex flex-col items-center gap-s2 translate-y-2">
@@ -181,7 +181,7 @@ export function LandingSteps() {
                   CSV
                 </span>
               </div>
-              <span className="mono-meta">TRANSACTIONS.CSV</span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">TRANSACTIONS.CSV</span>
             </div>
             {/* DOCX: kertas biru Word dengan blok judul dan paragraf menjorok. */}
             <div className="flex flex-col items-center gap-s2">
@@ -200,7 +200,7 @@ export function LandingSteps() {
                   DOCX
                 </span>
               </div>
-              <span className="mono-meta">KATALOG.DOCX</span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">KATALOG.DOCX</span>
             </div>
             {/* SQL: silinder bank data (bentuk gentong klasik database) memakai
                 warna brand, digambar SVG agar elips atas dan garis piringan rapi. */}
@@ -245,7 +245,7 @@ export function LandingSteps() {
                   SQL
                 </span>
               </div>
-              <span className="mono-meta">ANALYTICS.SQL</span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">ANALYTICS.SQL</span>
             </div>
           </div>
 
@@ -385,7 +385,7 @@ export function LandingSteps() {
             }`}
           >
             <div className="p-s3 text-porcelain">
-              <p className="mono-meta">HALAMAN BAGIKAN</p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.06em] text-lime text-glow-lime">HALAMAN BAGIKAN</p>
               <p className="mt-s2 inline-flex items-center gap-s1 font-body text-caption text-porcelain">
                 <span className="state-dot state-dot-active" aria-hidden="true" />
                 TAUTAN · READ-ONLY
