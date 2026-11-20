@@ -119,7 +119,7 @@ const timer = setTimeout(() => {
 
 try {
   const { runEval } = await import('../lib/eval/harness.ts');
-  const report = runEval({ fixturesDir, casesFile });
+  const report = await runEval({ fixturesDir, casesFile });
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, `${JSON.stringify(report, null, 2)}\n`, 'utf8');

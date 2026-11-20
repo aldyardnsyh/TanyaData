@@ -378,7 +378,7 @@ function gradeGuardrail(testCase: Json, question: string): { pass: boolean; deta
 
 /* -------------------------------------------------------------------- main */
 
-export function runEval(options: { fixturesDir: string; casesFile: string }): EvalReport {
+export async function runEval(options: { fixturesDir: string; casesFile: string }): Promise<EvalReport> {
   const casesFile = readJson(options.casesFile);
   const prepared = prepareWorkspace(options.fixturesDir, casesFile);
   const db = new Database(WORKSPACE_DB, { readonly: true, fileMustExist: true });
