@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T12:31:35.739Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-40236-1795177894948\\tanyadata.db",
+  "generatedAt": "2026-11-20T13:00:49.623Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-41724-1795179648886\\tanyadata.db",
   "fixtures": [
     "transaksi",
     "uud-1945",
@@ -761,7 +761,7 @@
     "Koreksi ground truth P3-TUNING: LEG-01/02 expected.extracted_fields.ayat diubah dari subset (1,2,3 / 1) menjadi 1,2,3,4,5 sesuai isi fixture legal/uud.json — Pasal 33 dan Pasal 31 masing-masing memuat 5 ayat. Untuk \"Pasal 33 UUD 1945 berbunyi apa?\" jawaban hukum yang benar adalah seluruh pasal. Ini koreksi label, BUKAN pelonggaran ambang: threshold recall agregat & per-case tetap 0,80 dan pipeline ekstraksi tidak diubah."
   ],
   "capability": {
-    "generatedAt": "2026-11-20T12:31:35.745Z",
+    "generatedAt": "2026-11-20T13:00:49.629Z",
     "cases": [
       {
         "id": "EV-A01",
@@ -1036,6 +1036,382 @@
     "notes": [
       "11 eval_case baru dari docs/CORE_V2_SPEC.md §10 (EV-A01…EV-E02).",
       "FR-A/FR-E dinilai pada permukaan kontrak AI-lane; OCR penuh & share UI tetap lane backend/frontend (P5 manual).",
+      "Tidak ada model lokal, tidak ada jaringan, tidak ada retry; deterministik dan bisa diulang."
+    ]
+  },
+  "perpres": {
+    "generatedAt": "2026-11-20T13:00:49.644Z",
+    "groundTruthFile": "data\\fixtures\\perpres76\\chunks.jsonl",
+    "groundTruthSha256": "bfbc5c822331bac3c4fe4e659f321a85f3b7f48b6106b4675ba74033c6d1a2f0",
+    "groundTruthChunks": 42,
+    "baseline": {
+      "label": "baseline: chunkSections (flat, satu level)",
+      "outputCount": 32,
+      "metrics": [
+        {
+          "name": "chunk_type_detection",
+          "value": 0,
+          "hit": 0,
+          "total": 42,
+          "threshold": 0.8,
+          "pass": false,
+          "detail": "0/42 chunk bertipe sama"
+        },
+        {
+          "name": "page_span",
+          "value": 0.3333,
+          "hit": 14,
+          "total": 42,
+          "threshold": 0.8,
+          "pass": false,
+          "detail": "14/42 rentang halaman sama"
+        },
+        {
+          "name": "parent_id_linkage",
+          "value": 0.619,
+          "hit": 26,
+          "total": 42,
+          "threshold": 0.8,
+          "pass": false,
+          "detail": "26/42 parent sama (termasuk null)"
+        },
+        {
+          "name": "parent_id_linkage_children",
+          "value": 1,
+          "hit": 0,
+          "total": 0,
+          "threshold": 0.8,
+          "pass": true,
+          "detail": "0/0 child terhubung ke induk benar"
+        },
+        {
+          "name": "dedup",
+          "value": 1,
+          "hit": 32,
+          "total": 32,
+          "threshold": 0.8,
+          "pass": true,
+          "detail": "0 duplikat dari 32 chunk"
+        },
+        {
+          "name": "mojibake_clean",
+          "value": 1,
+          "hit": 32,
+          "total": 32,
+          "threshold": 0.8,
+          "pass": true,
+          "detail": "0/32 chunk mengandung karakter asing/flag"
+        }
+      ],
+      "average": 0.6587,
+      "misses": [
+        "pembukaan: chunk_type (tanpa chunk_type) != pembukaan",
+        "pembukaan: page_span 1-1 != 1-2",
+        "pasal-1: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-1: page_span 2-2 != 2-4",
+        "pasal-1-b-pengantar: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-1: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-2: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-3: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-4: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-5: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-6: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-7: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-8: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-9: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-10: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-11: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-2: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-3: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-3: page_span 5-5 != 5-6",
+        "pasal-4: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-5: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-6: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-6: page_span 6-6 != 6-7",
+        "pasal-7: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-8: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-8: page_span 7-7 != 7-8",
+        "pasal-8-a1: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-8-a2: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-8-a3: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-8-a4: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-9: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-9: page_span 8-8 != 8-9",
+        "pasal-10: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-11: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-12: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-12: page_span 9-9 != 9-10",
+        "pasal-13: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-14: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-14: page_span 10-10 != 10-11",
+        "pasal-15: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-16: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-17: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-17: page_span 11-11 != 11-12",
+        "pasal-18: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-19: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-19: page_span 12-12 != 12-13",
+        "pasal-20: chunk_type (tanpa chunk_type) != pasal",
+        "pasal-21: chunk_type (tanpa chunk_type) != pasal",
+        "penutup: chunk_type (tanpa chunk_type) != penutup",
+        "visual-lambang: chunk_type (tanpa chunk_type) != visual",
+        "visual-lambang: page_span 1-1 != 1-14",
+        "visual-paraf: chunk_type (tanpa chunk_type) != visual",
+        "visual-paraf: page_span 3-3 != 3-12",
+        "visual-tanda_tangan_atau_stempel-p14-484: chunk_type (tanpa chunk_type) != visual"
+      ]
+    },
+    "tuned": {
+      "label": "tuning: chunkLegalDocument (structure-aware)",
+      "outputCount": 42,
+      "metrics": [
+        {
+          "name": "chunk_type_detection",
+          "value": 1,
+          "hit": 42,
+          "total": 42,
+          "threshold": 0.8,
+          "pass": true,
+          "detail": "42/42 chunk bertipe sama"
+        },
+        {
+          "name": "page_span",
+          "value": 0.9762,
+          "hit": 41,
+          "total": 42,
+          "threshold": 0.8,
+          "pass": true,
+          "detail": "41/42 rentang halaman sama"
+        },
+        {
+          "name": "parent_id_linkage",
+          "value": 1,
+          "hit": 42,
+          "total": 42,
+          "threshold": 0.8,
+          "pass": true,
+          "detail": "42/42 parent sama (termasuk null)"
+        },
+        {
+          "name": "parent_id_linkage_children",
+          "value": 1,
+          "hit": 16,
+          "total": 16,
+          "threshold": 0.8,
+          "pass": true,
+          "detail": "16/16 child terhubung ke induk benar"
+        },
+        {
+          "name": "dedup",
+          "value": 1,
+          "hit": 42,
+          "total": 42,
+          "threshold": 0.8,
+          "pass": true,
+          "detail": "0 duplikat dari 42 chunk"
+        },
+        {
+          "name": "mojibake_clean",
+          "value": 1,
+          "hit": 42,
+          "total": 42,
+          "threshold": 0.8,
+          "pass": true,
+          "detail": "0/42 chunk mengandung karakter asing/flag"
+        }
+      ],
+      "average": 0.996,
+      "misses": [
+        "pasal-1-b-1: page_span 2-2 != 2-3"
+      ]
+    },
+    "cases": [
+      {
+        "id": "PP-01",
+        "check": "full_pasal",
+        "question": "Pasal 1 berbunyi apa?",
+        "pass": true,
+        "detail": "parent=pasal-1 butir=11 span=[2,4] dup=0",
+        "observed": {
+          "parent_id": "pasal-1",
+          "child_count": 12,
+          "numbered_butir": 11,
+          "page_span": [
+            2,
+            4
+          ],
+          "duplicate_count": 0,
+          "evidence_ids": [
+            "pasal-1",
+            "pasal-1-b-pengantar",
+            "pasal-1-b-1",
+            "pasal-1-b-2",
+            "pasal-1-b-3",
+            "pasal-1-b-4",
+            "pasal-1-b-5",
+            "pasal-1-b-6",
+            "pasal-1-b-7",
+            "pasal-1-b-8",
+            "pasal-1-b-9",
+            "pasal-1-b-10",
+            "pasal-1-b-11"
+          ]
+        }
+      },
+      {
+        "id": "PP-02",
+        "check": "chunk",
+        "question": "Apa yang dimaksud Pengadu?",
+        "pass": true,
+        "detail": "rank=2/5 id=pasal-1-b-7 sitasi=cocok",
+        "observed": {
+          "ranked": [
+            {
+              "id": "pasal-8-a2",
+              "section": "BAB II PENGELOLAAN PENGADUAN > Bagian Keempat Mekanisme Pengelolaan Pengaduan > Pasal 8 > Ayat (2)",
+              "page": 8
+            },
+            {
+              "id": "pasal-1-b-7",
+              "section": "BAB I KETENTUAN UMUM > Pasal 1 > butir 7",
+              "page": 4
+            },
+            {
+              "id": "pasal-1-b-pengantar",
+              "section": "BAB I KETENTUAN UMUM > Pasal 1 > butir pengantar",
+              "page": 2
+            },
+            {
+              "id": "pasal-1-b-8",
+              "section": "BAB I KETENTUAN UMUM > Pasal 1 > butir 8",
+              "page": 4
+            },
+            {
+              "id": "pasal-1-b-10",
+              "section": "BAB I KETENTUAN UMUM > Pasal 1 > butir 10",
+              "page": 4
+            }
+          ],
+          "rank": 2,
+          "expected_citation": "Perpres 76/2013, Pasal 1 butir 7, hlm. 4",
+          "actual_citation": "BAB I KETENTUAN UMUM > Pasal 1 > butir 7, hlm. 4"
+        }
+      },
+      {
+        "id": "PP-03",
+        "check": "chunk",
+        "question": "Pasal 8 ayat (2) berbunyi apa?",
+        "pass": true,
+        "detail": "rank=1/5 id=pasal-8-a2 sitasi=cocok",
+        "observed": {
+          "ranked": [
+            {
+              "id": "pasal-8-a2",
+              "section": "BAB II PENGELOLAAN PENGADUAN > Bagian Keempat Mekanisme Pengelolaan Pengaduan > Pasal 8 > Ayat (2)",
+              "page": 8
+            },
+            {
+              "id": "pasal-8-a1",
+              "section": "BAB II PENGELOLAAN PENGADUAN > Bagian Keempat Mekanisme Pengelolaan Pengaduan > Pasal 8 > Ayat (1)",
+              "page": 7
+            },
+            {
+              "id": "pasal-8-a3",
+              "section": "BAB II PENGELOLAAN PENGADUAN > Bagian Keempat Mekanisme Pengelolaan Pengaduan > Pasal 8 > Ayat (3)",
+              "page": 8
+            },
+            {
+              "id": "pasal-8-a4",
+              "section": "BAB II PENGELOLAAN PENGADUAN > Bagian Keempat Mekanisme Pengelolaan Pengaduan > Pasal 8 > Ayat (4)",
+              "page": 8
+            },
+            {
+              "id": "pasal-1-b-pengantar",
+              "section": "BAB I KETENTUAN UMUM > Pasal 1 > butir pengantar",
+              "page": 2
+            }
+          ],
+          "rank": 1,
+          "expected_citation": "Perpres 76/2013, Pasal 8 ayat (2), hlm. 8",
+          "actual_citation": "BAB II PENGELOLAAN PENGADUAN > Bagian Keempat Mekanisme Pengelolaan Pengaduan > Pasal 8 > Ayat (2), hlm. 8"
+        }
+      },
+      {
+        "id": "PP-04",
+        "check": "topic",
+        "question": "Sebutkan pasal tentang perlindungan pengadu?",
+        "pass": true,
+        "detail": "topik \"Pasal 15\" di peringkat 1",
+        "observed": {
+          "ranked": [
+            {
+              "id": "pasal-15",
+              "section": "BAB II PENGELOLAAN PENGADUAN > Bagian Kedelapan Perlindungan Pengaduan > Pasal 15"
+            },
+            {
+              "id": "pasal-1",
+              "section": "BAB I KETENTUAN UMUM > Pasal 1"
+            },
+            {
+              "id": "pasal-1-b-7",
+              "section": "BAB I KETENTUAN UMUM > Pasal 1 > butir 7"
+            },
+            {
+              "id": "pasal-1-b-8",
+              "section": "BAB I KETENTUAN UMUM > Pasal 1 > butir 8"
+            },
+            {
+              "id": "pasal-1-b-10",
+              "section": "BAB I KETENTUAN UMUM > Pasal 1 > butir 10"
+            }
+          ],
+          "rank": 1
+        }
+      },
+      {
+        "id": "PP-05",
+        "check": "full_pasal",
+        "question": "Apa isi Pasal 12?",
+        "pass": true,
+        "detail": "parent=pasal-12 butir=0 span=[9,10] dup=0",
+        "observed": {
+          "parent_id": "pasal-12",
+          "child_count": 0,
+          "numbered_butir": 0,
+          "page_span": [
+            9,
+            10
+          ],
+          "duplicate_count": 0,
+          "evidence_ids": [
+            "pasal-12"
+          ]
+        }
+      },
+      {
+        "id": "PP-06",
+        "check": "guardrail",
+        "question": "Apa isi UU 21/2019 tentang Pencegahan dan Pemberantasan Tindak Pidana Korupsi?",
+        "pass": true,
+        "detail": "triggered=true type=out_of_scope angka_asing=0",
+        "observed": {
+          "triggered": true,
+          "type": "out_of_scope",
+          "message": "Pertanyaan ini di luar cakupan sumber aktif. Pilih attachment yang relevan dengan topik Anda, atau ajukan pertanyaan yang bisa dijawab dari dokumen dan data yang tersedia.",
+          "foreign_numbers": []
+        }
+      }
+    ],
+    "passed": 6,
+    "total": 6,
+    "overallPass": true,
+    "notes": [
+      "Ground truth disalin verbatim dari rag-ids; SHA-256 tercatat, isi tidak diubah.",
+      "Input chunker direkonstruksi sebagai blok teks per halaman dari chunk induk + sinyal halaman child; child TIDAK dipakai sebagai jawaban.",
+      "Baseline chunkSections tidak memiliki chunk_type/page_span/parent_id — metrik strukturalnya 0, bukan angka yang dibuat-buat.",
+      "Aturan split child: butir ≥ 2 ATAU pasal ≥ 1000 char dengan ≥ 4 ayat. Aturan ini dikalibrasi pada Perpres 76 dan perlu diuji ulang pada dokumen lain.",
+      "Chunk visual tidak bisa dideteksi dari teks; kehadirannya bergantung pada tag kind=\"visual\" dari ekstraktor.",
+      "Riwayat run (jujur): run diagnostik 1 = 4/6 case (bug: filter retrieval terbalik & regex pembukaan terlalu luas); run koreksi 2 = 5/6 (bug: substring \"pengaduan\" cocok dengan \"pengadu\"); run final 3 setelah perbaikan batas kata + boost definisi \"X adalah\". Angka di bawah berasal dari run final.",
       "Tidak ada model lokal, tidak ada jaringan, tidak ada retry; deterministik dan bisa diulang."
     ]
   }

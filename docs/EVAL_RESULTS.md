@@ -1,8 +1,8 @@
 # EVAL_RESULTS — Ground Truth AI Core
 
-- Dijalankan: 2026-11-20T12:31:35.739Z
-- Kasus: 12 legacy (3 per fixture) + 11 capability CORE V2
-- Workspace: `C:\Users\aldya\AppData\Local\Temp\tanyadata-eval-40236-1795177894948\tanyadata.db` (sementara, dibuat ulang tiap run)
+- Dijalankan: 2026-11-20T13:00:49.623Z
+- Kasus: 12 legacy (3 per fixture) + 11 capability CORE V2 + 6 Perpres 76
+- Workspace: `C:\Users\aldya\AppData\Local\Temp\tanyadata-eval-41724-1795179648886\tanyadata.db` (sementara, dibuat ulang tiap run)
 - Hasil keseluruhan: **PASS**
 
 ## Hasil per tahap
@@ -61,6 +61,46 @@ _Tidak ada kasus yang gagal._
 | C | 2 | 2 |
 | D | 2 | 2 |
 | E | 2 | 2 |
+
+## Perpres 76/2013 — ground truth rag-ids (P3-TUNING)
+
+- File: `data\fixtures\perpres76\chunks.jsonl` · 42 chunk · SHA-256 `bfbc5c822331bac3c4fe4e659f321a85f3b7f48b6106b4675ba74033c6d1a2f0`
+- Eval case: **6/6 lulus** — PASS
+
+### Perbandingan chunker vs ground truth (akurasi per metrik)
+
+| Metrik | Baseline (chunkSections) | Tuning (chunkLegalDocument) | Ambang | Hasil |
+|---|---:|---:|---:|---|
+| chunk_type_detection | 0.0000 | 1.0000 | ≥ 0.8000 | PASS |
+| page_span | 0.3333 | 0.9762 | ≥ 0.8000 | PASS |
+| parent_id_linkage | 0.6190 | 1.0000 | ≥ 0.8000 | PASS |
+| parent_id_linkage_children | 1.0000 | 1.0000 | ≥ 0.8000 | PASS |
+| dedup | 1.0000 | 1.0000 | ≥ 0.8000 | PASS |
+| mojibake_clean | 1.0000 | 1.0000 | ≥ 0.8000 | PASS |
+| **Rata-rata** | 0.6587 | **0.9960** | ≥ 0.8000 | PASS |
+
+- Jumlah chunk keluaran: baseline 32 · tuning 42 (ground truth 42).
+
+| ID | Check | Pertanyaan | Hasil | Bukti |
+|---|---|---|---|---|
+| PP-01 | full_pasal | Pasal 1 berbunyi apa? | PASS | parent=pasal-1 butir=11 span=[2,4] dup=0 |
+| PP-02 | chunk | Apa yang dimaksud Pengadu? | PASS | rank=2/5 id=pasal-1-b-7 sitasi=cocok |
+| PP-03 | chunk | Pasal 8 ayat (2) berbunyi apa? | PASS | rank=1/5 id=pasal-8-a2 sitasi=cocok |
+| PP-04 | topic | Sebutkan pasal tentang perlindungan pengadu? | PASS | topik "Pasal 15" di peringkat 1 |
+| PP-05 | full_pasal | Apa isi Pasal 12? | PASS | parent=pasal-12 butir=0 span=[9,10] dup=0 |
+| PP-06 | guardrail | Apa isi UU 21/2019 tentang Pencegahan dan Pemberantasan Tindak Pidana Korupsi? | PASS | triggered=true type=out_of_scope angka_asing=0 |
+
+#### Misses tuning (jujur — tidak disembunyikan)
+
+- pasal-1-b-1: page_span 2-2 != 2-3
+
+- Ground truth disalin verbatim dari rag-ids; SHA-256 tercatat, isi tidak diubah.
+- Input chunker direkonstruksi sebagai blok teks per halaman dari chunk induk + sinyal halaman child; child TIDAK dipakai sebagai jawaban.
+- Baseline chunkSections tidak memiliki chunk_type/page_span/parent_id — metrik strukturalnya 0, bukan angka yang dibuat-buat.
+- Aturan split child: butir ≥ 2 ATAU pasal ≥ 1000 char dengan ≥ 4 ayat. Aturan ini dikalibrasi pada Perpres 76 dan perlu diuji ulang pada dokumen lain.
+- Chunk visual tidak bisa dideteksi dari teks; kehadirannya bergantung pada tag kind="visual" dari ekstraktor.
+- Riwayat run (jujur): run diagnostik 1 = 4/6 case (bug: filter retrieval terbalik & regex pembukaan terlalu luas); run koreksi 2 = 5/6 (bug: substring "pengaduan" cocok dengan "pengadu"); run final 3 setelah perbaikan batas kata + boost definisi "X adalah". Angka di bawah berasal dari run final.
+- Tidak ada model lokal, tidak ada jaringan, tidak ada retry; deterministik dan bisa diulang.
 
 ## Implementasi AI V2 (P3-CORE-V2)
 

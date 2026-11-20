@@ -214,7 +214,7 @@ const GRADERS: Record<string, (c: Json) => Grade> = {
 
 export function runCapabilityEval(casesFile: string): CapabilityReport {
   const data = JSON.parse(fs.readFileSync(casesFile, 'utf8')) as Json;
-  const selected: Json[] = (data.cases ?? []).filter((c: Json) => Boolean(c.capability));
+  const selected: Json[] = (data.cases ?? []).filter((c: Json) => Boolean(c.capability) && !c.suite);
   const cases: CapabilityCaseResult[] = selected.map((c) => {
     const grader = GRADERS[String(c.capability)];
     const grade = grader

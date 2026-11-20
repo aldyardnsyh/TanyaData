@@ -66,7 +66,7 @@ function markdown(report) {
   lines.push('# EVAL_RESULTS — Ground Truth AI Core');
   lines.push('');
   lines.push(`- Dijalankan: ${report.generatedAt}`);
-  lines.push(`- Kasus: ${report.caseCount} legacy (3 per fixture) + ${report.capability?.total ?? 0} capability CORE V2`);
+  lines.push(`- Kasus: ${report.caseCount} legacy (3 per fixture) + ${report.capability?.total ?? 0} capability CORE V2 + ${report.perpres?.total ?? 0} Perpres 76`);
   lines.push(`- Workspace: \`${report.workspaceDb}\` (sementara, dibuat ulang tiap run)`);
   lines.push(`- Hasil keseluruhan: **${report.overallPass ? 'PASS' : 'FAIL'}**`);
   lines.push('');
@@ -138,6 +138,45 @@ function markdown(report) {
     lines.push('');
   }
 
+  if (report.perpres) {
+    const p = report.perpres;
+    lines.push('## Perpres 76/2013 — ground truth rag-ids (P3-TUNING)');
+    lines.push('');
+    lines.push(`- File: \`${p.groundTruthFile}\` · ${p.groundTruthChunks} chunk · SHA-256 \`${p.groundTruthSha256}\``);
+    lines.push(`- Eval case: **${p.passed}/${p.total} lulus** — ${p.passed === p.total ? 'PASS' : 'FAIL'}`);
+    lines.push('');
+    lines.push('### Perbandingan chunker vs ground truth (akurasi per metrik)');
+    lines.push('');
+    lines.push('| Metrik | Baseline (chunkSections) | Tuning (chunkLegalDocument) | Ambang | Hasil |');
+    lines.push('|---|---:|---:|---:|---|');
+    const baseBy = new Map(p.baseline.metrics.map((m) => [m.name, m]));
+    for (const m of p.tuned.metrics) {
+      const b = baseBy.get(m.name);
+      lines.push(`| ${m.name} | ${b ? fmt(b.value) : '—'} | ${fmt(m.value)} | ≥ ${fmt(m.threshold)} | ${m.pass ? 'PASS' : 'FAIL'} |`);
+    }
+    lines.push(`| **Rata-rata** | ${fmt(p.baseline.average)} | **${fmt(p.tuned.average)}** | ≥ 0.8000 | ${p.tuned.metrics.every((m) => m.pass) ? 'PASS' : 'FAIL'} |`);
+    lines.push('');
+    lines.push(`- Jumlah chunk keluaran: baseline ${p.baseline.outputCount} · tuning ${p.tuned.outputCount} (ground truth ${p.groundTruthChunks}).`);
+    lines.push('');
+    lines.push('| ID | Check | Pertanyaan | Hasil | Bukti |');
+    lines.push('|---|---|---|---|---|');
+    for (const c of p.cases) {
+      lines.push(`| ${c.id} | ${c.check} | ${c.question.replace(/\|/g, '\\|')} | ${c.pass ? 'PASS' : 'FAIL'} | ${c.detail.replace(/\|/g, '\\|')} |`);
+    }
+    lines.push('');
+    lines.push('#### Misses tuning (jujur — tidak disembunyikan)');
+    lines.push('');
+    if (!p.tuned.misses.length) {
+      lines.push('_Tidak ada._');
+    } else {
+      for (const m of p.tuned.misses.slice(0, 30)) lines.push(`- ${m}`);
+      if (p.tuned.misses.length > 30) lines.push(`- … dan ${p.tuned.misses.length - 30} miss lainnya.`);
+    }
+    lines.push('');
+    for (const n of p.notes) lines.push(`- ${n}`);
+    lines.push('');
+  }
+
   lines.push('## Implementasi AI V2 (P3-CORE-V2)');
   lines.push('');
   lines.push('- **Readjustment deterministik** (`lib/ai/readjustment.ts`): regex → `ReadjustmentOp` (filter/group_by/classify/report) yang di-resolve terhadap `schema_json`/registry. Kolom atau bagian tak dikenal → `needs_clarification` + daftar nilai valid, bukan tebakan. `ReadjustmentOp` saat ini didefinisikan secara lokal karena `lib/core/contracts.ts` (milik backend) belum memilikinya; file itu sengaja tidak diubah.');
@@ -164,9 +203,11 @@ const timer = setTimeout(() => {
 try {
   const { runEval } = await import('../lib/eval/harness.ts');
   const { runCapabilityEval } = await import('../lib/eval/capability.ts');
+  const { runPerpresEval } = await import('../lib/eval/perpres.ts');
   const report = await runEval({ fixturesDir, casesFile });
   const capability = runCapabilityEval(casesFile);
-  const combined = { ...report, capability };
+  const perpres = runPerpresEval({ casesFile, fixturesDir });
+  const combined = { ...report, capability, perpres };
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, `${JSON.stringify(combined, null, 2)}\n`, 'utf8');
@@ -196,8 +237,23 @@ try {
     console.log(`  ${c.id.padEnd(7)} FR-${c.fr} ${c.capability.padEnd(12)} ${c.pass ? 'PASS' : 'FAIL'}  ${c.detail}`);
   }
   console.log('─'.repeat(72));
-  const overall = report.overallPass && capability.overallPass;
-  console.log(`KESELURUHAN: ${overall ? 'PASS' : 'FAIL'}  |  ${report.caseCount} legacy + ${capability.total} capability  |  detail: ${path.relative(root, outFile)}`);
+  console.log(`Perpres 76/2013 — chunker vs ground truth (${perpres.groundTruthChunks} chunk, SHA-256 ${perpres.groundTruthSha256.slice(0, 12)}…)`);
+  console.log('Metrik                          Baseline   Tuning   Ambang   Hasil');
+  for (const m of perpres.tuned.metrics) {
+    const b = perpres.baseline.metrics.find((x) => x.name === m.name);
+    const name = m.name.padEnd(31);
+    const base = fmt(b ? b.value : 0).padStart(8);
+    const tuned = fmt(m.value).padStart(8);
+    console.log(`${name}${base}  ${tuned}   ≥${fmt(m.threshold)}    ${m.pass ? 'PASS' : 'FAIL'}`);
+  }
+  console.log(`Rata-rata: baseline ${fmt(perpres.baseline.average)} → tuning ${fmt(perpres.tuned.average)}`);
+  console.log(`Perpres eval case: ${perpres.passed}/${perpres.total} lulus — ${perpres.passed === perpres.total ? 'PASS' : 'FAIL'}`);
+  for (const c of perpres.cases) {
+    console.log(`  ${c.id.padEnd(7)} ${c.check.padEnd(11)} ${c.pass ? 'PASS' : 'FAIL'}  ${c.detail}`);
+  }
+  console.log('─'.repeat(72));
+  const overall = report.overallPass && capability.overallPass && perpres.overallPass;
+  console.log(`KESELURUHAN: ${overall ? 'PASS' : 'FAIL'}  |  ${report.caseCount} legacy + ${capability.total} capability + ${perpres.total} perpres  |  detail: ${path.relative(root, outFile)}`);
   console.log(`Laporan: ${path.relative(root, mdFile)}`);
 
   clearTimeout(timer);

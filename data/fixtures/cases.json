@@ -500,6 +500,87 @@
       },
       "tolerance": { "exposure_before_confirm": 0, "content_drift": 0 },
       "tags": ["share", "confirmation", "edge"]
+    },
+
+    {
+      "id": "PP-01",
+      "suite": "perpres76",
+      "check": "full_pasal",
+      "question": "Pasal 1 berbunyi apa?",
+      "expected": {
+        "pasal": 1,
+        "parent_id": "pasal-1",
+        "butir_count": 11,
+        "page_span": [2, 4]
+      },
+      "tolerance": { "citation_hit": 1.0, "duplicate_chunk": 0 },
+      "tags": ["perpres76", "pasal", "butir", "lintas-halaman", "normal"]
+    },
+    {
+      "id": "PP-02",
+      "suite": "perpres76",
+      "check": "chunk",
+      "question": "Apa yang dimaksud Pengadu?",
+      "expected": {
+        "chunk_id": "pasal-1-b-7",
+        "parent_id": "pasal-1",
+        "butir": "7",
+        "page": 4,
+        "citation": "Perpres 76/2013, Pasal 1 butir 7, hlm. 4"
+      },
+      "tolerance": { "citation_hit": 1.0, "top_k": 5 },
+      "tags": ["perpres76", "definisi", "butir", "normal"]
+    },
+    {
+      "id": "PP-03",
+      "suite": "perpres76",
+      "check": "chunk",
+      "question": "Pasal 8 ayat (2) berbunyi apa?",
+      "expected": {
+        "chunk_id": "pasal-8-a2",
+        "parent_id": "pasal-8",
+        "ayat": 2,
+        "page": 8,
+        "section_contains": "Ayat (2)",
+        "citation": "Perpres 76/2013, Pasal 8 ayat (2), hlm. 8"
+      },
+      "tolerance": { "citation_hit": 1.0, "top_k": 5 },
+      "tags": ["perpres76", "ayat", "normal"]
+    },
+    {
+      "id": "PP-04",
+      "suite": "perpres76",
+      "check": "topic",
+      "question": "Sebutkan pasal tentang perlindungan pengadu?",
+      "expected": { "section_contains": "Pasal 15" },
+      "tolerance": { "citation_hit": 1.0, "top_k": 5 },
+      "tags": ["perpres76", "topik", "normal"]
+    },
+    {
+      "id": "PP-05",
+      "suite": "perpres76",
+      "check": "full_pasal",
+      "question": "Apa isi Pasal 12?",
+      "expected": {
+        "pasal": 12,
+        "parent_id": "pasal-12",
+        "page_span": [9, 10],
+        "duplicate_count": 0
+      },
+      "tolerance": { "citation_hit": 1.0, "duplicate_chunk": 0 },
+      "tags": ["perpres76", "pasal", "lintas-halaman", "edge"]
+    },
+    {
+      "id": "PP-06",
+      "suite": "perpres76",
+      "check": "guardrail",
+      "question": "Apa isi UU 21/2019 tentang Pencegahan dan Pemberantasan Tindak Pidana Korupsi?",
+      "expected": {
+        "guardrail": "out_of_scope",
+        "available_topics": ["Perpres 76/2013", "Pengelolaan Pengaduan Pelayanan Publik", "Pasal 1", "Pasal 8", "Pasal 12"]
+      },
+      "tolerance": { "refusal_correctness": 1.0, "foreign_numbers": 0 },
+      "tags": ["perpres76", "guardrail", "di-luar-sumber", "adversarial"]
     }
   ]
 }
