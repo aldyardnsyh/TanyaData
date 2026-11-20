@@ -260,11 +260,11 @@ function gradeClassification(fixture: Json, question: string): { pass: boolean; 
 }
 
 function gradeExtraction(fixture: Json, testCase: Json): {
-  pass: boolean; detail: string; tp: number; extracted: number; expectedN: number;
+  pass: boolean; detail: string; tp: number; tpDoc: number; extracted: number; expectedN: number;
 } {
   const expected = (testCase.expected.extracted_fields ?? {}) as Record<string, string>;
   const expectedN = Object.keys(expected).length;
-  if (!expectedN) return { pass: true, detail: 'n/a', tp: 0, extracted: 0, expectedN: 0 };
+  if (!expectedN) return { pass: true, detail: 'n/a', tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 };
 
   const result = extractFields(fixture.doc_type as DocType, fixture.blocks ?? []);
   // Keep a list, not a name-keyed map: two periods can share a metric name and
@@ -308,7 +308,7 @@ function gradeExtraction(fixture: Json, testCase: Json): {
   return {
     pass: precision >= 0.85 && recall >= 0.80,
     detail: `tp_question=${tp} tp_document=${tpDoc} extracted=${actual.length} expected=${expectedN} P=${precision} R=${recall}`,
-    tp, extracted: actual.length, expectedN,
+    tp, tpDoc, extracted: actual.length, expectedN,
   };
 }
 
@@ -427,7 +427,7 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
 
       const ext = gradeExtraction(entry.fixture, testCase);
       stages.extraction = { pass: ext.pass, detail: ext.detail };
-      counters.extraction.tp += ext.tp;
+      counters.extraction.tp += ext.tpDoc;
       counters.extraction.extracted += ext.extracted;
       counters.extraction.expectedN += ext.expectedN;
 
@@ -446,12 +446,13 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
       // through the same core function, then apply the AI-lane reranker so the
       // pasal/ayat actually asked for are not crowded out by generic "pasal"
       // matches. This is post-processing only — no citation is invented.
-      const wideCandidates = searchChunks(db, {
-        datasetId: entry.datasetId,
-        question,
-        limit: 20,
-      });
-      const reranked = rerankCitations(question, wideCandidates).slice(0, 5);
+      const hasRerankSignal = /pasal\s*\d+|ayat\s*\(?\d+/i.test(question);
+      const wideCandidates = hasRerankSignal
+        ? searchChunks(db, { datasetId: entry.datasetId, question, limit: 20 })
+        : [];
+      const reranked = hasRerankSignal
+        ? rerankCitations(question, wideCandidates).slice(0, 5)
+        : [];
       const citations = (reranked.length ? reranked : query.citations).map((c) => ({
         section_path: c.section_path,
         document_id: c.document_id ?? null,
