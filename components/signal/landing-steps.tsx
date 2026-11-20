@@ -70,7 +70,12 @@ export function LandingSteps() {
   };
 
   const trackClass = (active: boolean) =>
-    `relative hidden h-px flex-none w-14 lg:w-32 transition-colors duration-[var(--motion-slow)] md:block ${
+    `relative hidden h-px flex-none w-14 lg:w-32 transition-colors duration-[var(--motion-slow)] lg:block ${
+      active ? 'bg-lime' : 'bg-[var(--hairline-dark)]'
+    }`;
+  // Alur vertikal untuk viewport < lg: penghubung antar node supaya alur tetap terbaca.
+  const trackVerticalClass = (active: boolean) =>
+    `relative h-10 w-px flex-none transition-colors duration-[var(--motion-slow)] lg:hidden ${
       active ? 'bg-lime' : 'bg-[var(--hairline-dark)]'
     }`;
 
@@ -103,10 +108,10 @@ export function LandingSteps() {
           </span>
         </div>
 
-        <div className="flex flex-col items-center gap-s3 md:flex-row md:justify-center md:gap-0">
+        <div className="flex flex-col items-center gap-s3 lg:flex-row lg:justify-center lg:gap-0">
           {/* Sisi masukan: dua chip berkas. Menonjol saat fase unggah/tanya. */}
           <div
-            className={`flex flex-col items-start gap-s1 transition-all duration-[var(--motion-slow)] ${
+            className={`flex flex-col items-center gap-s1 lg:items-start transition-all duration-[var(--motion-slow)] ${
               phase <= 1 ? 'opacity-100' : 'opacity-60'
             }`}
           >
@@ -129,6 +134,13 @@ export function LandingSteps() {
           <div aria-hidden="true" className={trackClass(phase >= 1)}>
             <span
               className={`absolute right-0 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
+                phase >= 1 ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          </div>
+          <div aria-hidden="true" className={trackVerticalClass(phase >= 1)}>
+            <span
+              className={`absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
                 phase >= 1 ? 'opacity-100' : 'opacity-0'
               }`}
             />
@@ -168,10 +180,17 @@ export function LandingSteps() {
               }`}
             />
           </div>
+          <div aria-hidden="true" className={trackVerticalClass(phase >= 2)}>
+            <span
+              className={`absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-lime transition-opacity duration-[var(--motion-slow)] ${
+                phase >= 2 ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          </div>
 
           {/* Sisi keluaran: jawaban + sitasi; chip bagikan muncul di fase akhir. */}
           <div
-            className={`w-full max-w-48 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
+            className={`w-full max-w-56 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
               phase >= 2 ? 'translate-y-0 opacity-100 shadow-float' : 'translate-y-1 opacity-30'
             }`}
           >
@@ -198,7 +217,7 @@ export function LandingSteps() {
       <div
         role="group"
         aria-label="Empat langkah cara kerja"
-        className="mt-s6 grid gap-s2 md:grid-cols-4 md:gap-0 md:divide-x md:divide-[var(--hairline-dark)]"
+        className="mt-s6 grid gap-s3 md:grid-cols-2 lg:grid-cols-4 lg:gap-0 lg:divide-x lg:divide-[var(--hairline-dark)]"
       >
         {STEPS.map((step, index) => {
           const active = phase === index;
@@ -208,7 +227,7 @@ export function LandingSteps() {
               type="button"
               onClick={() => jump(index)}
               aria-pressed={active}
-              className={`touch-44 text-left transition-opacity duration-[var(--motion-fast)] focus-ring md:px-s4 first:md:pl-0 ${
+              className={`touch-44 text-left transition-opacity duration-[var(--motion-fast)] focus-ring lg:px-s4 first:lg:pl-0 ${
                 active ? 'opacity-100' : 'opacity-55 hover:opacity-100'
               }`}
             >
