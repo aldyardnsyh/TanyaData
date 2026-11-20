@@ -56,6 +56,7 @@ export function LandingSteps() {
   const [paused, setPaused] = useState(false);
   const [manual, setManual] = useState(false);
   const [tabHidden, setTabHidden] = useState(false);
+  const [docsShown, setDocsShown] = useState(true);
 
   // Loop hanya saat motion diizinkan; reduced-motion membiarkan fase akhir statis.
   useEffect(() => {
@@ -68,6 +69,20 @@ export function LandingSteps() {
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
+
+  // Konsep siklus (arah user): dokumen muncul dari kosong saat fase unggah,
+  // TETAP ADA sampai fase bagikan, dan saat siklus diulang semuanya hide lalu
+  // mulai lagi dari fase unggah — makanya setiap masuk fase unggah dokumen
+  // di-hide sesaat (300ms) lalu pop masuk sebagai bagian dari animasinya.
+  useEffect(() => {
+    if (!shouldAnimate() || phase !== 0) {
+      setDocsShown(true);
+      return;
+    }
+    setDocsShown(false);
+    const timer = window.setTimeout(() => setDocsShown(true), 300);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
 
   useEffect(() => {
     if (!shouldAnimate() || paused || manual || tabHidden) return;
@@ -120,14 +135,11 @@ export function LandingSteps() {
               memakai warna brand. Warna merah/biru/hijau adalah warna identitas
               fungsional jenis berkas yang diminta eksplisit, di luar enam token
               palet, hanya untuk lencana kecil di ilustrasi ini.
-              Tanpa ghost: dokumen tampil penuh hanya di fase unggah dan di fase
-              akhir (ringkasan hasil), lalu menghilang selama pertanyaan dan
-              jawaban diproses, dan muncul kembali tiap siklus diulang. */}
+              Dokumen pop masuk di fase unggah lalu TETAP ADA sampai siklus
+              berikutnya menyembunyikannya kembali (docsShown). */}
           <div
             className={`flex items-start gap-s2 transition-all duration-[var(--motion-slow)] ${
-              phase === 0 || phase === 3
-                ? 'opacity-100'
-                : 'pointer-events-none opacity-0'
+              docsShown ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
             }`}
           >
             {/* PDF: kertas dengan strip judul merah dan garis teks. */}
@@ -308,9 +320,10 @@ export function LandingSteps() {
           </div>
 
           {/* Sisi keluaran: jawaban menyusun baris demi baris saat fase periksa,
-              header berubah menjadi selesai di fase akhir. */}
+              header berubah menjadi selesai di fase akhir. Kartu max-w-68 supaya
+              baris kanal/SLA dengan nowrap tidak meluber keluar kartu. */}
           <div
-            className={`w-full max-w-60 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
+            className={`w-full max-w-68 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-slow)] ${
               phase >= 2 ? 'translate-y-0 opacity-100 shadow-float' : 'pointer-events-none translate-y-2 opacity-0'
             }`}
           >
