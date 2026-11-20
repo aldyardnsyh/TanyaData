@@ -78,10 +78,10 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="px-6 py-8">
-      <div className="mx-auto mb-4 max-w-[760px]">{backLink}</div>
+      <div className="mx-auto mb-4 max-w-[760px] print-no-print">{backLink}</div>
 
       {/* Toolbar */}
-      <div className="sticky top-14 z-sticky mx-auto mb-6 flex max-w-[760px] flex-wrap items-center justify-between gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3">
+      <div className="sticky top-14 z-sticky mx-auto mb-6 flex max-w-[760px] flex-wrap items-center justify-between gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-3 print-no-print">
         <span className="truncate font-body text-label-md font-semibold text-on-surface">{report.title}</span>
         <div className="flex flex-wrap gap-2">
           <a href={`/api/reports/${id}/export?format=csv`} download>
@@ -180,7 +180,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         </footer>
       </article>
 
-      <p className="mx-auto mt-4 max-w-[760px] font-body text-body-sm text-on-surface-variant">
+      <p className="mx-auto mt-4 max-w-[760px] font-body text-body-sm text-on-surface-variant print-no-print">
         Ekspor memakai snapshot laporan; angka tidak dihitung ulang.
       </p>
     </div>

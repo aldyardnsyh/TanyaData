@@ -227,3 +227,38 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-skeleton { animation: none !important; }
 }
+
+/* C-25 / §D.9: print & ekspor PDF — nav/toolbar tersembunyi, hitam-putih aman,
+   page-break sebelum h2. Kelas print-no-print menandai elemen yang harus hilang saat cetak. */
+@media print {
+  body { background: #ffffff !important; }
+  aside,
+  header,
+  nav,
+  .print-no-print { display: none !important; }
+  main { margin-left: 0 !important; }
+  .print-document {
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .print-document * {
+    background: transparent !important;
+    color: #000000 !important;
+    border-color: #000000 !important;
+    box-shadow: none !important;
+  }
+  .print-document h2 { break-before: page; }
+  .print-document section:first-of-type h2 { break-before: auto; }
+  .print-document pre {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere;
+    border: 1px solid #000000 !important;
+  }
+  .print-document table { width: 100% !important; border-collapse: collapse; }
+  .print-document th,
+  .print-document td { border: 1px solid #000000 !important; }
+}
