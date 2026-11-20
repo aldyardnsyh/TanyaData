@@ -11,6 +11,7 @@ import type { DB } from '@/lib/db/client';
 import { resolveSeedDb } from '@/lib/db/paths';
 import { nowJakartaIso } from '@/lib/date';
 import { notFound } from '@/lib/errors';
+import { invalidateQueryCache } from '@/lib/core/cache';
 import type {
   Dataset,
   DatasetKind,
@@ -241,6 +242,7 @@ export function deleteDataset(db: DB, id: string): void {
       db.exec(`DROP TABLE IF EXISTS "${table.replace(/"/g, '')}"`);
     }
     db.prepare('DELETE FROM core_datasets WHERE id = ?').run(id);
+    invalidateQueryCache(db);
   })();
 }
 

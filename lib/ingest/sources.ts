@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { DB } from '@/lib/db/client';
 import { seedDocPath } from '@/lib/db/paths';
 import { conflict, notFound, unprocessable } from '@/lib/errors';
+import { invalidateQueryCache } from '@/lib/core/cache';
 import { readSettingsState } from '@/lib/settings';
 import { datasetStats, dropDatasetTable, tableNameFor } from '@/lib/ingest/dataset';
 import { ingestDocument } from '@/lib/ingest/documents';
@@ -211,6 +212,7 @@ export function removeSource(db: DB, id: string): void {
   if (row.kind === 'dataset') dropDatasetTable(db, row);
   removeStoredFile(row);
   db.prepare('DELETE FROM data_sources WHERE id = ?').run(id);
+  invalidateQueryCache(db);
 }
 
 function docFilePath(row: SourceRow): string {
@@ -225,6 +227,8 @@ function docFilePath(row: SourceRow): string {
 export async function reindexSource(db: DB, id: string): Promise<ReindexResponse> {
   const row = getSourceRow(db, id);
   if (runningJob(db, id)) throw conflict('Job reindex lain sedang berjalan');
+  // Reindex mengubah isi sumber → semua jawaban cache dianggap stale.
+  invalidateQueryCache(db);
 
   if (row.kind === 'document') {
     const job = createJob(db, id, 'document');

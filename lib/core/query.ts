@@ -15,6 +15,7 @@ import type {
   SqlCandidate,
 } from '@/lib/core/contracts';
 import type { CorePorts } from '@/lib/core/ports';
+import { getCachedQuery, queryCacheKey, setCachedQuery } from '@/lib/core/cache';
 import { getDataset } from '@/lib/core/registry';
 import { buildRuleBasedCandidate, runCandidate } from '@/lib/core/sql';
 import { searchChunks } from '@/lib/core/store';
@@ -80,6 +81,38 @@ export async function answerQuestion(
     query.answer = guardrail.explanation;
     query.duration_ms = Math.round(performance.now() - started);
     return query;
+  }
+
+  // Cache dicek SETELAH guardrail murah, tetapi SEBELUM generator LLM / FTS —
+  // di situlah biaya CPU dan LLM call dihemat. DB readonly (eval) → auto-disable.
+  const cacheKey = queryCacheKey({
+    datasetId: input.datasetId,
+    question: input.question,
+    lang: input.lang,
+    period: input.context?.period ?? null,
+  });
+  const cached = getCachedQuery(db, cacheKey);
+  if (cached) {
+    const duration = Math.round(performance.now() - started);
+    const hit: Query = {
+      ...cached,
+      id: `q_${randomUUID()}`,
+      dataset_id: input.datasetId,
+      nl_question: input.question,
+      lang: input.lang,
+      created_at: nowJakartaIso(),
+      duration_ms: duration,
+      evaluation: input.evaluate
+        ? evaluateGrounding({
+            answer: cached.answer,
+            result: cached.result_json,
+            citations: cached.citations,
+            viz: cached.viz_spec,
+            latencyMs: duration,
+          })
+        : null,
+    };
+    return hit;
   }
 
   let candidate: SqlCandidate | null = null;
@@ -194,5 +227,8 @@ export async function answerQuestion(
       latencyMs: query.duration_ms,
     });
   }
+  // Simpan tanpa evaluation: hasil eval tidak boleh membocorkan latency lama
+  // ke pemanggil berikutnya (di-hitung ulang pada cache hit bila diminta).
+  setCachedQuery(db, cacheKey, input.datasetId, { ...query, evaluation: null });
   return query;
 }

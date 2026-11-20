@@ -13,6 +13,7 @@ import {
   type ColumnMapping,
 } from '@/lib/ingest/validate';
 import { updateSource, type SourceRow } from '@/lib/ingest/store';
+import { invalidateQueryCache } from '@/lib/core/cache';
 
 type RawRow = Record<string, string>;
 
@@ -256,6 +257,7 @@ export async function ingestDataset(db: DB, source: SourceRow, buffer: Buffer): 
     });
   });
   persist();
+  invalidateQueryCache(db);
 
   return { rowCount: prepared.length };
 }
