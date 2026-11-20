@@ -114,3 +114,14 @@ Ground truth berhasil menunjukkan **tahap mana yang rusak**, bukan sekadar "jawa
 - Perlu keputusan manusia: definisi presisi ekstraksi (field ekstra benar dihitung FP?) dan cakupan ayat Pasal 33 pada fixture legal.
 
 **Rekomendasi:** perbaiki satu akar masalah per iterasi, jalankan ulang `npm run eval:ground-truth`, dan bandingkan tabel §1 — jangan mengubah ekspektasi untuk menaikkan angka.
+
+## 6. Verifikasi akhir (jujur)
+
+| Perintah | Exit | Catatan |
+|---|---:|---|
+| `npm run eval:ground-truth` | 1 | Sesuai desain: ada tahap di bawah ambang. Laporan ini dihasilkan dari run ini. |
+| `npm run typecheck` (run 1) | 2 | 4 error: 1 di `lib/eval/harness.ts` (**milik saya, sudah diperbaiki**), 3 di lane lain. |
+| `npm run typecheck` (run 2) | 2 | 3 error tersisa, semuanya **di luar lane aiml**: `app/api/datasets/[id]/ingest/route.ts:41`, `lib/core/query.ts:184`, `lib/core/sql.ts:407`. Tidak saya sentuh sesuai batas tugas. |
+| `npm run build` (run 1 & 2) | 1 | `EBUSY: resource busy or locked, unlink .next/standalone/data/analytics.db` — file lock proses eksternal, bukan error kompilasi. Retry maksimal 2x sudah dipakai. |
+
+**Blocking:** `typecheck` dan `build` belum hijau karena 3 error lane backend/route + 1 file lock eksternal. Eval harness sendiri bebas error tipe dan sudah terverifikasi jalan lewat `npm run eval:ground-truth`.
