@@ -539,7 +539,7 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
   }
 
   notes.push('Eval dijalankan pada workspace DB sementara; seed analytics.db disalin ke tabel fisik tx_daily untuk kasus transaksi.');
-  notes.push('Riwayat eksekusi: run-1 crash (await pada fungsi non-async), run-2 hasil terdistorsi 3 bug harness (chunk level, tabrakan nama metrik, allow-list angka), run-3 final setelah perbaikan harness. Bug produk sengaja DIBIARKAN agar laporan ini menjadi diagnosis jujur.');
+  notes.push('Riwayat eksekusi lengkap dicatat di docs/EVAL_RESULTS.md. Bug produk sengaja DIBIARKAN agar laporan ini menjadi diagnosis jujur, bukan hasil yang dihijaukan.');
   notes.push('Kasus TX-03 gagal karena rule builder core tidak memiliki pola rate — temuan produk, bukan bug harness.');
   notes.push('FIN-03 memuat instruksi injeksi; guardrail AI lane diuji terpisah dari guardrail core.');
 
