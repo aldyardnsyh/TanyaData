@@ -3,22 +3,20 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GlowingCTA } from '@/components/signal/glowing-cta';
-import { Button } from '@/components/ui/button';
 
 /**
  * CTA navigasi landing menuju Overview, tempat data contoh sudah siap.
- * Purpose Gate: S1 memakai satu-satunya CTA menyala (C-03), S7 memakai tombol
- * flat primitif button.tsx karena dua CTA menyala dalam satu halaman adalah
- * cacat (P2 / LANDING_COPY_SEO §2-S7).
+ * Purpose Gate: satu CTA menyala di hero dan satu di band CTA akhir; keduanya
+ * menuju rute nyata yang ada (LandingCopySEO §2-S1/S7).
  * Microcopy state dari LANDING_COPY_SEO §4: loading "Membuka...", error
  * "Gagal membuka. Coba lagi." Success = halaman Overview tampil, sehingga
  * state sukses tidak pernah terlihat di halaman ini.
  */
 export function LandingCTA({
-  variant = 'primary',
+  tone = 'light',
   className = '',
 }: {
-  variant?: 'primary' | 'flat';
+  tone?: 'light' | 'dark';
   className?: string;
 }) {
   const router = useRouter();
@@ -56,18 +54,11 @@ export function LandingCTA({
     );
   }
 
-  if (variant === 'flat') {
-    return (
-      <Button variant="secondary" size="lg" onClick={open} loading={navigating} className={className}>
-        {navigating ? 'Membuka...' : 'Coba dengan data contoh'}
-      </Button>
-    );
-  }
-
   return (
     <GlowingCTA
       onClick={open}
       state={navigating ? 'loading' : 'default'}
+      tone={tone}
       loadingLabel="Membuka..."
       className={className}
     >

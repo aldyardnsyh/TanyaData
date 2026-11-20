@@ -18,7 +18,8 @@ export interface BentoItem {
   source?: string;
   /** C-12: tooltip menjelaskan sumber angka. Hanya muncul saat hover/fokus, tidak pernah terlihat saat halaman dibuka (§6 aturan 6). */
   tooltip?: string;
-  span?: 'hero' | 'support';
+  /** hero = 6 kolom, support = 3, wide = 6 (melengkapi baris agar grid penuh). */
+  span?: 'hero' | 'support' | 'wide';
   active?: boolean;
 }
 
@@ -36,7 +37,7 @@ function Cell({ item, state }: { item: BentoItem; state: ComponentState }) {
       data-span={item.span ?? 'support'}
       data-state={state}
       tabIndex={interactive ? 0 : undefined}
-      className="surface flex flex-col justify-between gap-s2 p-s3 transition-colors duration-[var(--motion-fast)] hover:border-forest focus-ring"
+      className="surface flex flex-col justify-between gap-s2 p-s3 transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift focus-ring motion-reduce:transform-none"
     >
       <div className="flex items-start justify-between gap-s2">
         <span className="font-display text-label font-semibold text-ink">{item.label}</span>

@@ -33,7 +33,7 @@ export function LandingFormatTabs() {
         {formats.map((format) => (
           <li
             key={format}
-            className="touch-44 inline-flex items-center rounded-control bg-forest-08 px-s3 font-display text-label font-semibold text-ink"
+            className="touch-44 inline-flex items-center rounded-chip border border-[var(--border-hairline)] bg-forest-08 px-s4 font-display text-label font-semibold text-ink"
           >
             {format}
           </li>

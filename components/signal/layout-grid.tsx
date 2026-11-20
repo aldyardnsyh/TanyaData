@@ -16,6 +16,8 @@ export interface RevealCard {
   meta?: string;
   preview: React.ReactNode;
   detail: React.ReactNode;
+  /** xl: 8 kolom (dipasangkan 8+4 atau 4+4+4 agar baris penuh untuk jumlah kartu ganjil). */
+  wide?: boolean;
 }
 
 export interface LayoutGridProps extends StateCopy {
@@ -84,7 +86,7 @@ export function LayoutGrid({
       {cards.map((card) => {
         const open = expanded === card.id || state === 'active';
         return (
-          <div key={card.id} className="surface col-span-4 p-s3 transition-colors duration-[var(--motion-fast)] hover:border-forest md:col-span-4 xl:col-span-3">
+          <div key={card.id} className={`surface col-span-4 p-s3 transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift md:col-span-4 motion-reduce:transform-none ${card.wide ? 'xl:col-span-8' : 'xl:col-span-3'}`}>
             <button
               type="button"
               onClick={() => setExpanded(open ? null : card.id)}

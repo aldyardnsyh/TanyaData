@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { inter, jakarta } from '@/lib/fonts';
 import { MotionVisibility } from '@/lib/ui/motion-visibility';
@@ -65,6 +65,11 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     images: ['/og-image.png'],
   },
+};
+
+/* Bar browser mobile ikut warna band gelap landing (token --color-forest). */
+export const viewport: Viewport = {
+  themeColor: '#0B4433',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

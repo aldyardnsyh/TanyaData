@@ -14,27 +14,45 @@ import type { ComponentState } from '@/lib/ui/component-state';
  */
 export interface HeroHighlightProps {
   children: React.ReactNode;
-  /** Frasa yang disorot latar forest-08. Satu per halaman. */
+  /** Frasa yang disorot. Satu per halaman. */
   highlight: string;
+  /** light = sorotan latar forest-08 (permukaan porcelain). dark = frasa lime + glow (band gelap forest). */
+  tone?: 'light' | 'dark';
+  /** hero = skala judul landing (clamp 40-68px), page = token display standar. */
+  size?: 'page' | 'hero';
   state?: ComponentState;
   className?: string;
 }
 
-export function HeroHighlight({ children, highlight, state = 'default', className = '' }: HeroHighlightProps) {
+export function HeroHighlight({
+  children,
+  highlight,
+  tone = 'light',
+  size = 'page',
+  state = 'default',
+  className = '',
+}: HeroHighlightProps) {
   const parts = String(children).split(highlight);
+  const headlineTone =
+    tone === 'dark'
+      ? 'text-porcelain'
+      : 'text-ink';
+  const markTone =
+    tone === 'dark'
+      ? 'bg-transparent px-0 text-lime text-glow-lime'
+      : 'bg-forest-08 px-s1 text-ink';
+  const sizeTone = size === 'hero' ? 'text-display-hero' : 'text-display';
 
   return (
     <h1
       data-state={state}
       data-motion
-      className={`animate-phrase-in max-w-[68ch] font-display text-display font-bold tracking-[-0.03em] text-ink ${className}`}
+      className={`animate-phrase-in max-w-[24ch] font-display ${sizeTone} font-bold tracking-[-0.03em] ${headlineTone} ${className}`}
     >
       {parts.map((part, i) => (
         <span key={i}>
           {part}
-          {i < parts.length - 1 && (
-            <mark className="bg-forest-08 px-s1 text-ink">{highlight}</mark>
-          )}
+          {i < parts.length - 1 && <mark className={markTone}>{highlight}</mark>}
         </span>
       ))}
     </h1>

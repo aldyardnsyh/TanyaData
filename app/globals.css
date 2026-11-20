@@ -142,6 +142,10 @@
   --z-tooltip: 80;
 
   --border-hairline: color-mix(in srgb, var(--color-muted) 40%, transparent);
+
+  /* Landing band gelap: hairline dan teks sekunder = alpha porcelain di atas forest. */
+  --hairline-dark: color-mix(in srgb, var(--color-porcelain) 16%, transparent);
+  --porcelain-72: color-mix(in srgb, var(--color-porcelain) 72%, transparent);
 }
 
 @property --border-angle {
@@ -152,6 +156,7 @@
 
 @layer base {
   html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
   body {
     overscroll-behavior: none;
     background: var(--color-porcelain);
@@ -161,6 +166,7 @@
     line-height: 22px;
     -webkit-font-smoothing: antialiased;
   }
+  [id] { scroll-margin-top: 96px; }
   main > :first-child { margin-top: 0 !important; }
   main > :last-child { margin-bottom: 0 !important; }
   ::selection { background: var(--color-lime); color: var(--color-ink); }
@@ -199,20 +205,24 @@
   border-radius: var(--radius-surface);
 }
 
-/* Bento (C-01): satu metrik utama span 6, pendukung span 3, tinggi 148px. */
+/* Bento (C-01): metrik utama span 6, pendukung span 3, span "wide" 6 untuk
+ * melengkapi baris kedua saat metrik berjumlah ganjil kelompok (landing:
+ * 5 metrik = [6,3,3] + [6,6], tanpa lubang grid). Tinggi seragam 148px. */
 @utility bento {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: var(--spacing-s3);
   & > [data-span="hero"] { grid-column: span 6; }
   & > [data-span="support"] { grid-column: span 3; }
+  & > [data-span="wide"] { grid-column: span 6; }
   & > [data-cell] { min-height: 148px; }
   @media (max-width: 1023px) {
     & > [data-span="hero"], & > [data-span="support"] { grid-column: span 4; }
+    & > [data-span="wide"] { grid-column: span 6; }
   }
   @media (max-width: 389px) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    & > [data-span="hero"], & > [data-span="support"] { grid-column: span 4; }
+    & > [data-span="hero"], & > [data-span="support"], & > [data-span="wide"] { grid-column: span 4; }
   }
 }
 
@@ -361,6 +371,10 @@
   --radius-md: var(--radius-control);
   --radius-lg: var(--radius-surface);
   --radius-card: var(--radius-surface);
+  /* Landing saja (Aceternity/kanjikan-informed): kartu besar lebih bulat, chip pill. */
+  --radius-card-lg: 24px;
+  --radius-button-lg: 10px;
+  --radius-chip: 999px;
 
   --text-headline-lg: var(--text-title);
   --text-headline-sm: var(--text-label);
@@ -393,6 +407,98 @@
 @utility z-modal { z-index: var(--z-modal); }
 @utility z-toast { z-index: var(--z-toast); }
 @utility z-tooltip { z-index: var(--z-tooltip); }
+
+/* ---- Landing (Aceternity-informed + ritme band kanjikan) ----
+ * Palet tetap enam token absolut; semua efek di bawah = alpha/turunan token.
+ * Alasan tiap efek (R-31): grid pattern = motif identitas "baris data" (SQL rows),
+ * bukan blueprint dekoratif. Glow lime = penanda SATU fokus (hero + CTA akhir),
+ * tidak pernah dipasang di semua kartu. Shadow hijau lembut = pembeda band gelap
+ * dan permukaan terangkat saat hover. Reveal scroll = pandai ritme baca, bukan
+ * scroll-jacking (tanpa parallax, tanpa pin).
+ */
+@utility text-dark-muted { color: var(--porcelain-72); }
+@utility border-hairline-dark { border-color: var(--hairline-dark); }
+
+@utility bg-grid-dark {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-porcelain) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-porcelain) 7%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+@utility mask-grid-fade {
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, black 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 35%, black 30%, transparent 100%);
+}
+@utility glow-radial-lime {
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--color-lime) 20%, transparent), transparent 72%);
+}
+@utility text-glow-lime {
+  text-shadow:
+    0 0 24px color-mix(in srgb, var(--color-lime) 35%, transparent),
+    0 0 72px color-mix(in srgb, var(--color-lime) 15%, transparent);
+}
+@utility shadow-float {
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--color-forest) 14%, transparent);
+}
+@utility shadow-lift {
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--color-forest) 10%, transparent);
+}
+@utility eyebrow {
+  font-family: var(--font-display);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-forest);
+}
+@utility text-display-hero {
+  font-size: clamp(40px, 6.5vw, 68px);
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+@utility text-title-cta {
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Attention border untuk band gelap: border hairline, sweep lime. */
+@utility attention-border-dark {
+  position: relative;
+  border: 1px solid var(--hairline-dark);
+  border-radius: var(--radius-button-lg);
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(from var(--border-angle), transparent 0deg 300deg, var(--color-porcelain) 340deg, transparent 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    pointer-events: none;
+  }
+  &:hover::before, &:focus-visible::before {
+    opacity: 1;
+    animation: var(--animate-border-orbit);
+  }
+}
+
+/* Reveal scroll (pola atlas-rise kanjikan): server merender "in" (terlihat);
+ * JS menandai elemen di bawah viewport menjadi "out" lalu IO/fallback 2s
+ * membaliknya ke "in". Konten tidak pernah hilang permanen. */
+[data-reveal] {
+  transition:
+    opacity 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 560ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-reveal="out"] { opacity: 0; transform: translateY(20px); }
+[data-reveal="in"] { opacity: 1; transform: none; }
 
 /* Hentikan loop transient saat tab tersembunyi (§6 aturan 7). */
 [data-tab-hidden="true"] .animate-skeleton,
