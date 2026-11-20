@@ -14,6 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { registerHooks } from 'node:module';
+import { evaluateHoldoutGate } from './lib/holdout-gate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -63,8 +64,22 @@ const timer = setTimeout(() => {
 }, timeoutMs);
 
 try {
-  const { runHoldoutEval } = await import('../lib/eval/holdout.ts');
+  const { runHoldoutEval, perpresLikeBaseline } = await import('../lib/eval/holdout.ts');
   const report = await runHoldoutEval({ fixturesDir, casesFile });
+
+  // ADR-OF-15 — gate sejenis memakai helper backend (pure, fail-closed).
+  // `report.overallPass` dari modul eval hanya menutup allow-list hallucination;
+  // di sini digabung dengan gate answerable/refusal/delta.
+  const gate = evaluateHoldoutGate({
+    perpres: perpresLikeBaseline(),
+    holdout: report.metrics,
+  });
+  report.delta = {
+    answerable: gate.deltaAnswerable,
+    refusal: gate.deltaRefusal,
+  };
+  report.gate = gate;
+  report.overallPass = gate.overallPass && report.metrics.hallucination_rate <= report.thresholds.hallucination;
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
@@ -84,7 +99,9 @@ try {
   console.log(`Refusal accuracy    : ${fmt(report.metrics.refusal_accuracy)}  (ambang ≥ ${fmt(report.thresholds.refusal)})`);
   console.log(`Hallucination rate  : ${fmt(report.metrics.hallucination_rate)}  (ambang ≤ ${fmt(report.thresholds.hallucination)})`);
   console.log(`Overall accuracy    : ${fmt(report.metrics.overall_accuracy)}  (${report.passed}/${report.total})`);
-  console.log(`Perpres 76 baseline : 0.9960 (chunker structure metrics) — lihat docs/EVAL_RESULTS.md`);
+  console.log(`Baseline sejenis    : answerable ${fmt(report.baseline.answerable_accuracy)} · refusal ${fmt(report.baseline.refusal_accuracy)}  [${report.baseline.source}]`);
+  console.log(`Delta (Perpres−hold): answerable ${fmt(report.delta.answerable)} · refusal ${fmt(report.delta.refusal)}  (ambang ≤ ${fmt(report.thresholds.delta)})`);
+  if (report.gate.reasons.length) console.log(`Gate reasons        : ${report.gate.reasons.join(' | ')}`);
   console.log(`HASIL KESELURUHAN   : ${report.overallPass ? 'PASS' : 'FAIL'}`);
   console.log(`Detail lengkap     : ${path.relative(root, outFile)}`);
 

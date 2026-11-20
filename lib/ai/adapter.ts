@@ -35,7 +35,7 @@ import {
   validateCitationDeepLink,
   type CitationRegistry,
 } from '@/lib/ai/retrieval';
-import { checkGuardrails } from '@/lib/ai/guardrails';
+import { checkGuardrails, topicsFromRegistry } from '@/lib/ai/guardrails';
 import { classifyEvidenceConfidence, decideOutput } from '@/lib/ai/output';
 import { callLlmStructured } from '@/lib/ai/llm';
 import type { DocType as AiDocType, SchemaJson as AiSchemaJson } from '@/lib/ai/types';
@@ -222,9 +222,20 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
   const registry = (input.citationRegistry ?? { documents: {}, chunks: {} }) as CitationRegistry;
   const scope = input.scope ?? null;
 
+  // ADR-OF-12: topik berasal dari registry chunk aktif, BUKAN daftar hard-code.
+  // Guardrail dievaluasi di sini — setelah retrieval, SEBELUM compose — sehingga
+  // sinyal out_of_scope tidak lagi dibuang saat FTS5 menemukan term yang cocok.
+  const registryChunks = Object.values(registry.chunks ?? {});
+  const registryTopics = topicsFromRegistry(
+    registryChunks.map((c) => ({ section_path: c.section_path, text: c.text })),
+  );
+  const evidenceText = registryChunks.map((c) => c.text).join(' ');
+
   // FR-C.1: scope gate sebelum retrieval/sitasi dipakai.
   const guard = checkGuardrails({
     question: input.question,
+    availableTopics: registryTopics,
+    evidenceText,
     ...(scope
       ? {
           scope: {

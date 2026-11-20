@@ -19,8 +19,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import {
-  chunkLegalDocument, chunkSections,
-  type LegalChunk, type LegalChunkInput,
+  chunkDocument,
+  type LegalChunkInput,
 } from '../ingest/chunker';
 import { badness } from '../ingest/mojibake';
 import type { ExtractedSection } from '../ingest/types';
@@ -242,16 +242,17 @@ function baselineComparison(gt: GtChunk[], inputs: LegalChunkInput[]): ChunkerCo
     page: i.pageStart,
     text: i.text,
   }));
-  const out = chunkSections(sections).map((c) => ({
+  // ADR-OF-13: baseline juga lewat entry point produksi, bukan jalur eval.
+  const out = chunkDocument({ sections, docType: 'general' }).map((c) => ({
     text: c.content,
-    chunk_type: null,
-    page_start: c.page,
-    page_end: c.page,
-    parent_id: null,
-    clean_flags: [] as string[],
+    chunk_type: c.chunk_type,
+    page_start: c.page_start,
+    page_end: c.page_end,
+    parent_id: c.parent_id,
+    clean_flags: c.clean_flags,
   }));
   const result = compareChunker(gt, out);
-  result.label = 'baseline: chunkSections (flat, satu level)';
+  result.label = 'baseline: chunkDocument(docType=general) — flat, satu level';
   return result;
 }
 
@@ -395,9 +396,17 @@ export function runPerpresEval(options: { casesFile: string; fixturesDir: string
   const sectionChunks = toLegalSectionChunks(gt);
 
   const baseline = baselineComparison(gt, inputs);
-  const tunedRaw = chunkLegalDocument(inputs);
+  // ADR-OF-13: tuned lewat entry point yang SAMA dengan produksi/ingest.
+  const tunedRaw = chunkDocument({ legalInputs: inputs, docType: 'legal' }).map((c) => ({
+    text: c.content,
+    chunk_type: c.chunk_type,
+    page_start: c.page_start,
+    page_end: c.page_end,
+    parent_id: c.parent_id,
+    clean_flags: c.clean_flags,
+  }));
   const tuned = compareChunker(gt, tunedRaw);
-  tuned.label = 'tuning: chunkLegalDocument (structure-aware)';
+  tuned.label = 'tuning: chunkDocument(docType=legal) — structure-aware';
 
   const selected: Json[] = (data.cases ?? []).filter((c: Json) => c.suite === 'perpres76');
   const cases: PerpresCaseResult[] = selected.map((c) => {

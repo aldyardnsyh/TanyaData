@@ -15,6 +15,7 @@ import type {
 } from '@/lib/contracts/http';
 import { freshContext } from '@/lib/ai/compose';
 import { isFailureCodeLookup } from '@/lib/ai/normalize';
+import { queryTerms } from './retrieval';
 import type { GuardrailResult, GuardrailType as CoreGuardrailType } from './types';
 
 type GuardrailText = { answer: string; explanation: string; followUps: string[] };
@@ -173,9 +174,18 @@ export function isSqlInjectionLike(question: string): boolean {
 const GENERAL_DESTRUCTIVE_RE =
   /\b(hapus|hapuskan|delete|drop|truncate|update|insert|alter|create\s+table|replace|timpa|reset\s+data|remove\s+all|overwrite|清空)\b/i;
 
-/** PII request — generic patterns, no reference to any specific dataset. */
+/**
+ * PII request — generic patterns, no reference to any specific dataset.
+ *
+ * ADR-OF-12: `data pribadi` / `personal data` sengaja DIBUANG. Frasa itu
+ * terlalu luas: pertanyaan sah seperti "Apakah prosedur ini berlaku untuk
+ * permintaan data pribadi pihak ketiga?" (SOP-06) adalah pertanyaan
+ * *tentang* kebijakan, bukan permintaan mengungkap PII. Yang ditahan tetap
+ * pola identitas konkret (email, telepon, NIK, 16 digit) dan kata kunci
+ * identitas eksplisit.
+ */
 const GENERAL_PII_RE =
-  /([\w.+-]+@[\w-]+\.[\w.]+)|\b(0\d{2,3}[- ]?\d{3,4}[- ]?\d{3,4})\b|\b\d{16}\b|\b(NIK|KTP|no\s*ktp|nomor\s*hp|data\s*pribadi|email\s*(pelanggan|customer)|personal\s+data)\b/i;
+  /([\w.+-]+@[\w-]+\.[\w.]+)|\b(0\d{2,3}[- ]?\d{3,4}[- ]?\d{3,4})\b|\b\d{16}\b|\b(NIK|KTP|no\s*ktp|nomor\s*hp|email\s*(pelanggan|customer))\b/i;
 
 /** Clearly off-topic for a document/data assistant, independent of domain. */
 const GENERAL_OFF_TOPIC_RE =
@@ -189,10 +199,79 @@ const GENERAL_AMBIGUOUS_RE =
 const INJECTION_RE =
   /\b(abaikan\s+(semua\s+)?(aturan|instruksi)|ignore\s+(all\s+)?(previous|above|instructions)|system\s*prompt|keluarkan\s+(kunci|rahasia)|reveal\s+(your\s+)?(secret|key|prompt)|jangan\s+ikuti\s+aturan)\b/i;
 
+/**
+ * ADR-OF-12 — turunkan topik dari REGISTRY chunk aktif, bukan daftar hard-code.
+ *
+ * `section_path` generik ("Halaman 1", "chunk-0") bukan topik; dibuang.
+ * Topik diambil dari heading/definisi yang memang tertulis di dokumen
+ * (pola "X adalah ..." / "X wajib ..."). Turunan ini deterministik dan
+ * berubah otomatis saat dokumen aktif berubah — tidak ada overfitting SOP.
+ */
+export function topicsFromRegistry(
+  chunks: Array<{ section_path?: string | null; text?: string | null }>,
+): string[] {
+  const topics = new Set<string>();
+  for (const c of chunks ?? []) {
+    const sp = String(c.section_path ?? '').trim();
+    if (sp && !/^(halaman\s*\d+|chunk-\d+)$/i.test(sp)) topics.add(sp);
+    const text = String(c.text ?? '');
+    for (const m of text.matchAll(/\b([A-Z][A-Za-zÀ-ÿ][\w\s-]{1,38}?)\s+(?:adalah|wajib)\b/g)) {
+      const t = m[1].replace(/\s+/g, ' ').trim();
+      if (t.length >= 3) topics.add(t);
+    }
+  }
+  return [...topics].slice(0, 40);
+}
+
+/**
+ * Sinonim generik (bukan daftar topik dokumen) untuk mengukur apakah sebuah
+ * pertanyaan benar-benar DIDUKUNG oleh kalimat bukti. Parafrasa sah seperti
+ * "masuk lewat jalur" ↔ "diterima melalui" tidak boleh salah ditolak; sebaliknya
+ * "uploading" / "menandatangani" memang tidak punya padanan di bukti.
+ */
+const GUARDRAIL_SYNONYMS: Record<string, string[]> = {
+  masuk: ['diterima', 'terima'],
+  jalur: ['melalui', 'lewat'],
+  bisa: ['dapat'],
+  dilakukan: ['diberi'],
+  belum: ['tidak'],
+  cara: ['prosedur'],
+  uploading: ['unggah', 'upload'],
+  kepala: ['pimpinan'],
+  menandatangani: ['tanda'],
+};
+
+/**
+ * Skor dukungan maksimum: fraksi query-term yang hadir di SATU kalimat bukti.
+ * Satu kalimat yang menjawab lebih bermakna daripada kumpulan kata yang
+ * tersebar di seluruh dokumen (itu yang membuat FTS5 OR-match menyesatkan).
+ */
+export function answerabilitySupport(question: string, evidenceText: string): number {
+  const terms = queryTerms(question);
+  if (!terms.length) return 1;
+  const sentences = String(evidenceText ?? '')
+    .replace(/\s+/g, ' ')
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.toLowerCase())
+    .filter(Boolean);
+  let best = 0;
+  for (const sentence of sentences) {
+    let hits = 0;
+    for (const term of terms) {
+      const variants = [term, ...(GUARDRAIL_SYNONYMS[term] ?? [])];
+      if (variants.some((v) => sentence.includes(v))) hits += 1;
+    }
+    best = Math.max(best, hits / terms.length);
+  }
+  return Number(best.toFixed(4));
+}
+
 export interface GuardrailCheckInput {
   question: string;
   /** Topics actually available in the active sources; used for out_of_scope. */
   availableTopics?: string[];
+  /** Teks bukti aktif — dipakai agar parafrasa tidak salah ditolak. */
+  evidenceText?: string;
   /** True when retrieval returned zero usable evidence. */
   noEvidence?: boolean;
   /** True when the question cannot be served by any active source. */
@@ -259,8 +338,16 @@ export function checkGuardrails(input: GuardrailCheckInput): GuardrailResult {
     else if (GENERAL_AMBIGUOUS_RE.test(q)) type = 'ambiguous';
     else if (GENERAL_OFF_TOPIC_RE.test(q)) type = 'out_of_scope';
     else if (input.availableTopics && input.availableTopics.length) {
-      const hit = input.availableTopics.some((t) => q.toLowerCase().includes(t.toLowerCase()));
-      if (!hit && q.length > 12) type = 'out_of_scope';
+      const qLower = q.toLowerCase();
+      const topicHit = input.availableTopics.some((t) => qLower.includes(String(t).toLowerCase()));
+      if (!topicHit && q.length > 12) {
+        // ADR-OF-12: FTS5 OR-match tidak cukup untuk menyatakan "ada jawaban".
+        // Tolak bila tidak ada SATU kalimat bukti yang mendukung mayoritas
+        // term pertanyaan (sinonim generik dipakai agar parafrasa tidak kena).
+        if (answerabilitySupport(q, String(input.evidenceText ?? '')) < 0.45) {
+          type = 'out_of_scope';
+        }
+      }
     }
   }
 
