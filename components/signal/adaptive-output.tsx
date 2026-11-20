@@ -22,8 +22,9 @@ export interface AdaptiveOutputViewProps {
   className?: string;
 }
 
-function formatValue(value: string | number | null, format: ShareOutput['format']): string {
+function formatValue(value: string | number | null, format: ShareOutput['format'] | 'text'): string {
   if (value === null || value === undefined || value === '') return 'Belum dihitung';
+  if (format === 'text') return String(value);
   const n = typeof value === 'number' ? value : Number(value.replace(/\./g, '').replace(',', '.'));
   if (!Number.isFinite(n)) return String(value);
   if (format === 'currency') return formatIdr(n);
