@@ -15,6 +15,7 @@ import type {
 } from '@/lib/contracts/http';
 import { freshContext } from '@/lib/ai/compose';
 import { isFailureCodeLookup } from '@/lib/ai/normalize';
+import type { GuardrailResult, GuardrailType as CoreGuardrailType } from './types';
 
 type GuardrailText = { answer: string; explanation: string; followUps: string[] };
 
@@ -162,3 +163,91 @@ export function detectEarlyGuardrail(db: DB, question: string): EarlyGuardrail {
 export function isSqlInjectionLike(question: string): boolean {
   return /\b(select\s+.+\s+from|union\s+select|;\s*drop|or\s+1\s*=\s*1|--|\/\*|\*\/)\b/i.test(question);
 }
+
+/* ========================================================================== */
+/* GENERAL CORE (P3-CORE) — docs/CORE_AI_SPEC.md §2.9, §9                      */
+/* Domain-agnostic. The block above is the legacy demo adapter, untouched.     */
+/* ========================================================================== */
+
+/** Destructive intent — generic verbs only, no table/column names. */
+const GENERAL_DESTRUCTIVE_RE =
+  /\b(hapus|hapuskan|delete|drop|truncate|update|insert|alter|create\s+table|replace|timpa|reset\s+data|remove\s+all|overwrite|清空)\b/i;
+
+/** PII request — generic patterns, no reference to any specific dataset. */
+const GENERAL_PII_RE =
+  /([\w.+-]+@[\w-]+\.[\w.]+)|\b(0\d{2,3}[- ]?\d{3,4}[- ]?\d{3,4})\b|\b\d{16}\b|\b(NIK|KTP|no\s*ktp|nomor\s*hp|data\s*pribadi|email\s*(pelanggan|customer)|personal\s+data)\b/i;
+
+/** Clearly off-topic for a document/data assistant, independent of domain. */
+const GENERAL_OFF_TOPIC_RE =
+  /\b(CEO|CTO|direktur utama|presiden direktur|cuaca|harga saham|prediksi saham|olahraga|gaji\s+karyawan|siapa\s+pemilik)\b/i;
+
+/** Ambiguous metric request without a named measure. */
+const GENERAL_AMBIGUOUS_RE =
+  /\b(terbaik|paling\s+baik|performanya\s+(bagaimana|gimana)|bagaimana\s+performanya|kinerjanya\s+(bagaimana|gimana)|bagaimana\s+kinerjanya|best|most\s+important)\b/i;
+
+/** Instruction-injection / prompt-override attempts inside untrusted text. */
+const INJECTION_RE =
+  /\b(abaikan\s+(semua\s+)?(aturan|instruksi)|ignore\s+(all\s+)?(previous|above|instructions)|system\s*prompt|keluarkan\s+(kunci|rahasia)|reveal\s+(your\s+)?(secret|key|prompt)|jangan\s+ikuti\s+aturan)\b/i;
+
+export interface GuardrailCheckInput {
+  question: string;
+  /** Topics actually available in the active sources; used for out_of_scope. */
+  availableTopics?: string[];
+  /** True when retrieval returned zero usable evidence. */
+  noEvidence?: boolean;
+  /** True when the question cannot be served by any active source. */
+  unsupported?: boolean;
+}
+
+const MESSAGES: Record<CoreGuardrailType, { message: string; explanation: string }> = {
+  destructive: {
+    message: 'Sistem hanya memiliki akses baca. Saya tidak dapat menghapus, mengubah, atau menjalankan perintah yang merusak data.',
+    explanation: 'Permintaan bersifat destruktif; tidak ada pernyataan yang dieksekusi.',
+  },
+  pii: {
+    message: 'Saya tidak akan menampilkan atau menebak data pribadi. Hanya informasi yang tersedia pada sumber yang dapat ditampilkan.',
+    explanation: 'Permintaan mengarah pada data pribadi; tidak ada nilai yang direkayasa.',
+  },
+  out_of_scope: {
+    message: 'Pertanyaan ini di luar cakupan sumber yang tersedia. Saya hanya menjawab dari dokumen dan data yang diunggah.',
+    explanation: 'Tidak ada sumber aktif yang relevan dengan topik ini.',
+  },
+  ambiguous: {
+    message: 'Metrik atau objek yang dimaksud belum jelas. Silakan sebutkan ukuran, periode, atau bagian dokumen yang spesifik.',
+    explanation: 'Pertanyaan memerlukan klarifikasi sebelum dapat dijawab dengan aman.',
+  },
+  unsupported: {
+    message: 'Pertanyaan ini tidak dapat dijawab dari sumber yang tersedia saat ini.',
+    explanation: 'Tidak ada komponen pipeline yang dapat memenuhi permintaan ini.',
+  },
+  not_in_sources: {
+    message: 'Informasi tersebut tidak ditemukan pada sumber yang tersedia. Saya tidak akan mengarang jawaban.',
+    explanation: 'Tidak ada bukti relevan yang dapat disitasi.',
+  },
+};
+
+/**
+ * General guardrail check. Order matters: destructive and PII are hard blocks,
+ * injection is treated as unsupported rather than obeyed, and "no evidence"
+ * is always admitted honestly.
+ */
+export function checkGuardrails(input: GuardrailCheckInput): GuardrailResult {
+  const q = String(input.question ?? '').trim();
+  let type: CoreGuardrailType | null = null;
+
+  if (GENERAL_DESTRUCTIVE_RE.test(q) || isSqlInjectionLike(q)) type = 'destructive';
+  else if (GENERAL_PII_RE.test(q)) type = 'pii';
+  else if (INJECTION_RE.test(q)) type = 'unsupported';
+  else if (input.noEvidence) type = 'not_in_sources';
+  else if (input.unsupported) type = 'unsupported';
+  else if (GENERAL_AMBIGUOUS_RE.test(q)) type = 'ambiguous';
+  else if (GENERAL_OFF_TOPIC_RE.test(q)) type = 'out_of_scope';
+  else if (input.availableTopics && input.availableTopics.length) {
+    const hit = input.availableTopics.some((t) => q.toLowerCase().includes(t.toLowerCase()));
+    if (!hit && q.length > 12) type = 'out_of_scope';
+  }
+
+  if (!type) return { triggered: false, type: null, message: '', explanation: '' };
+  return { triggered: true, type, ...MESSAGES[type] };
+}
+

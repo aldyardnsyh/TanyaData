@@ -10,6 +10,9 @@ import type { Lang, SourceCitation } from '@/lib/contracts/http';
 import { allRows, num, str } from '@/lib/analytics/sql';
 import { normalizeText, stopwordTokens } from '@/lib/ai/normalize';
 import { truncateText } from '@/lib/date';
+import type {
+  Chunk, Citation, DocType, RetrievalResult, RetrievalScore,
+} from './types';
 
 const MAX_TERMS = 12;
 
@@ -77,4 +80,266 @@ export function retrieveDocuments(db: DB, question: string, lang: Lang): SourceC
     }
   }
   return [];
+}
+
+/* ========================================================================== */
+/* GENERAL CORE (P3-CORE) — docs/CORE_AI_SPEC.md §5                            */
+/* The block above is the legacy demo adapter and is intentionally untouched. */
+/* ========================================================================== */
+
+export interface FtsDb {
+  prepare(sql: string): {
+    all: (...args: unknown[]) => Record<string, unknown>[];
+    run: (...args: unknown[]) => unknown;
+  };
+  exec(sql: string): unknown;
+}
+
+export interface HybridRetrieveInput {
+  question: string;
+  chunks: Chunk[];
+  /** Connection with FTS5 available. When absent, a lexical fallback is used. */
+  db?: FtsDb | null;
+  docType?: DocType | null;
+  topK?: number;
+  budgetTokens?: number;
+  /** Optional embedding scores keyed by chunk id; skipped when absent. */
+  embeddingScores?: Record<string, number> | null;
+  schemaText?: string;
+  sqlText?: string;
+  instructionText?: string;
+}
+
+const GENERAL_STOPWORDS = new Set([
+  'yang', 'di', 'pada', 'untuk', 'dari', 'ini', 'itu', 'dan', 'atau', 'dengan',
+  'oleh', 'ke', 'the', 'of', 'for', 'in', 'is', 'are', 'apa', 'siapa', 'kapan',
+  'mana', 'bagaimana', 'mengapa', 'kenapa', 'sejak', 'berapa', 'banyak', 'tentang',
+  'menurut', 'berbunyi', 'bunyi', 'apa', 'saja', 'ada', 'dalam',
+]);
+
+export function queryTerms(question: string, maxTerms = 12): string[] {
+  const normalized = String(question ?? '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return normalized.split(' ')
+    .filter((t) => t.length >= 3 && !GENERAL_STOPWORDS.has(t))
+    .slice(0, maxTerms);
+}
+
+/** Idempotently (re)build the FTS5 index from the supplied chunks. */
+export function ensureFtsIndex(db: FtsDb, chunks: Chunk[]): void {
+  db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS core_chunks_fts USING fts5(
+    text, doc UNINDEXED, section_path UNINDEXED, page UNINDEXED,
+    doc_type UNINDEXED, parse_ok UNINDEXED, parent_id UNINDEXED
+  )`);
+  db.exec('DELETE FROM core_chunks_fts');
+  const insert = db.prepare(
+    'INSERT INTO core_chunks_fts(rowid, text, doc, section_path, page, doc_type, parse_ok, parent_id) VALUES (?,?,?,?,?,?,?,?)',
+  );
+  chunks.forEach((c, i) => {
+    insert.run(
+      i + 1, c.text, c.doc, c.section_path, c.page ?? null,
+      c.doc_type ?? '', c.parse_ok === false ? '0' : '1', c.parent_id ?? '',
+    );
+  });
+}
+
+interface FtsRow {
+  rowid: number;
+  text: string;
+  doc: string;
+  section_path: string;
+  page: number | null;
+  doc_type: string;
+  parse_ok: string;
+  parent_id: string;
+  score: number;
+}
+
+function ftsSearch(db: FtsDb, terms: string[], topK: number): FtsRow[] {
+  const safe = terms.map((t) => t.replace(/[^a-z0-9]/g, '')).filter(Boolean);
+  if (!safe.length) return [];
+  const match = safe.map((t) => `"${t}"`).join(' OR ');
+  try {
+    return db.prepare(
+      `SELECT rowid, text, doc, section_path, page, doc_type, parse_ok, parent_id,
+              bm25(core_chunks_fts) AS score
+         FROM core_chunks_fts
+        WHERE core_chunks_fts MATCH ? AND parse_ok = '1'
+        ORDER BY score LIMIT ?`,
+    ).all(match, topK) as unknown as FtsRow[];
+  } catch {
+    return [];
+  }
+}
+
+function likeSearch(db: FtsDb, terms: string[], topK: number): FtsRow[] {
+  for (const requireAll of [true, false]) {
+    const cond = terms.map(() => 'text LIKE ?').join(requireAll ? ' AND ' : ' OR ');
+    try {
+      const rows = db.prepare(
+        `SELECT rowid, text, doc, section_path, page, doc_type, parse_ok, parent_id, 0 AS score
+           FROM core_chunks_fts WHERE parse_ok = '1' AND (${cond}) LIMIT ?`,
+      ).all(...terms.map((t) => `%${t}%`), topK) as unknown as FtsRow[];
+      if (rows.length) return rows;
+    } catch {
+      // next strategy
+    }
+  }
+  return [];
+}
+
+function metadataBoost(row: FtsRow, docType: DocType | null | undefined): number {
+  let boost = 0;
+  if (docType && row.doc_type === docType) boost += 0.4;
+  if (row.page && row.page > 0) boost += 0.3;
+  const depth = row.section_path.split('/').length;
+  boost += Math.min(0.3, depth * 0.1);
+  return Math.min(1, boost);
+}
+
+function estimateTokens(text: string): number {
+  return Math.max(1, Math.ceil(text.length / 4));
+}
+
+/**
+ * Hybrid retrieval: FTS5 BM25 (mandatory) → optional embedding → simple
+ * reranker → small-to-big parent expansion → context budget. Zero evidence is
+ * reported honestly; the model is never allowed to fill the gap.
+ */
+export function retrieveHybrid(input: HybridRetrieveInput): RetrievalResult {
+  const terms = queryTerms(input.question);
+  const topK = input.topK ?? 5;
+  const budget = input.budgetTokens ?? 6000;
+  const chunks = input.chunks ?? [];
+  const byId = new Map(chunks.map((c, i) => [String(c.id), c]));
+  const byRowid = new Map(chunks.map((c, i) => [i + 1, c]));
+
+  let rows: FtsRow[] = [];
+  let usedFts = false;
+  if (input.db) {
+    ensureFtsIndex(input.db, chunks);
+    rows = ftsSearch(input.db, terms, topK);
+    usedFts = rows.length > 0;
+    if (!rows.length) rows = likeSearch(input.db, terms, topK);
+  } else {
+    // Deterministic lexical fallback when no FTS connection is supplied.
+    const scored = chunks
+      .filter((c) => c.parse_ok !== false)
+      .map((c) => {
+        const hay = c.text.toLowerCase();
+        const hits = terms.filter((t) => hay.includes(t)).length;
+        return { chunk: c, hits };
+      })
+      .filter((x) => x.hits > 0)
+      .sort((a, b) => b.hits - a.hits)
+      .slice(0, topK);
+    rows = scored.map((x, i) => {
+      const c = x.chunk;
+      const idx = chunks.indexOf(c) + 1;
+      return {
+        rowid: idx, text: c.text, doc: c.doc, section_path: c.section_path,
+        page: c.page ?? null, doc_type: c.doc_type ?? '', parse_ok: '1',
+        parent_id: c.parent_id ?? '', score: -x.hits - i * 0.01,
+      };
+    });
+  }
+
+  const maxAbs = Math.max(1e-6, ...rows.map((r) => Math.abs(r.score)));
+  const scores: RetrievalScore[] = [];
+  const ranked = rows.map((r) => {
+    const bm25Norm = usedFts ? 1 / (1 + Math.abs(r.score) / maxAbs) : 1 / (1 + Math.abs(r.score));
+    const embedNorm = input.embeddingScores?.[String(byRowid.get(r.rowid)?.id ?? '')] ?? null;
+    const meta = metadataBoost(r, input.docType);
+    const final = embedNorm === null
+      ? 0.90 * bm25Norm + 0.10 * meta
+      : 0.60 * bm25Norm + 0.30 * embedNorm + 0.10 * meta;
+    const chunk = byRowid.get(r.rowid);
+    if (chunk) scores.push({ chunk_id: String(chunk.id), bm25: bm25Norm, ...(embedNorm === null ? {} : { embed: embedNorm }), metadata: meta, final });
+    return { row: r, final };
+  }).sort((a, b) => b.final - a.final);
+
+  // small-to-big: expand child → parent, deduplicate by parent id
+  const seenParents = new Set<string>();
+  const evidence: Citation[] = [];
+  for (const { row, final } of ranked) {
+    const child = byRowid.get(row.rowid);
+    if (!child) continue;
+    const parentKey = child.parent_id || String(child.id);
+    if (seenParents.has(parentKey)) continue;
+    seenParents.add(parentKey);
+    const parent = child.parent_id ? byId.get(child.parent_id) : undefined;
+    const contextText = parent?.text ?? child.text;
+    evidence.push({
+      chunk_id: String(child.id),
+      section_id: parentKey,
+      section_path: child.section_path,
+      doc: child.doc,
+      page: child.page ?? null,
+      quote: contextText.replace(/\s+/g, ' ').slice(0, 400),
+      score: Math.round(final * 1000) / 1000,
+    });
+  }
+
+  const status: RetrievalResult['status'] = evidence.length === 0
+    ? 'no_evidence'
+    : (ranked[0]?.final ?? 0) < 0.25 ? 'evidence_limited' : 'ok';
+
+  const contextBundle = buildContextBundle({
+    evidence,
+    schemaText: input.schemaText ?? '',
+    sqlText: input.sqlText ?? '',
+    instructionText: input.instructionText ?? '',
+    budgetTokens: budget,
+  });
+
+  return {
+    evidence,
+    context_bundle: contextBundle,
+    scores,
+    status,
+    tried_terms: terms,
+    budget_tokens: budget,
+    used_tokens: estimateTokens(contextBundle),
+    message: status === 'no_evidence'
+      ? `Informasi ini tidak ditemukan pada sumber yang tersedia. Kata kunci yang dicoba: ${terms.join(', ') || '(kosong)'}.`
+      : status === 'evidence_limited'
+        ? 'Bukti ditemukan tetapi skornya rendah; jawaban harus diberi label evidence_limited.'
+        : undefined,
+  };
+}
+
+/** 50% citations · 25% schema · 15% SQL · 10% instructions (spec §5.3). */
+export function buildContextBundle(parts: {
+  evidence: Citation[];
+  schemaText?: string;
+  sqlText?: string;
+  instructionText?: string;
+  budgetTokens: number;
+}): string {
+  const budget = parts.budgetTokens;
+  const caps = {
+    evidence: Math.floor(budget * 0.5),
+    schema: Math.floor(budget * 0.25),
+    sql: Math.floor(budget * 0.15),
+    instruction: Math.floor(budget * 0.10),
+  };
+  const take = (text: string, cap: number) => {
+    const maxChars = cap * 4;
+    return text.length <= maxChars ? text : `${text.slice(0, maxChars)}…`;
+  };
+  const cite = parts.evidence
+    .map((c, i) => `[${i + 1}] ${c.doc} · ${c.section_path}${c.page ? ` · hlm ${c.page}` : ''}\n${c.quote}`)
+    .join('\n\n');
+  const blocks = [
+    `SITASI:\n${take(cite, caps.evidence)}`,
+    `SKEMA:\n${take(parts.schemaText ?? '', caps.schema)}`,
+    `HASIL SQL:\n${take(parts.sqlText ?? '', caps.sql)}`,
+    `INSTRUKSI:\n${take(parts.instructionText ?? '', caps.instruction)}`,
+  ];
+  return blocks.join('\n\n---\n\n');
 }
