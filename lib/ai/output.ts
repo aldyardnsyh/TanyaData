@@ -61,7 +61,19 @@ export function decideOutput(input: DecideInput): OutputDecision {
   const evidence = input.evidenceCount ?? 0;
   const rows = input.rowCount ?? 0;
   const cats = input.categoryCount ?? 0;
-  const entities = input.entityCount ?? 0;
+  let entities = input.entityCount ?? 0;
+
+  // A document-backed comparison produces no SQL rows, so callers cannot
+  // always derive entityCount from the data shape. Infer it from distinct
+  // period anchors in the question ("Q2 dan Q3 2026") before the financial
+  // metadata guard runs — otherwise a valid comparison is mislabelled `table`.
+  if (kind === 'comparison' && entities < 2) {
+    const anchors = input.question.match(
+      /\bQ[1-4]\b|\b(?:Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\b|\b20\d{2}\b/gi,
+    ) ?? [];
+    const distinct = new Set(anchors.map((a) => a.toUpperCase()));
+    if (distinct.size >= 2) entities = distinct.size;
+  }
 
   const noChartForText = 'no_chart_for_prose_or_quote';
   const noChartForOne = 'no_chart_for_single_number';
