@@ -27,6 +27,7 @@ import type {
 import { emptyQualityReport, newDocumentId, recordStep } from '@/lib/core/registry';
 import { invalidateQueryCache } from '@/lib/core/cache';
 import { normalizeForFts } from '@/lib/core/store';
+import { chunkDocument, type ChunkDocumentResult } from '@/lib/ingest/chunker';
 import { LOW_TEXT_THRESHOLD, UNREADABLE_PAGE_TEXT, ocrPage, type OcrStatus } from '@/lib/ingest/ocr';
 import { detectPages, type PageLabel } from '@/lib/ingest/scan-detect';
 import { repairMojibake } from '@/lib/ingest/mojibake';
@@ -392,89 +393,51 @@ export function cleanSections(
 
 /* ----------------------------------------------------------- stage 7: chunk */
 
-const CHILD_TARGET = 1200; // ~300 token
-const CHILD_OVERLAP = 150;
-const PARENT_TARGET = 4000; // ~1000 token
-
 type ChunkDraft = Chunk & { key: string; parentKey: string | null };
 
-function splitText(text: string, target: number, overlap: number): string[] {
-  const units = text
-    .split(/\n\s*\n+/)
-    .flatMap((para) => para.split(/(?<=[.!?])\s+/))
-    .map((s) => s.replace(/\s+/g, ' ').trim())
-    .filter(Boolean);
-  const parts: string[] = [];
-  let current = '';
-  for (const unit of units) {
-    if (!current) {
-      current = unit;
-    } else if (current.length + 1 + unit.length <= target) {
-      current += ` ${unit}`;
-    } else {
-      parts.push(current);
-      const tail = current.slice(-overlap);
-      current = `${tail} ${unit}`.trim();
-    }
-  }
-  if (current) parts.push(current);
-  return parts.length ? parts : [text];
-}
-
-export function chunkSections(
-  sections: ParsedSection[],
+/**
+ * ADR-OF-13 — adapter dari entry point tunggal `chunkDocument` ke draft DB.
+ * Tidak ada lagi logika pemotongan teks di core: semua aturan chunking
+ * (legal vs non-legal) berada di `lib/ingest/chunker.ts` dan dipakai eval.
+ *
+ * - non-legal → chunk datar berlevel 'child' (sama dengan jalur hold-out);
+ * - legal → chunk induk berlevel 'parent' + child dengan parentKey stabil.
+ */
+function toChunkDrafts(
+  chunks: ChunkDocumentResult[],
   documentId: string,
   datasetId: string,
 ): ChunkDraft[] {
-  const drafts: ChunkDraft[] = [];
-  let seq = 0;
-  for (const section of sections) {
-    const text = section.text.replace(/\s+/g, ' ').trim();
-    if (!text) continue;
-    for (const parentText of splitText(text, PARENT_TARGET, 0)) {
-      const parentKey = `${documentId}:p:${seq}`;
-      drafts.push({
-        key: parentKey,
-        parentKey: null,
-        document_id: documentId,
-        dataset_id: datasetId,
-        section_path: section.section_path,
-        page: section.page,
-        text: parentText,
-        token_count: Math.ceil(parentText.length / 4),
-        char_count: parentText.length,
-        level: 'parent',
-        parent_id: null,
-        embedding: null,
-        ocr_status: section.ocrStatus ?? 'ok',
-        confidence: section.ocrConfidence ?? 1,
-        page_span: section.pageSpan ?? [section.page ?? 1, section.page ?? 1],
-        clean_flags: section.cleanFlags ?? [],
-        clean_version: 2,
-      });
-      seq += 1;
-      splitText(parentText, CHILD_TARGET, CHILD_OVERLAP).forEach((childText, childIndex) => {
-        drafts.push({
-          key: `${parentKey}:c:${childIndex}`,
-          parentKey,
-          document_id: documentId,
-          dataset_id: datasetId,
-          section_path: section.section_path,
-          page: section.page,
-          text: childText,
-          token_count: Math.ceil(childText.length / 4),
-          char_count: childText.length,
-          level: 'child',
-          parent_id: null,
-          embedding: null,
-          ocr_status: section.ocrStatus ?? 'ok',
-          confidence: section.ocrConfidence ?? 1,
-          page_span: section.pageSpan ?? [section.page ?? 1, section.page ?? 1],
-        });
-      });
-    }
+  const legalParentKeys = new Set<string>();
+  for (const chunk of chunks) {
+    if (chunk.legal_id && !chunk.parent_id) legalParentKeys.add(chunk.legal_id);
   }
-  return drafts;
+
+  return chunks.map((chunk, index) => {
+    const isLegalParent = Boolean(chunk.legal_id && legalParentKeys.has(chunk.legal_id) && !chunk.parent_id);
+    const span = chunk.pageSpan ??
+      (chunk.page != null ? ([chunk.page, chunk.page] as [number, number]) : null);
+    return {
+      key: chunk.legal_id ?? `${documentId}:c:${index}`,
+      parentKey: chunk.parent_id ?? null,
+      document_id: documentId,
+      dataset_id: datasetId,
+      section_path: chunk.section ?? `Bagian ${index + 1}`,
+      page: chunk.page,
+      text: chunk.content,
+      token_count: Math.ceil(chunk.content.length / 4),
+      char_count: chunk.charCount,
+      level: isLegalParent ? 'parent' : 'child',
+      parent_id: null,
+      embedding: null,
+      ocr_status: chunk.ocrStatus ?? (chunk.ocrSkipped ? 'ocr_skipped' : 'ok'),
+      confidence: chunk.ocrConfidence ?? chunk.confidence ?? 1,
+      page_span: span,
+      clean_flags: chunk.clean_flags ?? [],
+      clean_version: chunk.clean_flags?.length ? 2 : 0,
+      content_hash: chunk.content_hash ?? null,
+    };
+  });
 }
 
 /* ------------------------------------------------------- stage 8/9: storage */
@@ -668,7 +631,11 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
     await mark('chunking', () => {
       if (!sections.length) return;
       const documentId = newDocumentId();
-      const drafts = chunkSections(sections, documentId, dataset.id);
+      const drafts = toChunkDrafts(
+        chunkDocument({ sections, docType: classification.doc_type, documentId }),
+        documentId,
+        dataset.id,
+      );
       db.prepare(
         `INSERT INTO core_documents(id, dataset_id, doc_type, mime, pages, sections_json, source_path, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,

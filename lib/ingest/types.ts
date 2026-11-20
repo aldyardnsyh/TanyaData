@@ -42,6 +42,8 @@ export type DocumentChunk = {
   /** true bila halaman asal gagal dibaca → confidence rendah, jujur di UI. */
   ocrSkipped?: boolean;
   confidence?: number;
+  /** Indeks seksi asal di array input; dipakai adapter untuk metadata OCR. */
+  sourceSectionIndex?: number | null;
 };
 
 export function docSourceId(docId: string): string {

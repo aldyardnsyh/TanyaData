@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { getWorkspaceDb, seedAvailable, type DB } from '@/lib/db/client';
 import { resolveDocumentsJson } from '@/lib/db/paths';
-import { chunkSections } from '@/lib/ingest/chunker';
+import { chunkDocument } from '@/lib/ingest/chunker';
 import { docSourceId, type DocumentsJson } from '@/lib/ingest/types';
 import { nowJakartaIso } from '@/lib/date';
 import { conflict } from '@/lib/errors';
@@ -114,7 +114,7 @@ function ensureDocuments(db: DB): void {
 
   const run = db.transaction(() => {
     for (const doc of parsed.documents) {
-      const chunks = chunkSections(doc.sections ?? []);
+      const chunks = chunkDocument({ sections: doc.sections ?? [], docType: 'general' });
       const sourceId = docSourceId(doc.id);
       insertSource.run(
         sourceId,

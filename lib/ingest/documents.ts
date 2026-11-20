@@ -1,6 +1,6 @@
 ﻿import type { DB } from '@/lib/db/client';
 import { nowJakartaIso } from '@/lib/date';
-import { chunkSections } from '@/lib/ingest/chunker';
+import { chunkDocument } from '@/lib/ingest/chunker';
 import { extractPages, sectionsFromPages } from '@/lib/ingest/extract';
 import { updateSource, type SourceRow } from '@/lib/ingest/store';
 import { unprocessable } from '@/lib/errors';
@@ -10,7 +10,9 @@ import { ensureOcrColumns } from '@/lib/ingest/ocr';
 export async function ingestDocument(db: DB, source: SourceRow, buffer: Buffer): Promise<{ chunkCount: number }> {
   const pages = await extractPages(source.format, buffer);
   const sections = sectionsFromPages(pages, source.format, source.name);
-  const chunks = chunkSections(sections);
+  // ADR-OF-13: satu entry point. Sumber legacy tidak punya metadata doc_type
+  // → 'general' (bukan regex ad-hoc).
+  const chunks = chunkDocument({ sections, docType: 'general' });
   if (!chunks.length) {
     throw unprocessable('Dokumen tidak menghasilkan chunk yang dapat diindeks', { reason: 'NO_TEXT_LAYER' });
   }

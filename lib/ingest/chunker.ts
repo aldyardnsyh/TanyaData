@@ -1,4 +1,5 @@
-import type { DocumentChunk, ExtractedSection } from '@/lib/ingest/types';
+import type { DocType } from '@/lib/core/contracts';
+import type { DocumentChunk, ExtractedSection, OcrMark } from '@/lib/ingest/types';
 import { repairMojibake } from './mojibake';
 
 export const CHUNK_TARGET = 900;
@@ -87,7 +88,7 @@ export function chunkSections(
   const out: DocumentChunk[] = [];
   let index = 0;
 
-  const push = (section: ExtractedSection, content: string) => {
+  const push = (section: ExtractedSection, content: string, sourceSectionIndex: number) => {
     const text = content.trim();
     if (!text) return;
     out.push({
@@ -99,19 +100,21 @@ export function chunkSections(
       charCount: text.length,
       ocrSkipped: section.ocr?.skipped === true,
       confidence: section.ocr?.confidence ?? 1,
+      sourceSectionIndex,
     });
     index += 1;
   };
 
-  for (const section of sections) {
+  for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex += 1) {
+    const section = sections[sectionIndex];
     const text = (section.text ?? '').trim();
     if (!text) continue;
     if (text.length <= target) {
-      push(section, text);
+      push(section, text, sectionIndex);
       continue;
     }
     for (const chunk of packUnits(splitUnits(text), target, overlap)) {
-      push(section, chunk);
+      push(section, chunk, sectionIndex);
     }
   }
 
@@ -325,4 +328,151 @@ export function chunkLegalDocument(inputs: LegalChunkInput[]): LegalChunk[] {
   }
 
   return out;
+}
+
+/* ========================================================================== */
+/* ADR-OF-13 — SATU entry point chunker, dipilih lewat doc_type                  */
+/*                                                                             */
+/* Eval dan produksi WAJIB memanggil `chunkDocument`. Tidak boleh ada jalur     */
+/* khusus eval yang memanggil `chunkLegalDocument` langsung.                    */
+/* ========================================================================== */
+
+/**
+ * Bentuk seksi minimal yang diterima entry point. `ExtractedSection` (ingest
+ * legacy) maupun `ParsedSection` (core ingest) memenuhi struktur ini.
+ */
+export type ChunkableSection = {
+  text: string;
+  page?: number | null;
+  no?: number | null;
+  title?: string | null;
+  section_path?: string;
+  ocr?: OcrMark;
+  ocrStatus?: string;
+  ocrConfidence?: number;
+  unreadable?: boolean;
+  pageSpan?: [number, number] | null;
+  cleanFlags?: string[];
+};
+
+export type ChunkDocumentInput = {
+  sections?: ChunkableSection[];
+  docType?: DocType | null;
+  /** Id dokumen untuk legal chunk id yang stabil. */
+  documentId?: string;
+  /**
+   * Input legal kaya dari ekstraktor (heading, segments, kind). Bila diisi,
+   * dipakai apa adanya — dipakai eval Perpres agar sinyal halaman tidak hilang.
+   * Jalur ini TETAP masuk lewat chunkDocument, bukan jalur eval terpisah.
+   */
+  legalInputs?: LegalChunkInput[];
+  target?: number;
+  overlap?: number;
+};
+
+/** Keluaran seragam: field legal null untuk dokumen non-legal. */
+export type ChunkDocumentResult = DocumentChunk & {
+  chunk_type: LegalChunkType | null;
+  page_start: number | null;
+  page_end: number | null;
+  parent_id: string | null;
+  pasal: number | null;
+  ayat: number | null;
+  butir: string | null;
+  content_hash: string | null;
+  clean_flags: string[];
+  legal_id: string | null;
+  ocrStatus?: string;
+  ocrConfidence?: number;
+  pageSpan?: [number, number] | null;
+};
+
+function sectionsToLegalInputs(sections: ChunkableSection[], documentId?: string): LegalChunkInput[] {
+  return sections.map((section, index) => {
+    const heading = section.title ?? section.section_path ?? null;
+    const pasal = heading?.match(/pasal\s*(\d+[a-z]?)/i);
+    const id = pasal ? `pasal-${pasal[1]}` : `${documentId ?? 'doc'}-s${index}`;
+    const page = section.page ?? 1;
+    return {
+      id,
+      text: section.text,
+      pageStart: page,
+      pageEnd: section.pageSpan?.[1] ?? page,
+      heading,
+      kind: 'text',
+      segments: [{ page, text: section.text }],
+    };
+  });
+}
+
+function legalSectionPath(chunk: LegalChunk): string {
+  const parts: string[] = [];
+  if (chunk.pasal != null) parts.push(`Pasal ${chunk.pasal}`);
+  if (chunk.ayat != null) parts.push(`Ayat (${chunk.ayat})`);
+  if (chunk.butir) parts.push(`butir ${chunk.butir}`);
+  if (!parts.length) parts.push(chunk.chunk_type);
+  return parts.join(' > ');
+}
+
+/**
+ * Entry point tunggal untuk chunking (ADR-OF-13).
+ * `doc_type === 'legal'` → `chunkLegalDocument`; selainnya → `chunkSections`.
+ * Kosong/`unknown` → `general`. Deterministik, tanpa model.
+ */
+export function chunkDocument(input: ChunkDocumentInput): ChunkDocumentResult[] {
+  const docType = input.docType ?? 'general';
+  const sections = input.sections ?? [];
+
+  if (docType === 'legal') {
+    const legalInputs = input.legalInputs ?? sectionsToLegalInputs(sections, input.documentId);
+    return chunkLegalDocument(legalInputs).map((chunk, index) => ({
+      sectionNo: chunk.pasal ?? null,
+      section: legalSectionPath(chunk),
+      page: chunk.page_start ?? null,
+      chunkIndex: index,
+      content: chunk.text,
+      charCount: chunk.text.length,
+      ocrSkipped: false,
+      confidence: 1,
+      sourceSectionIndex: null,
+      chunk_type: chunk.chunk_type,
+      page_start: chunk.page_start,
+      page_end: chunk.page_end,
+      parent_id: chunk.parent_id,
+      pasal: chunk.pasal,
+      ayat: chunk.ayat,
+      butir: chunk.butir,
+      content_hash: chunk.content_hash,
+      clean_flags: chunk.clean_flags,
+      legal_id: chunk.id,
+      pageSpan: [chunk.page_start, chunk.page_end],
+    }));
+  }
+
+  const extracted: ExtractedSection[] = sections.map((section) => ({
+    no: section.no ?? null,
+    title: section.title ?? section.section_path ?? '',
+    page: section.page ?? null,
+    text: section.text,
+    ocr: section.ocr,
+  }));
+  return chunkSections(extracted, { target: input.target, overlap: input.overlap }).map((chunk) => {
+    const source = chunk.sourceSectionIndex != null ? sections[chunk.sourceSectionIndex] : undefined;
+    return {
+      ...chunk,
+      chunk_type: null,
+      page_start: chunk.page ?? null,
+      page_end: chunk.page ?? null,
+      parent_id: null,
+      pasal: null,
+      ayat: null,
+      butir: null,
+      content_hash: null,
+      clean_flags: [],
+      legal_id: null,
+      ocrStatus: source?.ocrStatus,
+      ocrConfidence: source?.ocrConfidence,
+      pageSpan: source?.pageSpan ?? null,
+    };
+  });
 }
