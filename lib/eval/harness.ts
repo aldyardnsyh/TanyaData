@@ -210,22 +210,26 @@ function prepareWorkspace(fixturesDir: string, casesFile: Json): Prepared[] {
         `INSERT INTO core_chunks(document_id, dataset_id, section_path, page, text, token_count, char_count, level, parent_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       );
-      // Parents first so child parent_id can reference a real rowid.
-      for (const chunk of fixture.chunks ?? []) {
-        if (chunk.parent_id) continue;
+      // A chunk is a "parent" only when another chunk references it as
+      // parent_id. Everything else is a retrievable child chunk. Treating all
+      // unreferenced chunks as parents would make FTS retrieval return zero
+      // results for fixtures without an explicit small-to-big hierarchy.
+      const parentIds = new Set<string>(
+        (fixture.chunks ?? []).map((c: Json) => c.parent_id).filter(Boolean),
+      );
+      const ordered = [
+        ...(fixture.chunks ?? []).filter((c: Json) => parentIds.has(c.id)),
+        ...(fixture.chunks ?? []).filter((c: Json) => !parentIds.has(c.id)),
+      ];
+      for (const chunk of ordered) {
+        const isParent = parentIds.has(chunk.id);
         const info = insertChunk.run(
           docId, dataset.id, chunk.section_path, chunk.page ?? null, chunk.text,
-          Math.ceil(String(chunk.text).length / 4), String(chunk.text).length, 'parent', null,
+          Math.ceil(String(chunk.text).length / 4), String(chunk.text).length,
+          isParent ? 'parent' : 'child',
+          chunk.parent_id ? (idMap.get(chunk.parent_id) ?? null) : null,
         );
         idMap.set(chunk.id, Number(info.lastInsertRowid));
-      }
-      for (const chunk of fixture.chunks ?? []) {
-        if (!chunk.parent_id) continue;
-        insertChunk.run(
-          docId, dataset.id, chunk.section_path, chunk.page ?? null, chunk.text,
-          Math.ceil(String(chunk.text).length / 4), String(chunk.text).length, 'child',
-          idMap.get(chunk.parent_id) ?? null,
-        );
       }
     }
     prepared.push({ datasetId: dataset.id, fixture, cases });
@@ -260,7 +264,9 @@ function gradeExtraction(fixture: Json, testCase: Json): {
   if (!expectedN) return { pass: true, detail: 'n/a', tp: 0, extracted: 0, expectedN: 0 };
 
   const result = extractFields(fixture.doc_type as DocType, fixture.blocks ?? []);
-  const actual: Record<string, string> = {};
+  // Keep a list, not a name-keyed map: two periods can share a metric name and
+  // a map would silently overwrite one of them (a grader bug, not a model bug).
+  const actual: Array<{ name: string; sig: string }> = [];
 
   if (fixture.doc_type === 'legal') {
     const topic = testCase.expected.topic as string | undefined;
@@ -269,29 +275,29 @@ function gradeExtraction(fixture: Json, testCase: Json): {
       ? findPasalByKeyword(result, topic)
       : result.pasal.find((p) => p.no === wantedNo) ?? null;
     if (pasal) {
-      if (expected.pasal) actual.pasal = pasal.no;
-      if (expected.ayat) actual.ayat = pasal.ayat.map((a) => a.no).join(',');
+      if (expected.pasal) actual.push({ name: 'pasal', sig: pasal.no });
+      if (expected.ayat) actual.push({ name: 'ayat', sig: pasal.ayat.map((a) => a.no).join(',') });
     }
   } else if (fixture.doc_type === 'technical_report') {
     for (const f of result.parameter) {
-      actual[f.name] = compactSignature(f.value, f.unit, null, null);
+      actual.push({ name: f.name, sig: compactSignature(f.value, f.unit, null, null) });
     }
   } else if (fixture.doc_type === 'financial') {
     for (const f of result.metrik) {
-      actual[f.name] = compactSignature(f.value, null, f.currency, f.period);
+      actual.push({ name: f.name, sig: compactSignature(f.value, null, f.currency, f.period) });
     }
   }
 
   let tp = 0;
   for (const [key, value] of Object.entries(expected)) {
-    if (actual[key] === value) tp += 1;
+    if (actual.some((a) => a.name === key && a.sig === value)) tp += 1;
   }
-  const precision = ratio(tp, Object.keys(actual).length);
+  const precision = ratio(tp, actual.length);
   const recall = ratio(tp, expectedN);
   return {
     pass: precision >= 0.85 && recall >= 0.80,
-    detail: `tp=${tp} extracted=${Object.keys(actual).length} expected=${expectedN} P=${precision} R=${recall}`,
-    tp, extracted: Object.keys(actual).length, expectedN,
+    detail: `tp=${tp} extracted=${actual.length} expected=${expectedN} P=${precision} R=${recall}`,
+    tp, extracted: actual.length, expectedN,
   };
 }
 
@@ -463,12 +469,18 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
       counters.output.hit += out.pass ? 1 : 0;
       counters.output.total += 1;
 
+      // Row counts and dataset-title numbers are legitimate execution/metadata
+      // values, not hallucinations. They must be in the allow-list alongside
+      // cell values and citation text.
       const allowed = [
         ...(sqlRows?.flat() ?? []),
+        query.result_json.rowCount,
+        ...(`${entry.fixture.title ?? ''} ${entry.fixture.id ?? ''}`
+          .match(/\d+(?:[.,]\d+)*/g)?.map((t) => Number(t.replace(/\./g, '').replace(',', '.'))) ?? []),
         ...(query.citations ?? []).flatMap((c) => `${c.section_path} ${c.quote ?? ''}`.match(/\d+(?:[.,]\d+)*/g) ?? [])
           .map((t) => Number(t.replace(/\./g, '').replace(',', '.')))
           .filter(Number.isFinite),
-      ];
+      ].filter((n): n is number => typeof n === 'number' && Number.isFinite(n));
       const gen = gradeGeneration(query.answer, allowed);
       stages.generation = { pass: gen.pass, detail: gen.detail };
       observed.foreign_numbers = gen.foreign;
@@ -526,8 +538,9 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
     byFixture[name] = { cases: list.length, passed, failed: list.length - passed };
   }
 
-  notes.push('Eval dijalankan sekali pada workspace DB sementara; seed analytics.db disalin ke tabel fisik tx_daily untuk kasus transaksi.');
-  notes.push('Kasus TX-03 sengaja diharapkan gagal bila rule builder tidak memiliki pola rate — ini temuan, bukan bug harness.');
+  notes.push('Eval dijalankan pada workspace DB sementara; seed analytics.db disalin ke tabel fisik tx_daily untuk kasus transaksi.');
+  notes.push('Riwayat eksekusi: run-1 crash (await pada fungsi non-async), run-2 hasil terdistorsi 3 bug harness (chunk level, tabrakan nama metrik, allow-list angka), run-3 final setelah perbaikan harness. Bug produk sengaja DIBIARKAN agar laporan ini menjadi diagnosis jujur.');
+  notes.push('Kasus TX-03 gagal karena rule builder core tidak memiliki pola rate — temuan produk, bukan bug harness.');
   notes.push('FIN-03 memuat instruksi injeksi; guardrail AI lane diuji terpisah dari guardrail core.');
 
   return {
