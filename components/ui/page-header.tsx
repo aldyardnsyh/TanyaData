@@ -13,12 +13,14 @@ export interface PageHeaderProps {
   title: string;
   subtitle?: string;
   meta?: string;
+  /** Versi pendek untuk layar < sm (mis. "SQL · FTS5") agar tidak terpotong. */
+  metaShort?: string;
   actions?: React.ReactNode;
   className?: string;
 }
 
 /** Satu display per layar (M3) + measurement rule + mono metadata. */
-export function PageHeader({ title, subtitle, meta, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, meta, metaShort, actions, className }: PageHeaderProps) {
   return (
     <div className={cn('mb-6', className)}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -30,7 +32,12 @@ export function PageHeader({ title, subtitle, meta, actions, className }: PageHe
       </div>
       <div className="mt-5">
         <MeasurementRule />
-        {meta && <div className="mt-2 text-right"><MonoMeta>{meta}</MonoMeta></div>}
+        {meta && (
+          <>
+            <div className="mt-2 hidden text-right sm:block"><MonoMeta>{meta}</MonoMeta></div>
+            <div className="mt-2 text-right sm:hidden"><MonoMeta>{metaShort ?? meta}</MonoMeta></div>
+          </>
+        )}
       </div>
     </div>
   );

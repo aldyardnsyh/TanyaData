@@ -7,6 +7,7 @@ import type { DictionaryKey } from '@/lib/i18n/dictionary';
 import { DatasetChip, type DatasetChoice } from './dataset-chip';
 import { QuickSearch } from './quick-search';
 import { LangToggle } from './lang-toggle';
+import { NAV_ITEMS } from './nav-config';
 
 export interface TopbarProps {
   activeKey: DictionaryKey;
@@ -32,6 +33,7 @@ export function Topbar({
 }: TopbarProps) {
   const { t } = useI18n();
   const currentLabel = t(activeKey);
+  const activeIcon = NAV_ITEMS.find((item) => item.key === activeKey)?.icon ?? 'dashboard';
 
   return (
     <header className="fixed left-0 right-0 top-0 z-sticky flex h-14 items-center justify-between gap-3 border-b border-border-hairline bg-surface px-3 md:left-sidebar-rail md:px-4 xl:left-sidebar">
@@ -45,12 +47,16 @@ export function Topbar({
           <Icon name="menu" className="text-[22px]" />
         </button>
 
-        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2">
+        {/* < md: breadcrumb disembunyikan, diganti ikon halaman aktif (tanpa truncate). */}
+        <span role="img" aria-label={currentLabel} className="flex h-11 w-11 shrink-0 items-center justify-center md:hidden">
+          <Icon name={activeIcon} className="text-[20px] text-ink" aria-hidden="true" />
+        </span>
+        <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-2 md:flex">
           <span className="hidden font-body text-body-sm text-ink-muted-strong xl:inline">{t('shell.platform')}</span>
           <Icon name="chevron_right" className="hidden text-[14px] text-ink-muted-strong xl:inline" aria-hidden="true" />
           <Link
             href="/overview"
-            aria-label="Kembali ke Platform"
+            aria-label="Kembali ke Ringkasan"
             className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-control text-ink-muted-strong transition-colors hover:bg-row-hover focus-ring lg:flex xl:hidden"
           >
             <Icon name="arrow_back" className="text-[20px]" />

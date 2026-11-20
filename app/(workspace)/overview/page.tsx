@@ -187,6 +187,7 @@ export default function OverviewPage() {
         title="Ringkasan"
         subtitle="Pantau metrik transaksi dan temukan perubahan yang bermakna antarperiode."
         meta={dataset ? `SQL · FTS5 · ${formatNumber(dataset.rowCount)} ROWS` : undefined}
+        metaShort="SQL · FTS5"
         actions={
           <Button variant="secondary" size="sm" onClick={refresh} aria-label="Muat ulang data">
             <Icon name="refresh" className="text-[18px]" aria-hidden="true" />
