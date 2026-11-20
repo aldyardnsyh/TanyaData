@@ -157,13 +157,38 @@ export function composeDeterministicAnswer(input: {
   mode: 'sql' | 'document' | 'hybrid';
 }): string {
   const { result, viz, citations, lang, sqlExplanation } = input;
+  const refs = citations.map((c) => c.section_path).filter(Boolean);
+  const excerpts = citations
+    .slice(0, 3)
+    .map((c) => ({ ref: c.section_path, text: (c.quote ?? '').replace(/\s+/g, ' ').trim().slice(0, 400) }))
+    .filter((c) => c.text.length > 0);
+
   if (viz.type === 'quote' && citations.length) {
-    const quote = citations[0].quote ?? '';
-    const ref = citations[0].section_path;
+    if (!excerpts.length) {
+      return lang === 'id'
+        ? `Bagian yang diminta adalah ${refs.join(', ')}. Sumber: ${refs.join(', ')}.`
+        : `The requested section is ${refs.join(', ')}. Sources: ${refs.join(', ')}.`;
+    }
+    const body = excerpts.map((e) => `${e.ref}: "${e.text}"`).join(' ');
     return lang === 'id'
-      ? `Berikut kutipan dari ${ref}: "${quote}". Sumber: ${citations.map((c) => c.section_path).join(', ')}.`
-      : `Excerpt from ${ref}: "${quote}". Sources: ${citations.map((c) => c.section_path).join(', ')}.`;
+      ? `Berikut kutipan dari sumber: ${body} Sumber: ${refs.join(', ')}.`
+      : `Excerpts from the source: ${body} Sources: ${refs.join(', ')}.`;
   }
+
+  // Dokumen ditemukan tetapi tidak ada baris SQL: jawab dari isi chunk sitasi.
+  // Tidak ada angka yang ditambahkan — semua teks berasal dari evidence.
+  if (!result.rows.length && citations.length) {
+    if (excerpts.length) {
+      const body = excerpts.map((e) => `${e.ref}: ${e.text}`).join(' ');
+      return lang === 'id'
+        ? `Berdasarkan dokumen yang ditemukan: ${body} Sumber: ${refs.join(', ')}.`
+        : `Based on the retrieved document: ${body} Sources: ${refs.join(', ')}.`;
+    }
+    return lang === 'id'
+      ? `Sumber yang relevan ditemukan pada ${refs.join(', ')}, tetapi isi bagian tersebut tidak dapat dikutip.`
+      : `Relevant sources were found at ${refs.join(', ')}, but their text could not be quoted.`;
+  }
+
   if (!result.rows.length) {
     return lang === 'id'
       ? 'Tidak ada baris yang memenuhi pertanyaan ini pada sumber yang tersedia.'

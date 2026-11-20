@@ -181,7 +181,7 @@ export async function answerQuestion(
     viz: query.viz_spec,
     citations: query.citations,
     sqlExplanation: query.sql_explanation,
-    mode: query.mode,
+    mode: query.mode === 'guardrail' ? 'document' : query.mode,
   });
 
   query.duration_ms = Math.round(performance.now() - started);
