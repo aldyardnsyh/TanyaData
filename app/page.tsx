@@ -5,7 +5,7 @@ import { LandingCTA } from '@/components/signal/landing-cta';
 import { LandingNav } from '@/components/signal/landing-nav';
 import { LandingFeatures } from '@/components/signal/landing-features';
 import { LandingSteps } from '@/components/signal/landing-steps';
-import { LandingFormatPanel } from '@/components/signal/landing-format-panel';
+import { LandingWorkspace } from '@/components/signal/landing-workspace';
 import { FaqAccordion, type FaqItem } from '@/components/signal/landing-faq';
 import { ScrollReveal } from '@/components/signal/scroll-reveal';
 import { LandingPreviewCard } from '@/components/signal/landing-preview-card';
@@ -137,11 +137,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* S4 Format yang diterima: satu panel gelap penuh lebar berisi penjelasan
-            dan ubin per format dengan keterangannya (C-04 tone dark). */}
-        <section id="format" className="page-container py-16 md:py-24">
+        {/* S4 Di dalam workspace: enam halaman aplikasi yang nyata (rute asli). */}
+        <section id="workspace" className="page-container py-16 md:py-24">
           <ScrollReveal>
-            <LandingFormatPanel />
+            <LandingWorkspace />
           </ScrollReveal>
         </section>
 
@@ -217,10 +216,10 @@ export default function LandingPage() {
                   Cara kerja
                 </Link>
                 <Link
-                  href="#format"
+                  href="#workspace"
                   className="touch-44 inline-flex items-center font-body text-body text-ink-72 underline-offset-2 transition-colors duration-[var(--motion-fast)] hover:text-forest hover:underline focus-ring"
                 >
-                  Format
+                  Workspace
                 </Link>
                 <Link
                   href="#faq"

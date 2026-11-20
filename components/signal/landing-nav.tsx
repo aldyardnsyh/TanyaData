@@ -14,7 +14,7 @@ import Link from 'next/link';
 const LINKS = [
   { href: '#fitur', label: 'Fitur' },
   { href: '#cara-kerja', label: 'Cara kerja' },
-  { href: '#format', label: 'Format' },
+  { href: '#workspace', label: 'Workspace' },
   { href: '#faq', label: 'FAQ' },
 ] as const;
 
