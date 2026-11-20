@@ -197,6 +197,8 @@ export interface GuardrailCheckInput {
   noEvidence?: boolean;
   /** True when the question cannot be served by any active source. */
   unsupported?: boolean;
+  /** Optional attachment scope gate (CORE_V2 FR-C.1). Absent = legacy path. */
+  scope?: AttachmentScopeInput;
 }
 
 const MESSAGES: Record<CoreGuardrailType, { message: string; explanation: string }> = {
@@ -234,20 +236,147 @@ const MESSAGES: Record<CoreGuardrailType, { message: string; explanation: string
 export function checkGuardrails(input: GuardrailCheckInput): GuardrailResult {
   const q = String(input.question ?? '').trim();
   let type: CoreGuardrailType | null = null;
+  let scopeExplanation: string | null = null;
 
-  if (GENERAL_DESTRUCTIVE_RE.test(q) || isSqlInjectionLike(q)) type = 'destructive';
-  else if (GENERAL_PII_RE.test(q)) type = 'pii';
-  else if (INJECTION_RE.test(q)) type = 'unsupported';
-  else if (input.noEvidence) type = 'not_in_sources';
-  else if (input.unsupported) type = 'unsupported';
-  else if (GENERAL_AMBIGUOUS_RE.test(q)) type = 'ambiguous';
-  else if (GENERAL_OFF_TOPIC_RE.test(q)) type = 'out_of_scope';
-  else if (input.availableTopics && input.availableTopics.length) {
-    const hit = input.availableTopics.some((t) => q.toLowerCase().includes(t.toLowerCase()));
-    if (!hit && q.length > 12) type = 'out_of_scope';
+  // FR-C.1: scope is checked before any other rule. A leak from another
+  // attachment is never allowed to reach retrieval or SQL.
+  if (input.scope) {
+    const scoped = checkAttachmentScope(input.scope);
+    if (!scoped.allowed) {
+      type = scoped.type === 'not_ready' ? 'unsupported' : 'out_of_scope';
+      scopeExplanation = scoped.explanation;
+    }
+  }
+
+  if (!type) {
+    if (GENERAL_DESTRUCTIVE_RE.test(q) || isSqlInjectionLike(q)) type = 'destructive';
+    else if (GENERAL_PII_RE.test(q)) type = 'pii';
+    else if (INJECTION_RE.test(q)) type = 'unsupported';
+    else if (input.noEvidence) type = 'not_in_sources';
+    else if (input.unsupported) type = 'unsupported';
+    else if (GENERAL_AMBIGUOUS_RE.test(q)) type = 'ambiguous';
+    else if (GENERAL_OFF_TOPIC_RE.test(q)) type = 'out_of_scope';
+    else if (input.availableTopics && input.availableTopics.length) {
+      const hit = input.availableTopics.some((t) => q.toLowerCase().includes(t.toLowerCase()));
+      if (!hit && q.length > 12) type = 'out_of_scope';
+    }
   }
 
   if (!type) return { triggered: false, type: null, message: '', explanation: '' };
-  return { triggered: true, type, ...MESSAGES[type] };
+  return {
+    triggered: true,
+    type,
+    message: scopeExplanation ?? MESSAGES[type].message,
+    explanation: scopeExplanation ?? MESSAGES[type].explanation,
+  };
+}
+
+/* ========================================================================== */
+/* CORE V2 — attachment scope guardrail (FR-C.1 / AC-C.1.1–C.2.3)              */
+/* Structural mirror of the backend AttachmentScope contract; the AI lane     */
+/* only reads it and refuses cross-attachment evidence. lib/core is untouched. */
+/* ========================================================================== */
+
+export type AttachmentStatus = 'UPLOADED' | 'PROCESSING' | 'READY' | 'FAILED';
+
+export interface AttachmentScope {
+  id: string;
+  dataset_id: string;
+  source_id?: string | null;
+  name: string;
+  doc_type?: string | null;
+  status: AttachmentStatus;
+  active_in_conversation?: boolean;
+}
+
+export interface ScopeEvidenceRef {
+  kind: 'chunk' | 'sql';
+  dataset_id?: string | null;
+  source_id?: string | null;
+  doc_id?: string | null;
+}
+
+export interface AttachmentScopeInput {
+  question: string;
+  active: AttachmentScope | null;
+  attachments?: AttachmentScope[];
+  /** Evidence proposed for the answer; each ref must belong to `active`. */
+  evidence?: ScopeEvidenceRef[];
+}
+
+export interface AttachmentScopeResult {
+  allowed: boolean;
+  violations: string[];
+  type: 'scope_violation' | 'not_ready' | 'cross_attachment_ref' | null;
+  message: string;
+  explanation: string;
+}
+
+/** "Dokumen sebelumnya" must not silently pull context from another attachment. */
+const CROSS_ATTACHMENT_RE =
+  /\b(?:dokumen|attachment|file|data)\s+(?:sebelumnya|sebelum|lain|yang\s+lain|lalu)\b|\b(?:sebelumnya|previous\s+(?:document|attachment))\b/i;
+
+/**
+ * Fail-closed scope gate. Only the active attachment's chunks/SQL may enter
+ * the answer. A not-READY attachment is refused rather than using partial
+ * chunks; a cross-attachment reference asks the user to choose explicitly.
+ */
+export function checkAttachmentScope(input: AttachmentScopeInput): AttachmentScopeResult {
+  const active = input?.active ?? null;
+  const violations: string[] = [];
+
+  if (!active) {
+    return {
+      allowed: false, violations: ['NO_ACTIVE_ATTACHMENT'], type: 'scope_violation',
+      message: 'Silakan pilih attachment aktif terlebih dahulu.',
+      explanation: 'Tidak ada attachment aktif; tidak ada chunk/SQL yang boleh dipakai.',
+    };
+  }
+  if (active.status !== 'READY') {
+    return {
+      allowed: false, violations: [`NOT_READY:${active.status}`], type: 'not_ready',
+      message: `Attachment "${active.name}" berstatus ${active.status}, belum READY.`,
+      explanation: 'Chunk parsial dari attachment yang belum READY tidak dipakai sebagai bukti.',
+    };
+  }
+  if (CROSS_ATTACHMENT_RE.test(String(input.question ?? ''))) {
+    return {
+      allowed: false, violations: ['CROSS_ATTACHMENT_REFERENCE'], type: 'cross_attachment_ref',
+      message: `Pertanyaan merujuk dokumen/attachment lain. Silakan pilih attachment yang dimaksud; scope aktif adalah "${active.name}".`,
+      explanation: 'Referensi lintas attachment tidak di-resolve dari conversation lain.',
+    };
+  }
+
+  for (const ref of input.evidence ?? []) {
+    if (ref.dataset_id && active.dataset_id && ref.dataset_id !== active.dataset_id) {
+      violations.push(`EVIDENCE_LEAK:${ref.kind}:dataset=${ref.dataset_id}`);
+    }
+    if (ref.source_id && active.source_id && ref.source_id !== active.source_id) {
+      violations.push(`EVIDENCE_LEAK:${ref.kind}:source=${ref.source_id}`);
+    }
+    if (ref.doc_id && active.source_id && ref.doc_id !== active.source_id && ref.doc_id !== active.id) {
+      violations.push(`EVIDENCE_LEAK:${ref.kind}:doc=${ref.doc_id}`);
+    }
+  }
+
+  if (violations.length) {
+    return {
+      allowed: false, violations, type: 'scope_violation',
+      message: `Bukti dari attachment lain ditolak. Hanya "${active.name}" yang dipakai.`,
+      explanation: `Pelanggaran scope: ${violations.join(', ')}.`,
+    };
+  }
+
+  return {
+    allowed: true, violations: [], type: null,
+    message: '', explanation: `Scope aman: ${active.name}.`,
+  };
+}
+
+/** Honest fallback text for a page whose OCR failed (AC-A.2.2 / EV-A01). */
+export function unreadablePageNotice(page: number, lang: 'id' | 'en' = 'id'): string {
+  return lang === 'id'
+    ? `Halaman ${page} tidak terbaca (OCR gagal/timeout). Halaman ini tidak dijadikan sitasi; halaman lain tetap dipakai.`
+    : `Page ${page} is unreadable (OCR failed/timed out). It is not cited; other pages are still used.`;
 }
 
