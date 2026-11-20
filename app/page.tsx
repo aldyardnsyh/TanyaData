@@ -1,25 +1,23 @@
 import Link from 'next/link';
 import { HeroHighlight } from '@/components/signal/hero-highlight';
-import { BentoGrid, type BentoItem } from '@/components/signal/bento-grid';
-import { TimelineView, type TimelineNode } from '@/components/signal/timeline-view';
 import { SectionRule } from '@/components/signal/section-rule';
 import { LandingCTA } from '@/components/signal/landing-cta';
 import { LandingNav } from '@/components/signal/landing-nav';
+import { LandingFeatures } from '@/components/signal/landing-features';
+import { LandingWorkflow } from '@/components/signal/landing-workflow';
+import { LandingEvidenceBand } from '@/components/signal/landing-evidence-band';
+import { LandingAudit } from '@/components/signal/landing-audit';
 import { LandingFormatPanel } from '@/components/signal/landing-format-panel';
 import { FaqAccordion, type FaqItem } from '@/components/signal/landing-faq';
 import { ScrollReveal } from '@/components/signal/scroll-reveal';
 import { LandingPreviewCard } from '@/components/signal/landing-preview-card';
-import { LandingEvidenceSamples } from '@/components/signal/landing-evidence-samples';
-import { IconTooltip } from '@/components/ui/icon-tooltip';
 
 /*
- * Landing TanyaData. Copy disalin dari docs/LANDING_COPY_SEO.md (8 section, tanpa
- * perubahan kata). Presentasi visual mengikuti arahan user: bahasa Aceternity
- * (band gelap + grid pattern + glow lime + navbar melayang) dengan ritme band
- * dan kelembutan kanjikan.munawariz.site, dieksekusi hanya dengan enam token
- * warna dan turunan alphanya. Semua angka berasal dari berkas uji yang tercatat:
- * tanyadata/docs/ROBUSTNESS_REAL_DOCS.md (24/24, 6/6, 0 temuan, 46.952, SQL-01,
- * SQL-03, GR-02) dan tanyadata/docs/EVAL_RESULTS.md (8/8 tahap, 11/11 kasus).
+ * Landing TanyaData. Susunan feature-forward sesuai arahan user: fitur ditonjolkan
+ * dengan mini-demo (bukan narasi), angka uji menjadi bukti kompak. Setiap section
+ * dirancang oleh subagent terpisah lalu diintegrasikan. Copy inti dari
+ * docs/LANDING_COPY_SEO.md; semua angka dari berkas uji tercatat
+ * (tanyadata/docs/ROBUSTNESS_REAL_DOCS.md dan tanyadata/docs/EVAL_RESULTS.md).
  * Landing tidak memanggil API: datanya kontrak uji yang statis, sehingga state
  * loading/empty/error pada komponen data bersifat n/a (tidak ada sumber yang bisa gagal).
  */
@@ -60,111 +58,6 @@ const FAQ_JSONLD = {
   })),
 };
 
-/* S2: empat metrik pendukung bento (3+3+3+3 = baris penuh). Metrik utama 24/24
- * tampil sebagai banner gelap penuh di atasnya agar bobot terlihat. */
-const EVIDENCE_ITEMS: BentoItem[] = [
-  {
-    id: 'dokumen-terbaca',
-    label: 'Dokumen terbaca',
-    value: '6/6',
-    source: 'docs/ROBUSTNESS_REAL_DOCS.md',
-    tooltip: 'Sumber: docs/ROBUSTNESS_REAL_DOCS.md. Enam dokumen nyata berhasil di-ingest tanpa temuan.',
-  },
-  {
-    id: 'tahap-evaluasi',
-    label: 'Tahap evaluasi lulus',
-    value: '8/8',
-    source: 'docs/EVAL_RESULTS.md',
-    tooltip: 'Sumber: docs/EVAL_RESULTS.md. Delapan tahap evaluasi kemampuan inti, semuanya lulus.',
-  },
-  {
-    id: 'kasus-fr',
-    label: 'Kasus FR-A sampai FR-E',
-    value: '11/11',
-    source: 'docs/EVAL_RESULTS.md',
-    tooltip: 'Sumber: docs/EVAL_RESULTS.md. Sebelas kasus kemampuan CORE V2 untuk FR-A sampai FR-E.',
-  },
-  {
-    id: 'temuan',
-    label: 'Temuan tercatat',
-    value: '0',
-    source: 'docs/ROBUSTNESS_REAL_DOCS.md',
-    tooltip: 'Sumber: docs/ROBUSTNESS_REAL_DOCS.md. Daftar bug dan temuan pada run: tidak ada.',
-  },
-];
-
-/* S3: lima FR dari kontrak §2-S3 sebagai daftar editorial bernomor. Copy tampil
- * penuh (tidak disembunyikan di balik klik) karena tiap FR mendapat satu baris
- * penuh; "bisa diuji satu per satu" dibaca langsung tanpa interaksi. */
-const CAPABILITIES = [
-  {
-    id: 'fr-a',
-    no: '01',
-    fr: 'FR-A',
-    title: 'Ingest tangguh',
-    copy: 'PDF ber-text-layer dibaca langsung. Halaman hasil pindai yang tidak terbaca ditandai dengan nomor halaman dan tidak dipakai sebagai sitasi.',
-  },
-  {
-    id: 'fr-b',
-    no: '02',
-    fr: 'FR-B',
-    title: 'Readjustment dan laporan',
-    copy: 'Minta "tampilkan bagian X saja" atau "group by kanal". Langkah filter, cleaning, grouping, dan agregasi tercatat. PDF dan Excel memakai angka yang sama dengan tampilan.',
-  },
-  {
-    id: 'fr-c',
-    no: '03',
-    fr: 'FR-C',
-    title: 'Chat per attachment',
-    copy: 'Pertanyaan hanya memakai berkas yang sedang aktif. Dua berkas berisi angka berbeda tidak saling mencampur.',
-  },
-  {
-    id: 'fr-d',
-    no: '04',
-    fr: 'FR-D',
-    title: 'Sitasi dan guardrail',
-    copy: 'Klik sitasi untuk membuka halaman, bagian, dan potongan asal. Pertanyaan di luar sumber dijawab dengan keterbatasan, bukan angka rekaan.',
-  },
-  {
-    id: 'fr-e',
-    no: '05',
-    fr: 'FR-E',
-    title: 'Tautan hasil',
-    copy: 'Bagikan percakapan sebagai halaman read-only tanpa login. Konfirmasi muncul lebih dulu, dan tautan berisi salinan yang tidak berubah.',
-  },
-];
-
-/* S5: garis waktu memakai tanggal nyata dari berkas uji dan rentang data contoh
- * (footer: 1 Agustus sampai 18 November 2026; GR-01 di ROBUSTNESS_REAL_DOCS;
- * run EVAL_RESULTS 2026-11-20T14:59 dan uji robust 2026-11-20T15:02).
- * Purpose Gate: urutan kronologis adalah bukti, bukan dekorasi (C-07). */
-const AUDIT_NODES: TimelineNode[] = [
-  {
-    id: 'rentang-mulai',
-    date: '2026-08-01',
-    label: 'Rentang data contoh dimulai',
-    evidence: 'Data contoh mencakup transaksi sejak tanggal ini sampai 18 November 2026.',
-  },
-  {
-    id: 'rentang-berakhir',
-    date: '2026-11-18',
-    label: 'Rentang data contoh berakhir',
-    evidence: 'Pertanyaan di luar rentang dijawab dengan keterbatasan, bukan angka rekaan.',
-  },
-  {
-    id: 'eval-inti',
-    date: '2026-11-20',
-    label: 'Kemampuan inti dievaluasi ulang',
-    evidence: '8 dari 8 tahap lulus dan 11 dari 11 kasus kemampuan baru lulus.',
-  },
-  {
-    id: 'robust-dokumen',
-    date: '2026-11-20',
-    label: 'Pipeline dijalankan ulang pada 6 dokumen nyata',
-    evidence: 'Dari 24 kasus, 24 lulus. Tidak ada temuan yang dicatat.',
-  },
-];
-
 export default function LandingPage() {
   return (
     <>
@@ -203,10 +96,10 @@ export default function LandingPage() {
                 <div className="mt-s5 flex flex-wrap items-center gap-s3">
                   <LandingCTA tone="dark" />
                   <Link
-                    href="#cara-kerja"
+                    href="#fitur"
                     className="touch-44 inline-flex items-center rounded-button-lg border border-hairline-dark px-s4 font-display text-label font-semibold text-porcelain transition-colors duration-[var(--motion-fast)] hover:border-porcelain focus-ring"
                   >
-                    Lihat cara kerjanya
+                    Lihat fiturnya
                   </Link>
                 </div>
                 <p className="mt-s4 inline-flex items-center rounded-chip border border-hairline-dark px-s3 py-1 font-body text-caption tabular text-dark-muted">
@@ -233,82 +126,34 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <SectionRule className="page-container" />
-
-        {/* S2 Bukti nyata: metrik utama mendapat banner gelap penuh (satu angka paling
-            berbobot), empat metrik pendukung satu baris bento di bawahnya (C-01). */}
-        <section id="bukti" className="page-container py-16 md:py-24">
+        {/* S2 Fitur utama: tiga jaminan jawaban dengan mini-demo (subagent, komponen LandingFeatures). */}
+        <section id="fitur" className="page-container py-16 md:py-24">
           <ScrollReveal>
-            <p className="eyebrow">Bukti uji</p>
-            <h2 className="mt-s2 font-display text-title text-ink">Yang sudah diuji, bukan yang dijanjikan</h2>
-            <p className="mt-s2 max-w-[68ch] font-body text-body text-ink-72">
-              Pada 20 November 2026 pipeline produksi dijalankan ulang pada 6 dokumen nyata dan data transaksi.
-              Dari 24 kasus, 24 lulus. Dari 6 dokumen, 6 terbaca. Tidak ada temuan yang dicatat. Evaluasi
-              kemampuan inti mencatat 8 dari 8 tahap lulus dan 11 dari 11 kasus kemampuan baru lulus. Angka di
-              bawah berasal dari eksekusi, bukan dari narasi.
-            </p>
-          </ScrollReveal>
-          <ScrollReveal className="mt-s5">
-            <div className="relative overflow-hidden rounded-card-lg border border-hairline-dark bg-forest p-s4 text-porcelain md:p-s5">
-              <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
-              <div
-                aria-hidden="true"
-                className="glow-radial-lime absolute -right-24 -top-28 h-[320px] w-[440px]"
-              />
-              <div className="relative flex flex-wrap items-end justify-between gap-s3">
-                <div>
-                  <p className="font-display text-label font-semibold text-porcelain">
-                    Kasus uji produksi lulus
-                  </p>
-                  <p className="text-stat-lg mt-s1 text-lime text-glow-lime">24/24</p>
-                </div>
-                <IconTooltip label="Sumber: docs/ROBUSTNESS_REAL_DOCS.md. Uji robust 20 November 2026: 24 kasus, 24 lulus.">
-                  <span className="inline-flex min-h-11 items-center font-mono text-[11px] uppercase tracking-[0.06em] text-dark-muted">
-                    docs/ROBUSTNESS_REAL_DOCS.md
-                  </span>
-                </IconTooltip>
-              </div>
-            </div>
-            <div className="mt-s3">
-              <BentoGrid items={EVIDENCE_ITEMS} />
-            </div>
+            <LandingFeatures />
           </ScrollReveal>
         </section>
 
         <SectionRule className="page-container" />
 
-        {/* S3 Cara kerja: daftar editorial bernomor, copy tiap FR tampil penuh. */}
+        {/* S3 Cara kerja: lima FR sebagai daftar editorial bernomor (subagent, LandingWorkflow). */}
         <section id="cara-kerja" className="page-container py-16 md:py-24">
           <ScrollReveal>
-            <p className="eyebrow">Cara kerja</p>
-            <h2 className="mt-s2 font-display text-title text-ink">Lima kemampuan yang bisa diuji satu per satu</h2>
-            <p className="mt-s2 max-w-[68ch] font-body text-body text-ink-72">
-              Setiap kemampuan punya kriteria yang bisa Anda coba sendiri.
-            </p>
-          </ScrollReveal>
-          <ScrollReveal className="mt-s5">
-            <ol className="border-t border-[var(--border-hairline)]">
-              {CAPABILITIES.map((cap) => (
-                <li
-                  key={cap.id}
-                  className="grid gap-s2 border-b border-[var(--border-hairline)] py-s4 transition-colors duration-[var(--motion-fast)] hover:bg-forest-08 md:grid-cols-12 md:gap-s4 md:px-s2"
-                >
-                  <span className="mono-meta order-1 md:col-span-2">
-                    {cap.no} · {cap.fr}
-                  </span>
-                  <h3 className="order-2 font-display text-label font-semibold text-ink md:col-span-4">
-                    {cap.title}
-                  </h3>
-                  <p className="order-3 font-body text-body text-ink-72 md:col-span-6">{cap.copy}</p>
-                </li>
-              ))}
-            </ol>
+            <LandingWorkflow />
           </ScrollReveal>
         </section>
 
         <SectionRule className="page-container" />
 
-        {/* S4 Kapabilitas dokumen: panel gelap dengan tabs dua kelompok format (C-04 tone dark). */}
+        {/* S4 Bukti uji: banner angka utama + strip stat kompak (subagent, LandingEvidenceBand). */}
+        <section id="bukti" className="page-container py-16 md:py-24">
+          <ScrollReveal>
+            <LandingEvidenceBand />
+          </ScrollReveal>
+        </section>
+
+        <SectionRule className="page-container" />
+
+        {/* S5 Kapabilitas dokumen: panel gelap dengan tabs dua kelompok format (C-04 tone dark). */}
         <section id="format" className="page-container py-16 md:py-24">
           <ScrollReveal>
             <p className="eyebrow">Format diterima</p>
@@ -317,40 +162,24 @@ export default function LandingPage() {
               Data terstruktur: CSV, XLSX, dan SQL. Dokumen: PDF, DOCX, dan TXT. Uji robust memakai 6 dokumen
               nyata berupa TXT, MD, DOCX, dan tiga PDF. Berkas MD diperlakukan sebagai teks.
             </p>
-          </ScrollReveal>
-          <ScrollReveal className="mt-s5 max-w-3xl">
-            <LandingFormatPanel />
+            <div className="mt-s5 max-w-3xl">
+              <LandingFormatPanel />
+            </div>
           </ScrollReveal>
         </section>
 
         <SectionRule className="page-container" />
 
-        {/* S5 Audit trail: dua kolom. Kiri = garis waktu bukti bertanggal nyata (C-07);
-            kanan = sampel dua sisi jejak audit (query cocok dan penolakan guardrail). */}
+        {/* S6 Jejak audit: garis waktu + sampel nyata dua sisi (subagent, LandingAudit). */}
         <section id="audit" className="page-container py-16 md:py-24">
           <ScrollReveal>
-            <p className="eyebrow">Jejak audit</p>
-            <h2 className="mt-s2 font-display text-title text-ink">Jejak yang bisa dibuka satu per satu</h2>
-            <p className="mt-s2 max-w-[68ch] font-body text-body text-ink-72">
-              Untuk pertanyaan angka, query SQL tampil bersama durasi dan jumlah baris. Untuk pertanyaan
-              dokumen, sitasi membuka halaman, bagian, dan kutipan asal. Tautan sitasi hanya aktif bila potongan
-              asal masih cocok. Yang tidak cocok ditolak.
-            </p>
+            <LandingAudit />
           </ScrollReveal>
-          <div className="mt-s5 grid gap-s5 lg:grid-cols-2">
-            <ScrollReveal className="max-w-xl">
-              <TimelineView nodes={AUDIT_NODES} />
-            </ScrollReveal>
-            <ScrollReveal delay={100}>
-              <LandingEvidenceSamples />
-            </ScrollReveal>
-          </div>
         </section>
 
         <SectionRule className="page-container" />
 
-        {/* S6 Privasi dan batas: dua kolom, copy kiri dan FAQ kanan; menjawab keberatan
-            nyata sebelum CTA terakhir. FAQ = kontrak §2-S6. */}
+        {/* S7 Privasi dan batas: dua kolom, copy kiri dan FAQ kanan. FAQ = kontrak §2-S6. */}
         <section id="privasi" className="page-container py-16 md:py-24">
           <div className="grid gap-s5 lg:grid-cols-12">
             <ScrollReveal className="lg:col-span-5">
@@ -374,7 +203,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* S7 CTA akhir: band gelap kedua; CTA menyala lime di atas forest (P2 tetap: satu per layar). */}
+        {/* S8 CTA akhir: band gelap penutup; CTA menyala lime di atas forest (P2 tetap: satu per layar). */}
         <section className="relative overflow-hidden bg-forest text-porcelain">
           <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
           <div
@@ -394,7 +223,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* S8 Footer: penutup dan navigasi internal yang nyata. Tanpa heading, tanpa empat kolom template. */}
+        {/* S9 Footer: penutup dan navigasi internal yang nyata. Tanpa heading, tanpa empat kolom template. */}
         <footer className="border-t border-[var(--border-hairline)]">
           <div className="page-container py-s4">
             <div className="flex flex-wrap items-start justify-between gap-s4">
@@ -412,16 +241,22 @@ export default function LandingPage() {
               </div>
               <nav aria-label="Navigasi section landing" className="flex flex-wrap gap-s2">
                 <Link
-                  href="#bukti"
+                  href="#fitur"
                   className="touch-44 inline-flex items-center font-body text-body text-ink-72 underline-offset-2 transition-colors duration-[var(--motion-fast)] hover:text-forest hover:underline focus-ring"
                 >
-                  Bukti nyata
+                  Fitur
                 </Link>
                 <Link
                   href="#cara-kerja"
                   className="touch-44 inline-flex items-center font-body text-body text-ink-72 underline-offset-2 transition-colors duration-[var(--motion-fast)] hover:text-forest hover:underline focus-ring"
                 >
                   Cara kerja
+                </Link>
+                <Link
+                  href="#bukti"
+                  className="touch-44 inline-flex items-center font-body text-body text-ink-72 underline-offset-2 transition-colors duration-[var(--motion-fast)] hover:text-forest hover:underline focus-ring"
+                >
+                  Bukti nyata
                 </Link>
                 <Link
                   href="#privasi"

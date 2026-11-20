@@ -12,7 +12,7 @@ import Link from 'next/link';
  * sendiri gelap.
  */
 const LINKS = [
-  { href: '#bukti', label: 'Bukti' },
+  { href: '#fitur', label: 'Fitur' },
   { href: '#cara-kerja', label: 'Cara kerja' },
   { href: '#format', label: 'Format' },
   { href: '#audit', label: 'Jejak audit' },
