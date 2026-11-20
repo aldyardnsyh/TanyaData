@@ -15,21 +15,21 @@ export interface DatasetSelectorProps {
   className?: string;
 }
 
+/** Kontrol nyata: native select, bukan div role=button tanpa aksi (R-26). */
 export function DatasetSelector({ datasets, value, onChange, className }: DatasetSelectorProps) {
-  const selected = datasets.find((d) => d.id === value);
   return (
-    <div
-      className={cn(
-        'flex items-center gap-1.5 rounded-md bg-surface-container-low px-2.5 py-1.5 text-on-surface font-body text-label-md transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring',
-        className,
-      )}
-      role="button"
-      tabIndex={0}
-      aria-label="Select active dataset"
-    >
-      <Database className="h-4 w-4 text-primary" />
-      <span className="max-w-[150px] truncate">{selected?.name ?? value}</span>
-      <span className="text-on-surface-variant">▾</span>
-    </div>
+    <label className={cn('inline-flex min-h-11 items-center gap-2 rounded-control border border-border-control bg-surface px-3 focus-within:border-primary', className)}>
+      <Database className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+      <span className="sr-only">Pilih dataset aktif</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="max-w-[180px] cursor-pointer appearance-none bg-transparent font-body text-label-md text-ink focus-ring"
+      >
+        {datasets.map((d) => (
+          <option key={d.id} value={d.id}>{d.name}</option>
+        ))}
+      </select>
+    </label>
   );
 }

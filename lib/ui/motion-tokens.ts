@@ -1,16 +1,17 @@
-/** Motion tokens dari motion-foundations (§3.1 DESIGN_SYSTEM). */
+/**
+ * Motion token Precision Console (DESIGN_DIRECTION §6.1 / DECISION-013).
+ * Durasi maks 320ms untuk perubahan data. Tidak ada nilai ad-hoc di komponen.
+ */
 export const motionTokens = {
   duration: {
-    instant: 0.08,
-    fast: 0.18,
-    normal: 0.35,
-    slow: 0.6,
-    crawl: 1.0,
+    instant: 0.08, // tooltip, focus, badge update
+    fast: 0.12, // hover, chip, tombol, ripple
+    base: 0.18, // entrance, nav indicator, toast
+    slow: 0.32, // count-up, chart draw, dialog, drawer
   },
   easing: {
-    smooth: [0.22, 1, 0.36, 1],
-    sharp: [0.4, 0, 0.2, 1],
-    bounce: [0.34, 1.56, 0.64, 1],
+    outExpo: [0.16, 1, 0.3, 1],
+    spring: [0.34, 1.56, 0.64, 1],
     linear: [0, 0, 1, 1],
   },
   distance: {
@@ -18,7 +19,6 @@ export const motionTokens = {
     sm: 8,
     md: 16,
     lg: 24,
-    xl: 48,
   },
   scale: {
     subtle: 0.98,
@@ -27,10 +27,23 @@ export const motionTokens = {
   },
 } as const;
 
+/** Spring presets untuk interaksi langsung (nav, toast, dialog). */
 export const springs = {
-  snappy: { type: 'spring', stiffness: 300, damping: 30 },
-  gentle: { type: 'spring', stiffness: 120, damping: 14 },
-  bouncy: { type: 'spring', stiffness: 400, damping: 10 },
-  instant: { type: 'spring', stiffness: 600, damping: 35 },
-  release: { type: 'spring', stiffness: 200, damping: 20, restDelta: 0.001 },
+  snappy: { type: 'spring', stiffness: 420, damping: 32 },
+  gentle: { type: 'spring', stiffness: 180, damping: 20 },
+  instant: { type: 'spring', stiffness: 600, damping: 38 },
 } as const;
+
+/** Gate global: reduced-motion → 0ms, tanpa transform. */
+export function shouldAnimate(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/** Hentikan loop saat tab tidak aktif (§6.3.6). */
+export function onVisible(play: () => void, stop: () => void): () => void {
+  if (typeof document === 'undefined') return () => {};
+  const handler = () => (document.visibilityState === 'hidden' ? stop() : play());
+  document.addEventListener('visibilitychange', handler);
+  return () => document.removeEventListener('visibilitychange', handler);
+}

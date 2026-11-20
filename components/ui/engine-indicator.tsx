@@ -1,7 +1,3 @@
-/**
- * C-10 / §4.5: satu indikator mesin untuk Shell dan Asisten.
- * Pill sinyal hidup `#d6ea5b`/`#191e00` dengan dot 6px; gagal = pill error + tautan periksa.
- */
 import Link from 'next/link';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -17,20 +13,17 @@ export interface EngineIndicatorProps {
   className?: string;
 }
 
+/** U-01: tanpa klaim "live". Dot + fakta teknis dari API. */
 export function EngineIndicator({ online, label, href, className }: EngineIndicatorProps) {
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-2 rounded-full px-3 py-2 font-body text-label-sm font-semibold',
-        online ? 'bg-secondary-container text-on-secondary-fixed' : 'bg-error-container text-on-error-container',
-        className,
-      )}
-    >
-      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', online ? 'bg-primary' : 'bg-error')} aria-hidden="true" />
-      {label ?? (online ? 'Engine: SQLite · SQL + FTS5' : 'Engine unavailable')}
+    <span className={cn('inline-flex min-h-11 items-center gap-2 px-2', className)}>
+      <span className={cn('state-dot', online ? 'state-dot-active' : 'state-dot-error')} aria-hidden="true" />
+      <span className="font-body text-body-sm text-ink-muted-strong">
+        {label ?? (online ? 'SQLite · SQL + FTS5' : 'Sumber tidak tersedia')}
+      </span>
       {href && !online && (
-        <Link href={href} className="ml-1 underline focus-ring">
-          Check sources
+        <Link href={href} className="font-body text-body-sm text-primary underline focus-ring">
+          Periksa sumber
         </Link>
       )}
     </span>

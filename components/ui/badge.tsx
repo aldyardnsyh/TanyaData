@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { IconCheck, IconClock, IconAlertTriangle, IconMinus, IconLoader } from './icons';
+import { StatusDot, type DotState } from './status-dot';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -8,12 +8,12 @@ function cn(...inputs: ClassValue[]) {
 
 export type Status = 'success' | 'warning' | 'danger' | 'neutral' | 'info';
 
-const statusConfig: Record<Status, { bg: string; text: string; icon: React.ReactNode }> = {
-  success: { bg: 'bg-secondary-container', text: 'text-on-secondary-fixed', icon: <IconCheck className="h-3 w-3" /> },
-  warning: { bg: 'bg-tertiary-fixed', text: 'text-on-tertiary-fixed-variant', icon: <IconClock className="h-3 w-3" /> },
-  danger: { bg: 'bg-error-container', text: 'text-on-error-container', icon: <IconAlertTriangle className="h-3 w-3" /> },
-  neutral: { bg: 'bg-surface-container-high', text: 'text-on-surface-variant', icon: <IconMinus className="h-3 w-3" /> },
-  info: { bg: 'bg-surface-container-low', text: 'text-primary', icon: <IconLoader className="h-3 w-3" /> },
+const statusMap: Record<Status, DotState> = {
+  success: 'active',
+  warning: 'neutral',
+  danger: 'error',
+  neutral: 'empty',
+  info: 'loading',
 };
 
 export interface StatusBadgeProps {
@@ -22,19 +22,7 @@ export interface StatusBadgeProps {
   className?: string;
 }
 
+/** V-06: badge tanpa capsule/glow. Hanya status nyata dari API, ditandai dot + teks. */
 export function StatusBadge({ status, label, className }: StatusBadgeProps) {
-  const config = statusConfig[status];
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-body text-label-sm font-semibold',
-        config.bg,
-        config.text,
-        className,
-      )}
-    >
-      {config.icon}
-      {label}
-    </span>
-  );
+  return <StatusDot state={statusMap[status]} label={label} className={cn('px-0', className)} />;
 }

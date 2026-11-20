@@ -18,24 +18,27 @@ export interface DialogProps {
   className?: string;
 }
 
+/** Motion #9: spring 320ms + backdrop fade 120ms. Radix: focus trap + Escape. */
 export function Dialog({ open, onOpenChange, title, description, children, className }: DialogProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-modal bg-inverse-surface/32 transition-opacity duration-[var(--motion-slow)] data-[state=open]:opacity-100 data-[state=closed]:opacity-0" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-modal bg-ink/25 transition-opacity duration-[var(--motion-fast)] data-[state=open]:opacity-100 data-[state=closed]:opacity-0" />
         <DialogPrimitive.Content
           className={cn(
-            'fixed left-1/2 top-1/2 z-modal w-full max-w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-surface-container-lowest border border-outline-variant p-6 shadow-lg transition-all duration-[var(--motion-slow)] data-[state=open]:translate-y-0 data-[state=closed]:translate-y-4 data-[state=open]:opacity-100 data-[state=closed]:opacity-0',
+            'fixed left-1/2 top-1/2 z-modal w-full max-w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-overlay border border-border-hairline bg-surface p-6 shadow-overlay transition-[transform,opacity] duration-[var(--motion-slow)] ease-[var(--ease-spring)] data-[state=open]:opacity-100 data-[state=closed]:opacity-0 data-[state=closed]:scale-95',
             className,
           )}
           onEscapeKeyDown={() => onOpenChange(false)}
           onPointerDownOutside={() => onOpenChange(false)}
         >
-          <DialogPrimitive.Title className="font-display text-headline-sm font-semibold text-on-surface">
-            {title}
-          </DialogPrimitive.Title>
+          {title && (
+            <DialogPrimitive.Title className="font-body text-headline-sm text-ink">
+              {title}
+            </DialogPrimitive.Title>
+          )}
           {description && (
-            <DialogPrimitive.Description className="font-body text-body-sm text-on-surface-variant mt-1">
+            <DialogPrimitive.Description className="mt-1 font-body text-body-sm text-ink-muted-strong">
               {description}
             </DialogPrimitive.Description>
           )}
@@ -43,7 +46,7 @@ export function Dialog({ open, onOpenChange, title, description, children, class
           <DialogPrimitive.Close asChild>
             <button
               type="button"
-              className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
+              className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-control text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:bg-row-hover focus-ring"
               aria-label="Close"
             >
               <IconX className="h-5 w-5" />

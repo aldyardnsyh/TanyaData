@@ -20,10 +20,7 @@ export interface FilterChipsProps {
   className?: string;
 }
 
-/**
- * A-14/C-18: filter (bukan tab) — role="group" + aria-pressed, pill h32,
- * scroll horizontal dengan fade tepi kanan dan scroll-snap (§4.4).
- */
+/** §5.6 + motion #6: chip radius 8, visual 32px / sentuh 44px, slide aktif 120ms. */
 export function FilterChips({ chips, value, onChange, label, className }: FilterChipsProps) {
   return (
     <div
@@ -40,18 +37,21 @@ export function FilterChips({ chips, value, onChange, label, className }: Filter
             aria-pressed={active}
             onClick={() => onChange(chip.id)}
             className={cn(
-              'relative h-8 min-w-11 shrink-0 snap-start rounded-full px-3 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring',
+              'touch-44 relative h-8 shrink-0 snap-start rounded-control border px-3 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring',
               active
-                ? 'bg-primary font-semibold text-on-primary'
-                : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface',
+                ? 'border-primary bg-primary text-on-primary'
+                : 'border-border-control bg-surface text-ink-muted-strong hover:border-primary hover:text-ink',
             )}
           >
-            {chip.label}
-            {/* Purpose Gate: garis aktif meluncur 150ms tanpa menggeser layout. */}
+            <span className="inline-flex items-center gap-1.5">
+              {active && <span className="state-dot state-dot-active" aria-hidden="true" />}
+              {chip.label}
+            </span>
+            {/* Purpose Gate: indikator aktif meluncur 120ms, tanpa bounce. */}
             <span
               aria-hidden="true"
               className={cn(
-                'pointer-events-none absolute inset-x-3 bottom-1 h-0.5 origin-left rounded-full bg-current transition-transform duration-[var(--motion-focus)] ease-[var(--ease-out-quart)] motion-reduce:transform-none',
+                'pointer-events-none absolute inset-x-3 bottom-1 h-0.5 origin-left rounded-control bg-current transition-transform duration-[var(--motion-fast)] ease-[var(--ease-out-expo)] motion-reduce:transform-none',
                 active ? 'scale-x-100' : 'scale-x-0',
               )}
             />

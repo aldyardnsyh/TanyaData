@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { motionTokens, shouldAnimate } from './motion-tokens';
 
 /**
- * C-07 / §3.2: count-up angka 600ms sekali per muat.
- * SSR-aman: render pertama mengikuti server (nilai akhir), lalu efek menganimasikan
- * dari 0 ke target sekali saat data tersedia. Reduced-motion langsung ke nilai akhir.
+ * Count-up sekali saat mount/perubahan data (DESIGN_DIRECTION §5.1 / motion #2).
+ * 320ms, ease-out-expo. Hover replay = emphasis 120ms, BUKAN hitung ulang penuh.
+ * SSR-aman: render pertama mengikuti server (nilai akhir).
  */
-export function useCountUp(target: number | null, durationMs = 600, replayToken = 0): number | null {
+export function useCountUp(target: number | null, replayToken = 0): number | null {
   const [value, setValue] = useState<number | null>(target);
   const animatedFor = useRef<number | null>(null);
   const lastToken = useRef(replayToken);
@@ -18,28 +19,30 @@ export function useCountUp(target: number | null, durationMs = 600, replayToken 
       animatedFor.current = null;
       return;
     }
-    // replayToken berubah saat hover KPI: ulangi count-up halus tanpa mengubah data.
     const tokenChanged = lastToken.current !== replayToken;
     lastToken.current = replayToken;
     if (animatedFor.current === target && !tokenChanged) return;
     animatedFor.current = target;
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+
+    if (!shouldAnimate()) {
       setValue(target);
       return;
     }
+
     let frame = 0;
     const start = performance.now();
+    const duration = motionTokens.duration.slow * 1000;
     setValue(0);
     const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - t, 4); // ease-out-quart
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 4);
       setValue(target * eased);
       if (t < 1) frame = requestAnimationFrame(tick);
       else setValue(target);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [target, durationMs, replayToken]);
+  }, [target, replayToken]);
 
   return value;
 }

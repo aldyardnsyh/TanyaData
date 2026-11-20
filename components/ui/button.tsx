@@ -1,6 +1,9 @@
+'use client';
+
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { IconLoader } from './icons';
+import { useRipple } from '@/lib/ui/ripple';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -15,18 +18,19 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   loading?: boolean;
 }
 
+/* S-05: semua tombol punya area sentuh ≥44px. Visual dibedakan oleh padding. */
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-on-primary',
-  secondary: 'bg-surface-container-lowest text-on-surface border border-outline-variant',
-  ghost: 'bg-transparent text-on-surface-variant',
-  danger: 'bg-error text-on-primary',
-  icon: 'bg-transparent text-on-surface-variant',
+  primary: 'bg-primary text-on-primary border border-primary hover:bg-[#0A3A2C] focus-ring-forest',
+  secondary: 'bg-surface text-ink border border-border-control hover:border-primary focus-ring',
+  ghost: 'bg-transparent text-ink-muted-strong border border-transparent hover:bg-row-hover hover:text-ink focus-ring',
+  danger: 'bg-surface text-error-text border border-signal-terracotta hover:bg-row-hover focus-ring',
+  icon: 'bg-transparent text-ink-muted-strong border border-transparent hover:bg-row-hover hover:text-ink focus-ring',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-7 px-2.5 text-label-md',
-  md: 'h-9 px-3.5 text-label-md',
-  lg: 'h-11 px-5 text-label-md',
+  sm: 'min-h-11 px-3 text-label-md',
+  md: 'min-h-11 px-4 text-label-md',
+  lg: 'min-h-11 px-6 text-label-md',
 };
 
 export function Button({
@@ -36,23 +40,28 @@ export function Button({
   disabled,
   className,
   children,
+  onPointerDown,
   ref,
   ...props
 }: ButtonProps & { ref?: React.Ref<HTMLButtonElement> }) {
+  const ripple = useRipple<HTMLButtonElement>();
+
   return (
     <button
       type="button"
       ref={ref}
       disabled={disabled || loading}
       aria-busy={loading}
+      onPointerDown={(event) => {
+        if (variant === 'primary') ripple(event);
+        onPointerDown?.(event);
+      }}
       className={cn(
-        // Purpose Gate: tekan 1px ke bawah 120ms memberi umpan balik tanpa menggeser layout (§4.1).
-        'inline-flex items-center justify-center gap-2 rounded-md font-body font-medium transition-[transform,background-color,border-color,color] duration-[var(--motion-fast)] active:translate-y-px',
+        'motion-ripple-host inline-flex min-h-11 items-center justify-center gap-2 rounded-control font-body font-semibold transition-[background-color,border-color,color] duration-[var(--motion-fast)] active:translate-y-px motion-reduce:transform-none',
         variantClasses[variant],
         sizeClasses[size],
-        variant === 'icon' && 'w-9 h-9 px-0',
-        'focus-ring',
-        disabled && 'opacity-45 cursor-not-allowed',
+        variant === 'icon' && 'w-11 px-0',
+        disabled && 'cursor-not-allowed opacity-45',
         className,
       )}
       {...props}

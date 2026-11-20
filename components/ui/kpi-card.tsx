@@ -7,6 +7,8 @@ import { IconArrowUpRight, IconArrowDownRight, IconMinus } from './icons';
 import { formatNumber, formatPercent, formatIdr } from '@/lib/ui/format';
 import { useCountUp } from '@/lib/ui/count-up';
 import { Skeleton } from './skeleton';
+import { InlineError } from './inline-error';
+import { MonoMeta } from './mono-meta';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -22,7 +24,12 @@ export interface KpiCardProps {
   note?: string;
   tooltip?: string;
   loading?: boolean;
-  /** C-07: count-up 600ms sekali saat mount; false = langsung nilai akhir (perubahan filter). */
+  error?: string | null;
+  onRetry?: () => void;
+  /** Signature 3.3: satu kartu hero lebih besar (spans 6 dari 12). */
+  hero?: boolean;
+  meta?: string;
+  sparkline?: number[];
   animateCount?: boolean;
   className?: string;
 }
@@ -33,60 +40,121 @@ function formatValue(value: number | null, format: KpiFormat): string {
   return formatNumber(value);
 }
 
-export function KpiCard({ label, value, format = 'number', delta, note, tooltip, loading, animateCount = true, className }: KpiCardProps) {
-  // Purpose Gate: hover mengulang count-up agar angka terasa "baru diukur", bukan dekorasi.
+function Sparkline({ values }: { values: number[] }) {
+  if (values.length < 2) return null;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const span = max - min || 1;
+  const points = values
+    .map((v, i) => `${(i / (values.length - 1)) * 100},${40 - ((v - min) / span) * 36 - 2}`)
+    .join(' ');
+  return (
+    <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="mt-3 h-10 w-full" aria-hidden="true">
+      <polyline points={points} fill="none" stroke="var(--color-primary)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+/**
+ * Signature 3.3 + motion #2: asymmetric bento, count-up 320ms sekali,
+ * hover replay 120ms berupa emphasis angka (bukan hitung ulang penuh).
+ */
+export function KpiCard({
+  label,
+  value,
+  format = 'number',
+  delta,
+  note,
+  tooltip,
+  loading,
+  error,
+  onRetry,
+  hero = false,
+  meta,
+  sparkline,
+  animateCount = true,
+  className,
+}: KpiCardProps) {
   const [replayToken, setReplayToken] = useState(0);
-  const counted = useCountUp(animateCount ? value : null, 600, replayToken);
+  const counted = useCountUp(animateCount ? value : null, replayToken);
   const displayValue = animateCount ? counted : value;
 
   if (loading) {
     return (
-      <div className={cn('rounded-xl bg-surface-container-lowest border border-outline-variant p-5', className)}>
+      <div className={cn('flex min-h-40 flex-col rounded-card border border-border-hairline bg-surface p-5', hero && 'rounded-overlay', className)}>
         <Skeleton className="h-3 w-24" />
-        <Skeleton className="mt-2 h-8 w-20" />
-        <Skeleton className="mt-1 h-3 w-16" />
+        <Skeleton className="mt-3 h-8 w-28" />
+        <Skeleton className="mt-2 h-3 w-20" />
       </div>
     );
   }
 
-  // A-15: arah tidak hanya warna — kata up/down/flat + konteks pembanding (DECISION-011 English UI).
-  const deltaWord = delta?.direction === 'up' ? 'up' : delta?.direction === 'down' ? 'down' : 'flat';
-  const deltaChip = delta && delta.pct !== null && delta.direction ? (
+  if (error) {
+    return (
+      <div className={cn('min-h-40 rounded-card border border-border-hairline bg-surface p-5', hero && 'rounded-overlay', className)}>
+        <InlineError message={error} onRetry={onRetry} />
+      </div>
+    );
+  }
+
+  const direction = delta?.direction ?? null;
+  const word = direction === 'up' ? 'up' : direction === 'down' ? 'down' : 'flat';
+  const deltaChip = delta && delta.pct !== null && direction ? (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 rounded-sm px-1.5 py-0.5 font-body text-label-sm font-bold',
-        delta.direction === 'up' && 'bg-primary-fixed text-on-primary-fixed-variant',
-        delta.direction === 'down' && 'bg-tertiary-fixed text-on-tertiary-fixed-variant',
-        delta.direction === 'flat' && 'bg-surface-container-high text-on-surface-variant',
+        'inline-flex min-h-11 items-center gap-1 rounded-control px-2 font-body text-body-sm',
+        direction === 'up' && 'text-error-text',
+        direction === 'down' && 'text-primary',
+        direction === 'flat' && 'text-ink-muted-strong',
       )}
     >
-      {/* Purpose Gate: panah bergeser 2px saat hover untuk memperkuat arah delta. */}
-      {delta.direction === 'up' && <IconArrowUpRight className="h-3 w-3 transition-transform duration-[var(--motion-fast)] group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />}
-      {delta.direction === 'down' && <IconArrowDownRight className="h-3 w-3 transition-transform duration-[var(--motion-fast)] group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />}
-      {delta.direction === 'flat' && <IconMinus className="h-3 w-3 transition-transform duration-[var(--motion-fast)] group-hover:translate-x-0.5 motion-reduce:transform-none" aria-hidden="true" />}
-      {deltaWord} {formatPercent(Math.abs(delta.pct))}
+      <span
+        className={cn(
+          'state-dot',
+          direction === 'up' && 'state-dot-error',
+          direction === 'down' && 'state-dot-active',
+          direction === 'flat' && 'state-dot-empty',
+        )}
+        aria-hidden="true"
+      />
+      {direction === 'up' && <IconArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />}
+      {direction === 'down' && <IconArrowDownRight className="h-3.5 w-3.5" aria-hidden="true" />}
+      {direction === 'flat' && <IconMinus className="h-3.5 w-3.5" aria-hidden="true" />}
+      <span className="tabular">{word} {formatPercent(Math.abs(delta.pct))}</span>
       {delta.compareValue !== null && (
-        <span className="text-on-surface-variant font-normal"> vs {formatValue(delta.compareValue, format)}</span>
+        <span className="text-ink-muted-strong">vs {formatValue(delta.compareValue, format)}</span>
       )}
     </span>
   ) : null;
 
-  // Purpose Gate: kartu naik 2px saat hover sebagai affordance, tanpa shadow tambahan.
   return (
-    <div
+    <section
       className={cn(
-        'group rounded-xl bg-surface-container-lowest border border-outline-variant p-5 transition-transform duration-[var(--motion-fast)] ease-[var(--ease-out-quart)] hover:-translate-y-0.5 motion-reduce:transform-none',
+        'group flex min-h-40 flex-col rounded-card border border-border-hairline bg-surface p-5 transition-colors duration-[var(--motion-fast)] hover:border-primary motion-reduce:transition-none',
+        hero && 'rounded-overlay',
         className,
       )}
       onMouseEnter={() => setReplayToken((token) => token + 1)}
       title={tooltip}
     >
-      <p className="font-body text-label-sm text-on-surface-variant uppercase tracking-wider">{label}</p>
-      <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <p className="font-display text-metric-xl font-bold text-on-surface tabular">{formatValue(displayValue, format)}</p>
+      <div className="measurement-rule -mx-5 -mt-5 mb-4 px-5 pt-4 pb-3">
+        <p className="font-body text-label-sm uppercase text-ink-muted-strong">{label}</p>
+      </div>
+
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <p
+          key={replayToken}
+          className="animate-emphasis font-body text-metric-display tabular text-ink"
+        >
+          {value === null ? '—' : formatValue(displayValue, format)}
+        </p>
         {deltaChip}
       </div>
-      {note && <p className="mt-1 font-body text-body-sm text-on-surface-variant">{note}</p>}
-    </div>
+
+      {note && <p className="mt-1 font-body text-body-sm text-ink-muted-strong">{note}</p>}
+      {sparkline && sparkline.length > 1 && <Sparkline values={sparkline} />}
+
+      {meta && <div className="mt-auto pt-3"><MonoMeta>{meta}</MonoMeta></div>}
+    </section>
   );
 }

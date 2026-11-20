@@ -19,16 +19,16 @@ export interface DrawerProps {
   className?: string;
 }
 
+/** Motion #9: drawer spring 320ms + backdrop fade 120ms, fokus terperangkap. */
 export function Drawer({ open, onOpenChange, side = 'left', width, title, children, className }: DrawerProps) {
-  // C-35: prop width dihormati kedua sisi; default kiri 280, kanan 420 (§4.12).
   const resolvedWidth = width ?? (side === 'right' ? '420px' : '280px');
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-drawer bg-inverse-surface/32 transition-opacity duration-[var(--motion-slow)] data-[state=open]:opacity-100 data-[state=closed]:opacity-0" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-drawer bg-ink/25 transition-opacity duration-[var(--motion-fast)] data-[state=open]:opacity-100 data-[state=closed]:opacity-0" />
         <DialogPrimitive.Content
           className={cn(
-            'fixed top-0 z-drawer flex max-w-full flex-col bg-surface-container-lowest border-outline-variant shadow-lg transition-transform duration-[var(--motion-slow)] data-[state=open]:translate-x-0',
+            'fixed top-0 z-drawer flex max-w-full flex-col border-border-hairline bg-surface shadow-overlay transition-transform duration-[var(--motion-slow)] ease-[var(--ease-spring)] data-[state=open]:translate-x-0',
             side === 'left'
               ? 'left-0 h-full border-r data-[state=closed]:-translate-x-full'
               : 'right-0 h-full border-l data-[state=closed]:translate-x-full',
@@ -39,12 +39,12 @@ export function Drawer({ open, onOpenChange, side = 'left', width, title, childr
           onPointerDownOutside={() => onOpenChange(false)}
         >
           {title && (
-            <div className="flex h-14 items-center justify-between border-b border-outline-variant px-4">
-              <span className="font-display text-headline-sm font-semibold text-on-surface">{title}</span>
+            <div className="measurement-rule flex h-14 items-center justify-between px-4">
+              <span className="font-body text-headline-sm text-ink">{title}</span>
               <DialogPrimitive.Close asChild>
                 <button
                   type="button"
-                  className="flex h-11 w-11 items-center justify-center rounded-md text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
+                  className="flex h-11 w-11 items-center justify-center rounded-control text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:bg-row-hover focus-ring"
                   aria-label="Close"
                 >
                   <IconX className="h-5 w-5" />

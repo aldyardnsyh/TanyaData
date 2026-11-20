@@ -17,7 +17,7 @@ export function Select({ label, hint, error, className, children, ...props }: Se
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={id} className="font-body text-label-md text-on-surface font-medium">
+        <label htmlFor={id} className="font-body text-label-md font-semibold text-ink">
           {label}
         </label>
       )}
@@ -25,20 +25,20 @@ export function Select({ label, hint, error, className, children, ...props }: Se
         <select
           id={id}
           className={cn(
-            'h-9 w-full appearance-none rounded-md border border-outline-variant bg-surface-container-lowest px-3 pr-8 text-on-surface font-body text-body-md transition-colors duration-[var(--motion-fast)] focus:border-primary focus:shadow-[var(--focus-ring)] focus:outline-none',
-            error && 'border-error',
+            'min-h-11 w-full appearance-none rounded-control border border-border-control bg-surface px-3 pr-8 font-body text-body-md text-ink transition-colors duration-[var(--motion-fast)] focus-ring',
+            error && 'border-signal-terracotta',
             className,
           )}
           {...props}
         >
           {children}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted-strong" />
       </div>
       {error ? (
-        <p className="font-body text-body-sm text-error">{error}</p>
+        <p className="font-body text-body-sm text-error-text">{error}</p>
       ) : hint ? (
-        <p className="font-body text-body-sm text-on-surface-variant">{hint}</p>
+        <p className="font-body text-body-sm text-ink-muted-strong">{hint}</p>
       ) : null}
     </div>
   );

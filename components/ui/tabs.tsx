@@ -17,14 +17,13 @@ export interface TabsProps {
   tabs: Tab[];
   value: string;
   onChange: (id: string) => void;
-  /** Prefix untuk id panel yang dikontrol; tiap tab mendapat aria-controls={`${idPrefix}-${id}`}. */
   idPrefix?: string;
-  /** 'underline' = tab underline desktop h40 (default); 'chip' = filter chip pill h32. */
   variant?: 'underline' | 'chip';
   className?: string;
   label?: string;
 }
 
+/** Navigasi tab: underline 2px primary (state, bukan dekorasi), target 44px. */
 export function Tabs({ tabs, value, onChange, idPrefix = 'tab', variant = 'underline', className, label = 'Tab' }: TabsProps) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -48,7 +47,7 @@ export function Tabs({ tabs, value, onChange, idPrefix = 'tab', variant = 'under
       aria-label={label}
       className={cn(
         'flex',
-        underline ? 'gap-4 border-b border-outline-variant' : 'chip-scroll items-center gap-2 overflow-x-auto',
+        underline ? 'gap-4 border-b border-border-hairline' : 'chip-scroll items-center gap-2 overflow-x-auto',
         className,
       )}
     >
@@ -69,27 +68,19 @@ export function Tabs({ tabs, value, onChange, idPrefix = 'tab', variant = 'under
             className={cn(
               'shrink-0 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring',
               underline
-                ? cn(
-                    'relative h-10 px-1',
-                    active
-                      ? 'font-semibold text-primary'
-                      : 'text-on-surface-variant hover:text-on-surface',
-                  )
+                ? cn('relative min-h-11 px-1', active ? 'font-semibold text-primary' : 'text-ink-muted-strong hover:text-ink')
                 : cn(
-                    'h-8 min-w-11 rounded-full px-3',
-                    active
-                      ? 'bg-primary font-semibold text-on-primary'
-                      : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface',
+                    'min-h-11 rounded-control border px-3',
+                    active ? 'border-primary bg-primary font-semibold text-on-primary' : 'border-border-control bg-surface text-ink-muted-strong hover:text-ink',
                   ),
             )}
           >
             {tab.label}
-            {/* Purpose Gate: garis bawah tab tumbuh dari kiri 120ms menandai tab aktif (§4.4); transform-only, tanpa layout shift. */}
             {underline && (
               <span
                 aria-hidden="true"
                 className={cn(
-                  'absolute inset-x-0 bottom-0 h-0.5 origin-left bg-primary transition-transform duration-[var(--motion-fast)]',
+                  'absolute inset-x-0 bottom-0 h-0.5 origin-left bg-primary transition-transform duration-[var(--motion-fast)] ease-[var(--ease-out-expo)] motion-reduce:transform-none',
                   active ? 'scale-x-100' : 'scale-x-0',
                 )}
               />

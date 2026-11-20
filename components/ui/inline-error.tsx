@@ -14,24 +14,24 @@ export interface InlineErrorProps {
   className?: string;
 }
 
-/** B-06 / §4.13: banner error inline — ikon + judul + pesan API + aksi retry. */
-export function InlineError({ title = 'Failed to load data', message, onRetry, className }: InlineErrorProps) {
+/** V-03: teks error memakai --error-text (10,3:1), terracotta hanya border/dot. */
+export function InlineError({ title = 'Gagal memuat data', message, onRetry, className }: InlineErrorProps) {
   return (
     <div
       role="alert"
       className={cn(
-        'flex flex-col items-start gap-2 rounded-md border border-error-container bg-error-container p-4 sm:flex-row sm:items-center',
+        'flex flex-col items-start gap-2 rounded-card border border-signal-terracotta bg-surface p-4 sm:flex-row sm:items-center',
         className,
       )}
     >
-      <AlertTriangle className="h-5 w-5 shrink-0 text-on-error-container" aria-hidden="true" />
+      <AlertTriangle className="h-5 w-5 shrink-0 text-error-text" aria-hidden="true" />
       <div className="min-w-0 flex-1">
-        <p className="font-body text-label-md font-semibold text-on-error-container">{title}</p>
-        <p className="mt-0.5 font-body text-body-sm text-on-error-container">{message}</p>
+        <p className="font-body text-label-md font-semibold text-error-text">{title}</p>
+        <p className="mt-0.5 font-body text-body-sm text-ink-muted-strong">{message}</p>
       </div>
       {onRetry && (
         <Button size="sm" variant="secondary" onClick={onRetry} className="shrink-0">
-          Retry
+          Coba lagi
         </Button>
       )}
     </div>

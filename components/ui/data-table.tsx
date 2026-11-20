@@ -5,6 +5,8 @@ import { twMerge } from 'tailwind-merge';
 import { IconArrowUpDown as ArrowUpDown, IconArrowUp as ArrowUp, IconArrowDown as ArrowDown } from './icons';
 import { Skeleton } from './skeleton';
 import { EmptyState } from './empty-state';
+import { InlineError } from './inline-error';
+import { MonoMeta } from './mono-meta';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,11 +34,13 @@ export interface DataTableProps<T> {
   emptyTitle?: string;
   emptyDescription?: string;
   emptyAction?: React.ReactNode;
-  /** Header sticky saat tabel berada di dalam wadah scroll vertikal (§D.5 pratinjau). */
   stickyHeader?: boolean;
+  activeRowKey?: string | null;
+  rowKey?: (row: T) => string;
   className?: string;
 }
 
+/** §5.3: header sticky, baris 44/52px, garis kiri primary untuk baris aktif. */
 export function DataTable<T extends Record<string, any>>({
   columns,
   rows,
@@ -50,6 +54,8 @@ export function DataTable<T extends Record<string, any>>({
   emptyDescription,
   emptyAction,
   stickyHeader,
+  activeRowKey,
+  rowKey,
   className,
 }: DataTableProps<T>) {
   if (loading) {
@@ -57,9 +63,9 @@ export function DataTable<T extends Record<string, any>>({
       <div className={cn('overflow-x-auto', className)}>
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-surface-container-low">
+            <tr className="bg-canvas">
               {columns.map((col) => (
-                <th key={col.key} className="py-2.5 px-4 font-body text-label-sm text-on-surface-variant uppercase">
+                <th key={col.key} className="px-4 py-3 font-body text-label-sm uppercase text-ink-muted-strong">
                   {col.label}
                 </th>
               ))}
@@ -67,11 +73,9 @@ export function DataTable<T extends Record<string, any>>({
           </thead>
           <tbody>
             {Array.from({ length: 5 }).map((_, i) => (
-              <tr key={i} className="border-b border-outline-variant">
+              <tr key={i} className="border-b border-border-hairline">
                 {columns.map((col) => (
-                  <td key={col.key} className="py-3 px-4">
-                    <Skeleton className="h-4 w-24" />
-                  </td>
+                  <td key={col.key} className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                 ))}
               </tr>
             ))}
@@ -82,20 +86,7 @@ export function DataTable<T extends Record<string, any>>({
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col items-center gap-2 py-8 text-center">
-        <p className="font-body text-body-md text-error">{error}</p>
-        {onRetry && (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="rounded-md bg-surface-container-lowest border border-outline-variant px-3 py-1.5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
-          >
-            Retry
-          </button>
-        )}
-      </div>
-    );
+    return <InlineError message={error} onRetry={onRetry} className={className} />;
   }
 
   if (rows.length === 0) {
@@ -111,28 +102,24 @@ export function DataTable<T extends Record<string, any>>({
 
   return (
     <div className={cn('overflow-x-auto', className)}>
-      <table className="w-full text-left border-collapse">
+      <table className="w-full border-collapse text-left">
         <thead>
-          <tr className="bg-surface-container-low border-b border-outline-variant">
+          <tr className="bg-canvas">
             {columns.map((col) => {
               const isSortable = onSort && col.key === sortKey;
               return (
                 <th
                   key={col.key}
                   className={cn(
-                    'py-2.5 px-4 font-body text-label-sm text-on-surface-variant uppercase',
+                    'whitespace-nowrap px-4 py-3 font-body text-label-sm uppercase text-ink-muted-strong',
                     col.align === 'right' && 'text-right',
-                    col.sticky && 'sticky left-0 bg-surface-container-low z-10',
-                    stickyHeader && 'sticky top-0 z-sticky bg-surface-container-low',
+                    col.sticky && 'sticky left-0 z-10 bg-canvas',
+                    stickyHeader && 'sticky top-0 z-sticky bg-canvas',
                     stickyHeader && col.sticky && 'left-0 z-20',
                   )}
                   aria-sort={
                     isSortable
-                      ? sortDirection === 'asc'
-                        ? 'ascending'
-                        : sortDirection === 'desc'
-                          ? 'descending'
-                          : 'none'
+                      ? sortDirection === 'asc' ? 'ascending' : sortDirection === 'desc' ? 'descending' : 'none'
                       : undefined
                   }
                 >
@@ -143,53 +130,58 @@ export function DataTable<T extends Record<string, any>>({
                         onSort?.(col.key, sortDirection === 'asc' ? 'desc' : sortDirection === 'desc' ? null : 'asc')
                       }
                       className={cn(
-                        'inline-flex items-center gap-1 font-body text-label-sm text-on-surface-variant transition-colors duration-[var(--motion-fast)] hover:text-on-surface focus-ring',
-                        col.align === 'right' && 'justify-end w-full',
+                        'inline-flex min-h-11 items-center gap-1 font-body text-label-sm text-ink-muted-strong transition-colors duration-[var(--motion-fast)] hover:text-ink focus-ring',
+                        col.align === 'right' && 'w-full justify-end',
                       )}
                     >
                       {col.label}
-                      {sortDirection === 'asc' ? (
-                        <ArrowUp className="h-3 w-3" />
-                      ) : sortDirection === 'desc' ? (
-                        <ArrowDown className="h-3 w-3" />
-                      ) : (
-                        <ArrowUpDown className="h-3 w-3 opacity-40" />
-                      )}
+                      {sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> :
+                        sortDirection === 'desc' ? <ArrowDown className="h-3 w-3" /> :
+                        <ArrowUpDown className="h-3 w-3 opacity-40" />}
                     </button>
-                  ) : (
-                    col.label
-                  )}
+                  ) : col.label}
                 </th>
               );
             })}
           </tr>
         </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr
-              key={i}
-              className="border-b border-outline-variant last:border-b-0 hover:bg-surface-container-low transition-colors duration-[var(--motion-fast)]"
-            >
-              {columns.map((col) => {
-                const value = row[col.key];
-                const display = col.format ? col.format(value) : value;
-                return (
-                  <td
-                    key={col.key}
-                    className={cn(
-                      'py-3 px-4 font-body text-body-md text-on-surface',
-                      col.align === 'right' && 'text-right tabular',
-                      col.sticky && 'sticky left-0 bg-surface-container-low z-10',
-                    )}
-                  >
-                    {display}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+        <tbody className="animate-crossfade">
+          {rows.map((row, i) => {
+            const key = rowKey ? rowKey(row) : String(i);
+            const active = activeRowKey != null && key === activeRowKey;
+            return (
+              <tr
+                key={key}
+                className={cn(
+                  'relative min-h-11 border-b border-border-hairline transition-colors duration-[var(--motion-fast)] last:border-b-0 hover:bg-row-hover',
+                  active && 'bg-row-hover',
+                )}
+              >
+                {columns.map((col, ci) => {
+                  const value = row[col.key];
+                  const display = col.format ? col.format(value) : value;
+                  return (
+                    <td
+                      key={col.key}
+                      className={cn(
+                        'min-h-11 px-4 py-3 align-middle font-body text-body-md text-ink',
+                        col.align === 'right' && 'text-right tabular',
+                        col.sticky && 'sticky left-0 z-10 bg-surface',
+                        active && ci === 0 && 'border-l-2 border-primary pl-3',
+                      )}
+                    >
+                      {display}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
+      <div className="border-t border-border-hairline px-4 py-2">
+        <MonoMeta>{rows.length} rows</MonoMeta>
+      </div>
     </div>
   );
 }

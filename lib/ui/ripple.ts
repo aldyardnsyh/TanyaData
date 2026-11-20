@@ -1,18 +1,15 @@
 'use client';
 
 import { useCallback, type PointerEvent } from 'react';
-import { motionTokens } from './motion-tokens';
+import { motionTokens, shouldAnimate } from './motion-tokens';
 
 /**
- * Purpose Gate: ripple WAAPI memberi konfirmasi klik pada CTA utama.
- * Reduced-motion → return lebih awal (0ms, tanpa elemen baru dibuat).
- * Tidak ada loop; ripple dibuang setelah animasi selesai.
+ * Motion #7: ripple WAAPI 120ms memberi konfirmasi tekan tanpa menggeser layout.
+ * Reduced-motion → return lebih awal (0ms, tanpa elemen baru). Tanpa loop.
  */
 export function useRipple<T extends HTMLElement>() {
   return useCallback((event: PointerEvent<T>) => {
-    if (typeof window === 'undefined') return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
+    if (!shouldAnimate()) return;
     const host = event.currentTarget;
     const rect = host.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height) * 2;
@@ -24,7 +21,7 @@ export function useRipple<T extends HTMLElement>() {
       `top:${event.clientY - rect.top - size / 2}px`,
       `width:${size}px`,
       `height:${size}px`,
-      'border-radius:9999px',
+      'border-radius:50%',
       'background:currentColor',
       'opacity:0.18',
       'pointer-events:none',
@@ -37,8 +34,8 @@ export function useRipple<T extends HTMLElement>() {
         { transform: 'scale(1)', opacity: 0 },
       ],
       {
-        duration: motionTokens.duration.normal * 1000,
-        easing: `cubic-bezier(${motionTokens.easing.smooth.join(',')})`,
+        duration: motionTokens.duration.fast * 1000,
+        easing: `cubic-bezier(${motionTokens.easing.outExpo.join(',')})`,
       },
     );
     animation.onfinish = () => dot.remove();

@@ -18,27 +18,27 @@ export function Input({ label, hint, error, size = 'md', className, ...props }: 
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={id} className="font-body text-label-md text-on-surface font-medium">
+        <label htmlFor={id} className="font-body text-label-md font-semibold text-ink">
           {label}
         </label>
       )}
       <input
         id={id}
         className={cn(
-          'h-9 rounded-md border border-outline-variant bg-surface-container-lowest px-3 text-on-surface font-body text-body-md transition-colors duration-[var(--motion-fast)] focus:border-primary focus:shadow-[var(--focus-ring)] focus:outline-none',
-          size === 'sm' && 'h-7 text-body-sm',
-          error && 'border-error',
+          'min-h-11 rounded-control border border-border-control bg-surface px-3 font-body text-body-md text-ink transition-colors duration-[var(--motion-fast)] placeholder:text-ink-muted-strong focus-ring',
+          size === 'sm' && 'text-body-sm',
+          error && 'border-signal-terracotta',
           className,
         )}
         {...props}
       />
       {error ? (
-        <p className="flex items-center gap-1 font-body text-body-sm text-error">
+        <p className="flex items-center gap-1 font-body text-body-sm text-error-text">
           <AlertTriangle className="h-3 w-3" />
           {error}
         </p>
       ) : hint ? (
-        <p className="font-body text-body-sm text-on-surface-variant">{hint}</p>
+        <p className="font-body text-body-sm text-ink-muted-strong">{hint}</p>
       ) : null}
     </div>
   );
