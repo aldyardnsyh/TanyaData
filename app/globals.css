@@ -331,7 +331,8 @@
 @utility h-dock { height: 64px; }
 
 /* ---- Kompatibilitas sementara: alias token lama → token baru. ----
- * File yang belum direbuild (Batch 2) tetap terlihat konsisten. Bukan nilai baru.
+ * Dipertahankan HANYA yang masih dipakai landing (app/page.tsx) dan primitive
+ * yang tidak dihapus. Alias tanpa pemakai dihapus; bukan nilai warna baru.
  */
 @theme {
   --color-canvas: var(--color-porcelain);
@@ -345,41 +346,17 @@
   --color-border-hairline: var(--border-hairline);
   --color-border-control: var(--color-muted);
   --color-row-hover: var(--color-forest-08);
-  --color-ink-muted: var(--color-ink-72);
   --color-ink-muted-strong: var(--color-ink-72);
-  --color-background: var(--color-porcelain);
   --color-surface-container-lowest: var(--color-porcelain);
-  --color-surface-container-low: var(--color-porcelain);
   --color-surface-container: var(--color-porcelain);
-  --color-surface-container-high: var(--color-forest-08);
   --color-on-surface: var(--color-ink);
   --color-on-surface-variant: var(--color-ink-72);
-  --color-on-primary-container: var(--color-forest);
   --color-primary-container: var(--color-forest);
-  --color-primary-fixed: var(--color-lime);
-  --color-primary-fixed-dim: var(--color-forest-08);
-  --color-on-primary-fixed: var(--color-ink);
-  --color-on-primary-fixed-variant: var(--color-ink);
-  --color-secondary-container: var(--color-lime);
-  --color-secondary-fixed: var(--color-lime);
-  --color-tertiary: var(--color-ink);
-  --color-tertiary-fixed: var(--color-forest-08);
-  --color-on-tertiary-fixed-variant: var(--color-ink);
-  --color-error: var(--color-terracotta);
-  --color-error-container: var(--color-terracotta-16);
-  --color-on-error-container: var(--color-ink);
   --color-outline: var(--color-muted);
   --color-outline-variant: var(--border-hairline);
-  --color-graphite: var(--color-ink);
-  --color-border-structural: var(--border-hairline);
 
-  --radius-sm: var(--radius-control);
   --radius-md: var(--radius-control);
   --radius-lg: var(--radius-surface);
-  --radius-xl: var(--radius-overlay);
-  --radius-hero: var(--radius-surface);
-  --radius-full: var(--radius-dot);
-  --radius-pill: var(--radius-control);
   --radius-card: var(--radius-surface);
 
   --text-headline-lg: var(--text-title);
@@ -390,9 +367,6 @@
   --text-label-md: var(--text-label);
   --text-label-sm: var(--text-caption);
   --text-metric-display: var(--text-metric);
-  --text-metric-md: var(--text-metric);
-  --text-mono-meta: var(--text-mono);
-  --text-label-sm-legacy: var(--text-caption);
 
   --animate-message-in: phrase-in var(--motion-fast) var(--ease-smooth) both;
   --animate-share-enter: phrase-in var(--motion-fast) var(--ease-smooth) both;
@@ -400,11 +374,6 @@
   --animate-toast-in: toast-in var(--motion-toast) var(--ease-smooth) both;
   --animate-typing-dot: typing-dot 1.2s var(--ease-smooth) infinite;
   --animate-skeleton: skeleton-pulse 1.2s var(--ease-smooth) infinite;
-  --animate-crossfade: phrase-in var(--motion-fast) var(--ease-smooth) both;
-  --animate-emphasis: phrase-in var(--motion-fast) var(--ease-smooth) both;
-  --animate-ripple: phrase-in var(--motion-fast) var(--ease-smooth) both;
-  --animate-nav-slide: phrase-in var(--motion-fast) var(--ease-smooth) both;
-  --animate-palette-in: phrase-in var(--motion-fast) var(--ease-smooth) both;
   --ease-out-expo: var(--ease-smooth);
   --ease-spring: var(--ease-smooth);
   --ease-out-quart: var(--ease-sharp);

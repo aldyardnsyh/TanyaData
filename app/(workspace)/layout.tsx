@@ -1,11 +1,11 @@
 import { Toaster } from '@/components/ui/toaster';
 import { I18nProvider } from '@/lib/ui/i18n-provider';
-import { WorkspaceShell } from '@/components/layout/workspace-shell';
+import { AppShell } from '@/components/shell/app-shell';
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   return (
     <I18nProvider defaultLang="en">
-      <WorkspaceShell>{children}</WorkspaceShell>
+      <AppShell>{children}</AppShell>
       <Toaster />
     </I18nProvider>
   );
