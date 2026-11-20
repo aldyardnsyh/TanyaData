@@ -13,7 +13,7 @@ function cn(...inputs: ClassValue[]) {
 export interface DrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  side?: 'left' | 'right';
+  side?: 'left' | 'right' | 'bottom';
   width?: string;
   title?: string;
   children: React.ReactNode;
@@ -22,6 +22,7 @@ export interface DrawerProps {
 
 /** Motion #9: drawer spring 320ms + backdrop fade 120ms, fokus terperangkap. */
 export function Drawer({ open, onOpenChange, side = 'left', width, title, children, className }: DrawerProps) {
+  const isBottom = side === 'bottom';
   const resolvedWidth = width ?? (side === 'right' ? '420px' : '280px');
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -29,13 +30,15 @@ export function Drawer({ open, onOpenChange, side = 'left', width, title, childr
         <DialogPrimitive.Overlay className="fixed inset-0 z-drawer bg-ink/25 transition-opacity duration-[var(--motion-fast)] data-[state=open]:opacity-100 data-[state=closed]:opacity-0" />
         <DialogPrimitive.Content
           className={cn(
-            'fixed top-0 z-drawer flex max-w-full flex-col border-border-hairline bg-surface shadow-overlay transition-transform duration-[var(--motion-slow)] ease-[var(--ease-spring)] data-[state=open]:translate-x-0',
-            side === 'left'
-              ? 'left-0 h-full border-r data-[state=closed]:-translate-x-full'
-              : 'right-0 h-full border-l data-[state=closed]:translate-x-full',
+            'fixed z-drawer flex max-w-full flex-col border-border-hairline bg-surface shadow-overlay transition-transform duration-[var(--motion-slow)] ease-[var(--ease-spring)]',
+            isBottom
+              ? 'bottom-0 left-0 max-h-[85vh] w-full rounded-t-overlay border-t data-[state=open]:translate-y-0 data-[state=closed]:translate-y-full'
+              : side === 'left'
+                ? 'left-0 top-0 h-full border-r data-[state=open]:translate-x-0 data-[state=closed]:-translate-x-full'
+                : 'right-0 top-0 h-full border-l data-[state=open]:translate-x-0 data-[state=closed]:translate-x-full',
             className,
           )}
-          style={{ width: resolvedWidth }}
+          style={isBottom ? undefined : { width: resolvedWidth }}
           onEscapeKeyDown={() => onOpenChange(false)}
           onPointerDownOutside={() => onOpenChange(false)}
         >

@@ -7,6 +7,8 @@ export const motionTokens = {
     instant: 0.08, // tooltip, focus, badge update
     fast: 0.12, // hover, chip, tombol, ripple
     base: 0.18, // entrance, nav indicator, toast
+    /** SHARE_PAGE_SPEC §6: entrance halaman share 240ms, tanpa transform. */
+    shareEntrance: 0.24,
     slow: 0.32, // count-up, chart draw, dialog, drawer
   },
   easing: {

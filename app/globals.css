@@ -123,6 +123,9 @@
   --animate-skeleton: skeleton-pulse 1.2s ease-in-out infinite;
   --animate-crossfade: crossfade 120ms ease-out both;
   --animate-emphasis: emphasis 120ms var(--ease-out-expo) both;
+  /* Share page (SHARE_PAGE_SPEC §6): entrance 240ms tanpa transform, stagger 30ms × 8. */
+  --animate-share-enter: share-enter 240ms var(--ease-out-expo) both;
+  --animate-share-stagger: share-stagger 180ms var(--ease-out-expo) both;
 
   @keyframes ripple {
     from { transform: scale(0); opacity: 0.5; }
@@ -160,6 +163,14 @@
     from { opacity: 0.55; }
     to { opacity: 1; }
   }
+  @keyframes share-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes share-stagger {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
 @layer base {
@@ -184,6 +195,9 @@
   --motion-instant: 80ms;
   --motion-fast: 120ms;
   --motion-base: 180ms;
+  /* Share entrance 240ms (SHARE_PAGE_SPEC §6). Token terpisah agar tidak
+     mengubah --motion-base global yang dipakai workspace. */
+  --motion-share-entrance: 240ms;
   --motion-slow: 320ms;
   --z-sticky: 10;
   --z-drawer: 40;
@@ -223,6 +237,25 @@
     height: 4px;
     background:
       linear-gradient(var(--color-border-control), var(--color-border-control)) left / 1px 4px no-repeat,
+      linear-gradient(var(--color-border-control), var(--color-border-control)) right / 1px 4px no-repeat;
+  }
+}
+
+/* SHARE_PAGE_SPEC §2: measurement rule tiga tick, tick tengah --primary.
+   Varian share dipakai agar komponen workspace yang sudah ada tidak berubah. */
+@utility measurement-rule-share {
+  position: relative;
+  border-bottom: 1px solid var(--color-border-hairline);
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 4px;
+    background:
+      linear-gradient(var(--color-border-control), var(--color-border-control)) left / 1px 4px no-repeat,
+      linear-gradient(var(--color-primary), var(--color-primary)) center / 1px 4px no-repeat,
       linear-gradient(var(--color-border-control), var(--color-border-control)) right / 1px 4px no-repeat;
   }
 }
@@ -348,7 +381,9 @@
 
 /* §6.3.6: loop transient berhenti saat tab tersembunyi. */
 [data-tab-hidden="true"] .animate-skeleton,
-[data-tab-hidden="true"] .animate-typing-dot {
+[data-tab-hidden="true"] .animate-typing-dot,
+[data-tab-hidden="true"] .animate-share-enter,
+[data-tab-hidden="true"] .animate-share-stagger {
   animation-play-state: paused !important;
 }
 
@@ -363,6 +398,9 @@
   }
   .animate-skeleton,
   .animate-typing-dot { animation: none !important; }
+  /* Share: 0ms, tanpa transform, fallback opacity langsung tampil. */
+  .animate-share-enter,
+  .animate-share-stagger { animation: none !important; opacity: 1 !important; transform: none !important; }
   .motion-ripple-host::after { display: none !important; }
 }
 
