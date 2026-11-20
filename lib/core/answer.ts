@@ -54,15 +54,32 @@ export function detectGuardrail(input: {
   return null;
 }
 
+/**
+ * Label sumber yang aman untuk pesan user. Nama internal seperti
+ * "Demo QRIS (legacy adapter)" atau id teknis bukan identitas yang boleh
+ * bocor ke jawaban; pakai metadata yang dimengerti user atau fallback generik.
+ */
+export function friendlySourceName(dataset: Dataset): string {
+  const raw = String(dataset.name ?? '').trim();
+  const internal = /\b(legacy|adapter|demo|qris)\b/i.test(raw);
+  const kindLabel =
+    dataset.kind === 'tabular'
+      ? 'Transaksi'
+      : dataset.doc_type === 'legal'
+        ? 'Dokumen hukum'
+        : 'Dokumen';
+  const file = dataset.storage_path?.split(/[\\/]/).pop()?.trim();
+  const candidate = internal || !raw ? (file ? `${file} - ${kindLabel}` : kindLabel) : raw;
+  // Angka tahun/id teknis tidak membantu di pesan guardrail dan berisiko
+  // dianggap angka karangan oleh evaluation grounding.
+  return candidate.replace(/\b\d+\b/g, '').replace(/\s+/g, ' ').trim() || 'sumber yang tersedia';
+}
+
 export function notInSourcesGuardrail(dataset: Dataset): Guardrail {
-  const topics = dataset.schema_json.tables
-    .flatMap((t) => t.columns.filter((c) => c.semantic_role === 'dimension').map((c) => c.sourceName))
-    .slice(0, 5);
+  const source = friendlySourceName(dataset);
   return {
     type: 'not_in_sources',
-    explanation: topics.length
-      ? `Informasi itu tidak ditemukan pada sumber "${dataset.name}". Topik yang tersedia antara lain: ${topics.join(', ')}.`
-      : `Informasi itu tidak ditemukan pada sumber "${dataset.name}".`,
+    explanation: `Informasi itu tidak ditemukan pada sumber "${source}".`,
   };
 }
 

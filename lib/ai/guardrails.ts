@@ -312,6 +312,21 @@ export interface AttachmentScopeResult {
   explanation: string;
 }
 
+/**
+ * Nama attachment yang aman ditampilkan. Label internal/teknis seperti
+ * "Demo QRIS (legacy adapter)" tidak boleh bocor ke pesan user.
+ */
+export function friendlyAttachmentName(name: string | null | undefined): string {
+  const raw = String(name ?? '').trim();
+  if (!raw) return 'sumber yang tersedia';
+  const cleaned = raw
+    .replace(/\s*\((?:legacy\s+)?adapter\)\s*/gi, ' ')
+    .replace(/\bDemo\s+QRIS\b/gi, 'Transaksi')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned || 'sumber yang tersedia';
+}
+
 /** "Dokumen sebelumnya" must not silently pull context from another attachment. */
 const CROSS_ATTACHMENT_RE =
   /\b(?:dokumen|attachment|file|data)\s+(?:sebelumnya|sebelum|lain|yang\s+lain|lalu)\b|\b(?:sebelumnya|previous\s+(?:document|attachment))\b/i;
@@ -332,17 +347,18 @@ export function checkAttachmentScope(input: AttachmentScopeInput): AttachmentSco
       explanation: 'Tidak ada attachment aktif; tidak ada chunk/SQL yang boleh dipakai.',
     };
   }
+  const activeName = friendlyAttachmentName(active.name);
   if (active.status !== 'READY') {
     return {
       allowed: false, violations: [`NOT_READY:${active.status}`], type: 'not_ready',
-      message: `Attachment "${active.name}" berstatus ${active.status}, belum READY.`,
+      message: `Attachment "${activeName}" berstatus ${active.status}, belum READY.`,
       explanation: 'Chunk parsial dari attachment yang belum READY tidak dipakai sebagai bukti.',
     };
   }
   if (CROSS_ATTACHMENT_RE.test(String(input.question ?? ''))) {
     return {
       allowed: false, violations: ['CROSS_ATTACHMENT_REFERENCE'], type: 'cross_attachment_ref',
-      message: `Pertanyaan merujuk dokumen/attachment lain. Silakan pilih attachment yang dimaksud; scope aktif adalah "${active.name}".`,
+      message: `Pertanyaan merujuk dokumen/attachment lain. Silakan pilih attachment yang dimaksud; scope aktif adalah "${activeName}".`,
       explanation: 'Referensi lintas attachment tidak di-resolve dari conversation lain.',
     };
   }
@@ -362,14 +378,14 @@ export function checkAttachmentScope(input: AttachmentScopeInput): AttachmentSco
   if (violations.length) {
     return {
       allowed: false, violations, type: 'scope_violation',
-      message: `Bukti dari attachment lain ditolak. Hanya "${active.name}" yang dipakai.`,
+      message: `Bukti dari attachment lain ditolak. Hanya "${activeName}" yang dipakai.`,
       explanation: `Pelanggaran scope: ${violations.join(', ')}.`,
     };
   }
 
   return {
     allowed: true, violations: [], type: null,
-    message: '', explanation: `Scope aman: ${active.name}.`,
+    message: '', explanation: `Scope aman: ${activeName}.`,
   };
 }
 
