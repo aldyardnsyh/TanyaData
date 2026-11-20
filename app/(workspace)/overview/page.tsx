@@ -209,17 +209,17 @@ export default function OverviewPage() {
       </div>
 
       {/* Asymmetric bento: hero 6, tiga regular 2 dari 12 (S-04 / §3.3). */}
-      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+        <div className="xl:col-span-6">
           <KpiCard hero label={t('kpi.total')} value={total?.value ?? null} format="number" delta={delta(total)} goodDirection="up" note={`vs ${compareLabel}`} meta="SQL · SUMMARY" loading={summary.loading} error={summary.error} onRetry={summary.retry} sparkline={points.map((p) => p.successful)} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-2">
           <KpiCard label={t('kpi.successful')} value={successful?.value ?? null} format="number" delta={delta(successful)} goodDirection="up" loading={summary.loading} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-2">
           <KpiCard label={t('kpi.successRate')} value={successRate?.value ?? null} format="percent" delta={delta(successRate)} goodDirection="up" loading={summary.loading} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="xl:col-span-2">
           <KpiCard label={t('kpi.failed')} value={failed?.value ?? null} format="number" delta={delta(failed)} goodDirection="down" loading={summary.loading} />
         </div>
       </div>
