@@ -343,3 +343,55 @@ export function buildContextBundle(parts: {
   ];
   return blocks.join('\n\n---\n\n');
 }
+
+/* --------------------------------------------------------------- reranker */
+
+export interface RerankableCitation {
+  section_path: string;
+  quote?: string | null;
+  score?: number | null;
+}
+
+/**
+ * Lightweight, model-free reranker for an already-retrieved candidate list.
+ *
+ * FTS5 OR-matching makes every child chunk of a legal document match the term
+ * "pasal" through its section_path, so BM25 alone cannot tell which pasal (or
+ * which ayat) the question actually asked for. This reranker reads the
+ * requested pasal/ayat numbers from the question and boosts matching sections.
+ * It never invents a citation: it only reorders candidates that FTS5 returned.
+ *
+ * Callers should retrieve a WIDER candidate set (e.g. limit 20) and then take
+ * the top-k after reranking — reordering five items cannot surface an ayat
+ * that was never in the candidate list.
+ */
+export function rerankCitations<T extends RerankableCitation>(question: string, citations: T[]): T[] {
+  const q = String(question ?? '');
+  const pasalNumbers = [...q.matchAll(/pasal\s*(\d+)/gi)].map((m) => m[1]);
+  const ayatNumbers = [...q.matchAll(/ayat\s*\(?(\d+)\)?/gi)].map((m) => Number(m[1]));
+  const range = q.match(/ayat\s*(\d+)\s*(?:-|–|s\.?d\.?|to)\s*(\d+)/i);
+  if (range) {
+    const from = Number(range[1]);
+    const to = Number(range[2]);
+    for (let n = from; n <= to && n - from < 20; n += 1) ayatNumbers.push(n);
+  }
+
+  return citations
+    .map((citation, index) => {
+      const section = String(citation.section_path ?? '');
+      let boost = 0;
+      if (pasalNumbers.length && pasalNumbers.some((p) =>
+        new RegExp(`pasal\\s*0*${p}\\b`, 'i').test(section))) {
+        boost += 0.6;
+      }
+      for (const n of new Set(ayatNumbers)) {
+        if (section.includes(`Ayat (${n})`) || section.includes(`ayat ${n}`)) boost += 0.25;
+      }
+      const base = typeof citation.score === 'number' && Number.isFinite(citation.score)
+        ? citation.score
+        : 0;
+      return { citation, index, rank: base + Math.min(1, boost) };
+    })
+    .sort((a, b) => b.rank - a.rank || a.index - b.index)
+    .map((x) => x.citation);
+}

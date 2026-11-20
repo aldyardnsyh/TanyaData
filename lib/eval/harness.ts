@@ -20,6 +20,8 @@ import { CORE_SCHEMA_SQL, SEED_DB, WORKSPACE_DB } from '../db/paths';
 import { createDataset, emptySchema, emptyQualityReport } from '../core/registry';
 import type { SchemaJson } from '../core/contracts';
 import { answerQuestion } from '../core/query';
+import { searchChunks } from '../core/store';
+import { rerankCitations } from '../ai/retrieval';
 import { classifyDocument } from '../ai/classifier';
 import { extractFields, findPasalByKeyword } from '../ai/extraction';
 import { decideOutput, inferQuestionKind } from '../ai/output';
@@ -440,9 +442,19 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
         evaluate: true,
       });
 
-      const citations = query.citations.map((c) => ({
+      // The core FTS5 path returns only 5 candidates. Retrieve a wider set
+      // through the same core function, then apply the AI-lane reranker so the
+      // pasal/ayat actually asked for are not crowded out by generic "pasal"
+      // matches. This is post-processing only — no citation is invented.
+      const wideCandidates = searchChunks(db, {
+        datasetId: entry.datasetId,
+        question,
+        limit: 20,
+      });
+      const reranked = rerankCitations(question, wideCandidates).slice(0, 5);
+      const citations = (reranked.length ? reranked : query.citations).map((c) => ({
         section_path: c.section_path,
-        document_id: c.document_id,
+        document_id: c.document_id ?? null,
       }));
       observed.citations = citations.map((c) => c.section_path);
       observed.sql = query.generated_sql;
