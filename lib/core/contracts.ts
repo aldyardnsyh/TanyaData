@@ -7,7 +7,7 @@
  * yang diunggah. File ini adalah titik koordinasi dengan lane aiml.
  */
 
-import type { Lang } from '@/lib/contracts/http';
+import type { AnswerQuestionResult, Lang } from '@/lib/contracts/http';
 
 export type { Lang };
 
@@ -253,3 +253,26 @@ export type SqlExecution = {
 export type ValidationOutcome =
   | { ok: true; sql: string; params: Record<string, string | number | null> }
   | { ok: false; code: 'SQL_REJECTED' | 'SQL_TIMEOUT'; reason: string; layer: string };
+
+/* ------------------------------------------------------- evidence confidence */
+
+/**
+ * Three-level evidence confidence (rag-ids adaptation, CORE_AI_SPEC §5.4).
+ *
+ * - `strong`: high FTS5 score AND a citation that matches the asked entity.
+ * - `limited`: evidence exists but is weak or does not match the entity.
+ * - `refused`: no evidence; refuse and offer alternative keywords instead of
+ *   filling the gap with model knowledge.
+ */
+export type EvidenceConfidenceLevel = 'strong' | 'limited' | 'refused';
+
+/**
+ * Optional extension of the frozen HTTP contract. The backend does not edit
+ * `lib/contracts/http.ts`; aiml declares the two additive fields here and
+ * merges them at the AI boundary. Structurally assignable to
+ * `AnswerQuestionResult`, so existing callers need no change.
+ */
+export type AnswerQuestionResultWithEvidence = AnswerQuestionResult & {
+  confidenceLevel?: EvidenceConfidenceLevel;
+  alternativeKeywords?: string[];
+};

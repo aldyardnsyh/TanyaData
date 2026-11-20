@@ -130,6 +130,70 @@ export function queryTerms(question: string, maxTerms = 12): string[] {
     .slice(0, maxTerms);
 }
 
+/* ------------------------------------------------------------ entity signals */
+
+export interface RetrievalEntities {
+  pasal: string[];
+  ayat: number[];
+  failureCodes: string[];
+  channels: string[];
+  /** section_path substring for store.searchChunks({ boostSection }). */
+  boostSection: string | null;
+  /** Explicit page hint ("halaman 10") when the question carries one. */
+  boostPage: number | null;
+  /** Canonical phrases offered to the user on `limited` / `refused`. */
+  keywords: string[];
+}
+
+/**
+ * Deterministic entity extraction for the model-free reranker. No embedding
+ * and no local ML model: reads pasal/ayat numbers, failure codes (Fnn) and
+ * known channel names straight from the question. `knownChannels` is supplied
+ * by callers that have a seed/schema; it is optional so the AI lane stays
+ * dataset-agnostic.
+ */
+export function extractRetrievalEntities(question: string, knownChannels: string[] = []): RetrievalEntities {
+  const q = String(question ?? '');
+  const pasal = [...q.matchAll(/pasal\s*(\d+)/gi)].map((m) => m[1]);
+  const ayat = [...q.matchAll(/ayat\s*\(?(\d+)\)?/gi)].map((m) => Number(m[1]));
+  const range = q.match(/ayat\s*(\d+)\s*(?:-|–|s\.?d\.?|to)\s*(\d+)/i);
+  if (range) {
+    const from = Number(range[1]);
+    const to = Number(range[2]);
+    for (let n = from; n <= to && n - from < 20; n += 1) ayat.push(n);
+  }
+  const failureCodes = [...new Set([...q.matchAll(/\bf\d{2}\b/gi)].map((m) => m[0].toUpperCase()))];
+  const lower = q.toLowerCase();
+  const channels = knownChannels.filter((name) => {
+    const n = String(name ?? '').toLowerCase();
+    return n.length >= 2 && lower.includes(n);
+  });
+  const pageMatch = q.match(/(?:halaman|hlm\.?|page)\s*(\d+)/i);
+  const boostPage = pageMatch ? Number(pageMatch[1]) : null;
+  const boostSection = pasal.length
+    ? `Pasal ${pasal[0]}`
+    : failureCodes.length
+      ? failureCodes[0]
+      : channels.length
+        ? channels[0]
+        : null;
+  const keywords = [
+    ...pasal.map((p) => `Pasal ${p}`),
+    ...[...new Set(ayat)].map((n) => `Ayat (${n})`),
+    ...failureCodes,
+    ...channels,
+  ];
+  return {
+    pasal: [...new Set(pasal)],
+    ayat: [...new Set(ayat)],
+    failureCodes,
+    channels,
+    boostSection,
+    boostPage,
+    keywords: [...new Set(keywords)],
+  };
+}
+
 /** Idempotently (re)build the FTS5 index from the supplied chunks. */
 export function ensureFtsIndex(db: FtsDb, chunks: Chunk[]): void {
   db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS core_chunks_fts USING fts5(

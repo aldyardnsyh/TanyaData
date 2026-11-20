@@ -12,6 +12,7 @@ import type {
   ChatMode,
   SourceCitation,
 } from '@/lib/contracts/http';
+import type { AnswerQuestionResultWithEvidence } from '@/lib/core/contracts';
 import { getWorkspaceDb } from '@/lib/db/client';
 import { resolveScope } from '@/lib/analytics/scope';
 import type { Scope } from '@/lib/analytics/scope';
@@ -25,6 +26,7 @@ import {
   composeResult, emptyDraft, freshContext,
   type DraftResult, type HandlerCtx,
 } from '@/lib/ai/compose';
+import { classifyEvidenceConfidence } from '@/lib/ai/output';
 import {
   buildGuardrail, detectEarlyGuardrail, isSqlInjectionLike,
   type EarlyGuardrail,
@@ -35,8 +37,22 @@ import {
 } from '@/lib/ai/llm';
 import { nowJakartaIso } from '@/lib/date';
 
-/** Titik masuk tunggal. HTTP tetap 200; kegagalan LLM tidak pernah merusak jawaban. */
-export async function answerQuestion(input: AnswerQuestionInput): Promise<AnswerQuestionResult> {
+/**
+ * Titik masuk tunggal. HTTP tetap 200; kegagalan LLM tidak pernah merusak jawaban.
+ *
+ * Evidence confidence ditempelkan di sini (bukan di compose.ts milik backend)
+ * supaya seluruh jalur — RAG, guardrail `not_in_sources`, dan fallback —
+ * mendapatkan perlakuan yang sama tanpa mengubah handler mana pun.
+ */
+export async function answerQuestion(
+  input: AnswerQuestionInput,
+): Promise<AnswerQuestionResultWithEvidence> {
+  const result = await answerQuestionCore(input);
+  return withEvidenceConfidence(result, input.question);
+}
+
+/** Pipeline deterministik apa adanya, sebelum label evidence ditempelkan. */
+async function answerQuestionCore(input: AnswerQuestionInput): Promise<AnswerQuestionResult> {
   const started = performance.now();
   const db = getWorkspaceDb();
   const lang = input.lang;
@@ -142,6 +158,31 @@ export async function answerQuestion(input: AnswerQuestionInput): Promise<Answer
     updatedAt: nowJakartaIso(),
   };
   return composeResult(ctx, draft, finalContext, started, fallbackReason);
+}
+
+/**
+ * Tempel `confidenceLevel` + `alternativeKeywords` hanya pada jawaban yang
+ * memang bertumpu pada bukti dokumen. Jawaban SQL murni tidak diberi label
+ * evidence (tidak relevan), sedangkan guardrail `not_in_sources` adalah
+ * bentuk `refused` yang disyaratkan CORE_AI_SPEC §5.4.
+ */
+function withEvidenceConfidence(
+  result: AnswerQuestionResult,
+  question: string,
+): AnswerQuestionResultWithEvidence {
+  const docSources = result.sources.filter((s) => s.kind === 'document');
+  const isEvidenceRefusal = result.guardrail?.type === 'not_in_sources';
+  if (!docSources.length && !isEvidenceRefusal) return result;
+
+  const { confidenceLevel, alternativeKeywords } = classifyEvidenceConfidence({
+    question,
+    citations: docSources.map((s) => ({
+      score: s.score ?? null,
+      section_path: s.section ?? (s.sectionNo === null || s.sectionNo === undefined ? null : String(s.sectionNo)),
+      quote: s.quote ?? null,
+    })),
+  });
+  return { ...result, confidenceLevel, alternativeKeywords };
 }
 
 /* ---------------------------------------------------------------- helpers */

@@ -6,6 +6,8 @@
  * suggestions: no chart for a legal quote, no chart for a single number, no
  * donut for two categories, no forced visualisation for prose.
  */
+import type { EvidenceConfidenceLevel } from '@/lib/core/contracts';
+import { extractRetrievalEntities, queryTerms } from './retrieval';
 import type { DataType, DocType, OutputDecision, OutputType, QuestionKind } from './types';
 
 export interface DecideInput {
@@ -164,5 +166,69 @@ export function decideOutput(input: DecideInput): OutputDecision {
 
   return decision('table', 'Bentuk data tidak memenuhi syarat chart; tabel ringkas dipilih.', 0.65,
     [noForcedViz, noChartForOne]);
+}
+
+/* ------------------------------------------- three-level evidence confidence */
+
+export interface EvidenceConfidenceInput {
+  question: string;
+  /** Document citations only; dataset/SQL citations are not evidence here. */
+  citations: Array<{
+    score?: number | null;
+    section_path?: string | null;
+    quote?: string | null;
+  }>;
+  /** Known channel names, when the caller has a seed/schema to resolve them. */
+  knownChannels?: string[];
+}
+
+export interface EvidenceConfidence {
+  confidenceLevel: EvidenceConfidenceLevel;
+  alternativeKeywords: string[];
+}
+
+/** Both retrieval paths normalise FTS5 scores into 0..1. */
+const STRONG_SCORE = 0.60;
+
+function sectionIsPrecise(
+  haystack: string,
+  entities: ReturnType<typeof extractRetrievalEntities>,
+  terms: string[],
+): boolean {
+  const hay = haystack.toLowerCase();
+  if (entities.pasal.some((p) => new RegExp(`pasal\\s*0*${p}\\b`, 'i').test(hay))) return true;
+  if (entities.failureCodes.some((c) => hay.includes(c.toLowerCase()))) return true;
+  if (entities.channels.some((c) => hay.includes(c.toLowerCase()))) return true;
+  if (entities.ayat.some((n) => hay.includes(`ayat (${n})`) || hay.includes(`ayat ${n}`))) return true;
+  // No explicit entity in the question: a citation is precise when its section
+  // or quote carries a content term from the question.
+  return terms.some((t) => t.length >= 4 && hay.includes(t));
+}
+
+/**
+ * rag-ids-style evidence grading. `strong` needs BOTH a high FTS5 score and a
+ * citation that matches what was asked; weak-but-present evidence is `limited`;
+ * zero evidence is `refused` and returns keywords the user can try instead of
+ * an invented answer. Purely deterministic — no model call, no extra latency.
+ */
+export function classifyEvidenceConfidence(input: EvidenceConfidenceInput): EvidenceConfidence {
+  const citations = input.citations ?? [];
+  const entities = extractRetrievalEntities(input.question, input.knownChannels ?? []);
+  const terms = queryTerms(input.question, 8);
+  const alternatives = [...new Set([...entities.keywords, ...terms])].slice(0, 6);
+
+  if (!citations.length) {
+    return { confidenceLevel: 'refused', alternativeKeywords: alternatives };
+  }
+
+  const topScore = Math.max(0, ...citations.map((c) =>
+    typeof c.score === 'number' && Number.isFinite(c.score) ? c.score : 0));
+  const precise = citations.some((c) =>
+    sectionIsPrecise(`${c.section_path ?? ''} ${c.quote ?? ''}`, entities, terms));
+
+  if (topScore >= STRONG_SCORE && precise) {
+    return { confidenceLevel: 'strong', alternativeKeywords: [] };
+  }
+  return { confidenceLevel: 'limited', alternativeKeywords: alternatives };
 }
 
