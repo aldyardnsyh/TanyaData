@@ -403,14 +403,14 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
 
   const notes: string[] = [];
   const cases: CaseResult[] = [];
-  const counters: Record<string, { hit: number; total: number; tp: number; extracted: number; expectedN: number }> = {
-    classification: { hit: 0, total: 0, tp: 0, extracted: 0, expectedN: 0 },
-    extraction: { hit: 0, total: 0, tp: 0, extracted: 0, expectedN: 0 },
-    retrieval: { hit: 0, total: 0, tp: 0, extracted: 0, expectedN: 0 },
-    sql: { hit: 0, total: 0, tp: 0, extracted: 0, expectedN: 0 },
-    output: { hit: 0, total: 0, tp: 0, extracted: 0, expectedN: 0 },
-    generation: { hit: 0, total: 0, tp: 0, extracted: 0, expectedN: 0 },
-    guardrail: { hit: 0, total: 0, tp: 0, extracted: 0, expectedN: 0 },
+  const counters: Record<string, { hit: number; total: number; tp: number; tpDoc: number; extracted: number; expectedN: number }> = {
+    classification: { hit: 0, total: 0, tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 },
+    extraction: { hit: 0, total: 0, tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 },
+    retrieval: { hit: 0, total: 0, tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 },
+    sql: { hit: 0, total: 0, tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 },
+    output: { hit: 0, total: 0, tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 },
+    generation: { hit: 0, total: 0, tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 },
+    guardrail: { hit: 0, total: 0, tp: 0, tpDoc: 0, extracted: 0, expectedN: 0 },
   };
 
   for (const entry of prepared) {
@@ -427,7 +427,8 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
 
       const ext = gradeExtraction(entry.fixture, testCase);
       stages.extraction = { pass: ext.pass, detail: ext.detail };
-      counters.extraction.tp += ext.tpDoc;
+      counters.extraction.tp += ext.tp;
+      counters.extraction.tpDoc += ext.tpDoc;
       counters.extraction.extracted += ext.extracted;
       counters.extraction.expectedN += ext.expectedN;
 
@@ -538,10 +539,10 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
   const c = counters;
   push('classification', 'accuracy', ratio(c.classification.hit, c.classification.total), 0.90, 'min',
     `${c.classification.hit}/${c.classification.total} kasus`);
-  push('extraction', 'precision', ratio(c.extraction.tp, c.extraction.extracted), 0.85, 'min',
-    `${c.extraction.tp}/${c.extraction.extracted} field`);
+  push('extraction', 'precision', ratio(c.extraction.tpDoc, c.extraction.extracted), 0.85, 'min',
+    `${c.extraction.tpDoc}/${c.extraction.extracted} field (ground truth dokumen)`);
   push('extraction', 'recall', ratio(c.extraction.tp, c.extraction.expectedN), 0.80, 'min',
-    `${c.extraction.tp}/${c.extraction.expectedN} field`);
+    `${c.extraction.tp}/${c.extraction.expectedN} field (ditanyakan)`);
   push('retrieval', 'citation_hit_rate', ratio(c.retrieval.hit, c.retrieval.total), 0.90, 'min',
     `${c.retrieval.hit}/${c.retrieval.total} sitasi (hanya kasus dokumen)`);
   push('sql', 'execution_match', ratio(c.sql.hit, c.sql.total), 0.90, 'min',
