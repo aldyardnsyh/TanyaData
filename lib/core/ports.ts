@@ -13,6 +13,9 @@ import type {
   VizSpec,
   Citation,
   DocType,
+  CitationRegistryView,
+  AttachmentScopeView,
+  QueryMeta,
 } from '@/lib/core/contracts';
 
 export type SqlGenerateInput = {
@@ -36,12 +39,22 @@ export type ComposeInput = {
   citations: Citation[];
   sqlExplanation: string | null;
   mode: 'sql' | 'document' | 'hybrid';
+  /** CORE V2 — registry sitasi aktif untuk validasi deep-link fail-closed. */
+  citationRegistry?: CitationRegistryView | null;
+  /** CORE V2 — scope attachment aktif; menolak bukti lintas attachment. */
+  scope?: AttachmentScopeView | null;
+  /** Konteks percakapan asli (dipakai guardrail/readjustment AI). */
+  context?: QueryContext | null;
+  /** Dataset aktif — dipakai adapter untuk retrieval & pembangunan registry. */
+  datasetId?: string;
 };
 
 export type ComposeOutput = {
   answer: string;
   vizSpec: VizSpec;
   citations: Citation[];
+  /** CORE V2 — aditif; ditempelkan orchestrator ke `Query.meta`. */
+  meta?: QueryMeta;
 };
 
 /** Composer narasi opsional. Return `null` → template deterministik dipakai. */

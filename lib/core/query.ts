@@ -7,7 +7,9 @@ import { randomUUID } from 'node:crypto';
 import type { DB } from '@/lib/db/client';
 import { nowJakartaIso } from '@/lib/date';
 import type {
+  AttachmentScopeView,
   Citation,
+  CitationRegistryView,
   Guardrail,
   Query,
   QueryContext,
@@ -33,6 +35,10 @@ export type AnswerQuestionInput = {
   lang: 'id' | 'en';
   context?: QueryContext | null;
   evaluate?: boolean;
+  /** CORE V2 — opsional; tanpa ini jalur deterministik identik dengan baseline. */
+  citationRegistry?: CitationRegistryView | null;
+  scope?: AttachmentScopeView | null;
+  conversationId?: string | null;
 };
 
 const EMPTY_RESULT: QueryResultJson = { columns: [], rows: [], rowCount: 0, truncated: false };
@@ -117,6 +123,7 @@ export async function answerQuestion(
 
   let candidate: SqlCandidate | null = null;
   let rejection: string | null = null;
+  let aiActive = false;
   if (ports.sqlGenerator) {
     try {
       candidate = await ports.sqlGenerator.generate({
@@ -125,6 +132,7 @@ export async function answerQuestion(
         context: input.context ?? null,
         lang: input.lang,
       });
+      if (candidate?.mode === 'generated') aiActive = true;
     } catch {
       candidate = null;
     }
@@ -197,16 +205,23 @@ export async function answerQuestion(
         citations,
         sqlExplanation: query.sql_explanation,
         mode: query.mode === 'guardrail' ? 'document' : query.mode,
+        citationRegistry: input.citationRegistry ?? null,
+        scope: input.scope ?? null,
+        context: input.context ?? null,
+        datasetId: input.datasetId,
       });
       answer = composed?.answer ?? null;
       if (composed) {
         query.viz_spec = composed.vizSpec;
         query.citations = composed.citations;
+        if (composed.meta) query.meta = { ...(query.meta ?? {}), ...composed.meta };
+        aiActive = true;
       }
     } catch {
       answer = null;
     }
   }
+  if (aiActive) query.meta = { ...(query.meta ?? {}), aiActive: true };
   query.answer = answer ?? composeDeterministicAnswer({
     question: input.question,
     lang: input.lang,

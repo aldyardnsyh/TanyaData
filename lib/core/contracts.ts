@@ -162,6 +162,39 @@ export type Citation = {
   page: number | null;
   quote: string | null;
   score: number | null;
+  /** CORE V2 — aditif; deep-link tervalidasi fail-closed oleh AI adapter. */
+  deep_link?: string | null;
+  deep_link_status?: 'valid' | 'invalid' | 'unchecked';
+  rev?: string | null;
+};
+
+/**
+ * Structural mirrors of the AI-lane CORE V2 contracts. Declared here so
+ * `lib/core/**` never imports `lib/ai/**`; the adapter passes structurally
+ * compatible values across the port boundary.
+ */
+export type CitationRegistryView = {
+  documents: Record<string, { status?: string; pageCount?: number; rev?: string }>;
+  chunks: Record<string, {
+    document_id: string;
+    section_path: string;
+    page: number | null;
+    page_end?: number | null;
+    text: string;
+    parse_ok?: boolean;
+    ocr_status?: string | null;
+    rev?: string | null;
+  }>;
+};
+
+export type AttachmentScopeView = {
+  id: string;
+  dataset_id: string;
+  source_id?: string | null;
+  name: string;
+  doc_type?: string | null;
+  status: DatasetStatus;
+  active_in_conversation?: boolean;
 };
 
 /* -------------------------------------------------------------------- query */
@@ -213,6 +246,17 @@ export type QueryResultJson = {
   truncated: boolean;
 };
 
+/**
+ * Additive observability metadata. Absent when no AI port ran, so the
+ * deterministic baseline (and the 8/8 eval) is byte-for-byte unaffected.
+ */
+export type QueryMeta = {
+  aiActive?: boolean;
+  confidenceLevel?: EvidenceConfidenceLevel;
+  alternativeKeywords?: string[];
+  fallbackReason?: string;
+};
+
 export type Query = {
   id: string;
   dataset_id: string;
@@ -229,6 +273,8 @@ export type Query = {
   answer: string;
   duration_ms: number;
   created_at: string;
+  /** CORE V2 — opsional; diisi hanya bila AI port benar-benar dipakai. */
+  meta?: QueryMeta;
 };
 
 export type QueryContext = {

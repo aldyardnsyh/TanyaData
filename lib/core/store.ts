@@ -88,8 +88,8 @@ export function saveQuery(db: DB, query: Query): Query {
       query.created_at,
     );
     const insertCitation = db.prepare(
-      `INSERT INTO core_citations(query_id, chunk_id, document_id, section_path, page, quote, score)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO core_citations(query_id, chunk_id, document_id, section_path, page, quote, score, rev, deep_link, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
     for (const citation of query.citations) {
       insertCitation.run(
@@ -100,6 +100,9 @@ export function saveQuery(db: DB, query: Query): Query {
         citation.page,
         citation.quote,
         citation.score,
+        citation.rev ?? null,
+        citation.deep_link ?? null,
+        citation.deep_link_status ?? 'valid',
       );
     }
   })();
