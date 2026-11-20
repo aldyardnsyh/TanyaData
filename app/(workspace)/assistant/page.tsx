@@ -470,7 +470,7 @@ export default function AssistantPage() {
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-primary/10 text-primary" aria-hidden="true">
                       <Icon name="forum" className="text-[18px]" />
                     </span>
-                    <AnswerCard message={m} modeLabel={modeLabel} conversationId={activeId ?? undefined} onFollowUp={(q) => fillAndSend(q)} onSaveReport={saveReport} savingReport={savingReportId === m.id} onOpenSource={setSourceDetail} disabled={sending} />
+                    <AnswerCard message={m} modeLabel={modeLabel} lang={lang} conversationId={activeId ?? undefined} onFollowUp={(q) => fillAndSend(q)} onSaveReport={saveReport} savingReport={savingReportId === m.id} onOpenSource={setSourceDetail} disabled={sending} />
                   </div>
                 ),
               )

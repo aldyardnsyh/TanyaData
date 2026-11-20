@@ -21,6 +21,20 @@ function fmtCell(value: string | number | null, format?: string): string {
 
 const BAR_COLORS = ['bg-primary', 'bg-primary-dim', 'bg-border-control', 'bg-signal-lime', 'bg-signal-terracotta'];
 
+/** Audit P0: follow-up guardrail mengarah ke klarifikasi, bukan topik kanal baru. */
+const GUARDRAIL_FOLLOW_UPS: Record<'id' | 'en', { label: string; question: string }[]> = {
+  id: [
+    { label: 'Lihat daftar kode kegagalan', question: 'Apa saja kode kegagalan transaksi dan artinya?' },
+    { label: 'Tanya metrik transaksi', question: 'Berapa total transaksi bulan ini?' },
+    { label: 'Lihat dokumen prosedur', question: 'Apa prosedur penanganan transaksi gagal?' },
+  ],
+  en: [
+    { label: 'List failure codes', question: 'What are the transaction failure codes and their meanings?' },
+    { label: 'Ask about metrics', question: 'What is the total transaction volume this month?' },
+    { label: 'Open procedure docs', question: 'What is the failed-transaction procedure?' },
+  ],
+};
+
 function wibTime(iso: string): string {
   return new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso)).replace(':', '.');
 }
@@ -128,6 +142,9 @@ export function AnswerCard({
   const otherViz = (message.visualizations ?? []).filter((v) => v.type !== 'kpi');
   const documents = (message.sources ?? []).filter((s) => s.kind === 'document');
   const datasetSources = (message.sources ?? []).filter((s) => s.kind === 'dataset');
+  const followUps = guardrail
+    ? GUARDRAIL_FOLLOW_UPS[lang]
+    : (message.followUps ?? []).map((q) => ({ label: q, question: q }));
 
   const copyText = async (text: string, success: string) => {
     try { await navigator.clipboard.writeText(text); toast({ status: 'success', message: success }); }
@@ -205,7 +222,7 @@ export function AnswerCard({
         </div>
       )}
 
-      {message.sql && (
+      {message.sql && !guardrail && (
         <div className="overflow-hidden rounded-card border border-border-hairline bg-surface">
           <button type="button" onClick={() => setSqlOpen((o) => !o)} aria-expanded={sqlOpen} aria-controls={sqlPanelId} className="flex min-h-11 w-full items-center justify-between gap-2 bg-canvas px-4 text-left focus-ring">
             <span className="inline-flex items-center gap-2"><Icon name="terminal" className="text-[16px] text-primary" aria-hidden="true" /><MonoMeta>LIHAT SQL · {formatNumber(message.sql.durationMs)} MS · {formatNumber(message.sql.rowCount)} BARIS</MonoMeta></span>
@@ -247,16 +264,17 @@ export function AnswerCard({
         </div>
       )}
 
-      {meta && (
+      {/* Audit: metadata teknis (SQL, row count) hanya untuk jawaban bertipe SQL. */}
+      {meta && !guardrail && (
         <MonoMeta>{meta.period ? `${meta.period.label} · ` : ''}{formatNumber(meta.rowCount)} BARIS · {meta.mode}{meta.fallbackReason ? ' · JAWABAN DETERMINISTIK' : ''}</MonoMeta>
       )}
 
-      {message.followUps && message.followUps.length > 0 && onFollowUp && (
+      {followUps.length > 0 && onFollowUp && (
         <div className="space-y-2 pt-1">
           <MonoMeta className="block">PERTANYAAN LANJUTAN</MonoMeta>
           <div className="flex flex-wrap gap-2">
-            {message.followUps.slice(0, 8).map((q, i) => (
-              <button key={q} type="button" disabled={disabled} onClick={() => onFollowUp(q)} className="animate-message-in min-h-11 rounded-control border border-border-control px-3 font-body text-body-sm text-ink transition-colors hover:border-primary focus-ring disabled:opacity-45" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}>{q}</button>
+            {followUps.slice(0, 8).map((item, i) => (
+              <button key={item.label} type="button" disabled={disabled} onClick={() => onFollowUp(item.question)} className="animate-message-in min-h-11 rounded-control border border-border-control px-3 font-body text-body-sm text-ink transition-colors hover:border-primary focus-ring disabled:opacity-45" style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}>{item.label}</button>
             ))}
           </div>
         </div>

@@ -128,7 +128,7 @@ export function KpiCard({
       {direction === 'up' && <IconArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />}
       {direction === 'down' && <IconArrowDownRight className="h-3.5 w-3.5" aria-hidden="true" />}
       {direction === 'flat' && <IconMinus className="h-3.5 w-3.5" aria-hidden="true" />}
-      <span className="tabular">{word} {formatPercent(Math.abs(delta.pct))}</span>
+      <span className="tabular">{word} {formatPercent(Math.abs(pct))}</span>
       {delta.compareValue !== null && (
         <span className="text-ink-muted-strong">vs {formatValue(delta.compareValue, format)}</span>
       )}
