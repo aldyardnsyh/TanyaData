@@ -469,7 +469,7 @@ export default function AssistantPage() {
                 )}
                 {!m.guardrail && (
                   <>
-                    <AdaptiveOutputView outputs={normalizeChatOutputs(m)} onOpenCitation={(id) => setSourceDetail(m.sources?.find((s) => `S${m.sources.indexOf(s) + 1}` === id) ?? null)} />
+                    <AdaptiveOutputView outputs={normalizeChatOutputs(m)} onOpenCitation={(id) => { const sources = m.sources ?? []; setSourceDetail(sources.find((s) => `S${sources.indexOf(s) + 1}` === id) ?? null); }} />
                     <CitationMarks citations={m.sources ?? []} onOpen={setSourceDetail} />
                     {m.followUps && m.followUps.length > 0 && (
                       <div className="flex flex-wrap gap-s2">

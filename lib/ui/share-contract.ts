@@ -77,6 +77,8 @@ export type ShareEvent = {
  * view model (P-7: milik audit sheet, bukan pembaca).
  */
 export type ShareOutput = {
+  /** ID blok kanonik dari normalizer; opsional untuk payload share mentah. */
+  id?: string;
   type: ShareOutputType;
   title: string | null;
   rows: Record<string, string | number | null>[];
