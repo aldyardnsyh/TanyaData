@@ -170,10 +170,18 @@ export default function DataSourcesPage() {
           <h1 className="font-display text-headline-xl font-bold tracking-tight text-on-surface">Sumber Data</h1>
           <p className="mt-0.5 font-body text-body-md text-on-surface-variant">Kelola dataset dan dokumen pada workspace.</p>
         </div>
-        <Button variant="primary" onClick={() => fileRef.current?.click()} disabled={uploading}>
-          <UploadCloud className="h-4 w-4" />
-          Unggah file
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="primary" onClick={() => fileRef.current?.click()} disabled={uploading}>
+            <UploadCloud className="h-4 w-4" />
+            Unggah file
+          </Button>
+          {/* C-17: belum didukung → disabled + tooltip, bukan kontrol mati. */}
+          <span title="Belum tersedia pada build ini.">
+            <Button variant="secondary" disabled>
+              Hubungkan database
+            </Button>
+          </span>
+        </div>
         <input
           ref={fileRef}
           type="file"
@@ -198,9 +206,10 @@ export default function DataSourcesPage() {
           <p className="mt-1 font-display text-metric-xl font-bold tabular text-on-surface">{formatNumber(counts?.document ?? null)}</p>
         </div>
         <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-5">
-          <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Sedang diproses / Gagal</p>
-          <p className="mt-1 font-display text-metric-xl font-bold tabular text-on-surface">
-            {formatNumber((counts?.processing ?? 0) + (counts?.failed ?? 0))}
+          <p className="font-body text-label-sm uppercase tracking-wider text-on-surface-variant">Total baris</p>
+          {/* C-16: metrik ketiga = Total baris (§D.4); counts API belum memuat totalRows → — + alasan, bukan metrik pengganti. */}
+          <p className="mt-1 font-display text-metric-xl font-bold tabular text-on-surface" title="Belum dihitung">
+            —
           </p>
         </div>
       </div>
@@ -223,7 +232,7 @@ export default function DataSourcesPage() {
             fileRef.current?.click();
           }
         }}
-        className={`flex min-h-36 flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition-colors duration-[var(--motion-fast)] focus-ring ${
+        className={`flex h-dropzone-mobile flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-center transition-colors duration-[var(--motion-fast)] focus-ring md:h-dropzone md:p-6 ${
           dragging ? 'border-primary bg-surface' : 'border-outline-variant bg-surface-container-lowest'
         }`}
       >

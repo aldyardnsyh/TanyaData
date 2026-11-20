@@ -178,7 +178,8 @@
 @utility w-conversations { width: 264px; }
 @utility ml-sidebar { margin-left: 232px; }
 @utility ml-sidebar-rail { margin-left: 72px; }
-@utility h-dropzone { height: 144px; }
+@utility h-dropzone { height: 148px; }
+@utility h-dropzone-mobile { height: 120px; }
 
 /* C-18: baris chip filter — scroll horizontal, snap, fade tepi kanan (§4.4). */
 @utility chip-scroll {

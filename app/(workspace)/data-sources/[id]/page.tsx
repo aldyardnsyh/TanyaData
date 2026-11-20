@@ -9,7 +9,7 @@ import type {
   PreviewResponse,
   SourceDetailResponse,
 } from '@/lib/contracts/http';
-import { formatNumber, formatDateTimeId } from '@/lib/ui/format';
+import { formatNumber, formatDateTimeId, formatPercent } from '@/lib/ui/format';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,7 +34,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [limit, setLimit] = useState(20);
+  const [limit, setLimit] = useState(5);
   // C-19/A-13: dua tab sesuai jenis sumber (dataset: Pratinjau/Skema; dokumen: Teks/Metadata).
   const [tab, setTab] = useState('preview');
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -132,6 +132,22 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
   const isDataset = detail && 'schema' in detail;
   const isDocument = detail && 'sections' in detail;
 
+  // §D.5 Skema: Kolom · Tipe terdeteksi · Null % · Contoh nilai.
+  // Null % dari quality.missingByColumn ÷ rowsParsed; contoh dari baris pratinjau pertama yang terisi.
+  const schemaRows: Record<string, string | number | null>[] =
+    detail && 'schema' in detail && detail.schema
+      ? detail.schema.columns.map((c) => {
+          const missing = detail.quality?.missingByColumn?.[c.name];
+          const parsed = detail.quality?.rowsParsed;
+          const nullPct =
+            typeof missing === 'number' && typeof parsed === 'number' && parsed > 0
+              ? (missing / parsed) * 100
+              : null;
+          const sample = preview?.rows.find((r) => r[c.name] !== null && r[c.name] !== undefined)?.[c.name];
+          return { name: c.name, type: c.type, nullPct, sample: sample ?? null };
+        })
+      : [];
+
   const previewColumns: DataTableColumn<Record<string, string | number | null>>[] =
     preview?.columns.map((c) => ({
       key: c.key,
@@ -199,14 +215,14 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
             </div>
           </div>
 
-          {/* Meta strip */}
+          {/* Meta strip — §D.5: Tipe, Baris, Kolom, Diperbarui (dataset). */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {isDataset && (
               <>
+                <Meta label="Tipe" value={detail.source.format.toUpperCase()} />
                 <Meta label="Baris" value={formatNumber(detail.source.rowCount)} />
-                <Meta label="Tabel" value={formatNumber(detail.source.tableCount)} />
                 <Meta label="Kolom" value={detail.schema ? String(detail.schema.columns.length) : '—'} />
-                <Meta label="Baris ditolak" value={detail.quality ? formatNumber(detail.quality.rowsRejected) : '—'} />
+                <Meta label="Diperbarui" value={formatDateTimeId(detail.source.updatedAt ?? detail.source.createdAt)} />
               </>
             )}
             {isDocument && (
@@ -238,11 +254,14 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
                 <DataTable
                   columns={[
                     { key: 'name', label: 'Kolom' },
-                    { key: 'type', label: 'Tipe' },
-                    { key: 'nullable', label: 'Nullable', align: 'right', format: (v) => (v ? 'ya' : 'tidak') },
+                    { key: 'type', label: 'Tipe terdeteksi' },
+                    { key: 'nullPct', label: 'Null %', align: 'right', format: (v) => (typeof v === 'number' ? formatPercent(v) : '—') },
+                    { key: 'sample', label: 'Contoh nilai', format: (v) => (v === null || v === undefined ? '—' : String(v)) },
                   ]}
-                  rows={(detail.schema?.columns ?? []) as unknown as Record<string, any>[]}
+                  rows={schemaRows}
                   emptyTitle="Skema tidak tersedia"
+                  className="max-h-[480px] overflow-y-auto"
+                  stickyHeader
                 />
               </div>
               <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
@@ -294,8 +313,9 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
               <h2 className="font-display text-headline-sm font-semibold text-on-surface">
                 Pratinjau baris
               </h2>
-              <Button size="sm" variant="secondary" disabled={!preview?.truncated || previewLoading} onClick={() => void loadPreview(limit + 30)}>
-                Muat {Math.min(30, Math.max(0, (preview?.rowCount ?? 0) - (preview?.rows.length ?? 0)))} baris berikutnya
+              {/* §D.5: 5 baris awal, lalu muat hingga 50 baris (batas limit API). */}
+              <Button size="sm" variant="secondary" disabled={!preview?.truncated || previewLoading} onClick={() => void loadPreview(50)}>
+                Muat {Math.max(0, Math.min(50, preview?.rowCount ?? 0) - (preview?.rows.length ?? 0))} baris berikutnya
               </Button>
             </div>
             {previewLoading && preview === null ? (
@@ -307,7 +327,9 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
               </div>
             ) : preview && preview.rows.length > 0 ? (
               <>
-                <DataTable columns={previewColumns} rows={preview.rows} />
+                <div className="max-h-[480px] overflow-y-auto rounded-md border border-outline-variant">
+                  <DataTable columns={previewColumns} rows={preview.rows} stickyHeader />
+                </div>
                 <p className="mt-2 font-body text-body-sm text-on-surface-variant">
                   Menampilkan {formatNumber(preview.rows.length)} dari {formatNumber(preview.rowCount)} baris.
                 </p>

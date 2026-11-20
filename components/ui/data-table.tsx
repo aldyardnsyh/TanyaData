@@ -32,6 +32,8 @@ export interface DataTableProps<T> {
   emptyTitle?: string;
   emptyDescription?: string;
   emptyAction?: React.ReactNode;
+  /** Header sticky saat tabel berada di dalam wadah scroll vertikal (§D.5 pratinjau). */
+  stickyHeader?: boolean;
   className?: string;
 }
 
@@ -47,6 +49,7 @@ export function DataTable<T extends Record<string, any>>({
   emptyTitle = 'Belum ada data',
   emptyDescription,
   emptyAction,
+  stickyHeader,
   className,
 }: DataTableProps<T>) {
   if (loading) {
@@ -120,6 +123,8 @@ export function DataTable<T extends Record<string, any>>({
                     'py-2.5 px-4 font-body text-label-sm text-on-surface-variant uppercase',
                     col.align === 'right' && 'text-right',
                     col.sticky && 'sticky left-0 bg-surface-container-low z-10',
+                    stickyHeader && 'sticky top-0 z-sticky bg-surface-container-low',
+                    stickyHeader && col.sticky && 'left-0 z-20',
                   )}
                   aria-sort={
                     isSortable
