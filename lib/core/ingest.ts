@@ -29,6 +29,7 @@ import { invalidateQueryCache } from '@/lib/core/cache';
 import { normalizeForFts } from '@/lib/core/store';
 import { LOW_TEXT_THRESHOLD, UNREADABLE_PAGE_TEXT, ocrPage, type OcrStatus } from '@/lib/ingest/ocr';
 import { detectPages, type PageLabel } from '@/lib/ingest/scan-detect';
+import { repairMojibake } from '@/lib/ingest/mojibake';
 import { sampleRss } from '@/lib/ingest/watchdog';
 import {
   buildSchemaJson,
@@ -364,17 +365,27 @@ export function sectionsFromPages(pages: ParsedPage[], title: string): ParsedSec
 
 /* ----------------------------------------------------------- stage 5: clean */
 
-export function cleanSections(sections: ParsedSection[]): ParsedSection[] {
+export function cleanSections(
+  sections: ParsedSection[],
+  onClean?: (result: ReturnType<typeof repairMojibake>, section: ParsedSection) => void,
+): ParsedSection[] {
   const seen = new Map<string, number>();
   const out: ParsedSection[] = [];
   for (const section of sections) {
-    const text = section.text.replace(/\s+/g, ' ').trim();
+    const repaired = repairMojibake(section.text);
+    onClean?.(repaired, section);
+    const text = repaired.text.replace(/\s+/g, ' ').trim();
     if (!text) continue;
     const key = text.slice(0, 80);
     const count = (seen.get(key) ?? 0) + 1;
     seen.set(key, count);
     if (count > 1 && text.length < 120) continue; // header/footer berulang
-    out.push({ ...section, text, char_count: text.length });
+    out.push({
+      ...section,
+      text,
+      char_count: text.length,
+      cleanFlags: [...(section.cleanFlags ?? []), ...repaired.flags],
+    });
   }
   return out;
 }
@@ -438,6 +449,8 @@ export function chunkSections(
         ocr_status: section.ocrStatus ?? 'ok',
         confidence: section.ocrConfidence ?? 1,
         page_span: section.pageSpan ?? [section.page ?? 1, section.page ?? 1],
+        clean_flags: section.cleanFlags ?? [],
+        clean_version: 2,
       });
       seq += 1;
       splitText(parentText, CHILD_TARGET, CHILD_OVERLAP).forEach((childText, childIndex) => {
@@ -608,7 +621,20 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
     });
 
     await mark('cleaning', () => {
-      sections = cleanSections(sections);
+      const log: NonNullable<QualityReport['cleaningLog']> = [];
+      const flags = new Set<string>();
+      sections = cleanSections(sections, (result, section) => {
+        for (const entry of result.cleaningLog) {
+          log.push({ ...entry, reason: `halaman ${section.page ?? '?'}: ${entry.reason}` });
+        }
+        for (const flag of result.flags) flags.add(flag);
+        if (!result.numericSafe) {
+          quality.issues.push(`numeric_guard_halaman_${section.page ?? '?'}`);
+        }
+      });
+      quality.cleaningLog = log;
+      quality.cleanFlags = [...flags];
+      if (flags.size) quality.issues.push(`clean_flags=${JSON.stringify([...flags])}`);
     });
 
     let schema: SchemaJson = dataset.schema_json;
