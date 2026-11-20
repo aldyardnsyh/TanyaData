@@ -2,9 +2,6 @@
 
 import { KpiCard } from '@/components/ui/kpi-card';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
-import { LineChart } from '@/components/charts/line-chart';
-import { BarChart } from '@/components/charts/bar-chart';
-import { PieChart } from '@/components/charts/pie-chart';
 import { MonoMeta } from '@/components/ui/mono-meta';
 import { toast } from '@/components/ui/toaster';
 import { formatIdr, formatNumber, formatPercent } from '@/lib/ui/format';
@@ -20,13 +17,6 @@ function formatCell(value: string | number | null, format?: string): string {
   if (format === 'percent') return formatPercent(value);
   if (format === 'number') return formatNumber(value);
   return String(value);
-}
-
-function srTable(rows: Row[], columns: { key: string; label: string }[]): { header: string[]; rows: string[][] } {
-  return {
-    header: columns.map((column) => column.label),
-    rows: rows.map((row) => columns.map((column) => formatCell(row[column.key] ?? null))),
-  };
 }
 
 function OutputFrame({ title, meta, children }: { title: string | null; meta: string | null; children: React.ReactNode }) {
@@ -94,46 +84,20 @@ export function ShareOutputView({
     );
   }
 
-  if (output.type === 'line' || output.type === 'bar') {
+  if (output.type === 'line' || output.type === 'bar' || output.type === 'donut') {
     if (output.rows.length === 0) return <EmptyOutput message="Tidak ada data pada periode snapshot ini." />;
-    const series = output.series.length > 0
-      ? output.series
-      : [{ key: output.xKey, label: output.title ?? 'Nilai' }];
-    const table = srTable(output.rows, [
-      ...columns.slice(0, 1),
-      ...series.map((s) => ({ key: s.key, label: s.label })),
-    ]);
-    const chartProps = {
-      data: output.rows,
-      xKey: output.xKey || columns[0]?.key || 'label',
-      series,
-      title: output.title ?? 'Grafik',
-      tableData: table,
-    };
+    // Chart lama diserap ke BentoGrid/TimelineView (UI_REFACTOR_DESIGN §7.3).
+    // Sampai renderer adaptif Batch 2, angka tetap tampil penuh sebagai tabel
+    // dari result_json. Tidak ada angka yang dihitung ulang di komponen ini.
+    const tableColumns: DataTableColumn<Row>[] = columns.map((column) => ({
+      key: column.key,
+      label: column.label,
+      align: column.align,
+      format: (value) => formatCell(value as string | number | null, column.format),
+    }));
     return (
       <OutputFrame title={output.title} meta={meta}>
-        {output.type === 'line'
-          ? <LineChart {...chartProps} />
-          : <BarChart {...chartProps} />}
-      </OutputFrame>
-    );
-  }
-
-  if (output.type === 'donut') {
-    if (output.rows.length === 0) return <EmptyOutput message="Tidak ada kategori pada snapshot ini." />;
-    const valueKey = output.series[0]?.key ?? columns[1]?.key ?? 'value';
-    const total = output.rows.reduce((sum, row) => sum + (typeof row[valueKey] === 'number' ? (row[valueKey] as number) : 0), 0);
-    const data = output.rows.map((row) => {
-      const value = typeof row[valueKey] === 'number' ? (row[valueKey] as number) : 0;
-      return {
-        name: String(row[output.xKey || columns[0]?.key || 'label'] ?? ''),
-        value,
-        percent: total > 0 ? (value / total) * 100 : 0,
-      };
-    });
-    return (
-      <OutputFrame title={output.title} meta={meta}>
-        <PieChart data={data} title={output.title ?? 'Distribusi'} tableData={srTable(output.rows, columns)} />
+        <DataTable columns={tableColumns} rows={output.rows} stickyHeader emptyTitle="Tidak ada data pada snapshot ini." />
       </OutputFrame>
     );
   }

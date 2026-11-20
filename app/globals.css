@@ -82,6 +82,9 @@
   --spacing-s4: 24px;
   --spacing-s5: 40px;
   --spacing-s6: 64px;
+  --spacing-rail: 72px;
+  --spacing-rail-expanded: 232px;
+  --spacing-dock: 64px;
 
   /* ---- Motion (§6): semua durasi dari sini, bukan angka inline. ---- */
   --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);

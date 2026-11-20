@@ -3,7 +3,6 @@
 import { useId, useState } from 'react';
 import type { ChatMessage, SourceCitation, Visualization } from '@/lib/contracts/http';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
-import { VisualizationView } from './visualization-view';
 import { Icon } from '@/components/ui/icons';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { MonoMeta } from '@/components/ui/mono-meta';
@@ -220,7 +219,21 @@ export function AnswerCard({
               {viz.type === 'bar' ? <ChannelBars viz={viz} periodLabel={periodLabel} /> : (
                 <div className="rounded-card border border-border-hairline bg-surface p-4">
                   <h4 className="mb-4 font-body text-headline-sm text-ink">{viz.title}</h4>
-                  <VisualizationView viz={viz} />
+                  <ul className="space-y-s2">
+                    {viz.rows.map((row, rowIndex) => {
+                      const label = String(row[viz.xKey] ?? '');
+                      const raw = row[viz.dataKey];
+                      const shown = typeof raw === 'number'
+                        ? viz.format === 'currency' ? formatIdr(raw) : viz.format === 'percent' ? formatPercent(raw) : formatNumber(raw)
+                        : '—';
+                      return (
+                        <li key={`${label}-${rowIndex}`} className="flex items-center justify-between gap-s3 border-b border-border-hairline pb-s2 last:border-b-0">
+                          <span className="font-body text-body text-ink">{label}</span>
+                          <span className="font-body text-body tabular text-ink">{shown}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               )}
             </div>
