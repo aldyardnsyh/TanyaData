@@ -1,0 +1,49 @@
+{
+  "id": "transaksi",
+  "title": "Ringkasan transaksi agregat per periode dan status",
+  "doc_type": "financial",
+  "sample_text": "Laporan keuangan ringkas per periode. Mata uang IDR. Menampilkan saldo, jumlah transaksi, dan nilai transaksi per status untuk setiap periode pelaporan.",
+  "schema": {
+    "tables": [
+      {
+        "name": "tx_daily",
+        "columns": [
+          { "name": "period", "type": "text", "semantic_role": "time", "description": "Periode pelaporan YYYY-MM" },
+          { "name": "status", "type": "text", "semantic_role": "dimension", "enum": ["SUCCESS", "FAILED", "EXPIRED", "REFUNDED", "PENDING"], "description": "Status transaksi" },
+          { "name": "count", "type": "number", "semantic_role": "measure", "description": "Jumlah transaksi" },
+          { "name": "amount_idr", "type": "number", "semantic_role": "measure", "description": "Nilai transaksi dalam IDR" }
+        ],
+        "row_count": 20,
+        "date_column": "period"
+      }
+    ],
+    "relations": [],
+    "enums": {
+      "status": ["SUCCESS", "FAILED", "EXPIRED", "REFUNDED", "PENDING"]
+    }
+  },
+  "timeValues": ["2026-08", "2026-09", "2026-10", "2026-11"],
+  "columns": ["period", "status", "count", "amount_idr"],
+  "rows": [
+    ["2026-08", "SUCCESS", 12320, 10718905500],
+    ["2026-08", "FAILED", 365, 0],
+    ["2026-08", "EXPIRED", 156, 0],
+    ["2026-08", "REFUNDED", 83, 0],
+    ["2026-08", "PENDING", 56, 0],
+    ["2026-09", "SUCCESS", 11875, 8973463500],
+    ["2026-09", "FAILED", 315, 0],
+    ["2026-09", "EXPIRED", 180, 0],
+    ["2026-09", "REFUNDED", 105, 0],
+    ["2026-09", "PENDING", 45, 0],
+    ["2026-10", "SUCCESS", 12578, 8231978500],
+    ["2026-10", "FAILED", 440, 0],
+    ["2026-10", "EXPIRED", 169, 0],
+    ["2026-10", "REFUNDED", 94, 0],
+    ["2026-10", "PENDING", 46, 0],
+    ["2026-11", "SUCCESS", 7537, 4389541500],
+    ["2026-11", "FAILED", 399, 0],
+    ["2026-11", "EXPIRED", 90, 0],
+    ["2026-11", "REFUNDED", 64, 0],
+    ["2026-11", "PENDING", 35, 0]
+  ]
+}

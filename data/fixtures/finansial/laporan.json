@@ -1,0 +1,30 @@
+{
+  "id": "fin-q3-2026",
+  "title": "Laporan Keuangan Ringkas Q3 2026",
+  "doc_type": "financial",
+  "sample_text": "Laporan keuangan ringkas. Mata uang IDR. Periode pelaporan Q3 2026 dan Q2 2026. Menampilkan pendapatan, laba bersih, arus kas operasi, saldo, neraca, dan catatan manajemen untuk setiap periode.",
+  "metadata": {
+    "periode": "Q3 2026",
+    "mata_uang": "IDR",
+    "entitas": "Contoh Entitas"
+  },
+  "blocks": [
+    { "kind": "heading", "text": "Laporan Keuangan Ringkas Q3 2026", "page": 1 },
+    { "kind": "text", "text": "Pendapatan: 125000000000 IDR Q3 2026", "page": 1 },
+    { "kind": "text", "text": "Laba bersih: 18750000000 IDR Q3 2026", "page": 1 },
+    { "kind": "text", "text": "Pendapatan: 112000000000 IDR Q2 2026", "page": 1 },
+    { "kind": "text", "text": "Laba bersih: 15000000000 IDR Q2 2026", "page": 1 },
+    { "kind": "text", "text": "Arus kas operasi: 22300000000 IDR Q3 2026", "page": 2 },
+    { "kind": "text", "text": "Saldo kas akhir: 41000000000 IDR Q3 2026", "page": 2 },
+    { "kind": "text", "text": "Catatan: seluruh angka dinyatakan dalam IDR. Periode pelaporan kuartalan. Angka belum diaudit.", "page": 2 }
+  ],
+  "chunks": [
+    { "id": "fin-pendapatan-q3", "section_path": "Pendapatan/Q3 2026", "doc": "fin-q3-2026", "doc_type": "financial", "page": 1, "parse_ok": true, "text": "Pendapatan: 125000000000 IDR Q3 2026" },
+    { "id": "fin-laba-q3", "section_path": "Laba bersih/Q3 2026", "doc": "fin-q3-2026", "doc_type": "financial", "page": 1, "parse_ok": true, "text": "Laba bersih: 18750000000 IDR Q3 2026" },
+    { "id": "fin-pendapatan-q2", "section_path": "Pendapatan/Q2 2026", "doc": "fin-q3-2026", "doc_type": "financial", "page": 1, "parse_ok": true, "text": "Pendapatan: 112000000000 IDR Q2 2026" },
+    { "id": "fin-laba-q2", "section_path": "Laba bersih/Q2 2026", "doc": "fin-q3-2026", "doc_type": "financial", "page": 1, "parse_ok": true, "text": "Laba bersih: 15000000000 IDR Q2 2026" },
+    { "id": "fin-aruskas-q3", "section_path": "Arus kas operasi/Q3 2026", "doc": "fin-q3-2026", "doc_type": "financial", "page": 2, "parse_ok": true, "text": "Arus kas operasi: 22300000000 IDR Q3 2026" },
+    { "id": "fin-saldo-q3", "section_path": "Saldo kas akhir/Q3 2026", "doc": "fin-q3-2026", "doc_type": "financial", "page": 2, "parse_ok": true, "text": "Saldo kas akhir: 41000000000 IDR Q3 2026" },
+    { "id": "fin-catatan", "section_path": "Catatan", "doc": "fin-q3-2026", "doc_type": "financial", "page": 2, "parse_ok": true, "text": "Catatan: seluruh angka dinyatakan dalam IDR. Periode pelaporan kuartalan. Angka belum diaudit." }
+  ]
+}

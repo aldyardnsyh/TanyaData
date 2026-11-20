@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "node .next/standalone/server.js",
     "typecheck": "tsc --noEmit",
+    "eval:ground-truth": "node scripts/eval-ground-truth.mjs --non-interactive",
     "db:extract": "node scripts/extract-documents.mjs",
     "db:init": "node scripts/init-workspace-db.mjs",
     "db:reset": "node scripts/reset-workspace-db.mjs",
