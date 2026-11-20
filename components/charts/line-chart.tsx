@@ -73,7 +73,9 @@ export function LineChart({ data, xKey, series, title, height = 280, summary, em
                 axisLine={{ stroke: '#c0c9c2' }}
                 domain={[0, 'auto']}
               />
+              {/* Purpose Gate: tooltip fade 120ms mengikuti token --motion-tooltip. */}
               <Tooltip
+                animationDuration={120}
                 contentStyle={{ backgroundColor: '#2c322f', border: 'none', borderRadius: 8, color: '#ecf2ed', fontSize: 12 }}
                 labelStyle={{ fontWeight: 600 }}
                 formatter={(value: any) => (typeof value === 'number' ? value.toLocaleString('id-ID') : value)}

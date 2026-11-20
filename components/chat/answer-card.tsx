@@ -279,7 +279,8 @@ export function AnswerCard({
 
       {/* Guardrail (kontrak §10.1): tanpa angka hasil karangan */}
       {guardrail && (
-        <div className="rounded-lg bg-surface-container-lowest p-space-md shadow-sm relative overflow-hidden">
+        // Purpose Gate: kartu jawaban reveal bertahap, konten tidak muncul sekaligus.
+        <div className="animate-[stagger-in_180ms_var(--ease-out-quart)_both] rounded-lg bg-surface-container-lowest p-space-md shadow-sm relative overflow-hidden">
           <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-tertiary" aria-hidden="true" />
           <div className="pl-2 flex flex-col space-y-space-xs">
             <span className="font-label-sm text-label-sm font-bold text-tertiary uppercase tracking-wider flex items-center gap-1">
@@ -295,7 +296,7 @@ export function AnswerCard({
 
       {/* Executive summary (code.html 126-141) */}
       {!guardrail && (message.answer || message.content) && (
-        <div className="rounded-lg bg-surface-container-lowest p-space-md shadow-sm relative overflow-hidden">
+        <div className="animate-[stagger-in_180ms_var(--ease-out-quart)_both] rounded-lg bg-surface-container-lowest p-space-md shadow-sm relative overflow-hidden">
           <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary" aria-hidden="true" />
           <div className="pl-2 flex flex-col space-y-space-xs">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -485,13 +486,15 @@ export function AnswerCard({
           <div className="flex flex-wrap gap-2">
             {message.followUps.slice(0, 8).map((q, i) => {
               const icon = FOLLOWUP_ICONS[i % FOLLOWUP_ICONS.length];
+              // Purpose Gate: chip follow-up masuk bertahap 30ms untuk memandu urutan baca.
               return (
                 <button
                   key={q}
                   type="button"
                   disabled={disabled}
                   onClick={() => onFollowUp(q)}
-                  className="px-space-sm py-1.5 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-colors focus-ring disabled:opacity-45"
+                  className="animate-[stagger-in_180ms_var(--ease-out-quart)_both] px-space-sm py-1.5 rounded-full bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-colors focus-ring disabled:opacity-45"
+                  style={{ animationDelay: `${i * 30}ms` }}
                 >
                   <Icon name={icon.name} className={`text-[14px] ${icon.color}`} />
                   <span>{q}</span>

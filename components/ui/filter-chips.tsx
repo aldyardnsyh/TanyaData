@@ -40,13 +40,21 @@ export function FilterChips({ chips, value, onChange, label, className }: Filter
             aria-pressed={active}
             onClick={() => onChange(chip.id)}
             className={cn(
-              'h-8 min-w-11 shrink-0 snap-start rounded-full px-3 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring',
+              'relative h-8 min-w-11 shrink-0 snap-start rounded-full px-3 font-body text-label-md transition-colors duration-[var(--motion-fast)] focus-ring',
               active
                 ? 'bg-primary font-semibold text-on-primary'
                 : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface',
             )}
           >
             {chip.label}
+            {/* Purpose Gate: garis aktif meluncur 150ms tanpa menggeser layout. */}
+            <span
+              aria-hidden="true"
+              className={cn(
+                'pointer-events-none absolute inset-x-3 bottom-1 h-0.5 origin-left rounded-full bg-current transition-transform duration-[var(--motion-focus)] ease-[var(--ease-out-quart)] motion-reduce:transform-none',
+                active ? 'scale-x-100' : 'scale-x-0',
+              )}
+            />
           </button>
         );
       })}

@@ -7,9 +7,10 @@ import { useEffect, useRef, useState } from 'react';
  * SSR-aman: render pertama mengikuti server (nilai akhir), lalu efek menganimasikan
  * dari 0 ke target sekali saat data tersedia. Reduced-motion langsung ke nilai akhir.
  */
-export function useCountUp(target: number | null, durationMs = 600): number | null {
+export function useCountUp(target: number | null, durationMs = 600, replayToken = 0): number | null {
   const [value, setValue] = useState<number | null>(target);
   const animatedFor = useRef<number | null>(null);
+  const lastToken = useRef(replayToken);
 
   useEffect(() => {
     if (target === null) {
@@ -17,7 +18,10 @@ export function useCountUp(target: number | null, durationMs = 600): number | nu
       animatedFor.current = null;
       return;
     }
-    if (animatedFor.current === target) return;
+    // replayToken berubah saat hover KPI: ulangi count-up halus tanpa mengubah data.
+    const tokenChanged = lastToken.current !== replayToken;
+    lastToken.current = replayToken;
+    if (animatedFor.current === target && !tokenChanged) return;
     animatedFor.current = target;
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setValue(target);
@@ -35,7 +39,7 @@ export function useCountUp(target: number | null, durationMs = 600): number | nu
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [target, durationMs]);
+  }, [target, durationMs, replayToken]);
 
   return value;
 }

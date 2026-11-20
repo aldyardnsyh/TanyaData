@@ -9,6 +9,7 @@ import { QuickSearch } from './quick-search';
 import { LangToggle } from './lang-toggle';
 import { NotificationMenu } from './notification-menu';
 import { UserMenu } from './user-menu';
+import { useRipple } from '@/lib/ui/ripple';
 
 export interface TopbarProps {
   activeKey: DictionaryKey;
@@ -31,6 +32,8 @@ export function Topbar({
   onOpenMenu,
 }: TopbarProps) {
   const { t } = useI18n();
+  // Purpose Gate: ripple klik pada CTA utama; shimmer hover lewat utilitas CSS.
+  const askRipple = useRipple<HTMLAnchorElement>();
 
   return (
     <header className="fixed left-0 right-0 top-0 z-sticky flex h-14 items-center justify-between gap-space-sm border-b border-border-structural bg-surface-container-lowest px-space-sm md:left-sidebar-rail md:px-space-md xl:left-sidebar">
@@ -67,7 +70,8 @@ export function Topbar({
         <QuickSearch />
         <Link
           href="/assistant"
-          className="hidden items-center gap-space-xs rounded-lg bg-primary-container px-space-md py-2 font-label-md text-on-primary shadow-sm transition-all hover:bg-primary focus-ring sm:flex"
+          onPointerDown={askRipple}
+          className="motion-shimmer motion-ripple-host hidden items-center gap-space-xs rounded-lg bg-primary-container px-space-md py-2 font-label-md text-on-primary shadow-sm transition-all hover:bg-primary focus-ring sm:flex"
         >
           <Icon name="bolt" className="text-[16px] text-secondary-fixed" />
           <span>{t('shell.askTanyaData')}</span>
