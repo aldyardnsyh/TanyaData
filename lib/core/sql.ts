@@ -432,13 +432,21 @@ function buildRateCandidate(
     params.periodEnd = context.period.end;
   }
 
-  // BUG-SQL-03-DEF — rate SELALU count-based: jumlah baris yang memenuhi
-  // kategori dibagi COUNT(*). Definisi ini mengikuti EVALUATION_QA.md B2 dan
-  // SOP-TRX-003 Bagian 3 (SUCCESS/total, FAILED/total). Bobot `amount`
-  // menghasilkan angka amount-weighted yang berbeda secara semantik (94.03
-  // vs 94.39 pada data nyata), jadi tidak boleh dipakai sebagai pembobot.
-  const numerator = `SUM(CASE WHEN ${category.name} = ? THEN 1 ELSE 0 END)`;
-  const denominator = 'COUNT(*)';
+  // BUG-SQL-03-DEF — rate SELALU count-based: JUMLAH TRANSAKSI pada kategori
+  // dibagi JUMLAH TRANSAKSI seluruhnya (EVALUATION_QA.md B2, SOP Bagian 3).
+  // Tabel transaksi mentah: satu baris = satu transaksi → COUNT(*).
+  // Tabel agregat (mis. tx_daily) sudah punya measure jumlah transaksi →
+  // pakai measure itu, jangan COUNT(*) yang hanya menghitung baris status.
+  // Fallback lama ke measures[0] (amount) DILARANG: itu mengubah definisi
+  // jadi amount-weighted (94.03 vs 94.39 pada data nyata).
+  const countMeasure =
+    table.columns.find(
+      (c) => c.semantic_role === 'measure' && /count|jumlah|qty|volume|freq/i.test(c.name),
+    ) ?? null;
+  const numerator = countMeasure
+    ? `SUM(CASE WHEN ${category.name} = ? THEN ${countMeasure.name} ELSE 0 END)`
+    : `SUM(CASE WHEN ${category.name} = ? THEN 1 ELSE 0 END)`;
+  const denominator = countMeasure ? `SUM(${countMeasure.name})` : 'COUNT(*)';
   const sql = `SELECT ROUND(${numerator} * 100.0 / NULLIF(${denominator}, 0), 2) AS value FROM ${table.name}${whereParts.length ? ` WHERE ${whereParts.join(' AND ')}` : ''}`;
   const explanation = `Saya menghitung persentase "${categoryValue}" dari seluruh baris pada tabel ${table.sourceName}${whereParts.length ? ' pada rentang yang diminta' : ''} berdasarkan jumlah transaksi (bukan nilai transaksi), dengan pembilang dan penyebut dihitung mesin dari data.`;
 
@@ -447,7 +455,7 @@ function buildRateCandidate(
     explanation,
     confidence: 0.6,
     referenced_tables: [table.name],
-    referenced_columns: [category.name, ...(time ? [time.name] : [])],
+    referenced_columns: [category.name, ...(countMeasure ? [countMeasure.name] : []), ...(time ? [time.name] : [])],
     params,
     mode: 'limited',
     reason: 'rule_based_rate',
