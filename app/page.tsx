@@ -127,7 +127,7 @@ export default function LandingPage() {
               />
             </div>
             <div className="lg:col-span-2">
-              <KpiCard label="Success Rate" value={successRate?.value ?? null} format="percent" delta={delta(successRate)} loading={loading} />
+              <KpiCard label="Tingkat keberhasilan" value={successRate?.value ?? null} format="percent" delta={delta(successRate)} loading={loading} />
             </div>
             <div className="lg:col-span-2">
               <KpiCard label="Transaksi Gagal" value={failed?.value ?? null} format="number" delta={delta(failed)} loading={loading} />

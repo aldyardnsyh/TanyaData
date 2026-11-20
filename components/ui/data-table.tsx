@@ -180,7 +180,7 @@ export function DataTable<T extends Record<string, any>>({
         </tbody>
       </table>
       <div className="border-t border-border-hairline px-4 py-2">
-        <MonoMeta>{rows.length} rows</MonoMeta>
+        <MonoMeta>{rows.length} baris</MonoMeta>
       </div>
     </div>
   );

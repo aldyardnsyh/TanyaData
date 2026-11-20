@@ -1,5 +1,11 @@
 import type { Lang } from '@/lib/contracts/http';
 
+/*
+ * DECISION-014: copy UI dikunci Bahasa Indonesia di semua layar.
+ * `lang` hanya mengatur bahasa konten jawaban AI (dikirim ke API), bukan label UI.
+ * Lihat t() di bawah: ia selalu mengembalikan dictionary `id`.
+ */
+
 const id = {
   appName: 'TanyaData',
   tagline: 'Tanyakan Datanya. Temukan Wawasannya.',
@@ -12,7 +18,7 @@ const id = {
   'shell.quickSearch': 'Pencarian cepat',
   'shell.searchPlaceholder': 'Cari halaman dan aksi',
   'shell.commandPalette': 'Palet perintah',
-  'shell.platform': 'Platform',
+  'shell.platform': 'Ruang Kerja',
   'shell.telemetry': 'Telemetri',
   'shell.notifications': 'Notifikasi',
   'shell.noNotifications': 'Tidak ada notifikasi baru',
@@ -33,9 +39,9 @@ const id = {
   'shell.docsReports': 'Tinjau dan ekspor laporan yang tersimpan.',
   'shell.docsSettings': 'Atur bahasa, dataset aktif, dan preferensi workspace.',
 
-  'nav.overview': 'Overview',
-  'nav.assistant': 'AI Assistant',
-  'nav.dataSources': 'Data Sources',
+  'nav.overview': 'Ringkasan',
+  'nav.assistant': 'Asisten',
+  'nav.dataSources': 'Sumber Data',
   'nav.investigations': 'Investigasi',
   'nav.reports': 'Laporan',
   'nav.settings': 'Pengaturan',
@@ -43,8 +49,8 @@ const id = {
   'kpi.total': 'Total Transaksi',
   'kpi.successful': 'Transaksi Sukses',
   'kpi.failed': 'Transaksi Gagal',
-  'kpi.successRate': 'Success Rate',
-  'kpi.failureRate': 'Failure Rate',
+  'kpi.successRate': 'Tingkat keberhasilan',
+  'kpi.failureRate': 'Tingkat kegagalan',
   'kpi.successValue': 'Nilai Transaksi Sukses',
 
   'status.SUCCESS': 'Sukses',
@@ -59,12 +65,12 @@ const id = {
   'period.noData': 'Tidak ada data pada filter ini.',
 
   'channel.volume': 'Volume',
-  'channel.failure_rate': 'Failure rate',
+  'channel.failure_rate': 'Tingkat kegagalan',
   'metric.total': 'Total',
   'metric.successful': 'Sukses',
   'metric.failed': 'Gagal',
-  'metric.successRate': 'Success rate',
-  'metric.failureRate': 'Failure rate',
+  'metric.successRate': 'Tingkat keberhasilan',
+  'metric.failureRate': 'Tingkat kegagalan',
   'metric.successValue': 'Nilai sukses',
   'metric.avgTicket': 'Rata-rata nominal',
   'metric.share': 'Pangsa',
@@ -152,6 +158,8 @@ const id = {
   'report.exportHint': 'Ekspor memakai snapshot laporan; angka tidak dihitung ulang.',
 } as const;
 
+/* DECISION-014: dictionary `en` dipertahankan sebagai referensi terjemahan,
+   tetapi tidak dipakai untuk copy UI. t() selalu mengembalikan `id`. */
 const en: Record<keyof typeof id, string> = {
   appName: 'TanyaData',
   tagline: 'Ask the Data. Find the Insight.',
@@ -309,8 +317,8 @@ export type Dictionary = Record<DictionaryKey, string>;
 
 export const dictionaries: Record<Lang, Dictionary> = { id, en };
 
-export function t(lang: Lang, key: DictionaryKey, vars?: Record<string, string | number>): string {
-  let text: string = dictionaries[lang][key] ?? dictionaries.id[key] ?? key;
+export function t(_lang: Lang, key: DictionaryKey, vars?: Record<string, string | number>): string {
+  let text: string = dictionaries.id[key] ?? key;
   if (vars) {
     for (const [name, value] of Object.entries(vars)) {
       text = text.replaceAll(`{${name}}`, String(value));

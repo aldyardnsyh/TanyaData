@@ -98,7 +98,7 @@ export function KpiCard({
   }
 
   const direction = delta?.direction ?? null;
-  const word = direction === 'up' ? 'up' : direction === 'down' ? 'down' : 'flat';
+  const word = direction === 'up' ? 'naik' : direction === 'down' ? 'turun' : 'stabil';
   const deltaChip = delta && delta.pct !== null && direction ? (
     <span
       className={cn(

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useApi } from '@/lib/ui/fetch-hooks';
+import { useI18n } from '@/lib/ui/i18n-provider';
+import { STATUS_KEYS } from '@/lib/i18n/dictionary';
 import { Icon } from '@/components/ui/icons';
 import { MonoMeta } from '@/components/ui/mono-meta';
 import { MeasurementRule } from '@/components/ui/measurement-rule';
@@ -94,6 +96,8 @@ export default function OverviewPage() {
   const [activeBar, setActiveBar] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [hidden, setHidden] = useState({ success: false, failed: false });
+  const { t } = useI18n();
+  const statusLabel = (code: string) => (STATUS_KEYS[code] ? t(STATUS_KEYS[code]) : code);
 
   useEffect(() => {
     setFilters(readFilters());
@@ -203,16 +207,16 @@ export default function OverviewPage() {
       {/* Asymmetric bento: hero 6, tiga regular 2 dari 12 (S-04 / §3.3). */}
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
         <div className="lg:col-span-6">
-          <KpiCard hero label="Total Transaksi" value={total?.value ?? null} format="number" delta={delta(total)} note={`vs ${compareLabel}`} meta="SQL · SUMMARY" loading={summary.loading} error={summary.error} onRetry={summary.retry} sparkline={points.map((p) => p.successful)} />
+          <KpiCard hero label={t('kpi.total')} value={total?.value ?? null} format="number" delta={delta(total)} note={`vs ${compareLabel}`} meta="SQL · SUMMARY" loading={summary.loading} error={summary.error} onRetry={summary.retry} sparkline={points.map((p) => p.successful)} />
         </div>
         <div className="lg:col-span-2">
-          <KpiCard label="Transaksi Sukses" value={successful?.value ?? null} format="number" delta={delta(successful)} loading={summary.loading} />
+          <KpiCard label={t('kpi.successful')} value={successful?.value ?? null} format="number" delta={delta(successful)} loading={summary.loading} />
         </div>
         <div className="lg:col-span-2">
-          <KpiCard label="Success Rate" value={successRate?.value ?? null} format="percent" delta={delta(successRate)} loading={summary.loading} />
+          <KpiCard label={t('kpi.successRate')} value={successRate?.value ?? null} format="percent" delta={delta(successRate)} loading={summary.loading} />
         </div>
         <div className="lg:col-span-2">
-          <KpiCard label="Transaksi Gagal" value={failed?.value ?? null} format="number" delta={delta(failed)} loading={summary.loading} />
+          <KpiCard label={t('kpi.failed')} value={failed?.value ?? null} format="number" delta={delta(failed)} loading={summary.loading} />
         </div>
       </div>
 
@@ -346,7 +350,7 @@ export default function OverviewPage() {
                   <div key={i} className="flex items-center justify-between gap-2">
                     <span className="inline-flex min-w-0 items-center gap-2 font-body text-body-sm text-ink-muted-strong">
                       <span className="state-dot shrink-0" style={{ backgroundColor: arc.color }} aria-hidden="true" />
-                      <span className="truncate">{arc.item?.status ?? '—'}</span>
+                      <span className="truncate">{arc.item ? statusLabel(arc.item.status) : '—'}</span>
                     </span>
                     <span className="font-body text-body-sm tabular text-ink">{num(arc.item?.count)}</span>
                   </div>

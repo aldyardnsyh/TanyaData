@@ -234,7 +234,7 @@ export default function InvestigationsPage() {
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         {[
           { label: 'Failure rate', value: overview.loading ? null : pct(failureRate?.current), meta: `BASELINE ${pct(failureRate?.previous)}`, note: failureRate ? `${failureRate.deltaPctPoints >= 0 ? '+' : ''}${failureRate.deltaPctPoints.toFixed(2)} PP` : '—' },
-          { label: 'Volume terdampak', value: analyzing ? null : num(analysis?.comparison.total.current), meta: `EXCESS ${num(excessTotal)}`, note: 'TRANSAKSI' },
+          { label: 'Volume terdampak', value: analyzing ? null : num(analysis?.comparison.total.current), meta: `KELEBIHAN ${num(excessTotal)}`, note: 'TRANSAKSI' },
           { label: 'Kanal dominan', value: dominant?.channelName ?? '—', meta: contributionChannels.length ? `${channelShare(contributionChannels, 0).toFixed(1)}% DARI LONJAKAN` : '—', note: runnerUp ? `KE-2: ${runnerUp.channelName}` : '—' },
         ].map((card) => (
           <div key={card.label} className="flex min-h-40 flex-col rounded-card border border-border-hairline bg-surface p-5">
