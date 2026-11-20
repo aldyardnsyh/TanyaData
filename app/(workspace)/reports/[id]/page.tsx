@@ -2,7 +2,11 @@
 
 import { use } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Download, FileText } from 'lucide-react';
+import {
+  IconArrowLeft as ArrowLeft,
+  IconDownload as Download,
+  IconFileText as FileText,
+} from '@/components/ui/icons';
 import type { ReportDetailResponse, ReportMetric } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { formatNumber, formatDateId, formatDateTimeId, formatIdr, formatPercent } from '@/lib/ui/format';

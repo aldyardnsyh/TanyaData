@@ -2,7 +2,7 @@
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { IconAlertTriangle as AlertTriangle, IconRefresh as RefreshCw } from './icons';
 import { EmptyState } from './empty-state';
 import { Skeleton } from './skeleton';
 

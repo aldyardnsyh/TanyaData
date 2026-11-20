@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, Trash2, FileText, FileSpreadsheet, AlertTriangle } from 'lucide-react';
+import {
+  IconArrowLeft as ArrowLeft,
+  IconRefresh as RefreshCw,
+  IconTrash as Trash2,
+  IconFileText as FileText,
+  IconFileSpreadsheet as FileSpreadsheet,
+  IconAlertTriangle as AlertTriangle,
+} from '@/components/ui/icons';
 import type {
   DatasetSourceDetail,
   DocumentSourceDetail,

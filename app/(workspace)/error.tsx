@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { AlertTriangle } from 'lucide-react';
+import { IconAlertTriangle as AlertTriangle } from '@/components/ui/icons';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 

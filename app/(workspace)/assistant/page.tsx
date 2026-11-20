@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Trash2, Send, History, MessageSquare, Check } from 'lucide-react';
+import {
+  IconPlus as Plus,
+  IconTrash as Trash2,
+  IconSend as Send,
+  IconHistory as History,
+  IconMessageSquare as MessageSquare,
+  IconCheck as Check,
+} from '@/components/ui/icons';
 import type {
   ChatMessage,
   ConversationDetailResponse,

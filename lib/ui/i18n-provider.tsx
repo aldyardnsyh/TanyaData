@@ -18,18 +18,18 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 function readStoredLang(): Lang {
-  if (typeof window === 'undefined') return 'id';
+  if (typeof window === 'undefined') return 'en';
   try {
     const stored = window.localStorage.getItem('tanyadata.lang');
-    return stored === 'en' ? 'en' : 'id';
+    return stored === 'id' ? 'id' : 'en';
   } catch {
-    return 'id';
+    return 'en';
   }
 }
 
 export function I18nProvider({
   children,
-  defaultLang = 'id',
+  defaultLang = 'en',
 }: {
   children: React.ReactNode;
   defaultLang?: Lang;

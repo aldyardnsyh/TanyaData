@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { UploadCloud, RefreshCw, Trash2, FileSpreadsheet, FileText } from 'lucide-react';
+import {
+  IconUpload as UploadCloud,
+  IconRefresh as RefreshCw,
+  IconTrash as Trash2,
+  IconFileSpreadsheet as FileSpreadsheet,
+  IconFileText as FileText,
+} from '@/components/ui/icons';
 import type {
   ApiErrorCode,
   ReindexResponse,

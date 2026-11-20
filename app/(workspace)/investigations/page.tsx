@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Search, AlertTriangle, MapPin, FileText, Loader2, Save } from 'lucide-react';
+import {
+  IconSearch as Search,
+  IconAlertTriangle as AlertTriangle,
+  IconMapPin as MapPin,
+  IconFileText as FileText,
+  IconLoader as Loader2,
+  IconSave as Save,
+} from '@/components/ui/icons';
 import type {
   AnomaliesResponse,
   CategoryPerformanceResponse,

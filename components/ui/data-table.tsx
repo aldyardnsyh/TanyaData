@@ -2,7 +2,7 @@
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { IconArrowUpDown as ArrowUpDown, IconArrowUp as ArrowUp, IconArrowDown as ArrowDown } from './icons';
 import { Skeleton } from './skeleton';
 import { EmptyState } from './empty-state';
 

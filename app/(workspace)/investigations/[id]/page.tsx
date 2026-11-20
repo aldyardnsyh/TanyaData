@@ -2,7 +2,12 @@
 
 import { use } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, AlertTriangle, FileText, Info } from 'lucide-react';
+import {
+  IconArrowLeft as ArrowLeft,
+  IconAlertTriangle as AlertTriangle,
+  IconFileText as FileText,
+  IconInfo as Info,
+} from '@/components/ui/icons';
 import type { InvestigationDetailResponse, TemporalPoint } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { formatNumber, formatPercent, formatDateId, formatDateTimeId } from '@/lib/ui/format';

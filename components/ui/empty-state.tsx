@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { FileText } from 'lucide-react';
+import { IconFileText as FileText } from './icons';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

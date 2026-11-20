@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { AlertTriangle } from 'lucide-react';
+import { IconAlertTriangle as AlertTriangle } from './icons';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

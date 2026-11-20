@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { Toast, type ToastStatus } from '@/components/ui/toast';
 
 let seq = 0;
@@ -82,4 +81,4 @@ export function Toaster() {
   );
 }
 
-export { CheckCircle, AlertTriangle, Info, X };
+export { CheckCircle, AlertTriangle, Info, X } from './icons';
