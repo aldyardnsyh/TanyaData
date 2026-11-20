@@ -11,8 +11,9 @@ import type { AnalyticsFilters } from '@/lib/analytics/filters';
 import type { AssistantContext, Lang, Period, SourceCitation } from '@/lib/contracts/http';
 import { allRows, num, oneRow, str } from '@/lib/analytics/sql';
 import { getChannelPerformance, getCategoryPerformance, getStatusDistribution, getSummary } from '@/lib/analytics/queries';
-import { formatCurrency, formatNumber, formatPercent, round1, round2, safeRatio } from '@/lib/date';
+import { formatCurrency, formatNumber, formatPercent, round1, round2, safeRatio, truncateText } from '@/lib/date';
 import { retrieveDocuments } from '@/lib/ai/retrieval';
+import type { Normalized } from '@/lib/ai/normalize';
 import {
   barViz, emptyDraft, fmtCur, fmtN, fmtPct, kpiViz, lineViz, pieViz, table,
   type DraftResult, type HandlerCtx,
@@ -25,7 +26,7 @@ export type IntentId =
   | 'E1_excess' | 'E2_change_point' | 'E3_processing'
   | 'F1_hybrid'
   | 'D1_sop' | 'D2_causes' | 'D3_by_type' | 'D4_refund_sla' | 'D5_escalation'
-  | 'D6_pending_expired' | 'D7_incident' | 'D8_hotfix' | 'D_generic'
+  | 'D6_pending_expired' | 'D7_incident' | 'D8_hotfix' | 'D9_failure_code' | 'D_generic'
   | 'META_help' | 'SMALLTALK';
 
 export type SlotName = 'period' | 'channel' | 'category' | 'failureCode' | 'docTopic';
@@ -707,6 +708,105 @@ function hD8Hotfix(ctx: HandlerCtx): DraftResult {
   ], ctx.lang === 'id' ? ['Apa status insiden INC-2026-1015?', 'Berapa failure rate OVO bulan ini?', 'Kategori apa yang paling terdampak di OVO?'] : ['What is the status of INC-2026-1015?', 'What is OVO failure rate this month?', 'Which category is most affected on OVO?']);
 }
 
+/* ============================================================ D9 failure-code lookup */
+
+/** Potong entri satu kode dari chunk tabel katalog (berhenti sebelum kode berikutnya). */
+function extractCatalogEntry(flat: string, code: string): string {
+  const at = flat.toUpperCase().indexOf(code);
+  if (at < 0) return '';
+  const rest = flat.slice(at + code.length).trim();
+  const next = rest.search(/\bF\d{2}\s+[A-Z][A-Z0-9_]{2,}\b/);
+  return (next > 0 ? rest.slice(0, next) : rest).trim();
+}
+
+/**
+ * D9 — penjelasan SATU kode kegagalan (F01–F12) dari Katalog Kode Kegagalan.
+ * FTS5 `document_chunks` menemukan chunk dan memberi sitasi; seed.failure_codes
+ * hanya indeks nama/ringkasan yang isinya identik dengan katalog.
+ */
+function hDFailureCode(ctx: HandlerCtx): DraftResult {
+  const code = ctx.norm.failureCode;
+  if (!code) return hDGeneric(ctx);
+
+  const seedRow = oneRow(
+    ctx.db,
+    'SELECT failure_code, failure_name, description, failure_type, owner_team, sla_hours FROM seed.failure_codes WHERE failure_code = ?',
+    [code],
+  );
+  const name = str(seedRow?.failure_name) || code;
+
+  // Perkaya query dengan kode + nama agar BM25 menaikkan chunk katalog.
+  const docs = retrieveDocuments(ctx.db, `Katalog Kode Kegagalan ${code} ${name}`, ctx.lang);
+  const catalog = docs.filter((d) => /katalog\s+kode\s+kegagalan/i.test(d.docTitle ?? ''));
+  const pool = catalog.length ? catalog : docs;
+  if (!pool.length) return { ...emptyDraft('rag'), answer: '' };
+
+  // Pilih chunk yang benar-benar memuat entri kode, bukan sekadar menyebut angka.
+  let primary = pool[0];
+  let content = '';
+  for (const d of pool) {
+    if (!d.chunkId) continue;
+    const row = oneRow(ctx.db, 'SELECT content FROM document_chunks WHERE id = ?', [d.chunkId]);
+    const text = str(row?.content);
+    if (text.toUpperCase().includes(code) && (!name || text.toUpperCase().includes(name))) {
+      primary = d;
+      content = text;
+      break;
+    }
+  }
+  if (!content) {
+    const row = oneRow(ctx.db, 'SELECT content FROM document_chunks WHERE id = ?', [primary.chunkId ?? -1]);
+    content = str(row?.content);
+  }
+
+  const flat = content.replace(/\s+/g, ' ').trim();
+  const at = flat.toUpperCase().indexOf(code);
+  const quote = truncateText(at >= 0 ? flat.slice(at) : flat, 240);
+
+  const entry = extractCatalogEntry(flat, code);
+  const desc = str(seedRow?.description);
+  const type = str(seedRow?.failure_type);
+  const owner = str(seedRow?.owner_team);
+  const sla = num(seedRow?.sla_hours);
+  let action = '';
+  if (desc && entry.includes(desc)) {
+    const after = entry.slice(entry.indexOf(desc) + desc.length).trim();
+    const picAt = owner ? after.lastIndexOf(owner) : -1;
+    action = (picAt > 0 ? after.slice(0, picAt) : after).replace(/[\s;]+$/, '').trim();
+  }
+
+  const docTitle = primary.docTitle ?? 'Katalog Kode Kegagalan Transaksi dan Panduan Diagnosis';
+  const section = primary.section ?? 'Katalog Kode Kegagalan';
+  const page = primary.page ?? null;
+  const src = `${docTitle}${section ? `, ${section}` : ''}${page ? `, hlm. ${page}` : ''}`;
+
+  const answer = ctx.lang === 'id'
+    ? `${code} adalah ${name}${type ? ` (${type})` : ''}. ${desc}${action ? ` Tindakan standar: ${action}.` : ''}${owner ? ` PIC/SLA: ${owner}${sla ? ` / ${sla} jam` : ''}.` : ''} Sumber: ${src}.`
+    : `${code} is ${name}${type ? ` (${type})` : ''}. ${desc}${action ? ` Standard action: ${action}.` : ''}${owner ? ` Owner/SLA: ${owner}${sla ? ` / ${sla} hours` : ''}.` : ''} Source: ${src}.`;
+
+  // Sitasi utama memakai kutipan yang benar-benar memuat entri kode.
+  const sources = pool.map((d) => ({ ...d }));
+  sources[0] = { ...primary, quote };
+
+  return {
+    answer,
+    keyFindings: [
+      { text: `${code} = ${name}${type ? ` — ${type}` : ''}.`, ref: `doc:${primary.sourceId}` },
+      ...(desc ? [{ text: desc, ref: `doc:${primary.sourceId}` }] : []),
+    ],
+    supportingTable: null,
+    visualizations: [],
+    sql: null,
+    sources,
+    followUps: ctx.lang === 'id'
+      ? ['Apa prosedur penanganan F04?', 'Apa perbedaan penanganan tiap jenis kegagalan?', 'Kode kegagalan apa yang paling sering?']
+      : ['What is the F04 handling procedure?', 'How does handling differ by failure type?', 'Which failure code is most frequent?'],
+    mode: 'rag',
+    contextUpdates: { docRefs: [...new Set(sources.map((d) => d.sourceId))], failureCode: code },
+    rowCount: sources.length,
+  };
+}
+
 /* ============================================================ META handlers */
 
 function hMetaHelp(ctx: HandlerCtx): DraftResult {
@@ -838,6 +938,7 @@ export const INTENTS: IntentDef[] = [
   { id: 'D6_pending_expired', domain: 'rag', triggers: ['pending berubah menjadi failed', 'masa berlaku va qris e-wallet sebelum expired', 'kapan transaksi pending berubah menjadi failed', 'masa berlaku va', 'expired'], slots: [], handler: hD6PendingExpired },
   { id: 'D7_incident', domain: 'rag', triggers: ['status dan tindak lanjut insiden inc-2026-1015', 'status insiden inc-2026-1015', 'insiden inc-2026-1015', 'tindak lanjut insiden'], slots: [], handler: hD7Incident },
   { id: 'D8_hotfix', domain: 'rag', triggers: ['hotfix untuk masalah ovo', 'jadwal perbaikan', 'hotfix ovo', 'penyebab dugaan ovo', 'hotfix untuk masalah ovo dijadwalkan'], slots: [], handler: hD8Hotfix },
+  { id: 'D9_failure_code', domain: 'rag', triggers: ['kode kegagalan', 'kode gagal', 'failure code', 'berarti apa', 'apa itu', 'itu apa', 'jelaskan kode', 'penjelasan kode', 'what does', 'what is', 'explain code', 'stands for'], slots: ['failureCode'], handler: hDFailureCode },
   { id: 'D_generic', domain: 'rag', triggers: ['dokumen', 'catatan insiden', 'laporan operasional', 'informasi di dokumen', 'infografis insiden', 'relevan untuk menjelaskan pola'], slots: [], handler: hDGeneric },
   { id: 'META_help', domain: 'meta', triggers: ['apa yang bisa kamu lakukan', 'help', 'contoh pertanyaan', 'apa yang bisa kita lakukan'], slots: [], handler: hMetaHelp },
   { id: 'SMALLTALK', domain: 'meta', triggers: ['halo', 'hai', 'hi', 'hello', 'selamat pagi', 'selamat siang', 'selamat sore', 'selamat malam', 'terima kasih', 'thanks', 'makasih'], slots: [], handler: hSmalltalk },
@@ -875,7 +976,7 @@ function overlapScore(triggers: string[], norm: { text: string }): number {
   return best;
 }
 
-function slotDetected(slot: SlotName, norm: { periodPhrase: string | null; monthPhrase: unknown; channel: string | null; category: string | null; failureCode: string | null; incidentId: string | null; text: string }): boolean {
+function slotDetected(slot: SlotName, norm: Normalized): boolean {
   switch (slot) {
     case 'period': return norm.periodPhrase !== null || norm.monthPhrase !== null;
     case 'channel': return norm.channel !== null;
@@ -886,23 +987,23 @@ function slotDetected(slot: SlotName, norm: { periodPhrase: string | null; month
   }
 }
 
-function slotCoverage(slots: SlotName[], norm: Parameters<typeof slotDetected>[1]): number {
+function slotCoverage(slots: SlotName[], norm: Normalized): number {
   if (!slots.length) return 1;
   return slots.filter((s) => slotDetected(s, norm)).length / slots.length;
 }
 
-function domainSignal(intent: IntentDef, norm: { text: string }): number {
+function domainSignal(intent: IntentDef, norm: Normalized): number {
   const q = norm.text;
   if (intent.domain === 'sql' || intent.domain === 'hybrid') return METRIC_KEYWORDS.some((k) => q.includes(k)) ? 1 : 0;
   if (intent.domain === 'rag') return DOC_KEYWORDS.some((k) => q.includes(k)) ? 1 : 0;
   return 0;
 }
 
-function lengthFit(norm: { tokens: string[] }): number {
+function lengthFit(norm: Normalized): number {
   return norm.tokens.length <= 30 ? 1 : 0.8;
 }
 
-export function scoreIntent(intent: IntentDef, norm: Parameters<typeof overlapScore>[1] & Parameters<typeof slotDetected>[1] & Parameters<typeof lengthFit>[0]): number {
+export function scoreIntent(intent: IntentDef, norm: Normalized): number {
   let s = 0.5 * overlapScore(intent.triggers, norm)
     + 0.25 * slotCoverage(intent.slots, norm)
     + 0.15 * domainSignal(intent, norm)
@@ -912,6 +1013,10 @@ export function scoreIntent(intent: IntentDef, norm: Parameters<typeof overlapSc
   if (intent.domain === 'hybrid' && norm.channel && DOC_KEYWORDS.some((k) => norm.text.includes(k))) {
     s += 0.06;
   }
+  // Entitas kode + maksud definisi → document lookup menang mutlak.
+  if (intent.id === 'D9_failure_code' && norm.failureCodeLookup) s += 0.5;
+  // Agregat kode ("paling sering", "dominan") tetap domain SQL.
+  if (norm.failureCodeLookup && intent.domain === 'sql') s -= 0.15;
   return s;
 }
 
@@ -919,15 +1024,20 @@ export type IntentDecision =
   | { kind: 'intent'; intent: IntentDef; assumed: boolean }
   | { kind: 'guardrail'; type: 'ambiguous' | 'not_in_sources' };
 
-export function decideIntent(norm: Parameters<typeof scoreIntent>[1]): IntentDecision {
+export function decideIntent(norm: Normalized): IntentDecision {
   const ranked = INTENTS.map((i) => ({ i, s: scoreIntent(i, norm) })).sort((a, b) => b.s - a.s);
   const top = ranked[0];
   const second = ranked[1];
   if (top.s >= 0.62) return { kind: 'intent', intent: top.i, assumed: false };
   if (top.s >= 0.45) {
     const gap = top.s - second.s;
-    if (gap < 0.05) return { kind: 'guardrail', type: 'ambiguous' };
-    return { kind: 'intent', intent: top.i, assumed: true };
+    // Ambiguous hanya untuk pertanyaan TANPA entitas spesifik. Kode kegagalan,
+    // insiden, kanal, atau kategori yang jelas tidak pernah dianggap ambigu.
+    const hasClearEntity =
+      norm.failureCode !== null || norm.incidentId !== null ||
+      norm.channel !== null || norm.category !== null;
+    if (gap < 0.05 && !hasClearEntity) return { kind: 'guardrail', type: 'ambiguous' };
+    return { kind: 'intent', intent: top.i, assumed: gap < 0.05 };
   }
   const hasDoc = DOC_KEYWORDS.some((k) => norm.text.includes(k));
   if (hasDoc) return { kind: 'intent', intent: INTENTS.find((i) => i.id === 'D_generic')!, assumed: true };

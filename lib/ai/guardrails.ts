@@ -14,6 +14,7 @@ import type {
   Lang,
 } from '@/lib/contracts/http';
 import { freshContext } from '@/lib/ai/compose';
+import { isFailureCodeLookup } from '@/lib/ai/normalize';
 
 type GuardrailText = { answer: string; explanation: string; followUps: string[] };
 
@@ -142,13 +143,16 @@ export type EarlyGuardrail = GuardrailType | 'smalltalk' | null;
 const DESTRUCTIVE_RE = /\b(hapus|hapuskan|delete|drop|truncate|update|insert|alter|create\s+table|replace|ganti\s+data|timpa|reset\s+data|remove\s+all|清空)\b/i;
 const PII_RE = /([\w.+-]+@[\w-]+\.[\w.]+)|\b(0\d{2,3}[- ]?\d{3,4}[- ]?\d{3,4})\b|\b\d{16}\b|\bNIK\b|\bno\s*ktp\b|\bnomor\s*hp\b|\bemail\s*(pelanggan|customer)\b/i;
 const OFF_TOPIC_RE = /\b(CEO|CTO|direktur utama|presiden direktur|cuaca|harga saham|prediksi saham|olahraga|天涯|siapa\s+pemilik|gaji\s+karyawan)\b/i;
-const AMBIGUOUS_RE = /\b(kanal\s+terbaik|best\s+channel|metrik\s+terbaik|channel\s+terbaik|kanal\s+paling\s+baik|metrik\s+paling\s+baik)\b/i;
+const AMBIGUOUS_RE = /\b(kanal\s+terbaik|best\s+channel|metrik\s+terbaik|channel\s+terbaik|kanal\s+paling\s+baik|metrik\s+paling\s+baik|performanya\s+(bagaimana|gimana)|bagaimana\s+performanya|kinerjanya\s+(bagaimana|gimana)|bagaimana\s+kinerjanya)\b/i;
 const GREETING_RE = /^(halo|hai|hi|hello|selamat\s+(pagi|siang|sore|malam)|terima\s+kasih|thanks|makasih)\b/i;
 
 export function detectEarlyGuardrail(db: DB, question: string): EarlyGuardrail {
   const q = question.trim();
   if (DESTRUCTIVE_RE.test(q)) return 'destructive';
   if (PII_RE.test(q)) return 'pii';
+  // "Kode kegagalan F04 berarti apa?" punya entitas kode yang jelas:
+  // ini document lookup, bukan klarifikasi metrik.
+  if (isFailureCodeLookup(db, q)) return null;
   if (AMBIGUOUS_RE.test(q)) return 'ambiguous';
   if (OFF_TOPIC_RE.test(q)) return 'not_in_sources';
   if (GREETING_RE.test(q) && q.length < 40) return 'smalltalk';

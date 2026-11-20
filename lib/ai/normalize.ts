@@ -133,6 +133,44 @@ export function detectFailureCode(text: string): string | null {
   return m ? m[0].toUpperCase() : null;
 }
 
+/**
+ * Deteksi kode kegagalan dari NAMA kanonik di seed.failure_codes
+ * (mis. "BANK_TIMEOUT" → F04, "GATEWAY_ERROR" → F05). Dipakai supaya
+ * "failure code BANK_TIMEOUT" diperlakukan sama dengan "failure code F04".
+ */
+export function detectFailureCodeByName(db: DB, text: string): string | null {
+  const candidates = text.toUpperCase().match(/\b[A-Z][A-Z0-9_]{3,}\b/g);
+  if (!candidates?.length) return null;
+  const rows = allRows(db, 'SELECT failure_code, failure_name FROM seed.failure_codes');
+  for (const row of rows) {
+    const name = str(row.failure_name).toUpperCase();
+    if (name && candidates.includes(name)) return str(row.failure_code).toUpperCase();
+  }
+  return null;
+}
+
+/** Kata kunci yang menandakan pertanyaan meminta DEFINISI/PENJELASAN kode. */
+const FAILURE_CODE_DEF_RE =
+  /\b(berarti|artinya|apa\s+itu|itu\s+apa|jelaskan|penjelasan|definisi|maksud|kode|code|what|mean|means|explain|define|stands\s+for)\b/i;
+
+/** Kata kunci agregasi: tetap SQL, bukan lookup definisi. */
+const FAILURE_CODE_AGG_RE =
+  /\b(paling\s+sering|paling\s+banyak|terbanyak|dominan|teratas|top|frekuensi|per\s+1000|kontribusi|paling\s+berkontribusi|most\s+frequent|frequency|count)\b/i;
+
+/**
+ * True bila pertanyaan meminta penjelasan satu kode kegagalan yang JELAS
+ * (F01–F12 atau nama kanoniknya), bukan agregat statistik.
+ */
+export function isFailureCodeLookup(
+  db: DB,
+  text: string,
+  code: string | null = detectFailureCode(text) ?? detectFailureCodeByName(db, text),
+): boolean {
+  if (!code) return false;
+  if (FAILURE_CODE_AGG_RE.test(text)) return false;
+  return FAILURE_CODE_DEF_RE.test(text);
+}
+
 export function detectIncidentId(text: string): string | null {
   const m = normalizeText(text).match(/\binc-2026-\d{4}\b/);
   return m ? m[0].toUpperCase() : null;
@@ -192,6 +230,8 @@ export type Normalized = {
   channel: string | null;
   category: string | null;
   failureCode: string | null;
+  /** True bila pertanyaan meminta definisi kode (bukan agregat SQL). */
+  failureCodeLookup: boolean;
   incidentId: string | null;
   monthPhrase: { month: string; year: number } | null;
   periodPhrase: string | null;
@@ -203,13 +243,15 @@ export function normalizeQuestion(db: DB, question: string): Normalized {
   // tanya TIDAK dipakai di sini agar frasa trigger multi-kata ("sejak kapan",
   // "failure rate", "processing time") tetap utuh saat dicocokkan.
   const text = normalizeText(question);
+  const failureCode = detectFailureCode(question) ?? detectFailureCodeByName(db, question);
   return {
     raw,
     text,
     tokens: tokenize(text),
     channel: detectChannel(db, question),
     category: detectCategory(db, question),
-    failureCode: detectFailureCode(question),
+    failureCode,
+    failureCodeLookup: isFailureCodeLookup(db, question, failureCode),
     incidentId: detectIncidentId(question),
     monthPhrase: detectMonthPhrase(question),
     periodPhrase: detectPeriodPhrase(question),
