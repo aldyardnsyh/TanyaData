@@ -406,9 +406,6 @@ function buildRateCandidate(
   }
   if (!category || categoryValue === null) return null;
 
-  const measures = table.columns.filter((c) => c.semantic_role === 'measure');
-  const weight = measures.find((c) => /count|jumlah|total|qty|volume|freq/i.test(c.name)) ?? measures[0] ?? null;
-
   const params: Record<string, string | number | null> = { rateValue: categoryValue };
   const whereParts: string[] = [];
   for (const column of table.columns) {
@@ -435,19 +432,22 @@ function buildRateCandidate(
     params.periodEnd = context.period.end;
   }
 
-  const numerator = weight
-    ? `SUM(CASE WHEN ${category.name} = ? THEN ${weight.name} ELSE 0 END)`
-    : `SUM(CASE WHEN ${category.name} = ? THEN 1 ELSE 0 END)`;
-  const denominator = weight ? `SUM(${weight.name})` : 'COUNT(*)';
+  // BUG-SQL-03-DEF — rate SELALU count-based: jumlah baris yang memenuhi
+  // kategori dibagi COUNT(*). Definisi ini mengikuti EVALUATION_QA.md B2 dan
+  // SOP-TRX-003 Bagian 3 (SUCCESS/total, FAILED/total). Bobot `amount`
+  // menghasilkan angka amount-weighted yang berbeda secara semantik (94.03
+  // vs 94.39 pada data nyata), jadi tidak boleh dipakai sebagai pembobot.
+  const numerator = `SUM(CASE WHEN ${category.name} = ? THEN 1 ELSE 0 END)`;
+  const denominator = 'COUNT(*)';
   const sql = `SELECT ROUND(${numerator} * 100.0 / NULLIF(${denominator}, 0), 2) AS value FROM ${table.name}${whereParts.length ? ` WHERE ${whereParts.join(' AND ')}` : ''}`;
-  const explanation = `Saya menghitung persentase "${categoryValue}" dari seluruh baris pada tabel ${table.sourceName}${whereParts.length ? ' pada rentang yang diminta' : ''}, dengan pembilang dan penyebut dihitung mesin dari data.`;
+  const explanation = `Saya menghitung persentase "${categoryValue}" dari seluruh baris pada tabel ${table.sourceName}${whereParts.length ? ' pada rentang yang diminta' : ''} berdasarkan jumlah transaksi (bukan nilai transaksi), dengan pembilang dan penyebut dihitung mesin dari data.`;
 
   return {
     sql,
     explanation,
     confidence: 0.6,
     referenced_tables: [table.name],
-    referenced_columns: [category.name, ...(weight ? [weight.name] : []), ...(time ? [time.name] : [])],
+    referenced_columns: [category.name, ...(time ? [time.name] : [])],
     params,
     mode: 'limited',
     reason: 'rule_based_rate',
