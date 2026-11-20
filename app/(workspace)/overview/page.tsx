@@ -343,10 +343,6 @@ export default function OverviewPage() {
                     <circle key={i} cx="50" cy="50" r="38" fill="none" stroke={arc.color} strokeWidth="12" strokeDasharray={`${arc.length.toFixed(1)} ${circumference.toFixed(1)}`} strokeDashoffset={-arc.offset} />
                   ))}
                 </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="font-body text-body-sm text-ink-muted-strong">Tingkat Keberhasilan</span>
-                  <span className="font-body text-metric-md tabular text-primary">{pct(successRate?.value)}</span>
-                </div>
               </div>
               <div className="min-w-0 flex-1 space-y-2">
                 {donutArcs.map((arc, i) => (

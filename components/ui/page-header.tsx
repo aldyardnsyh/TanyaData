@@ -28,9 +28,9 @@ export function PageHeader({ title, subtitle, meta, actions, className }: PageHe
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
-      <div className="relative mt-5">
+      <div className="mt-5">
         <MeasurementRule />
-        {meta && <MonoMeta className="absolute -bottom-2.5 right-0 bg-canvas pl-2">{meta}</MonoMeta>}
+        {meta && <div className="mt-2 text-right"><MonoMeta>{meta}</MonoMeta></div>}
       </div>
     </div>
   );
