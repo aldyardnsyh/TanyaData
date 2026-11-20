@@ -31,15 +31,27 @@ export interface PieChartProps {
   emptyText?: string;
   className?: string;
   onClick?: (data: any) => void;
+  /** C-09: tabel alternatif sr-only (status + jumlah + persen). */
+  tableData?: { header: string[]; rows: string[][] };
 }
 
-export function PieChart({ data, title, summary, emptyText, className, onClick }: PieChartProps) {
+export function PieChart({ data, title, summary, emptyText, className, onClick, tableData }: PieChartProps) {
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isEmpty = data.length === 0 || data.every((d) => d.value === 0);
 
   return (
     <figure className={cn('w-full', className)} aria-label={title}>
       <figcaption className="sr-only">{summary ?? title}</figcaption>
+      {tableData && tableData.rows.length > 0 && (
+        <table className="sr-only">
+          <thead><tr>{tableData.header.map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
+          <tbody>
+            {tableData.rows.map((row, i) => (
+              <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       <div className="w-full" style={{ height: isMobile ? 200 : 280 }}>
         {isEmpty ? (
           <div className="flex h-full items-center justify-center text-on-surface-variant font-body text-body-md">

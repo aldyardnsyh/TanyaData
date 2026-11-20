@@ -30,9 +30,11 @@ export interface BarChartProps {
   emptyText?: string;
   className?: string;
   onClick?: (data: Record<string, any>) => void;
+  /** C-09: tabel alternatif sr-only untuk pembaca layar. */
+  tableData?: { header: string[]; rows: string[][] };
 }
 
-export function BarChart({ data, xKey, series, title, height = 280, summary, emptyText, className, onClick }: BarChartProps) {
+export function BarChart({ data, xKey, series, title, height = 280, summary, emptyText, className, onClick, tableData }: BarChartProps) {
   const isMobile = useMediaQuery('(max-width: 767px)');
   const prefersReduced = useMediaQuery('(prefers-reduced-motion: reduce)');
   const chartHeight = isMobile ? 200 : height;
@@ -41,6 +43,16 @@ export function BarChart({ data, xKey, series, title, height = 280, summary, emp
   return (
     <figure className={cn('w-full', className)} aria-label={title}>
       <figcaption className="sr-only">{summary ?? title}</figcaption>
+      {tableData && tableData.rows.length > 0 && (
+        <table className="sr-only">
+          <thead><tr>{tableData.header.map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
+          <tbody>
+            {tableData.rows.map((row, i) => (
+              <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       <div className="w-full" style={{ height: chartHeight }}>
         {isEmpty ? (
           <div className="flex h-full items-center justify-center text-on-surface-variant font-body text-body-md">

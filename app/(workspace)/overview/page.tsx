@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Reveal } from '@/lib/ui/reveal';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { ChartCard } from '@/components/ui/chart-card';
@@ -23,10 +22,10 @@ import type {
 } from '@/lib/contracts/http';
 
 const PERIOD_PRESETS = [
-  { id: 'bulan_ini', label: 'Bulan ini' },
-  { id: '7_hari', label: '7 hari' },
-  { id: '30_hari', label: '30 hari' },
-  { id: 'kustom', label: 'Kustom' },
+  { id: 'this_month', label: 'Bulan ini' },
+  { id: 'last_7_days', label: '7 hari' },
+  { id: 'last_30_days', label: '30 hari' },
+  { id: 'custom', label: 'Kustom' },
 ] as const;
 
 type PresetId = (typeof PERIOD_PRESETS)[number]['id'];
@@ -41,17 +40,97 @@ type GrainId = (typeof GRAINS)[number]['id'];
 
 const SELECTED_KPI_KEYS = ['total', 'successful', 'failed', 'successRate', 'failureRate'] as const;
 
+/**
+ * C-05: teruskan filter periode ke semua endpoint /api/dashboard/*.
+ * Backend (dashboardContext) menerima ?period=...&start=...&end=...
+ * Grain hanya relevan untuk /trends.
+ */
+function appendParams(url: string, params: Record<string, string>): string {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}${new URLSearchParams(params).toString()}`;
+}
+
+function buildDashboardUrl(
+  endpoint: string,
+  preset: PresetId,
+  start: string | null,
+  end: string | null,
+): string {
+  if (preset === 'custom' && start && end) {
+    return appendParams(endpoint, { period: 'custom', start, end });
+  }
+  if (preset === 'custom') {
+    return endpoint;
+  }
+  return appendParams(endpoint, { period: preset });
+}
+
+function trendsUrl(
+  endpoint: string,
+  preset: PresetId,
+  grain: GrainId,
+  start: string | null,
+  end: string | null,
+): string {
+  const base = buildDashboardUrl(endpoint, preset, start, end);
+  return appendParams(base, { grain: grain });
+}
+
+type TableData = { header: string[]; rows: string[][] };
+
+function lineTable(points: { label: string; total: number }[]): TableData {
+  return {
+    header: ['Periode', 'Total'],
+    rows: points.map((p) => [p.label, p.total.toLocaleString('id-ID')]),
+  };
+}
+
+function pieTable(items: { status: string; count: number; percent: number }[]): TableData {
+  return {
+    header: ['Status', 'Jumlah', 'Persentase'],
+    rows: items.map((i) => [i.status, i.count.toLocaleString('id-ID'), `${i.percent.toFixed(1).replace('.', ',')}%`]),
+  };
+}
+
+function barTable(items: { channelName?: string; categoryName?: string; total: number }[]): TableData {
+  return {
+    header: ['Kategori', 'Total'],
+    rows: items.map((i) => [
+      i.channelName ?? i.categoryName ?? '',
+      i.total.toLocaleString('id-ID'),
+    ]),
+  };
+}
+
 export default function OverviewPage() {
-  const [preset, setPreset] = useState<PresetId>('bulan_ini');
+  const [preset, setPreset] = useState<PresetId>('this_month');
   const [grain, setGrain] = useState<GrainId>('day');
   const [period, setPeriod] = useState<Period | null>(null);
+  const [customStart, setCustomStart] = useState<string | null>(null);
+  const [customEnd, setCustomEnd] = useState<string | null>(null);
+  // C-07: count-up hanya sekali saat muat awal; perubahan filter cukup crossfade.
+  const [filterChanged, setFilterChanged] = useState(false);
+  // C-08/C-33: entrance sekali saat mount, bukan scroll-driven.
+  const [mounted, setMounted] = useState(false);
 
-  const summary = useApi<DashboardSummaryResponse>('/api/dashboard/summary');
-  const trends = useApi<TrendsResponse>(`/api/dashboard/trends?grain=${grain}`);
-  const statusDist = useApi<StatusDistributionResponse>('/api/dashboard/status-distribution');
-  const channelPerf = useApi<ChannelPerformanceResponse>('/api/dashboard/channel-performance?metric=volume&limit=10');
-  const categoryPerf = useApi<CategoryPerformanceResponse>('/api/dashboard/category-performance');
-  const insights = useApi<InsightsResponse>('/api/dashboard/insights?limit=3');
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const summary = useApi<DashboardSummaryResponse>(buildDashboardUrl('/api/dashboard/summary', preset, customStart, customEnd));
+  const trends = useApi<TrendsResponse>(trendsUrl('/api/dashboard/trends', preset, grain, customStart, customEnd));
+  const statusDist = useApi<StatusDistributionResponse>(
+    buildDashboardUrl('/api/dashboard/status-distribution', preset, customStart, customEnd),
+  );
+  const channelPerf = useApi<ChannelPerformanceResponse>(
+    buildDashboardUrl('/api/dashboard/channel-performance?metric=volume&limit=10', preset, customStart, customEnd),
+  );
+  const categoryPerf = useApi<CategoryPerformanceResponse>(
+    buildDashboardUrl('/api/dashboard/category-performance', preset, customStart, customEnd),
+  );
+  const insights = useApi<InsightsResponse>(
+    buildDashboardUrl('/api/dashboard/insights?limit=3', preset, customStart, customEnd),
+  );
 
   useEffect(() => {
     if (summary.data?.period) setPeriod(summary.data.period);
@@ -65,10 +144,32 @@ export default function OverviewPage() {
   const kpis = summary.data?.kpis ?? [];
   const empty = summary.data?.empty ?? false;
 
+  // C-07: crossfade 150ms saat filter berubah; kunci unik memicu ulang animasi CSS.
+  const filterKey = `${preset}|${grain}|${customStart ?? ''}|${customEnd ?? ''}`;
+
+  const selectPreset = (id: string) => {
+    const next = id as PresetId;
+    setPreset(next);
+    setFilterChanged(true);
+    if (next === 'custom') {
+      setCustomStart(summary.data?.period?.start ?? customStart);
+      setCustomEnd(summary.data?.period?.end ?? customEnd);
+    }
+  };
+
+  const selectGrain = (id: string) => {
+    setGrain(id as GrainId);
+    setFilterChanged(true);
+  };
+
   return (
-    <div className="mx-auto max-w-[1240px] px-6 py-8">
+    <div
+      className={`mx-auto max-w-[1240px] px-6 py-8 transition-opacity duration-150 ease-out ${
+        mounted ? 'opacity-100' : 'opacity-0'
+      }`}
+    >
       {/* Page header */}
-      <Reveal>
+      <div>
         <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-headline-xl font-bold text-on-surface tracking-tight">Ringkasan</h1>
@@ -82,13 +183,13 @@ export default function OverviewPage() {
             <FilterChips
               chips={PERIOD_PRESETS.map((p) => ({ id: p.id, label: p.label }))}
               value={preset}
-              onChange={(id) => setPreset(id as PresetId)}
+              onChange={(id) => selectPreset(id)}
               label="Filter periode"
             />
             <FilterChips
               chips={GRAINS.map((g) => ({ id: g.id, label: g.label }))}
               value={grain}
-              onChange={(id) => setGrain(id as GrainId)}
+              onChange={(id) => selectGrain(id)}
               label="Granularitas tren"
             />
             {/* Muat ulang */}
@@ -108,10 +209,10 @@ export default function OverviewPage() {
             </button>
           </div>
         </div>
-      </Reveal>
+      </div>
 
       {/* Indikator periode parsial + sumber data */}
-      <Reveal delay={80}>
+      <div>
         <div className="mb-6 flex flex-wrap items-center gap-4 text-body-sm text-on-surface-variant">
           {summary.data?.period.isPartial && (
             <span className="inline-flex items-center gap-1.5">
@@ -121,19 +222,19 @@ export default function OverviewPage() {
           )}
           {summary.data?.dataset && <span>Sumber: {summary.data.dataset.name}</span>}
         </div>
-      </Reveal>
+      </div>
 
       {/* Empty banner */}
       {empty && !loading && (
-        <Reveal delay={120}>
+        <div>
           <div className="mb-6 rounded-md bg-surface-container-low px-4 py-3 font-body text-body-md text-on-surface-variant">
             Tidak ada transaksi pada periode ini. Pilih bulan lain untuk melihat data.
           </div>
-        </Reveal>
+        </div>
       )}
 
       {/* 5 KPI */}
-      <Reveal delay={160}>
+      <div key={`kpi-${filterKey}`} className="animate-[crossfade_150ms_ease-out_both]">
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {SELECTED_KPI_KEYS.map((key) => {
             const kpi = kpis.find((k) => k.key === key);
@@ -153,15 +254,16 @@ export default function OverviewPage() {
                       : undefined
                 }
                 loading={summary.loading}
+                animateCount={!filterChanged}
               />
             );
           })}
         </div>
-      </Reveal>
+      </div>
 
       {/* Baris chart: Tren Volume + Distribusi Status */}
-      <Reveal delay={240}>
-        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div key={`chart-${filterKey}`} className="animate-[crossfade_150ms_ease-out_both] mb-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-8">
           <ChartCard
             title="Tren Volume Transaksi"
             subtitle={trends.data ? `${trends.data.points.length} titik data` : undefined}
@@ -176,8 +278,11 @@ export default function OverviewPage() {
               series={[{ key: 'total', label: 'Total' }]}
               title="Tren Volume Transaksi"
               summary={`Volume transaksi per ${grain === 'day' ? 'hari' : grain === 'week' ? 'minggu' : 'bulan'}, ${period?.label ?? ''}`}
+              tableData={lineTable(trends.data?.points ?? [])}
             />
           </ChartCard>
+          </div>
+          <div className="lg:col-span-4">
           <ChartCard
             title="Distribusi Status"
             loading={statusDist.loading}
@@ -193,14 +298,15 @@ export default function OverviewPage() {
               }))}
               title="Distribusi Status"
               summary={`Status transaksi: ${statusDist.data?.items.map((i) => `${i.status} ${formatNumber(i.count)} (${formatPercent(i.percent)})`).join(', ') ?? ''}`}
+              tableData={pieTable(statusDist.data?.items ?? [])}
             />
           </ChartCard>
+          </div>
         </div>
-      </Reveal>
 
       {/* Performa Kanal + Insight Otomatis */}
-      <Reveal delay={320}>
-        <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div key={`perf-${filterKey}`} className="animate-[crossfade_150ms_ease-out_both] mb-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-7">
           <ChartCard
             title="Performa Kanal"
             loading={channelPerf.loading}
@@ -214,8 +320,11 @@ export default function OverviewPage() {
               series={[{ key: 'total', label: 'Volume' }]}
               title="Performa Kanal"
               summary="Volume transaksi per kanal, urut menurun"
+              tableData={barTable(channelPerf.data?.items ?? [])}
             />
           </ChartCard>
+          </div>
+          <div className="lg:col-span-5">
           <Card title="Insight Otomatis" subtitle={`${insights.data?.items.length ?? 0} temuan`}>
             {insights.loading ? (
               <div className="space-y-2">
@@ -249,11 +358,11 @@ export default function OverviewPage() {
               <p className="font-body text-body-md text-on-surface-variant">Tidak ada temuan.</p>
             )}
           </Card>
+          </div>
         </div>
-      </Reveal>
 
       {/* Performa Kategori */}
-      <Reveal delay={400}>
+      <div key={`cat-${filterKey}`} className="animate-[crossfade_150ms_ease-out_both]">
         <ChartCard
           title="Performa Kategori"
           loading={categoryPerf.loading}
@@ -267,9 +376,10 @@ export default function OverviewPage() {
             series={[{ key: 'total', label: 'Volume' }]}
             title="Performa Kategori"
             summary="Volume transaksi per kategori"
+            tableData={barTable(categoryPerf.data?.items ?? [])}
           />
         </ChartCard>
-      </Reveal>
+      </div>
     </div>
   );
 }
