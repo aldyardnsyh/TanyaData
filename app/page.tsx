@@ -122,16 +122,20 @@ export default function LandingPage() {
           </ScrollReveal>
         </section>
 
-        <SectionRule className="page-container" />
-
-        {/* S3 Cara kerja: empat langkah produk dari unggahan ke jawaban. */}
-        <section id="cara-kerja" className="page-container py-16 md:py-24">
-          <ScrollReveal>
-            <LandingSteps />
-          </ScrollReveal>
+        {/* S3 Cara kerja: band gelap (ritme selang-seling dengan fitur yang terang);
+            empat langkah dalam kolom berpemisah garis, nomor lime besar. */}
+        <section id="cara-kerja" className="relative overflow-hidden bg-forest text-porcelain">
+          <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
+          <div
+            aria-hidden="true"
+            className="glow-radial-lime absolute -bottom-40 left-1/3 h-[320px] w-[520px] max-w-none"
+          />
+          <div className="page-container relative py-16 md:py-24">
+            <ScrollReveal>
+              <LandingSteps />
+            </ScrollReveal>
+          </div>
         </section>
-
-        <SectionRule className="page-container" />
 
         {/* S4 Format yang diterima: panel gelap, tab dua kelompok (C-04 tone dark). */}
         <section id="format" className="page-container py-16 md:py-24">

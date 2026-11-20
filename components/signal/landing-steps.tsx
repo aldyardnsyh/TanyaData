@@ -1,7 +1,9 @@
 /**
  * Purpose Gate: alur produk empat langkah dari berkas menjadi jawaban yang
- * bisa dibagikan, agar pembaca paham cara kerja sebelum mencoba. Nomor besar
- * menandai urutan, bukan dekorasi.
+ * bisa dibagikan, agar pembaca paham cara kerja sebelum mencoba.
+ * Section ini sengaja band gelap agar ritme halaman selang-seling dengan
+ * section fitur yang terang (arah user: variasi antar section). Nomor besar
+ * lime menandai urutan langkah, bukan dekorasi.
  */
 const STEPS = [
   {
@@ -29,20 +31,21 @@ const STEPS = [
 export function LandingSteps() {
   return (
     <>
-      <p className="eyebrow">Cara kerja</p>
-      <h2 className="mt-s2 font-display text-title text-ink">Empat langkah dari berkas menjadi jawaban</h2>
-      <p className="mt-s2 max-w-[68ch] font-body text-body text-ink-72">
+      <p className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
+        Cara kerja
+      </p>
+      <h2 className="mt-s2 font-display text-title text-porcelain">
+        Empat langkah dari berkas menjadi jawaban
+      </h2>
+      <p className="mt-s2 max-w-[52ch] font-body text-body text-dark-muted">
         Tanpa setup, tanpa menulis query: dari unggahan ke jawaban yang bisa dibagikan.
       </p>
-      <div className="mt-s5 grid gap-s3 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-s5 grid gap-s5 md:grid-cols-4 md:gap-0 md:divide-x md:divide-[var(--hairline-dark)]">
         {STEPS.map((step) => (
-          <div
-            key={step.no}
-            className="rounded-card-lg border border-[var(--border-hairline)] bg-porcelain p-s4 shadow-lift"
-          >
-            <span className="font-mono text-title tabular text-forest">{step.no}</span>
-            <h3 className="mt-s2 font-display text-label font-semibold text-ink">{step.title}</h3>
-            <p className="mt-s2 font-body text-body text-ink-72">{step.copy}</p>
+          <div key={step.no} className="md:px-s4 first:md:pl-0 last:md:pr-0">
+            <span className="text-stat-lg text-lime text-glow-lime">{step.no}</span>
+            <h3 className="mt-s2 font-display text-label font-semibold text-porcelain">{step.title}</h3>
+            <p className="mt-s2 font-body text-body text-dark-muted">{step.copy}</p>
           </div>
         ))}
       </div>
