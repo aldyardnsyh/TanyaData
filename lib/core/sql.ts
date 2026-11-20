@@ -412,6 +412,9 @@ function buildRateCandidate(
   const params: Record<string, string | number | null> = { rateValue: categoryValue };
   const whereParts: string[] = [];
   for (const column of table.columns) {
+    // Kolom kategori sudah dipakai sebagai pembilang; jangan difilter lagi,
+    // kalau tidak numerator = denominator dan rate selalu 100%.
+    if (column.name === category.name) continue;
     if (column.semantic_role !== 'dimension' && column.semantic_role !== 'identifier') continue;
     const hit = firstMatchingValue(
       column.sample_values,
