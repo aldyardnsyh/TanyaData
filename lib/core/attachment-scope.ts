@@ -136,3 +136,13 @@ export function activeAttachmentForConversation(db: DB, conversationId: string):
     .get(conversationId) as AttachmentRow | undefined;
   return row ? rowToAttachment(row) : null;
 }
+
+/** Tempel/lepas attachment dari percakapan (FR-C.1-2): null = lepas dari konteks. */
+export function setActiveInConversation(db: DB, id: string, conversationId: string | null): Attachment {
+  const attachment = getAttachment(db, id);
+  db.prepare('UPDATE core_attachments SET active_in_conversation = ? WHERE id = ?').run(
+    conversationId,
+    id,
+  );
+  return getAttachment(db, id);
+}

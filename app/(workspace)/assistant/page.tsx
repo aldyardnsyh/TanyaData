@@ -81,7 +81,7 @@ export default function AssistantPage() {
   const [periodOverride, setPeriodOverride] = useState<{ start: string; end: string } | null>(null);
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
-  const [contextMenu, setContextMenu] = useState<'dataset' | 'date' | null>(null);
+  const [contextMenu, setContextMenu] = useState<'dataset' | 'date' | 'source' | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -165,7 +165,7 @@ export default function AssistantPage() {
       }
       const json = await res.json();
       const conv: ConversationSummary = json.conversation;
-      setDetail({ conversation: conv, messages: [] });
+      setDetail({ conversation: conv, activeAttachment: null, messages: [] });
       setActiveId(conv.id);
       setHistoryOpen(false);
       list.retry();
@@ -211,6 +211,7 @@ export default function AssistantPage() {
         const realUser: ChatMessage = { id: `${json.message.id}-u`, role: 'user', createdAt: json.message.createdAt, content: text };
         return {
           conversation: { ...prev.conversation, title: json.conversation.title, messageCount: json.conversation.messageCount },
+          activeAttachment: prev.activeAttachment,
           messages: [...withoutTemp, realUser, json.message],
         };
       });
@@ -320,6 +321,55 @@ export default function AssistantPage() {
     void fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ activeDatasetId: id }) })
       .then(() => { settings.retry(); meta.retry(); })
       .catch(() => toast({ status: 'error', message: 'Dataset gagal diganti.' }));
+  };
+
+  /** FR-C.1-2: lepas attachment aktif dari percakapan + reset periode. */
+  const detachAttachment = async () => {
+    setContextMenu(null);
+    setPeriodOverride(null);
+    setDateStart('');
+    setDateEnd('');
+    const att = detail?.activeAttachment;
+    if (!att) {
+      toast({ status: 'success', message: 'Tidak ada dokumen dalam konteks.' });
+      return;
+    }
+    try {
+      const res = await fetch(`/api/attachments/${att.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activeInConversation: null }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (activeId) await loadConversation(activeId);
+      toast({ status: 'success', message: 'Konteks dokumen dilepas. Pertanyaan berikutnya memakai seluruh sumber.' });
+    } catch (err) {
+      toast({ status: 'error', message: err instanceof Error ? err.message : 'Gagal melepas konteks.' });
+    }
+  };
+
+  /** FR-C: arahkan konteks chat ke satu dokumen READY yang sudah ada.
+   * datasetId = dataset aktif tempat chunk dokumen terindeks (retrieval
+   * memfilter per source_id di dalam dataset tersebut). */
+  const attachFromSource = async (sourceId: string, name: string) => {
+    setContextMenu(null);
+    if (!activeId) {
+      toast({ status: 'error', message: 'Mulai percakapan terlebih dahulu untuk melampirkan dokumen.' });
+      return;
+    }
+    try {
+      const res = await fetch('/api/attachments', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datasetId: activeDatasetId, sourceId, name, activeInConversation: activeId }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.error?.message ?? `HTTP ${res.status}`);
+      }
+      await loadConversation(activeId);
+      toast({ status: 'success', message: `Konteks diarahkan ke ${name}.` });
+    } catch (err) {
+      toast({ status: 'error', message: err instanceof Error ? err.message : 'Gagal melampirkan dokumen.' });
+    }
   };
 
   const applyDateRange = () => {
@@ -549,9 +599,20 @@ export default function AssistantPage() {
               <div className="mb-s2 flex flex-wrap items-center justify-between gap-s2">
                 <div className="flex flex-wrap items-center gap-s2">
                   <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark bg-porcelain/10 px-s3"><Icon name="table_chart" className="text-[14px] text-dark-muted" /><span className="max-w-[140px] truncate font-mono text-caption uppercase tracking-[0.06em] text-porcelain">{datasetName}</span></span>
-                  <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark px-s3"><Icon name="description" className="text-[14px] text-dark-muted" /><span className="font-mono text-caption uppercase tracking-[0.06em] text-dark-muted">{docCount} DOKUMEN</span></span>
+                  {detail?.activeAttachment ? (
+                    <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-lime/50 bg-porcelain/10 px-s3" title="Konteks chat diarahkan ke dokumen ini (FR-C)">
+                      <Icon name="description" className="text-[14px] text-lime" />
+                      <span className="max-w-[180px] truncate font-mono text-caption uppercase tracking-[0.06em] text-porcelain">{detail.activeAttachment.name}</span>
+                      <span className="font-mono text-[10px] uppercase text-lime">AKTIF</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark px-s3" title="Tanpa dokumen terlampir: pertanyaan memakai seluruh sumber">
+                      <Icon name="description" className="text-[14px] text-dark-muted" />
+                      <span className="font-mono text-caption uppercase tracking-[0.06em] text-dark-muted">TANPA DOKUMEN TERLAMPIR</span>
+                    </span>
+                  )}
                 </div>
-                <button type="button" onClick={() => { setPeriodOverride(null); setDateStart(''); setDateEnd(''); }} className="touch-44 inline-flex items-center gap-s1 font-body text-caption text-dark-muted transition-colors hover:text-porcelain focus-ring"><Icon name="close" className="text-[14px]" /> Hapus konteks</button>
+                <button type="button" onClick={() => void detachAttachment()} className="touch-44 inline-flex items-center gap-s1 font-body text-caption text-dark-muted transition-colors hover:text-porcelain focus-ring"><Icon name="close" className="text-[14px]" /> Hapus konteks</button>
               </div>
               <textarea
                 ref={textareaRef} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKeyDown}
@@ -563,6 +624,37 @@ export default function AssistantPage() {
                 <div className="flex items-center gap-s1">
                   <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt,.md" className="sr-only" aria-label="Lampirkan dokumen" onChange={(e) => void attachDocument(e)} />
                   <button type="button" aria-label="Lampirkan dokumen" onClick={() => fileInputRef.current?.click()} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="attach_file" className="text-[20px]" /></button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      aria-label="Lampirkan dari sumber yang sudah ada"
+                      aria-expanded={contextMenu === 'source'}
+                      onClick={() => setContextMenu(contextMenu === 'source' ? null : 'source')}
+                      className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"
+                    >
+                      <Icon name="folder_open" className="text-[20px]" />
+                    </button>
+                    {contextMenu === 'source' && (
+                      <div role="listbox" aria-label="Pilih dokumen sebagai konteks chat" className="absolute bottom-full left-0 z-dropdown mb-s1 max-h-64 w-72 overflow-y-auto rounded-control border border-[var(--border-hairline)] bg-porcelain p-s2 elevated">
+                        {(docs.data?.items ?? []).length === 0 && (
+                          <p className="px-s2 py-s2 font-body text-caption text-ink-72">Belum ada dokumen READY. Unggah dari Sumber Data.</p>
+                        )}
+                        {(docs.data?.items ?? []).map((doc) => (
+                          <button
+                            key={doc.id}
+                            type="button"
+                            role="option"
+                            aria-selected={detail?.activeAttachment?.name === doc.name}
+                            onClick={() => void attachFromSource(doc.id, doc.name)}
+                            className="block w-full rounded-control px-s2 py-s2 text-left transition-colors hover:bg-forest-08 focus-ring"
+                          >
+                            <span className="block truncate font-body text-caption text-ink">{doc.name}</span>
+                            <span className="mono-meta">{doc.format.toUpperCase()} · READY</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div className="relative">
                     <button type="button" aria-label="Pilih dataset" aria-expanded={contextMenu === 'dataset'} onClick={() => setContextMenu(contextMenu === 'dataset' ? null : 'dataset')} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="database" className="text-[20px]" /></button>
                     {contextMenu === 'dataset' && (

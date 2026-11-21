@@ -9,6 +9,7 @@ import type {
 import { notFound } from '@/lib/errors';
 import { nowJakartaIso, truncateText } from '@/lib/date';
 import { datasetName, resolveScope } from '@/lib/analytics/scope';
+import { activeAttachmentForConversation } from '@/lib/core/attachment-scope';
 
 type ConversationRow = {
   id: string;
@@ -120,6 +121,9 @@ export function conversationDetail(db: DB, id: string): ConversationDetailRespon
   const messages = db
     .prepare('SELECT * FROM messages WHERE conversation_id = ? ORDER BY seq ASC')
     .all(id) as MessageRow[];
+  // FR-C: attachment aktif menentukan konteks chat; diekspos agar UI bisa
+  // menunjukkan dokumen mana yang sedang berada dalam lingkup percakapan.
+  const active = activeAttachmentForConversation(db, id);
 
   return {
     conversation: summaryFrom(db, row, {
@@ -127,6 +131,7 @@ export function conversationDetail(db: DB, id: string): ConversationDetailRespon
       lastMessageAt: messages.length ? messages[messages.length - 1].created_at : null,
       preview: [...messages].reverse().find((m) => m.role === 'assistant')?.content ?? null,
     }),
+    activeAttachment: active ? { id: active.id, name: active.name, docType: active.docType } : null,
     messages: messages.map(hydrateMessage),
   };
 }

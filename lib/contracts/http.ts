@@ -285,6 +285,8 @@ export type ConversationListResponse = {
 export type ConversationCreateResponse = { conversation: ConversationSummary };
 export type ConversationDetailResponse = {
   conversation: ConversationSummary;
+  /** FR-C: attachment yang aktif untuk percakapan ini (konteks chat). */
+  activeAttachment: { id: string; name: string; docType: string } | null;
   messages: ChatMessage[];
 };
 export type SendMessageResponse = {
