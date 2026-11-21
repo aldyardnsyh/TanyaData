@@ -147,6 +147,64 @@ function ensureDocuments(db: DB): void {
   upsertMeta(db, DOCS_INDEXED_AT, now);
 }
 
+/**
+ * C2 — unifikasi chunk store: cermin dokumen workspace (data_sources +
+ * document_chunks) ke tabel inti (core_datasets/core_documents/core_chunks)
+ * sehingga attachment FR-C, scoping per dokumen, dan retrieval chat membaca
+ * SATU sumber yang sama. Idempoten: sumber yang sudah terdaftar dilewati.
+ */
+function ensureDocumentsCoreMirror(db: DB): void {
+  const sources = db
+    .prepare(
+      `SELECT * FROM data_sources
+        WHERE kind = 'document' AND status = 'READY'
+          AND id NOT IN (SELECT id FROM core_datasets)`,
+    )
+    .all() as Array<Record<string, unknown>>;
+  for (const row of sources) {
+    const id = String(row.id);
+    const chunks = db
+      .prepare('SELECT * FROM document_chunks WHERE source_id = ? ORDER BY chunk_index')
+      .all(id) as Array<{ section: string; page: number | null; content: string; char_count: number; ocr_status: string; confidence: number | null }>;
+    if (chunks.length === 0) continue;
+    const now = nowJakartaIso();
+    const docId = `doc_${id}`;
+    const mirror = db.transaction(() => {
+      db.prepare(
+        `INSERT INTO core_datasets(id, name, kind, source_type, doc_type, status, schema_json, row_count, quality_report, storage_path, size_bytes, is_demo, created_at, updated_at)
+         VALUES (?, ?, 'document', ?, 'general', 'READY', '{}', 0, '{}', ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO NOTHING`,
+      ).run(id, String(row.name), String(row.format ?? 'txt'), row.storage_path ?? null, Number(row.size_bytes ?? 0), 0, now, now);
+      db.prepare(
+        `INSERT INTO core_documents(id, dataset_id, doc_type, mime, pages, sections_json, source_path, created_at)
+         VALUES (?, ?, 'general', NULL, ?, '[]', ?, ?)
+         ON CONFLICT(id) DO NOTHING`,
+      ).run(docId, id, Math.max(1, ...chunks.map((c) => c.page ?? 1), 1), row.storage_path ?? null, now);
+      db.prepare('DELETE FROM core_chunks WHERE dataset_id = ?').run(id);
+      const insert = db.prepare(
+        `INSERT INTO core_chunks
+           (document_id, dataset_id, section_path, page, text, token_count, char_count, level, parent_id, embedding_json,
+            content_hash, page_span, clean_version, clean_flags, ocr_status, confidence)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'child', NULL, NULL, NULL, NULL, 1, '[]', ?, ?)`,
+      );
+      for (const chunk of chunks) {
+        insert.run(
+          docId,
+          id,
+          chunk.section ?? '',
+          chunk.page ?? null,
+          chunk.content,
+          Math.max(1, Math.ceil((chunk.char_count ?? 0) / 4)),
+          chunk.char_count ?? 0,
+          chunk.ocr_status ?? 'ok',
+          chunk.confidence ?? 1,
+        );
+      }
+    });
+    mirror();
+  }
+}
+
 export function ensureWorkspaceReady(): DB {
   const db = getWorkspaceDb();
   if (globalThis.__tanyadataReady) return db;
@@ -161,6 +219,7 @@ export function ensureWorkspaceReady(): DB {
   ensureSeedSource(db);
   registerSeedDataset(db);
   ensureDocuments(db);
+  ensureDocumentsCoreMirror(db);
   upsertMeta(db, 'ready_at', nowJakartaIso());
 
   globalThis.__tanyadataReady = true;
