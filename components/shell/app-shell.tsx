@@ -19,6 +19,7 @@ export function ExpandableRail({ activeKey }: { activeKey: string }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-sticky hidden w-rail flex-col border-r border-[var(--border-hairline)] bg-porcelain md:flex xl:w-rail-expanded" aria-label="Navigasi samping">
       <div className="flex h-14 items-center gap-s2 border-b border-[var(--border-hairline)] px-s3">
+        <span className="state-dot state-dot-active" aria-hidden="true" />
         <Icon name="query_stats" className="text-[20px] text-forest" />
         <span className="hidden font-display text-label font-semibold text-ink xl:inline">TanyaData</span>
       </div>
