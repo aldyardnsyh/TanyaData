@@ -77,7 +77,7 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
         }
       />
 
-      <section aria-label="Kesimpulan" className="surface mb-s5 p-s4">
+      <section aria-label="Kesimpulan" className="surface mb-s5 p-s4 transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none">
         <div className="flex flex-wrap items-start justify-between gap-s2">
           <div className="min-w-0">
             <StatusBadge label={CLAIM_LABEL[claimLevel] ?? claimLevel} tone={claimLevel === 'proven' ? 'active' : 'neutral'} />
@@ -90,7 +90,7 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
       <section aria-label="Perbandingan" className="mb-s5"><BentoGrid items={summaryItems} /></section>
 
       <div className="grid-dashboard mb-s5">
-        <section className="surface col-span-4 p-s4 xl:col-span-6" aria-labelledby="d-kontribusi">
+        <section className="surface col-span-4 p-s4 transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none xl:col-span-6" aria-labelledby="d-kontribusi">
           <h2 id="d-kontribusi" className="font-display text-title text-ink">Kontribusi per kanal</h2>
           <SectionRule className="mb-s3 mt-s2" />
           <div className="space-y-s3">
@@ -108,7 +108,7 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
           </div>
         </section>
 
-        <section className="surface col-span-4 p-s4 xl:col-span-6" aria-labelledby="d-kode">
+        <section className="surface col-span-4 p-s4 transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none xl:col-span-6" aria-labelledby="d-kode">
           <h2 id="d-kode" className="font-display text-title text-ink">Kode kegagalan</h2>
           <SectionRule className="mb-s3 mt-s2" />
           <div className="overflow-x-auto">
@@ -128,7 +128,7 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
         </section>
       </div>
 
-      <section className="surface mb-s5 p-s4" aria-labelledby="d-bukti">
+      <section className="surface mb-s5 p-s4 transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none" aria-labelledby="d-bukti">
         <h2 id="d-bukti" className="font-display text-title text-ink">Temuan dan bukti</h2>
         <SectionRule className="mb-s4 mt-s2" />
         <div className="grid-dashboard">
@@ -150,7 +150,7 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
         )}
       </section>
 
-      <section id="timeline" className="surface mb-s5 p-s4" aria-labelledby="d-timeline">
+      <section id="timeline" className="surface mb-s5 p-s4 transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none" aria-labelledby="d-timeline">
         <h2 id="d-timeline" className="font-display text-title text-ink">Linimasa perubahan</h2>
         <SectionRule className="mb-s4 mt-s2" />
         {timelineNodes.length === 0 ? (

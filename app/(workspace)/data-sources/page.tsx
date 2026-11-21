@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import type {
   ApiErrorCode,
@@ -14,8 +14,6 @@ import type {
 } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { formatNumber } from '@/lib/ui/format';
-import { Icon } from '@/components/ui/icons';
-import { PageHeading } from '@/components/signal/page-heading';
 import { SectionRule } from '@/components/signal/section-rule';
 import { BentoGrid, type BentoItem } from '@/components/signal/bento-grid';
 import { AnimatedTabs } from '@/components/signal/animated-tabs';
@@ -80,6 +78,9 @@ export default function DataSourcesPage() {
   const totalBytes = items.reduce((sum, s) => sum + (s.sizeBytes ?? 0), 0);
   const totalRows = items.reduce((sum, s) => sum + (s.rowCount ?? 0), 0);
   const totalChunks = items.reduce((sum, s) => sum + (s.chunkCount ?? 0), 0);
+  const activeCount = items.filter((s) => s.status === 'READY').length;
+  const datasetName = meta.data?.data.activeDataset.name;
+  const ragLabel = meta.data?.capabilities.rag.toUpperCase() ?? 'FTS5';
 
   const tabs = [
     { id: 'all', label: `Semua (${items.length})` },
@@ -204,6 +205,13 @@ export default function DataSourcesPage() {
     { id: 'status', label: 'Status pemrosesan', value: (counts?.failed ?? 0) > 0 ? `${counts?.failed} perlu diperiksa` : 'Semua siap', source: 'SQLITE · FTS5', span: 'support' },
   ];
 
+  // Pasangan metrik kecil di sisi kanan band — status ringkas dari API sumber.
+  const bannerStats = [
+    { id: 'docs', label: 'Dokumen terindeks', value: num(counts?.document) },
+    { id: 'active', label: 'Sumber aktif', value: num(activeCount) },
+    { id: 'processing', label: 'Sumber diproses', value: num(counts?.processing) },
+  ];
+
   const cards: RevealCard[] = visible.map((source) => ({
     id: source.id,
     title: source.name,
@@ -231,101 +239,207 @@ export default function DataSourcesPage() {
   const previewRows = preview?.rows ?? [];
 
   return (
-    <div className="page-container py-s5">
-      <PageHeading
-        title="Sumber Data"
-        caption="Kelola dataset dan dokumen yang menjadi dasar setiap jawaban."
-        meta={`SQLITE · SQL + ${meta.data?.capabilities.rag.toUpperCase() ?? 'FTS5'}`}
-      />
-
-      <section aria-label="Ringkasan sumber" className="mb-s5">
-        <BentoGrid items={summaryItems} state={sources.loading ? 'loading' : sources.error ? 'error' : 'default'} errorTitle="Ringkasan gagal dimuat." onRetry={sources.retry} />
-      </section>
-
-      <section aria-labelledby="dropzone-heading" className="mb-s5">
-        <h2 id="dropzone-heading" className="font-display text-title text-ink">Unggah sumber</h2>
-        <SectionRule className="mb-s3 mt-s2" />
-        <Dropzone onFiles={(files) => void upload(files)} busy={uploading} />
-        {(uploading || job) && (
-          <div className="mt-s3 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3">
-            <div className="flex items-center justify-between gap-s2">
-              <span className="min-w-0 truncate font-body text-body text-ink">{uploading ? 'Mengunggah berkas' : job?.name}</span>
-              <span className="mono-meta">{uploading ? 'MENGUNGGAH' : `${job?.step ?? 'MEMPROSES'} · ${job?.progress ?? 0}%`}</span>
-            </div>
-            <div className="mt-s2 h-s2 w-full overflow-hidden rounded-control bg-forest-08" role="progressbar" aria-valuenow={uploading ? undefined : job?.progress} aria-valuemin={0} aria-valuemax={100}>
-              <div className="h-full bg-forest transition-[width] duration-[var(--motion-slow)]" style={{ width: uploading ? '33%' : `${job?.progress ?? 0}%` }} />
-            </div>
-          </div>
-        )}
-      </section>
-
-      <section aria-labelledby="sumber-heading" className="mb-s5">
-        <div className="mb-s3 flex flex-wrap items-end justify-between gap-s2">
-          <h2 id="sumber-heading" className="font-display text-title text-ink">Sumber terdaftar</h2>
-          <span className="mono-meta">{visible.length} SUMBER</span>
-        </div>
-        <AnimatedTabs tabs={tabs} activeId={filter} onChange={setFilter} className="mb-s3" />
-        <LayoutGrid
-          cards={cards}
-          state={sources.loading ? 'loading' : sources.error ? 'error' : visible.length === 0 ? 'empty' : 'default'}
-          emptyTitle="Belum ada sumber pada filter ini. Unggah berkas untuk menambah sumber."
-          emptyAction={{ label: 'Unggah berkas', onClick: () => document.getElementById('dropzone-heading')?.scrollIntoView({ behavior: 'smooth' }) }}
-          errorTitle="Daftar sumber gagal dimuat."
-          onRetry={sources.retry}
+    <>
+      {/* Band gelap struktural: kepala halaman + status ringkas sumber + filter
+          menyatu di satu band, idiom band Ringkasan (grid + glow lime). */}
+      <section data-nav-theme="dark" aria-label="Ringkasan sumber data" className="relative overflow-hidden bg-forest text-porcelain">
+        <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
+        <div
+          aria-hidden="true"
+          className="glow-radial-lime absolute -right-24 -top-28 h-[320px] w-[440px] max-w-none"
         />
+        <div className="page-container relative pb-s5 pt-s5">
+          <p className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
+            {datasetName ? `TanyaData · ${datasetName}` : 'TanyaData'}
+          </p>
+          <h1 className="mt-s2 font-display text-display text-porcelain">Sumber Data</h1>
+          <p className="mt-s2 max-w-[52ch] font-body text-body text-dark-muted">
+            Kelola dataset dan dokumen yang menjadi dasar setiap jawaban.
+          </p>
+
+          <div className="mt-s5 grid items-end gap-s4 lg:grid-cols-12">
+            <div className="min-w-0 lg:col-span-5">
+              {sources.loading && (
+                <div aria-busy="true" aria-label="Memuat status sumber">
+                  <div className="animate-skeleton h-s5 w-40 rounded-control bg-porcelain/10" aria-hidden="true" />
+                  <div className="animate-skeleton mt-s2 h-s6 w-56 rounded-control bg-porcelain/10" aria-hidden="true" />
+                </div>
+              )}
+              {sources.error && (
+                <div role="alert" className="flex flex-col items-start gap-s2">
+                  <span className="inline-flex items-center gap-s2">
+                    <span className="state-dot state-dot-error" aria-hidden="true" />
+                    <span className="font-body text-body text-porcelain">Ringkasan sumber gagal dimuat.</span>
+                  </span>
+                  <button type="button" onClick={sources.retry} className="touch-44 rounded-control border border-hairline-dark px-s3 font-display text-label font-semibold text-porcelain hover:border-porcelain focus-ring">
+                    Coba lagi
+                  </button>
+                </div>
+              )}
+              {!sources.loading && !sources.error && (
+                <>
+                  <p className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
+                    Sumber terdaftar
+                  </p>
+                  <p className="text-stat-lg text-lime text-glow-lime">{num(items.length)}</p>
+                  <p className="mt-s2 font-mono text-[11px] uppercase tracking-[0.06em] text-dark-muted">
+                    SQLITE · SQL + {ragLabel}
+                  </p>
+                </>
+              )}
+            </div>
+            <dl className="grid grid-cols-1 gap-s4 sm:grid-cols-3 lg:col-span-7">
+              {bannerStats.map((item) => (
+                <div key={item.id} className="min-w-0">
+                  <dt className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">{item.label}</dt>
+                  <dd className="mt-s1 font-body text-metric tabular text-porcelain">
+                    {sources.loading ? (
+                      <span className="animate-skeleton inline-block h-s5 w-24 rounded-control bg-porcelain/10" aria-hidden="true" />
+                    ) : sources.error ? (
+                      '—'
+                    ) : (
+                      item.value
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          <div className="mt-s5 max-w-2xl">
+            <AnimatedTabs
+              tabs={tabs}
+              activeId={filter}
+              onChange={setFilter}
+              tone="dark"
+              state={sources.loading ? 'loading' : 'default'}
+            />
+          </div>
+        </div>
       </section>
 
-      {/* Tabel validasi / pratinjau. */}
-      <section aria-labelledby="validasi-heading">
-        <div className="mb-s3 flex flex-wrap items-end justify-between gap-s2">
-          <div>
-            <h2 id="validasi-heading" className="font-display text-title text-ink">Pratinjau validasi</h2>
-            <p className="mt-s1 font-body text-caption text-ink-72">Baris pertama dari sumber yang dipilih. Angka berasal dari berkas asli.</p>
-          </div>
-          {previewDetail && <span className="mono-meta">{previewDetail.source.name.toUpperCase()} · {num(preview?.rowCount)} BARIS</span>}
-        </div>
-        <SectionRule className="mb-s3" />
-        {previewLoading ? (
-          <div className="skeleton h-40 w-full" aria-busy="true" />
-        ) : previewError ? (
-          <div className="flex flex-col items-start gap-s2 surface p-s4" role="alert">
-            <span className="inline-flex items-center gap-s2"><StatusBadge label="Gagal" tone="error" /><span className="font-body text-body text-ink">{previewError}</span></span>
-            {previewId && <button type="button" onClick={() => void loadPreview(previewId, previewLimit)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>}
-          </div>
-        ) : !previewDetail ? (
-          <div className="surface flex items-center gap-s2 p-s4"><StatusBadge label="Belum ada pratinjau" tone="neutral" /><span className="font-body text-body text-ink-72">Pilih sumber untuk melihat pratinjau.</span></div>
-        ) : previewRows.length === 0 ? (
-          <div className="surface flex items-center gap-s2 p-s4"><StatusBadge label="Kosong" tone="neutral" /><span className="font-body text-body text-ink-72">Tidak ada baris untuk ditampilkan.</span></div>
-        ) : (
-          <div className="surface overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left">
-                <caption className="sr-only">Pratinjau {previewDetail.source.name}</caption>
-                <thead><tr className="bg-forest-08"><th scope="col" className="px-s3 py-s2 font-body text-caption text-ink-72">#</th>{previewColumns.map((col) => <th key={col.key} scope="col" className="whitespace-nowrap px-s3 py-s2 font-body text-caption text-ink-72">{col.label}</th>)}</tr></thead>
-                <tbody>
-                  {previewRows.map((row, i) => (
-                    <tr key={i} className="border-t border-[var(--border-hairline)]">
-                      <td className="px-s3 py-s2 font-body text-caption tabular text-ink-72">{i + 1}</td>
-                      {previewColumns.map((col) => {
-                        const value = row[col.key];
-                        const isAmount = col.key.toLowerCase().includes('amount') && typeof value === 'number';
-                        return <td key={col.key} className="whitespace-nowrap px-s3 py-s2 font-body text-caption tabular text-ink">{isAmount ? `Rp ${formatNumber(value as number)}` : value == null ? <span className="text-ink-72">null</span> : String(value)}</td>;
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* Zona kerja terang: panel unggah, ringkasan Bento, grid sumber, tabel validasi. */}
+      <div className="page-container pb-s6" data-nav-theme="light">
+        {/* Panel fokus gelap kedua: unggah. Dropzone existing di dalam band gelap
+            rounded-card-lg (grid + glow diklip di lapisan dekorasi bersarang);
+            petunjuk di atas gelap dibaca lewat override presentasi di wrapper. */}
+        <section aria-labelledby="dropzone-heading" className="mt-s5">
+          <div className="relative rounded-card-lg border border-hairline-dark bg-forest p-s3 shadow-float md:p-s4">
+            <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-card-lg">
+              <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
+              <div aria-hidden="true" className="glow-radial-lime absolute -right-16 -top-20 h-[240px] w-[360px]" />
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-s2 border-t border-[var(--border-hairline)] px-s3 py-s2">
-              <span className="mono-meta">MENAMPILKAN {previewRows.length} DARI {num(preview?.rowCount)} BARIS</span>
-              <div className="flex flex-wrap gap-s2">
-                <button type="button" disabled={!preview?.truncated || previewLoading} onClick={() => previewId && void loadPreview(previewId, 50)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring disabled:opacity-50">Muat 50 baris</button>
-                <Link href="/assistant" className="touch-44 inline-flex items-center rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring">Tanya data ini</Link>
+            <div className="relative">
+              <div className="mb-s3 flex flex-wrap items-end justify-between gap-s2">
+                <div>
+                  <h2 id="dropzone-heading" className="font-display text-title text-porcelain">Unggah sumber</h2>
+                  <p className="mt-s1 font-body text-caption text-dark-muted">Tarik berkas ke panel atau pilih dari perangkat; pemrosesan dimulai otomatis.</p>
+                </div>
+                <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-dark-muted">MAKS 25 MB · CSV XLSX PDF DOCX TXT MD</span>
+              </div>
+              <Dropzone
+                onFiles={(files) => void upload(files)}
+                busy={uploading}
+                className="[--border-hairline:var(--hairline-dark)] [&_.text-ink]:text-porcelain [&_.text-ink-72]:text-dark-muted [&_.text-forest]:text-lime [&_.bg-forest-08]:bg-porcelain/10"
+              />
+              {(uploading || job) && (
+                <div className="mt-s3 rounded-control border border-hairline-dark bg-porcelain/10 p-s3">
+                  <div className="flex items-center justify-between gap-s2">
+                    <span className="min-w-0 truncate font-body text-body text-porcelain">{uploading ? 'Mengunggah berkas' : job?.name}</span>
+                    <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-dark-muted">{uploading ? 'MENGUNGGAH' : `${job?.step ?? 'MEMPROSES'} · ${job?.progress ?? 0}%`}</span>
+                  </div>
+                  <div className="mt-s2 h-s2 w-full overflow-hidden rounded-control bg-porcelain/10" role="progressbar" aria-valuenow={uploading ? undefined : job?.progress} aria-valuemin={0} aria-valuemax={100}>
+                    <div className="h-full bg-lime transition-[width] duration-[var(--motion-slow)]" style={{ width: uploading ? '33%' : `${job?.progress ?? 0}%` }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <SectionRule className="mt-s5" />
+
+        {/* Ringkasan sumber: Bento metrik pendukung. */}
+        <section aria-label="Ringkasan sumber" className="mt-s5">
+          <BentoGrid items={summaryItems} state={sources.loading ? 'loading' : sources.error ? 'error' : 'default'} errorTitle="Ringkasan gagal dimuat." onRetry={sources.retry} />
+        </section>
+
+        <SectionRule className="mt-s5" />
+
+        {/* Sumber terdaftar: reveal grid dengan hover lift bawaan LayoutGrid. */}
+        <section aria-labelledby="sumber-heading" className="mt-s5">
+          <div className="mb-s3 flex flex-wrap items-end justify-between gap-s2">
+            <div>
+              <h2 id="sumber-heading" className="font-display text-title text-ink">Sumber terdaftar</h2>
+              <p className="mt-s1 font-body text-caption text-ink-72">Filter di kepala band; pilih sumber untuk pratinjau, indeks ulang, atau penghapusan.</p>
+            </div>
+            <span className="mono-meta">{visible.length} SUMBER</span>
+          </div>
+          <SectionRule className="mb-s4" />
+          <LayoutGrid
+            cards={cards}
+            state={sources.loading ? 'loading' : sources.error ? 'error' : visible.length === 0 ? 'empty' : 'default'}
+            emptyTitle="Belum ada sumber pada filter ini. Unggah berkas untuk menambah sumber."
+            emptyAction={{ label: 'Unggah berkas', onClick: () => document.getElementById('dropzone-heading')?.scrollIntoView({ behavior: 'smooth' }) }}
+            errorTitle="Daftar sumber gagal dimuat."
+            onRetry={sources.retry}
+          />
+        </section>
+
+        <SectionRule className="mt-s5" />
+
+        {/* Tabel validasi / pratinjau: data-table existing dalam kartu rounded-card-lg. */}
+        <section aria-labelledby="validasi-heading" className="mt-s5">
+          <div className="mb-s3 flex flex-wrap items-end justify-between gap-s2">
+            <div>
+              <h2 id="validasi-heading" className="font-display text-title text-ink">Pratinjau validasi</h2>
+              <p className="mt-s1 font-body text-caption text-ink-72">Baris pertama dari sumber yang dipilih. Angka berasal dari berkas asli.</p>
+            </div>
+            {previewDetail && <span className="mono-meta">{previewDetail.source.name.toUpperCase()} · {num(preview?.rowCount)} BARIS</span>}
+          </div>
+          <SectionRule className="mb-s4" />
+          {previewLoading ? (
+            <div className="skeleton h-40 w-full rounded-card-lg" aria-busy="true" />
+          ) : previewError ? (
+            <div className="flex flex-col items-start gap-s2 surface rounded-card-lg p-s4" role="alert">
+              <span className="inline-flex items-center gap-s2"><StatusBadge label="Gagal" tone="error" /><span className="font-body text-body text-ink">{previewError}</span></span>
+              {previewId && <button type="button" onClick={() => void loadPreview(previewId, previewLimit)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>}
+            </div>
+          ) : !previewDetail ? (
+            <div className="surface flex items-center gap-s2 rounded-card-lg p-s4"><StatusBadge label="Belum ada pratinjau" tone="neutral" /><span className="font-body text-body text-ink-72">Pilih sumber untuk melihat pratinjau.</span></div>
+          ) : previewRows.length === 0 ? (
+            <div className="surface flex items-center gap-s2 rounded-card-lg p-s4"><StatusBadge label="Kosong" tone="neutral" /><span className="font-body text-body text-ink-72">Tidak ada baris untuk ditampilkan.</span></div>
+          ) : (
+            <div className="surface overflow-hidden rounded-card-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left">
+                  <caption className="sr-only">Pratinjau {previewDetail.source.name}</caption>
+                  <thead><tr className="bg-forest-08"><th scope="col" className="px-s3 py-s2 font-body text-caption text-ink-72">#</th>{previewColumns.map((col) => <th key={col.key} scope="col" className="whitespace-nowrap px-s3 py-s2 font-body text-caption text-ink-72">{col.label}</th>)}</tr></thead>
+                  <tbody>
+                    {previewRows.map((row, i) => (
+                      <tr key={i} className="border-t border-[var(--border-hairline)]">
+                        <td className="px-s3 py-s2 font-body text-caption tabular text-ink-72">{i + 1}</td>
+                        {previewColumns.map((col) => {
+                          const value = row[col.key];
+                          const isAmount = col.key.toLowerCase().includes('amount') && typeof value === 'number';
+                          return <td key={col.key} className="whitespace-nowrap px-s3 py-s2 font-body text-caption tabular text-ink">{isAmount ? `Rp ${formatNumber(value as number)}` : value == null ? <span className="text-ink-72">null</span> : String(value)}</td>;
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-s2 border-t border-[var(--border-hairline)] px-s3 py-s2">
+                <span className="mono-meta">MENAMPILKAN {previewRows.length} DARI {num(preview?.rowCount)} BARIS</span>
+                <div className="flex flex-wrap gap-s2">
+                  <button type="button" disabled={!preview?.truncated || previewLoading} onClick={() => previewId && void loadPreview(previewId, 50)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring disabled:opacity-50">Muat 50 baris</button>
+                  <Link href="/assistant" className="touch-44 inline-flex items-center rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring">Tanya data ini</Link>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      </div>
 
       {deleteTarget && (
         <div className="fixed inset-0 z-modal flex items-center justify-center p-s3">
@@ -340,6 +454,6 @@ export default function DataSourcesPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
