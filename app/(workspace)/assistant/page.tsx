@@ -16,10 +16,8 @@ import type {
 } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { useI18n } from '@/lib/ui/i18n-provider';
-import { formatNumber } from '@/lib/ui/format';
 import { normalizeChatOutputs } from '@/lib/ui/adaptive-output';
 import { Icon } from '@/components/ui/icons';
-import { PageHeading } from '@/components/signal/page-heading';
 import { SectionRule } from '@/components/signal/section-rule';
 import { StatusDot } from '@/components/signal/status-dot';
 import { TextGenerate } from '@/components/signal/text-generate';
@@ -352,207 +350,243 @@ export default function AssistantPage() {
   const sensitive = Boolean(shareTarget?.sources?.some((s) => s.kind === 'document'));
 
   return (
-    <div className="flex w-full flex-col">
-      <div className="page-container pt-s5">
-        <PageHeading
-          eyebrow="Asisten · analisis percakapan"
-          title="Asisten"
-          caption="Ajukan pertanyaan metrik. Setiap jawaban menyertakan sumber yang mendasarinya."
-          meta={`PERIODE · ${periodLabel.toUpperCase()} · ${modeLabel.toUpperCase()}`}
-          actions={
-            <>
-              <button type="button" onClick={() => void newConversation()} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink transition-colors hover:border-forest focus-ring">
+    <>
+      {/* Band gelap struktural: kepala halaman + konteks percakapan aktif menyatu
+          di satu band, idiom landing (grid + glow lime) seperti band Ringkasan.
+          Kontrol kepala halaman (percakapan baru, riwayat) ikut di sini. */}
+      <section data-nav-theme="dark" aria-label="Asisten analisis percakapan" className="relative overflow-hidden bg-forest text-porcelain">
+        <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
+        <div
+          aria-hidden="true"
+          className="glow-radial-lime absolute -right-24 -top-28 h-[320px] w-[440px] max-w-none"
+        />
+        <div className="page-container relative pb-s5 pt-s5">
+          <p className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
+            TanyaData · {datasetName}
+          </p>
+          <h1 className="mt-s2 font-display text-display text-porcelain">Asisten</h1>
+          <p className="mt-s2 max-w-[52ch] font-body text-body text-dark-muted">
+            Ajukan pertanyaan metrik. Setiap jawaban menyertakan sumber yang mendasarinya.
+          </p>
+
+          <div className="mt-s5 flex flex-wrap items-end justify-between gap-s4">
+            {/* Konteks aktif: percakapan berjalan + attachment/dataset/periode dari API. */}
+            <div className="flex min-w-0 flex-col gap-s2">
+              <span className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
+                Percakapan aktif
+              </span>
+              {detailLoading ? (
+                <span className="animate-skeleton h-s6 w-56 rounded-control bg-porcelain/10" aria-hidden="true" />
+              ) : (
+                <span className="truncate font-display text-title text-porcelain">{activeTitle}</span>
+              )}
+              <div className="flex flex-wrap items-center gap-s2">
+                <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark bg-porcelain/10 px-s3">
+                  <Icon name="table_chart" className="text-[14px] text-dark-muted" />
+                  <span className="max-w-[180px] truncate font-mono text-caption uppercase tracking-[0.06em] text-porcelain">{datasetName}</span>
+                </span>
+                <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark px-s3">
+                  <Icon name="description" className="text-[14px] text-dark-muted" />
+                  <span className="font-mono text-caption uppercase tracking-[0.06em] text-dark-muted">{docCount} DOKUMEN</span>
+                </span>
+                <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark px-s3">
+                  <Icon name="date_range" className="text-[14px] text-dark-muted" />
+                  <span className="font-mono text-caption uppercase tracking-[0.06em] text-dark-muted">PERIODE · {periodLabel.toUpperCase()}</span>
+                </span>
+              </div>
+            </div>
+            {/* Kontrol kepala halaman, skin gelap band. */}
+            <div className="flex flex-wrap items-center gap-s2">
+              <button type="button" onClick={() => void newConversation()} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-hairline-dark px-s3 font-display text-label font-semibold text-porcelain transition-colors hover:border-porcelain focus-ring">
                 <Icon name="add" className="text-[16px]" /> Percakapan baru
               </button>
-              <button type="button" onClick={() => setHistoryOpen(true)} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink transition-colors hover:border-forest focus-ring lg:hidden" aria-label="Riwayat percakapan">
+              <button type="button" onClick={() => setHistoryOpen(true)} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-hairline-dark px-s3 font-display text-label font-semibold text-porcelain transition-colors hover:border-porcelain focus-ring lg:hidden" aria-label="Riwayat percakapan">
                 <Icon name="history" className="text-[18px]" /> Riwayat
               </button>
-            </>
-          }
-        />
-        <SectionRule className="mb-s4" />
-      </div>
-
-      <div className="page-container flex w-full flex-col items-start gap-s4 xl:flex-row">
-        {/* Riwayat: rail 72 di 1024, kolom 3 di desktop, sheet di 390. */}
-        <aside className="hidden w-full shrink-0 flex-col gap-s2 xl:flex xl:w-[24%]" aria-label="Daftar percakapan">
-          <div className="flex items-center justify-between">
-            <span className="mono-meta">PERCAKAPAN · {conversations.length}</span>
-          </div>
-          {list.loading && <div className="skeleton h-40 w-full" aria-busy="true" />}
-          {list.error && (
-            <div className="flex flex-col items-start gap-s2" role="alert">
-              <span className="inline-flex items-center gap-s2"><StatusDot tone="error" /><span className="font-body text-caption text-ink">{list.error}</span></span>
-              <button type="button" onClick={list.retry} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>
             </div>
-          )}
-          {!list.loading && !list.error && conversations.length === 0 && (
-            <p className="font-body text-caption text-ink-72">Belum ada percakapan. Mulai pertanyaan pertama.</p>
-          )}
-          <div className="flex flex-col gap-s1">
-            {conversations.map((conv) => (
-              <div key={conv.id} className={`group flex items-start gap-s1 rounded-control border transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none ${activeId === conv.id ? 'border-forest bg-forest-08' : 'border-[var(--border-hairline)] bg-porcelain'}`}>
-                <button type="button" onClick={() => void loadConversation(conv.id)} aria-current={activeId === conv.id ? 'page' : undefined} className="min-w-0 flex-1 rounded-control px-s2 py-s2 text-left focus-ring">
-                  <span className="block truncate font-display text-label font-semibold text-ink">{conv.title}</span>
-                  {conv.preview && <span className="block truncate font-body text-caption text-ink-72">{conv.preview}</span>}
-                </button>
-                <button type="button" onClick={() => setDeleteTarget(conv)} aria-label={`Hapus ${conv.title}`} className="touch-44 flex shrink-0 items-center justify-center rounded-control text-ink-72 hover:text-ink focus-ring">
-                  <Icon name="delete" className="text-[16px]" />
-                </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Zona kerja terang: rail riwayat + panel percakapan, dipisah SectionRule. */}
+      <div className="page-container pb-s6" data-nav-theme="light">
+        <div className="flex w-full flex-col items-start gap-s4 pt-s5 lg:flex-row">
+          {/* Riwayat: rail 3/12 mulai 1024, sheet di bawah 1024. */}
+          <aside className="hidden w-full shrink-0 flex-col gap-s2 lg:flex lg:w-1/4" aria-label="Daftar percakapan">
+            <div className="flex items-center justify-between">
+              <span className="mono-meta">PERCAKAPAN · {conversations.length}</span>
+            </div>
+            {list.loading && <div className="skeleton h-40 w-full" aria-busy="true" />}
+            {list.error && (
+              <div className="flex flex-col items-start gap-s2" role="alert">
+                <span className="inline-flex items-center gap-s2"><StatusDot tone="error" /><span className="font-body text-caption text-ink">{list.error}</span></span>
+                <button type="button" onClick={list.retry} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>
               </div>
-            ))}
-          </div>
-        </aside>
-
-        {/* Percakapan. */}
-        <div className="flex w-full min-w-0 flex-col gap-s4 xl:w-[76%]">
-          {/* Header attachment aktif. Aksen mono chip (idiom landing-features); data tetap dari API. */}
-          <div className="surface rounded-card-lg flex flex-wrap items-center justify-between gap-s2 p-s3">
-            <div className="flex min-w-0 flex-wrap items-center gap-s2">
-              <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-[var(--border-hairline)] bg-forest-08 px-s3">
-                <Icon name="table_chart" className="text-[14px] text-forest" />
-                <span className="max-w-[180px] truncate font-mono text-caption uppercase tracking-[0.06em] text-ink">{datasetName}</span>
-              </span>
-              <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-[var(--border-hairline)] px-s3">
-                <Icon name="description" className="text-[14px] text-forest" />
-                <span className="font-mono text-caption uppercase tracking-[0.06em] text-ink-72">{docCount} DOKUMEN</span>
-              </span>
-            </div>
-            <span className="mono-meta">{activeTitle.toUpperCase()}</span>
-          </div>
-
-          {/* Contoh pertanyaan saat kosong. */}
-          {messages.length === 0 && !detailLoading && !sending && (
-            <div className="surface rounded-card-lg flex flex-col gap-s3 p-s4">
-              <span className="mono-meta">CONTOH PERTANYAAN</span>
-              <div className="grid grid-cols-1 gap-s2 sm:grid-cols-2">
-                {SUGGESTED.map((question) => (
-                  <button key={question} type="button" onClick={() => fillAndSend(question)} className="touch-44 flex items-center justify-between gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 text-left font-body text-caption text-ink transition-colors hover:border-forest focus-ring">
-                    <span>{question}</span>
-                    <Icon name="arrow_forward" className="shrink-0 text-[16px] text-ink-72" />
+            )}
+            {!list.loading && !list.error && conversations.length === 0 && (
+              <p className="font-body text-caption text-ink-72">Belum ada percakapan. Mulai pertanyaan pertama.</p>
+            )}
+            <div className="flex flex-col gap-s1">
+              {conversations.map((conv) => (
+                <div key={conv.id} className={`group flex items-start gap-s1 rounded-control border transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none ${activeId === conv.id ? 'border-forest bg-forest-08' : 'border-[var(--border-hairline)] bg-porcelain'}`}>
+                  <button type="button" onClick={() => void loadConversation(conv.id)} aria-current={activeId === conv.id ? 'page' : undefined} className="min-w-0 flex-1 rounded-control px-s2 py-s2 text-left focus-ring">
+                    <span className="block truncate font-display text-label font-semibold text-ink">{conv.title}</span>
+                    {conv.preview && <span className="block truncate font-body text-caption text-ink-72">{conv.preview}</span>}
+                    <span className="mt-s1 block truncate font-mono text-[11px] uppercase tracking-[0.06em] text-ink-72">
+                      {conv.messageCount} PESAN{conv.lastMessageAt ? ` · ${wibTime(conv.lastMessageAt)} WIB` : ''}
+                    </span>
                   </button>
-                ))}
-              </div>
+                  <button type="button" onClick={() => setDeleteTarget(conv)} aria-label={`Hapus ${conv.title}`} className="touch-44 flex shrink-0 items-center justify-center rounded-control text-ink-72 hover:text-ink focus-ring">
+                    <Icon name="delete" className="text-[16px]" />
+                  </button>
+                </div>
+              ))}
             </div>
-          )}
+          </aside>
 
-          {/* Utas pesan. */}
-          <div className="flex flex-col gap-s4" role="log" aria-live="polite" aria-relevant="additions">
-            {detailLoading && (
-              <div className="space-y-s3" aria-busy="true"><div className="skeleton h-40 w-2/3" /><div className="skeleton h-80 w-full" /><div className="skeleton h-48 w-full" /></div>
-            )}
-            {detailError && (
-              <div className="flex flex-col items-start gap-s2 surface rounded-card-lg p-s4" role="alert">
-                <span className="inline-flex items-center gap-s2"><StatusDot tone="error" /><span className="font-body text-body text-ink">{detailError}</span></span>
-                {activeId && <button type="button" onClick={() => void loadConversation(activeId)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>}
-              </div>
-            )}
-            {messages.map((m) => m.role === 'user' ? (
-              <div key={m.id} className="flex items-start justify-end gap-s3 pl-s5">
-                <div className="flex max-w-[85%] flex-col items-end gap-s1">
-                  <span className="mono-meta">{wibTime(m.createdAt)} WIB</span>
-                  <div className="rounded-surface border border-[var(--border-hairline)] bg-porcelain px-s3 py-s2">
-                    <p className="font-body text-body text-ink">{m.content}</p>
-                  </div>
+          {/* Panel percakapan aktif: utas dalam satu kartu rounded-card-lg.
+              Pertanyaan user = bubble gelap kecil; jawaban tetap AdaptiveOutputView. */}
+          <section aria-label="Percakapan aktif" className="surface min-w-0 w-full rounded-card-lg p-s4 md:p-s5 lg:w-3/4">
+            <div className="flex flex-wrap items-center justify-between gap-s2">
+              <span className="mono-meta">UTAS · {messages.length} PESAN</span>
+              <span className="mono-meta">{modeLabel}</span>
+            </div>
+            <SectionRule className="mb-s4 mt-s3" />
+
+            {/* Contoh pertanyaan saat kosong (state empty, tetap dirender). */}
+            {messages.length === 0 && !detailLoading && !sending && (
+              <div className="mb-s4 flex flex-col gap-s3 rounded-control border border-[var(--border-hairline)] bg-forest-08 p-s3">
+                <span className="mono-meta">CONTOH PERTANYAAN</span>
+                <div className="grid grid-cols-1 gap-s2 sm:grid-cols-2">
+                  {SUGGESTED.map((question) => (
+                    <button key={question} type="button" onClick={() => fillAndSend(question)} className="touch-44 flex items-center justify-between gap-s2 rounded-control border border-[var(--border-hairline)] bg-porcelain px-s3 text-left font-body text-caption text-ink transition-colors hover:border-forest focus-ring">
+                      <span>{question}</span>
+                      <Icon name="arrow_forward" className="shrink-0 text-[16px] text-ink-72" />
+                    </button>
+                  ))}
                 </div>
               </div>
-            ) : (
-              <article key={m.id} className="animate-phrase-in flex flex-col gap-s3 pr-s2">
-                <div className="flex items-center gap-s2">
-                  <StatusDot tone="active" />
-                  <span className="mono-meta">{wibTime(m.createdAt)} WIB · {m.meta?.mode ?? 'jawaban'}</span>
+            )}
+
+            <div className="flex flex-col gap-s4" role="log" aria-live="polite" aria-relevant="additions">
+              {detailLoading && (
+                <div className="space-y-s3" aria-busy="true"><div className="skeleton h-40 w-2/3" /><div className="skeleton h-80 w-full" /><div className="skeleton h-48 w-full" /></div>
+              )}
+              {detailError && (
+                <div className="flex flex-col items-start gap-s2 rounded-control border border-[var(--border-hairline)] p-s3" role="alert">
+                  <span className="inline-flex items-center gap-s2"><StatusDot tone="error" /><span className="font-body text-body text-ink">{detailError}</span></span>
+                  {activeId && <button type="button" onClick={() => void loadConversation(activeId)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>}
                 </div>
-                <TextGenerate text={m.answer || m.content} state={m.guardrail ? 'empty' : 'default'} emptyTitle={m.guardrail?.explanation ?? 'Informasi ini tidak ditemukan pada sumber.'} />
-                {m.guardrail && m.followUps && m.followUps.length > 0 && (
-                  <div className="flex flex-wrap gap-s2">
-                    {m.followUps.map((q) => <button key={q} type="button" onClick={() => fillAndSend(q)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s2 font-body text-caption text-ink hover:border-forest focus-ring">{q}</button>)}
+              )}
+              {messages.map((m) => m.role === 'user' ? (
+                <div key={m.id} className="flex items-start justify-end gap-s3 pl-s5">
+                  <div className="flex max-w-[85%] flex-col items-end gap-s1">
+                    <span className="mono-meta">{wibTime(m.createdAt)} WIB</span>
+                    <div className="rounded-card-lg bg-forest px-s3 py-s2 text-porcelain">
+                      <p className="font-body text-body text-porcelain">{m.content}</p>
+                    </div>
                   </div>
-                )}
-                {!m.guardrail && (
-                  <>
-                    <AdaptiveOutputView outputs={normalizeChatOutputs(m)} onOpenCitation={(id) => { const sources = m.sources ?? []; setSourceDetail(sources.find((s) => `S${sources.indexOf(s) + 1}` === id) ?? null); }} />
-                    <CitationMarks citations={m.sources ?? []} onOpen={setSourceDetail} />
-                    {m.followUps && m.followUps.length > 0 && (
+                </div>
+              ) : (
+                <article key={m.id} className="animate-phrase-in flex flex-col gap-s3 pr-s2">
+                  <div className="flex items-center gap-s2">
+                    <StatusDot tone="active" />
+                    <span className="mono-meta">{wibTime(m.createdAt)} WIB · {m.meta?.mode ?? 'jawaban'}</span>
+                  </div>
+                  <TextGenerate text={m.answer || m.content} state={m.guardrail ? 'empty' : 'default'} emptyTitle={m.guardrail?.explanation ?? 'Informasi ini tidak ditemukan pada sumber.'} />
+                  {m.guardrail && m.followUps && m.followUps.length > 0 && (
+                    <div className="flex flex-wrap gap-s2">
+                      {m.followUps.map((q) => <button key={q} type="button" onClick={() => fillAndSend(q)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s2 font-body text-caption text-ink hover:border-forest focus-ring">{q}</button>)}
+                    </div>
+                  )}
+                  {!m.guardrail && (
+                    <>
+                      <AdaptiveOutputView outputs={normalizeChatOutputs(m)} onOpenCitation={(id) => { const sources = m.sources ?? []; setSourceDetail(sources.find((s) => `S${sources.indexOf(s) + 1}` === id) ?? null); }} />
+                      <CitationMarks citations={m.sources ?? []} onOpen={setSourceDetail} />
+                      {m.followUps && m.followUps.length > 0 && (
+                        <div className="flex flex-wrap gap-s2">
+                          {m.followUps.map((q) => <button key={q} type="button" onClick={() => fillAndSend(q)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s2 font-body text-caption text-ink hover:border-forest focus-ring">{q}</button>)}
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-s2">
-                        {m.followUps.map((q) => <button key={q} type="button" onClick={() => fillAndSend(q)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s2 font-body text-caption text-ink hover:border-forest focus-ring">{q}</button>)}
+                        <button type="button" onClick={() => setShareTarget(m)} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink hover:border-forest focus-ring">
+                          <Icon name="ios_share" className="text-[16px]" /> Bagikan
+                        </button>
+                        <button type="button" onClick={() => void saveReport(m)} disabled={savingReportId === m.id} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink hover:border-forest focus-ring disabled:opacity-50">
+                          <Icon name="save" className="text-[16px]" /> {savingReportId === m.id ? 'Menyimpan' : 'Simpan laporan'}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </article>
+              ))}
+              {sending && <TypingIndicator />}
+              {sendError && (
+                <div className="flex flex-col items-start gap-s2 rounded-control border border-[var(--border-hairline)] p-s3" role="alert">
+                  <span className="inline-flex items-center gap-s2"><StatusDot tone="error" /><span className="font-body text-body text-ink">{sendError}</span></span>
+                  <div className="flex flex-wrap gap-s2">
+                    {lastFailed && <><button type="button" onClick={() => void send(lastFailed)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button><button type="button" onClick={() => void copyQuestion()} className="touch-44 rounded-control px-s3 font-display text-label text-ink-72 focus-ring">Salin pertanyaan</button></>}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+
+        <SectionRule className="mt-s5" />
+
+        {/* Composer: band gelap kedua modul (momen modul, idiom hero landing).
+            Sticky di bawah viewport di semua ukuran; di 390 menyertai sheet riwayat.
+            Grid + glow diklip di lapisan dekorasi bersarang: menu konteks dataset/periode
+            pop ke atas panel dan tidak boleh terpotong oleh overflow-hidden panelnya. */}
+        <div className="sticky bottom-s3 z-sticky mt-s4">
+          <div className="relative rounded-card-lg border border-hairline-dark bg-forest p-s3 shadow-float md:p-s4">
+            <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-card-lg">
+              <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
+              <div aria-hidden="true" className="glow-radial-lime absolute -bottom-20 -left-16 h-[240px] w-[360px]" />
+            </div>
+            <div className="relative">
+              <div className="mb-s2 flex flex-wrap items-center justify-between gap-s2">
+                <div className="flex flex-wrap items-center gap-s2">
+                  <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark bg-porcelain/10 px-s3"><Icon name="table_chart" className="text-[14px] text-dark-muted" /><span className="max-w-[140px] truncate font-mono text-caption uppercase tracking-[0.06em] text-porcelain">{datasetName}</span></span>
+                  <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark px-s3"><Icon name="description" className="text-[14px] text-dark-muted" /><span className="font-mono text-caption uppercase tracking-[0.06em] text-dark-muted">{docCount} DOKUMEN</span></span>
+                </div>
+                <button type="button" onClick={() => { setPeriodOverride(null); setDateStart(''); setDateEnd(''); }} className="touch-44 inline-flex items-center gap-s1 font-body text-caption text-dark-muted transition-colors hover:text-porcelain focus-ring"><Icon name="close" className="text-[14px]" /> Hapus konteks</button>
+              </div>
+              <textarea
+                ref={textareaRef} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKeyDown}
+                rows={2} maxLength={2000} disabled={sending}
+                aria-label="Tanyakan sesuatu tentang data" placeholder="Tanyakan metrik, tren, anomali, atau prosedur"
+                className="w-full resize-none rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3 font-body text-body text-ink placeholder:text-ink-72 focus-ring"
+              />
+              <div className="mt-s2 flex flex-wrap items-center justify-between gap-s2">
+                <div className="flex items-center gap-s1">
+                  <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt,.md" className="sr-only" aria-label="Lampirkan dokumen" onChange={(e) => void attachDocument(e)} />
+                  <button type="button" aria-label="Lampirkan dokumen" onClick={() => fileInputRef.current?.click()} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="attach_file" className="text-[20px]" /></button>
+                  <div className="relative">
+                    <button type="button" aria-label="Pilih dataset" aria-expanded={contextMenu === 'dataset'} onClick={() => setContextMenu(contextMenu === 'dataset' ? null : 'dataset')} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="database" className="text-[20px]" /></button>
+                    {contextMenu === 'dataset' && (
+                      <div className="absolute bottom-full left-0 z-dropdown mb-s1 w-60 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s2 elevated" role="listbox" aria-label="Pilih dataset">
+                        {(meta.data?.data.datasetChoices ?? settings.data?.datasets ?? []).map((choice) => (
+                          <button key={choice.id} type="button" role="option" aria-selected={choice.id === activeDatasetId} onClick={() => selectDataset(choice.id)} className="block min-h-11 w-full rounded-control px-s2 text-left font-body text-caption text-ink hover:bg-forest-08 focus-ring">{choice.name}</button>
+                        ))}
                       </div>
                     )}
-                    <div className="flex flex-wrap gap-s2">
-                      <button type="button" onClick={() => setShareTarget(m)} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink hover:border-forest focus-ring">
-                        <Icon name="ios_share" className="text-[16px]" /> Bagikan
-                      </button>
-                      <button type="button" onClick={() => void saveReport(m)} disabled={savingReportId === m.id} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink hover:border-forest focus-ring disabled:opacity-50">
-                        <Icon name="save" className="text-[16px]" /> {savingReportId === m.id ? 'Menyimpan' : 'Simpan laporan'}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </article>
-            ))}
-            {sending && <TypingIndicator />}
-            {sendError && (
-              <div className="flex flex-col items-start gap-s2 surface rounded-card-lg p-s4" role="alert">
-                <span className="inline-flex items-center gap-s2"><StatusDot tone="error" /><span className="font-body text-body text-ink">{sendError}</span></span>
-                <div className="flex flex-wrap gap-s2">
-                  {lastFailed && <><button type="button" onClick={() => void send(lastFailed)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button><button type="button" onClick={() => void copyQuestion()} className="touch-44 rounded-control px-s3 font-display text-label text-ink-72 focus-ring">Salin pertanyaan</button></>}
+                  </div>
+                  <div className="relative">
+                    <button type="button" aria-label="Filter periode" aria-expanded={contextMenu === 'date'} onClick={() => setContextMenu(contextMenu === 'date' ? null : 'date')} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="date_range" className="text-[20px]" /></button>
+                    {contextMenu === 'date' && (
+                      <div className="absolute bottom-full left-0 z-dropdown mb-s1 w-60 space-y-s2 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3 elevated">
+                        <label className="block font-body text-caption text-ink-72">Mulai<input type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="mt-s1 min-h-11 w-full rounded-control border border-[var(--border-hairline)] bg-porcelain px-s2 font-body text-caption text-ink focus-ring" /></label>
+                        <label className="block font-body text-caption text-ink-72">Akhir<input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className="mt-s1 min-h-11 w-full rounded-control border border-[var(--border-hairline)] bg-porcelain px-s2 font-body text-caption text-ink focus-ring" /></label>
+                        <button type="button" onClick={applyDateRange} className="touch-44 w-full rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Terapkan</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Composer sticky. Momen gelap modul: panel band forest + grid + glow lime (idiom hero landing,
-              tanpa efek scroll). Satu CTA primer (GlowingCTA, skin lime di atas gelap). */}
-          <div className="sticky bottom-s3 z-sticky">
-            <div className="relative rounded-card-lg border border-hairline-dark bg-forest p-s3 md:p-s4">
-              {/* Grid + glow diklip di lapisan terpisah: menu konteks dataset/periode pop ke atas
-                  panel dan tidak boleh terpotong oleh overflow-hidden pada panelnya. */}
-              <div aria-hidden="true" className="absolute inset-0 overflow-hidden rounded-card-lg">
-                <div aria-hidden="true" className="bg-grid-dark mask-grid-fade absolute inset-0" />
-                <div aria-hidden="true" className="glow-radial-lime absolute -left-16 -bottom-20 h-[240px] w-[360px]" />
-              </div>
-              <div className="relative">
-                <div className="mb-s2 flex flex-wrap items-center justify-between gap-s2">
-                  <div className="flex flex-wrap items-center gap-s2">
-                    <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark bg-porcelain/10 px-s3"><Icon name="table_chart" className="text-[14px] text-dark-muted" /><span className="max-w-[140px] truncate font-mono text-caption uppercase tracking-[0.06em] text-porcelain">{datasetName}</span></span>
-                    <span className="inline-flex min-h-11 items-center gap-s2 rounded-chip border border-hairline-dark px-s3"><Icon name="description" className="text-[14px] text-dark-muted" /><span className="font-mono text-caption uppercase tracking-[0.06em] text-dark-muted">{docCount} DOKUMEN</span></span>
-                  </div>
-                  <button type="button" onClick={() => { setPeriodOverride(null); setDateStart(''); setDateEnd(''); }} className="touch-44 inline-flex items-center gap-s1 font-body text-caption text-dark-muted transition-colors hover:text-porcelain focus-ring"><Icon name="close" className="text-[14px]" /> Hapus konteks</button>
-                </div>
-                <textarea
-                  ref={textareaRef} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={onKeyDown}
-                  rows={2} maxLength={2000} disabled={sending}
-                  aria-label="Tanyakan sesuatu tentang data" placeholder="Tanyakan metrik, tren, anomali, atau prosedur"
-                  className="w-full resize-none rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3 font-body text-body text-ink placeholder:text-ink-72 focus-ring"
-                />
-                <div className="mt-s2 flex flex-wrap items-center justify-between gap-s2">
-                  <div className="flex items-center gap-s1">
-                    <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt,.md" className="sr-only" aria-label="Lampirkan dokumen" onChange={(e) => void attachDocument(e)} />
-                    <button type="button" aria-label="Lampirkan dokumen" onClick={() => fileInputRef.current?.click()} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="attach_file" className="text-[20px]" /></button>
-                    <div className="relative">
-                      <button type="button" aria-label="Pilih dataset" aria-expanded={contextMenu === 'dataset'} onClick={() => setContextMenu(contextMenu === 'dataset' ? null : 'dataset')} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="database" className="text-[20px]" /></button>
-                      {contextMenu === 'dataset' && (
-                        <div className="absolute bottom-full left-0 z-dropdown mb-s1 w-60 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s2 elevated" role="listbox" aria-label="Pilih dataset">
-                          {(meta.data?.data.datasetChoices ?? settings.data?.datasets ?? []).map((choice) => (
-                            <button key={choice.id} type="button" role="option" aria-selected={choice.id === activeDatasetId} onClick={() => selectDataset(choice.id)} className="block min-h-11 w-full rounded-control px-s2 text-left font-body text-caption text-ink hover:bg-forest-08 focus-ring">{choice.name}</button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <button type="button" aria-label="Filter periode" aria-expanded={contextMenu === 'date'} onClick={() => setContextMenu(contextMenu === 'date' ? null : 'date')} className="touch-44 flex items-center justify-center rounded-control text-dark-muted transition-colors hover:bg-porcelain/10 hover:text-porcelain focus-ring"><Icon name="date_range" className="text-[20px]" /></button>
-                      {contextMenu === 'date' && (
-                        <div className="absolute bottom-full left-0 z-dropdown mb-s1 w-60 space-y-s2 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3 elevated">
-                          <label className="block font-body text-caption text-ink-72">Mulai<input type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className="mt-s1 min-h-11 w-full rounded-control border border-[var(--border-hairline)] bg-porcelain px-s2 font-body text-caption text-ink focus-ring" /></label>
-                          <label className="block font-body text-caption text-ink-72">Akhir<input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className="mt-s1 min-h-11 w-full rounded-control border border-[var(--border-hairline)] bg-porcelain px-s2 font-body text-caption text-ink focus-ring" /></label>
-                          <button type="button" onClick={applyDateRange} className="touch-44 w-full rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Terapkan</button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-s3">
-                    <span className="hidden font-body text-caption text-dark-muted sm:inline">Enter kirim · Shift+Enter baris baru</span>
-                    <GlowingCTA type="button" tone="dark" state={sending ? 'loading' : 'default'} onClick={() => void send(draft)} disabled={draft.trim().length === 0} loadingLabel="Mengirim">Kirim</GlowingCTA>
-                  </div>
+                <div className="flex items-center gap-s3">
+                  <span className="hidden font-body text-caption text-dark-muted sm:inline">Enter kirim · Shift+Enter baris baru</span>
+                  <GlowingCTA type="button" tone="dark" state={sending ? 'loading' : 'default'} onClick={() => void send(draft)} disabled={draft.trim().length === 0} loadingLabel="Mengirim">Kirim</GlowingCTA>
                 </div>
               </div>
             </div>
@@ -560,7 +594,7 @@ export default function AssistantPage() {
         </div>
       </div>
 
-      {/* Riwayat mobile (sheet). */}
+      {/* Riwayat mobile (sheet) di bawah 1024. */}
       {historyOpen && (
         <div className="fixed inset-0 z-drawer lg:hidden">
           <div className="absolute inset-0 bg-ink/40" onClick={() => setHistoryOpen(false)} aria-hidden="true" />
@@ -647,6 +681,6 @@ export default function AssistantPage() {
           </p>
         )}
       </AnimatedModal>
-    </div>
+    </>
   );
 }
