@@ -72,7 +72,7 @@ function ensureSeedSource(db: DB): void {
     `INSERT INTO data_sources
        (id, kind, name, original_name, format, mime, size_bytes, status, row_count, chunk_count,
         error, storage_path, meta_json, created_at, updated_at)
-     VALUES ('seed','dataset','analytics.db - Transaksi','analytics.db','seed-dataset','application/vnd.sqlite3',0,'READY',?,NULL,NULL,'analytics.db',?,?,?)
+     VALUES ('seed','dataset','Data demo · Transaksi QRIS','analytics.db','seed-dataset','application/vnd.sqlite3',0,'READY',?,NULL,NULL,'analytics.db',?,?,?)
      ON CONFLICT(id) DO UPDATE SET row_count=excluded.row_count, meta_json=excluded.meta_json, updated_at=excluded.updated_at`,
   ).run(
     bounds.rowCount,
@@ -168,11 +168,11 @@ function ensureDocumentsCoreMirror(db: DB): void {
       .all(id) as Array<{ section: string; page: number | null; content: string; char_count: number; ocr_status: string; confidence: number | null }>;
     if (chunks.length === 0) continue;
     const now = nowJakartaIso();
-    const docId = `doc_${id}`;
+    const docId = id;
     const mirror = db.transaction(() => {
       db.prepare(
         `INSERT INTO core_datasets(id, name, kind, source_type, doc_type, status, schema_json, row_count, quality_report, storage_path, size_bytes, is_demo, created_at, updated_at)
-         VALUES (?, ?, 'document', ?, 'general', 'READY', '{}', 0, '{}', ?, ?, ?, ?, ?)
+         VALUES (?, ?, 'document', ?, 'general', 'READY', '{\"version\":1,\"tables\":[],\"relations\":[],\"enums\":{}}', 0, '{}', ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO NOTHING`,
       ).run(id, String(row.name), String(row.format ?? 'txt'), row.storage_path ?? null, Number(row.size_bytes ?? 0), 0, now, now);
       db.prepare(

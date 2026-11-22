@@ -273,6 +273,9 @@ export type ConversationSummary = {
   createdAt: string;
   preview?: string;
   updatedAt?: string;
+  /** Grup topik percakapan (NotebookLM-style sidebar). */
+  groupName?: string | null;
+  pinned?: boolean;
 };
 
 export type ConversationListResponse = {
@@ -287,6 +290,8 @@ export type ConversationDetailResponse = {
   conversation: ConversationSummary;
   /** FR-C: attachment yang aktif untuk percakapan ini (konteks chat). */
   activeAttachment: { id: string; name: string; docType: string } | null;
+  /** Kelompok dokumen percakapan (NotebookLM-style): basis pengetahuan sesi. */
+  activeAttachments: Array<{ id: string; name: string; docType: string }>;
   messages: ChatMessage[];
 };
 export type SendMessageResponse = {
@@ -399,6 +404,9 @@ export type InvestigationListItem = {
   id: string;
   question: string;
   period: string;
+  /** Sumber tempat investigasi dijalankan (paralel ringkasan per dokumen). */
+  datasetId: string | null;
+  datasetName: string | null;
   topChannel: string | null;
   claimLevel: 'measured' | 'indication' | 'proven';
   createdAt: string;
@@ -508,6 +516,50 @@ export type SourcesListResponse = {
 };
 
 export type SourceSchemaColumn = { name: string; type: string; nullable: boolean };
+
+/** D2: ringkasan deterministik per dokumen (dari chunk terindeks, tanpa LLM). */
+export type SourceSummaryResponse = {
+  source: { id: string; name: string; format: string; pageCount: number | null };
+  totals: { chunks: number; sections: number; ocrSkipped: number };
+  sections: { title: string; page: number | null; chunkCount: number; excerpt: string }[];
+  generatedAt: string;
+  note: string;
+};
+
+/** Analytics per dokumen — deterministik dari chunk (tipe + metrik + insight). */
+export type SourceAnalyticsEntity = { label: string; count: number; topSection: string | null; topPage: number | null };
+export type SourceAnalyticsResponse = {
+  source: { id: string; name: string; format: string };
+  docType: 'financial-report' | 'incident-report' | 'general';
+  docTypeLabel: string;
+  confidence: number;
+  signals: string[];
+  totals: { chunks: number; sections: number; pages: number | null; words: number };
+  entities: {
+    failureCodes: SourceAnalyticsEntity[];
+    channels: SourceAnalyticsEntity[];
+    durations: SourceAnalyticsEntity[];
+    amounts: SourceAnalyticsEntity[];
+    percentages: SourceAnalyticsEntity[];
+    contacts: string[];
+  };
+  insights: string[];
+  generatedAt: string;
+  note: string;
+};
+
+/** Bukti sitasi — satu chunk dokumen yang dirujuk dari chat (deep-link). */
+export type CitationChunkResponse = {
+  source: { id: string };
+  chunk: {
+    id: number;
+    sectionNo: number | null;
+    section: string | null;
+    page: number | null;
+    content: string;
+    charCount: number;
+  };
+};
 
 export type DatasetSourceDetail = {
   source: SourceListItem;

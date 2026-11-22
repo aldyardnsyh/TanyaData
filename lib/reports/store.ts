@@ -146,13 +146,17 @@ export function createReportFromMessage(
   };
 }
 
-export function listReports(db: DB, limit: number, offset: number): ReportListResponse {
+export function listReports(db: DB, limit: number, offset: number, query?: string): ReportListResponse {
+  // Filter judul opsional untuk pagination server-side (q dari UI daftar).
+  const q = query?.trim();
+  const where = q ? "WHERE title LIKE ? ESCAPE '\\'" : '';
+  const pattern = q ? `%${q.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_')}%` : null;
   const rows = db
     .prepare(
       `SELECT id, title, dataset_id, period_start, period_end, created_at
-         FROM reports ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+         FROM reports ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
     )
-    .all(limit, offset) as {
+    .all(...(pattern ? [pattern] : []), limit, offset) as {
     id: string;
     title: string;
     dataset_id: string;
@@ -160,7 +164,7 @@ export function listReports(db: DB, limit: number, offset: number): ReportListRe
     period_end: string | null;
     created_at: string;
   }[];
-  const total = db.prepare('SELECT COUNT(*) AS n FROM reports').get() as { n: number };
+  const total = db.prepare(`SELECT COUNT(*) AS n FROM reports ${where}`).get(...(pattern ? [pattern] : [])) as { n: number };
 
   const items: ReportListItem[] = rows.map((row) => ({
     id: row.id,
@@ -183,4 +187,45 @@ export function getReport(db: DB, id: string): ReportDetail {
   } catch {
     throw notFound('Laporan tidak dapat dibaca');
   }
+}
+
+/**
+ * Hapus laporan tersimpan. Tindakan permanen — payload dokumen ikut hilang.
+ */
+export function deleteReport(db: DB, id: string): void {
+  const res = db.prepare('DELETE FROM reports WHERE id = ?').run(id);
+  if (res.changes === 0) throw notFound('Laporan tidak ditemukan');
+}
+
+/**
+ * Ganti judul laporan (mis. disesuaikan dengan nama dokumen sumbernya).
+ * Judul tersimpan dua tempat: kolom `reports.title` (daftar) dan
+ * `payload_json.title` (dokumen pratinjau/ekspor) — keduanya disinkronkan.
+ */
+export function renameReport(db: DB, id: string, title: string): ReportListItem {
+  const row = db
+    .prepare('SELECT title, dataset_id, period_start, period_end, created_at, payload_json FROM reports WHERE id = ?')
+    .get(id) as
+    | { title: string; dataset_id: string; period_start: string | null; period_end: string | null; created_at: string; payload_json: string }
+    | undefined;
+  if (!row) throw notFound('Laporan tidak ditemukan');
+
+  const clean = title.slice(0, 120);
+  let payload = row.payload_json;
+  try {
+    const parsed = JSON.parse(row.payload_json) as { title?: string };
+    parsed.title = clean;
+    payload = JSON.stringify(parsed);
+  } catch {
+    // payload tidak terbaca: judul kolom tetap diperbarui
+  }
+  db.prepare('UPDATE reports SET title = ?, payload_json = ? WHERE id = ?').run(clean, payload, id);
+
+  return {
+    id,
+    title: clean,
+    period: row.period_start && row.period_end ? `${row.period_start}..${row.period_end}` : '',
+    dataset: { id: row.dataset_id, name: datasetName(row.dataset_id, db) },
+    createdAt: row.created_at,
+  };
 }

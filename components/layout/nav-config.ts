@@ -8,8 +8,9 @@ export type NavItem = {
   docKey: DictionaryKey;
 };
 
+// Chat-first: Asisten permukaan utama. Ringkasan hidup per dokumen
+// (halaman detail sumber), bukan sebagai halaman global terpisah.
 export const NAV_ITEMS: NavItem[] = [
-  { key: 'nav.overview', href: '/overview', icon: 'dashboard', docKey: 'shell.docsOverview' },
   { key: 'nav.assistant', href: '/assistant', icon: 'forum', docKey: 'shell.docsAssistant' },
   { key: 'nav.dataSources', href: '/data-sources', icon: 'database', docKey: 'shell.docsSources' },
   { key: 'nav.investigations', href: '/investigations', icon: 'query_stats', docKey: 'shell.docsInvestigations' },
@@ -23,5 +24,5 @@ export function currentNavKey(pathname: string): DictionaryKey {
   if (pathname.startsWith('/investigations')) return 'nav.investigations';
   if (pathname.startsWith('/reports')) return 'nav.reports';
   if (pathname.startsWith('/settings')) return 'nav.settings';
-  return 'nav.overview';
+  return 'nav.assistant';
 }

@@ -284,6 +284,12 @@ export type QueryContext = {
   period?: { start: string; end: string } | null;
   entities?: Record<string, string | number>;
   history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  /**
+   * SQL dari jawaban asisten sebelumnya — dipakai resolusi follow-up
+   * anafora ("jabarkan laporan ini") supaya pertanyaan lanjutan memakai
+   * hasil sebelumnya, bukan dianggap pertanyaan baru di luar cakupan.
+   */
+  lastResult?: { sql: string; rowCount: number } | null;
 };
 
 /* ----------------------------------------------------------------- ingestion */

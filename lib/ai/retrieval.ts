@@ -367,7 +367,10 @@ export function retrieveHybrid(input: HybridRetrieveInput): RetrievalResult {
     if (seenParents.has(parentKey)) continue;
     seenParents.add(parentKey);
     const parent = child.parent_id ? byId.get(child.parent_id) : undefined;
-    const contextText = parent?.text ?? child.text;
+    // Kutipan WAJIB dari teks child: validateCitationDeepLink memverifikasi
+    // quote terhadap chunk_id (child). Kutipan parent di sini membuat setiap
+    // sitasi hasil ekspansi parent gagal QUOTE_MISMATCH dan dibuang fail-closed.
+    const contextText = child.text;
     evidence.push({
       chunk_id: String(child.id),
       section_id: parentKey,
@@ -526,7 +529,7 @@ export function rerankCitations<T extends RerankableCitation>(question: string, 
  */
 export function retrieveWithEntityBoost(
   db: DB,
-  datasetId: string,
+  datasetId: string | string[],
   question: string,
   limit = 5,
   knownChannels: string[] = [],

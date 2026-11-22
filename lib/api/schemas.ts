@@ -14,6 +14,12 @@ export const conversationCreateSchema = z.object({
   lang: langSchema.optional(),
 });
 
+export const conversationPatchSchema = z.object({
+  title: z.string().trim().min(1, 'Judul tidak boleh kosong').max(60, 'Judul maksimal 60 karakter').optional(),
+  group: z.string().trim().max(40, 'Nama grup maksimal 40 karakter').nullable().optional(),
+  pinned: z.boolean().optional(),
+});
+
 export const messageCreateSchema = z.object({
   content: z.string().trim().min(1, 'Pesan tidak boleh kosong').max(2000, 'Pesan maksimal 2000 karakter'),
   lang: langSchema.optional(),
@@ -23,6 +29,14 @@ export const messageCreateSchema = z.object({
 
 export const reportCreateSchema = z.object({
   title: z.string().trim().max(120).optional(),
+});
+
+export const reportPatchSchema = z.object({
+  title: z.string().trim().min(1, 'Judul tidak boleh kosong').max(120, 'Judul maksimal 120 karakter'),
+});
+
+export const messagePatchSchema = z.object({
+  content: z.string().trim().min(1, 'Pesan tidak boleh kosong').max(2000, 'Pesan maksimal 2000 karakter'),
 });
 
 export const investigateSchema = z.object({

@@ -750,10 +750,14 @@ export function listInvestigations(db: DB, limit: number, offset: number): Inves
   const items: InvestigationListItem[] = rows.map((row) => {
     let topChannel: string | null = null;
     let claimLevel: InvestigationListItem['claimLevel'] = 'indication';
+    let datasetId: string | null = null;
+    let datasetName: string | null = null;
     try {
       const payload = JSON.parse(str(row.payload_json)) as Investigation;
       topChannel = payload.contribution?.channels?.[0]?.channelName ?? null;
       claimLevel = payload.conclusion?.claimLevel ?? 'indication';
+      datasetId = payload.dataset?.id ?? null;
+      datasetName = payload.dataset?.name ?? null;
     } catch {
       // payload rusak tetap ditampilkan
     }
@@ -761,6 +765,8 @@ export function listInvestigations(db: DB, limit: number, offset: number): Inves
       id: str(row.id),
       question: str(row.question),
       period: `${str(row.period_start)}..${str(row.period_end)}`,
+      datasetId,
+      datasetName,
       topChannel,
       claimLevel,
       createdAt: str(row.created_at),

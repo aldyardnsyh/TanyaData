@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import type { DB } from '@/lib/db/client';
 import { nowJakartaIso } from '@/lib/date';
 import { stemIndonesian } from '@/lib/core/stem';
+import { expandSynonyms } from '@/lib/ai/normalize';
 
 export { normalizeForFts } from '@/lib/core/stem';
 import type {
@@ -196,12 +197,16 @@ const STOPWORDS = new Set([
  *   tanpa mengubah skema atau menambah dependency berat.
  */
 export function searchTerms(question: string): string[] {
+  const lowered = question
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9\s]/g, ' ');
+  // Sinonim domain (threshold→ambang, sop→prosedur, omzet→nilai, ...)
+  // ditambahkan sebagai TERM TAMBAHAN, bukan pengganti: kata asli tetap
+  // dicari supaya chunk yang memakai istilah asli tidak kehilangan match.
+  const expanded = expandSynonyms(lowered);
   const raw = [...new Set(
-    question
-      .toLowerCase()
-      .normalize('NFKD')
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .split(/\s+/)
+    [...lowered.split(/\s+/), ...expanded.split(/\s+/)]
       .filter((word) => word.length >= 3 && !STOPWORDS.has(word)),
   )];
   const out: string[] = [];
@@ -218,7 +223,8 @@ export function searchTerms(question: string): string[] {
 }
 
 export type SearchChunksOptions = {
-  datasetId: string;
+  /** Satu dataset, beberapa dataset (kelompok), atau '*' = seluruh dokumen. */
+  datasetId: string | string[];
   question: string;
   limit?: number;
   /** Opsi reranker opsional untuk aiml; tanpa keduanya perilaku default tidak berubah. */
@@ -248,6 +254,13 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
   const match = terms.map((term) => `"${term.replace(/"/g, '""')}"`).join(' OR ');
   const useBoost = Boolean(options.boostSection) || options.boostPage != null;
   const fetchLimit = useBoost ? Math.min(limit * 4, 50) : limit;
+  // datasetId '*' = cari di seluruh dokumen terindeks (chip "Semua dokumen");
+  // array = kelompok dokumen percakapan (konsep NotebookLM: jawaban hanya
+  // dari dokumen yang dijadikan basis pengetahuan sesi itu).
+  const ids = (Array.isArray(options.datasetId) ? options.datasetId : [options.datasetId]).filter(Boolean);
+  const allDocs = ids.includes('*');
+  const datasetFilter = allDocs ? '' : `AND c.dataset_id IN (${ids.map(() => '?').join(',')})`;
+  const datasetArgs = allDocs ? [] : ids;
 
   let results: Citation[];
   try {
@@ -257,10 +270,10 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
                 c.text AS quote, bm25(core_chunks_fts) AS raw_score
          FROM core_chunks_fts f
          JOIN core_chunks c ON c.id = f.rowid
-         WHERE core_chunks_fts MATCH ? AND c.dataset_id = ? AND c.level = 'child'
+         WHERE core_chunks_fts MATCH ? ${datasetFilter} AND c.level = 'child'
          ORDER BY raw_score ASC LIMIT ?`,
       )
-      .all(match, options.datasetId, fetchLimit) as Array<{
+      .all(match, ...datasetArgs, fetchLimit) as Array<{
       chunk_id: number;
       document_id: string;
       section_path: string;
@@ -283,10 +296,10 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
         `SELECT c.id AS chunk_id, c.document_id, c.section_path, c.page,
                 c.text AS quote
          FROM core_chunks c
-         WHERE c.dataset_id = ? AND c.level = 'child' AND (${like})
+         WHERE ${allDocs ? '' : 'c.dataset_id = ? AND '}c.level = 'child' AND (${like})
          LIMIT ?`,
       )
-      .all(options.datasetId, ...terms.map((t) => `%${t}%`), fetchLimit) as Array<{
+      .all(...datasetArgs, ...terms.map((t) => `%${t}%`), fetchLimit) as Array<{
       chunk_id: number;
       document_id: string;
       section_path: string;

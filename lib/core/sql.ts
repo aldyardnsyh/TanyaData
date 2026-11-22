@@ -6,6 +6,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import Database from 'better-sqlite3';
 import { WORKSPACE_DB, resolveSeedDb } from '@/lib/db/paths';
 import { AppError } from '@/lib/errors';
@@ -200,6 +201,11 @@ export function validateSql(sql: string, schema: SchemaJson): ValidationOutcome 
   // L5 — whitelist kolom + role agregasi
   const columns = schema.tables.flatMap((t) => t.columns);
   const allowedColumns = new Set(columns.map((c) => c.name));
+  // Bagian nama tabel berkualifikasi ("seed", "transactions" dari
+  // "seed.transactions") bukan kolom.
+  const objectNameParts = new Set(
+    [...objectNames].flatMap((n) => (n.includes('.') ? n.split('.') : [])),
+  );
   const roleByColumn = new Map<string, SchemaColumn['semantic_role']>();
   for (const col of columns) if (!roleByColumn.has(col.name)) roleByColumn.set(col.name, col.semantic_role);
   const aliases = new Set<string>();
@@ -215,6 +221,7 @@ export function validateSql(sql: string, schema: SchemaJson): ValidationOutcome 
     if (tokens[i + 1]?.kind === 'punct' && tokens[i + 1].value === '(') continue; // fungsi
     if (tokens[i - 1]?.upper === 'AS') continue; // alias
     if (objectNames.has(token.value)) continue; // nama tabel
+    if (objectNameParts.has(token.value)) continue; // bagian nama tabel berkualifikasi
     if (aliases.has(token.value)) continue;
     if (!allowedColumns.has(token.value)) {
       return reject('L5', `Kolom "${token.value}" tidak ada dalam schema_json`);
@@ -262,17 +269,17 @@ export function openExecutor(): Database.Database {
   db.pragma('busy_timeout = 8000');
   try {
     const seedPath = resolveSeedDb();
-    db.prepare('ATTACH DATABASE ? AS seed').run(`${pathToFileUrl(seedPath)}?mode=ro`);
+    try {
+      db.prepare('ATTACH DATABASE ? AS seed').run(`${pathToFileURL(seedPath).href}?mode=ro`);
+    } catch {
+      // Sebagian build SQLite tidak mendukung URI filename — fallback path biasa.
+      db.prepare('ATTACH DATABASE ? AS seed').run(seedPath);
+    }
   } catch {
     // seed tidak tersedia → kueri pada tabel core_data_* tetap jalan
   }
   executor = db;
   return db;
-}
-
-function pathToFileUrl(filePath: string): string {
-  const normalized = filePath.replace(/\\/g, '/');
-  return `file:///${normalized.replace(/^\/+/, '')}`;
 }
 
 export function closeExecutor(): void {
@@ -463,6 +470,44 @@ function buildRateCandidate(
 }
 
 /**
+ * Pemilihan tabel rule-based. Nama tabel berkualifikasi ("seed.transactions")
+ * tidak pernah cocok dengan pertanyaan ("total transaksi"), sehingga fallback
+ * lama "tabel pertama" memilih channels dan SQL-nya ditolak validator. Skor:
+ * kecocokan eksplisit > kata persis > awalan (Indonesia "transaksi" vs
+ * Inggris "transactions") > jumlah kolom (fact table) sebagai tie-break.
+ */
+function pickTableForQuestion(
+  question: string,
+  tables: SchemaJson['tables'],
+): SchemaJson['tables'][number] | null {
+  if (!tables.length) return null;
+  const lower = question.toLowerCase();
+  const words = lower.split(/[^a-z0-9]+/).filter((w) => w.length >= 4);
+  let best: { table: SchemaJson['tables'][number]; score: number } | null = null;
+  for (const t of tables) {
+    const parts = `${t.name} ${t.sourceName ?? ''} ${(t.columns ?? [])
+      .map((c) => `${c.name} ${c.sourceName ?? ''}`)
+      .join(' ')}`.toLowerCase().split(/\s+/).filter(Boolean);
+    let score = 0;
+    if (t.sourceName && lower.includes(t.sourceName.toLowerCase())) score += 10;
+    for (const w of words) {
+      for (const p of parts) {
+        if (p === w) score += 4;
+        else if (p.startsWith(w) || w.startsWith(p)) score += 2;
+        else if (p.length >= 6 && w.length >= 6 && p.slice(0, 6) === w.slice(0, 6)) score += 1;
+      }
+    }
+    score += Math.min(2, (t.columns ?? []).length / 7);
+    if (!best || score > best.score) best = { table: t, score };
+  }
+  if (!best) return null;
+  if (best.score <= 0) {
+    return [...tables].sort((a, b) => (b.columns ?? []).length - (a.columns ?? []).length)[0] ?? null;
+  }
+  return best.table;
+}
+
+/**
  * Fallback deterministik. Mengembalikan `null` bila pola tidak dikenal —
  * jawaban harus klarifikasi, bukan SQL tebakan (CORE_ARCHITECTURE §5).
  */
@@ -471,10 +516,7 @@ export function buildRuleBasedCandidate(
   schema: SchemaJson,
   context: QueryContext | null = null,
 ): SqlCandidate | null {
-  const table = schema.tables.find((t) => {
-    const lower = question.toLowerCase();
-    return lower.includes(t.sourceName.toLowerCase()) || lower.includes(t.name.toLowerCase());
-  }) ?? schema.tables.find((t) => t.columns.length > 0);
+  const table = pickTableForQuestion(question, schema.tables);
   if (!table || !table.columns.length) return null;
 
   const lower = question.toLowerCase();

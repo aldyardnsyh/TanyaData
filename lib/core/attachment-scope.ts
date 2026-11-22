@@ -65,7 +65,20 @@ export function createAttachment(
   const existing = db
     .prepare('SELECT * FROM core_attachments WHERE dataset_id = ? AND source_id IS ?')
     .get(datasetId, sourceId) as AttachmentRow | undefined;
-  if (existing) return rowToAttachment(existing); // idempoten
+  if (existing) {
+    // Re-binding (FR-C): memasang konteks ke percakapan lain harus memindahkan
+    // attachment aktif — bukan mengembalikan baris lama dengan percakapan usang.
+    if (input.activeInConversation !== undefined && input.activeInConversation !== existing.active_in_conversation) {
+      db.prepare('UPDATE core_attachments SET active_in_conversation = ? WHERE id = ?').run(
+        input.activeInConversation,
+        existing.id,
+      );
+      return rowToAttachment(
+        db.prepare('SELECT * FROM core_attachments WHERE id = ?').get(existing.id) as AttachmentRow,
+      );
+    }
+    return rowToAttachment(existing); // idempoten tanpa perubahan konteks
+  }
 
   const id = `att_${randomBytes(8).toString('hex')}`;
   const now = nowJakartaIso();
@@ -135,6 +148,17 @@ export function activeAttachmentForConversation(db: DB, conversationId: string):
     .prepare('SELECT * FROM core_attachments WHERE active_in_conversation = ? ORDER BY created_at DESC LIMIT 1')
     .get(conversationId) as AttachmentRow | undefined;
   return row ? rowToAttachment(row) : null;
+}
+
+/**
+ * Semua attachment aktif percakapan = kelompok dokumen (NotebookLM-style):
+ * percakapan bisa berbasis SATU dokumen atau KELOMPOK dokumen tertentu.
+ */
+export function activeAttachmentsForConversation(db: DB, conversationId: string): Attachment[] {
+  const rows = db
+    .prepare('SELECT * FROM core_attachments WHERE active_in_conversation = ? ORDER BY created_at ASC')
+    .all(conversationId) as AttachmentRow[];
+  return rows.map(rowToAttachment);
 }
 
 /** Tempel/lepas attachment dari percakapan (FR-C.1-2): null = lepas dari konteks. */

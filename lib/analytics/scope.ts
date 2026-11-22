@@ -44,7 +44,7 @@ export function seedScope(db: DB = getWorkspaceDb()): Scope {
     table: 'seed.transactions',
     ref: {
       id: 'seed',
-      name: 'analytics.db - Transaksi',
+      name: 'Data demo · Transaksi QRIS',
       kind: 'seed',
       rowCount: bounds.rowCount,
       minDate: bounds.minDate,
@@ -109,7 +109,7 @@ export function datasetChoices(db: DB = getWorkspaceDb()): { id: string; name: s
 }
 
 export function datasetName(datasetId: string, db: DB = getWorkspaceDb()): string {
-  if (datasetId === 'seed') return 'analytics.db - Transaksi';
+  if (datasetId === 'seed') return 'Data demo · Transaksi QRIS';
   const row = db.prepare('SELECT name FROM data_sources WHERE id = ?').get(datasetId) as
     | { name: string }
     | undefined;

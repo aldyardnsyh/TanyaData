@@ -81,6 +81,23 @@ function parseJson<T>(raw: string, fallback: T): T {
   }
 }
 
+/**
+ * Schema_json lama bisa berupa `'{}'` (cermin pra-C2): JSON valid tapi tanpa
+ * `tables`, yang membuat buildRuleBasedCandidate crash. Normalisasi bentuknya,
+ * bukan hanya validitas JSON-nya.
+ */
+function parseSchema(raw: string): SchemaJson {
+  const parsed = parseJson<Partial<SchemaJson> | null>(raw, emptySchema());
+  if (!parsed || !Array.isArray(parsed.tables)) return emptySchema();
+  return {
+    version: parsed.version ?? 1,
+    hash: parsed.hash ?? hashJson({ tables: parsed.tables }),
+    tables: parsed.tables,
+    relations: parsed.relations ?? [],
+    enums: parsed.enums ?? {},
+  };
+}
+
 export function rowToDataset(row: DatasetRow): Dataset {
   return {
     id: row.id,
@@ -89,7 +106,7 @@ export function rowToDataset(row: DatasetRow): Dataset {
     source_type: row.source_type,
     doc_type: row.doc_type,
     status: row.status,
-    schema_json: parseJson<SchemaJson>(row.schema_json, emptySchema()),
+    schema_json: parseSchema(row.schema_json),
     row_count: row.row_count,
     period_start: row.period_start,
     period_end: row.period_end,
@@ -385,7 +402,7 @@ export function registerSeedDataset(db: DB): Dataset | null {
 
     return createDataset(db, {
       id: 'demo-qris-v1',
-      name: 'Demo QRIS (legacy adapter)',
+      name: 'Data demo · Transaksi QRIS',
       kind: 'tabular',
       source_type: 'sqlite',
       doc_type: 'general',

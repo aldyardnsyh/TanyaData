@@ -531,27 +531,23 @@
   body { background: var(--color-porcelain) !important; }
   aside, header, nav, .print-no-print { display: none !important; }
   main { margin-left: 0 !important; padding-left: 0 !important; }
+  /* Template brand dipertahankan saat cetak: band forest + aksen lime +
+     kartu berwarna tetap tercetak (bukan hitam-putih polos). */
   .print-document {
     max-width: 100% !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 0 !important;
-    background: var(--color-porcelain) !important;
-    color: var(--color-ink) !important;
+    border-radius: 0 !important;
   }
-  .print-document * {
-    background: transparent !important;
-    color: var(--color-ink) !important;
-    border-color: var(--color-ink) !important;
-    box-shadow: none !important;
+  .print-document, .print-document * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  .print-document h2 { break-before: page; }
-  .print-document section:first-of-type h2 { break-before: auto; }
-  .print-document pre {
-    white-space: pre-wrap !important;
-    overflow-wrap: anywhere;
-    border: 1px solid var(--color-ink) !important;
-  }
+  .print-document .print-band { border-radius: 0 !important; }
+  /* Header dokumen (band brand) tetap tampil meski header aplikasi disembunyikan. */
+  .print-document header { display: flex !important; }
+  .print-main-col { grid-column: 1 / -1 !important; }
+  .print-section, .print-section * { break-inside: avoid; }
   .print-document table { width: 100% !important; border-collapse: collapse; }
-  .print-document th, .print-document td { border: 1px solid var(--color-ink) !important; }
+  .print-document thead { display: table-header-group; }
 }

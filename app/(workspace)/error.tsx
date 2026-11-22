@@ -30,8 +30,8 @@ export default function WorkspaceError({
         action={
           <div className="flex flex-wrap justify-center gap-2">
             <Button ref={retryRef} variant="primary" onClick={() => reset()}>Coba lagi</Button>
-            <Link href="/overview">
-              <Button variant="ghost">Kembali ke Ringkasan</Button>
+            <Link href="/data-sources">
+              <Button variant="ghost">Kembali ke Dokumen</Button>
             </Link>
           </div>
         }

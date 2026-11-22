@@ -17,6 +17,7 @@ import type {
 } from '@/lib/contracts/http';
 import { answerQuestion } from '@/lib/core/query';
 import { buildAiPortContext, createCorePorts } from '@/lib/ai/adapter';
+import { activeAttachmentForConversation, activeAttachmentsForConversation } from '@/lib/core/attachment-scope';
 import { findDataset } from '@/lib/core/registry';
 import type {
   Citation,
@@ -374,6 +375,30 @@ export async function sendMessage(
     }
   }
 
+  // SQL jawaban asisten terakhir — bahan resolusi follow-up anafora
+  // ("jabarkan laporan ini") di core, supaya pertanyaan lanjutan memakai
+  // hasil sebelumnya alih-alih ditolak sebagai pertanyaan baru.
+  let lastAssistantSql: string | null = null;
+  let lastAssistantRowCount = 0;
+  const lastAssistantRow = db
+    .prepare(
+      "SELECT payload_json FROM messages WHERE conversation_id = ? AND role = 'assistant' ORDER BY seq DESC LIMIT 1",
+    )
+    .get(conversationId) as { payload_json: string } | undefined;
+  if (lastAssistantRow?.payload_json) {
+    try {
+      const payload = JSON.parse(lastAssistantRow.payload_json) as {
+        sql?: { query?: string; rowCount?: number; error?: string } | null;
+      };
+      if (payload.sql?.query && !payload.sql.error) {
+        lastAssistantSql = payload.sql.query;
+        lastAssistantRowCount = payload.sql.rowCount ?? 0;
+      }
+    } catch {
+      lastAssistantSql = null;
+    }
+  }
+
   const now = nowJakartaIso();
   const userMessageId = randomUUID();
 
@@ -412,13 +437,26 @@ export async function sendMessage(
         : {}),
     ...(Object.keys(entities).length ? { entities } : {}),
     history: history.map((h) => ({ role: h.role, content: h.content })),
+    ...(lastAssistantSql
+      ? { lastResult: { sql: lastAssistantSql, rowCount: lastAssistantRowCount } }
+      : {}),
   };
 
-  // Registry & scope dibangun per permintaan dari dataset_id conversation —
-  // bukan dari state global — sehingga bukti lintas attachment tidak bocor.
+  // Registry & scope dibangun per permintaan — dan sesuai FR-C, kelompok
+  // dokumen percakapan menentukan domain konteks chat: SATU dokumen (scope
+  // ketat), KELOMPOK dokumen (NotebookLM-style, dibatasi struktural oleh
+  // retrieval IN-clause), atau seluruh dokumen ('*') bila tanpa attachment.
+  const activeAttachments = activeAttachmentsForConversation(db, conversationId);
+  const activeAttachment = activeAttachments[0] ?? null;
+  const contextDatasetId = activeAttachment ? activeAttachment.datasetId : coreDatasetId;
+  const retrievalDatasetIds = activeAttachments.length > 1
+    ? activeAttachments.map((a) => a.datasetId)
+    : null;
   const aiContext = buildAiPortContext(db, {
-    datasetId: coreDatasetId,
+    datasetId: activeAttachment ? activeAttachment.datasetId : '*',
+    datasetIds: retrievalDatasetIds,
     conversationId,
+    attachmentId: activeAttachment?.id ?? null,
   });
 
   const started = Date.now();
@@ -427,11 +465,12 @@ export async function sendMessage(
     const query = await answerQuestion(
       db,
       {
-        datasetId: coreDatasetId,
+        datasetId: contextDatasetId,
         question: input.content,
         lang,
         context: queryContext,
         conversationId,
+        retrievalDatasetIds,
         ...aiContext,
       },
       createCorePorts(db),

@@ -107,7 +107,7 @@ export function buildGuardrail(
   const latencyMs = Math.round(performance.now() - startedAt);
   const dataset = scope?.ref ?? {
     id: input.datasetId || 'seed',
-    name: 'analytics.db - Transaksi',
+    name: 'Data demo · Transaksi QRIS',
     kind: 'seed' as const,
     rowCount: 0,
     minDate: bounds.minDate,
@@ -399,7 +399,13 @@ export function checkGuardrails(input: GuardrailCheckInput): GuardrailResult {
           codeEntities.length > 0 && hasCodeEntityInEvidence && hasStrongCitation
             ? CODE_LOOKUP_THRESHOLD
             : ANSWERABILITY_THRESHOLD;
-        if (answerabilitySupport(q, String(input.evidenceText ?? '')) < threshold) {
+        // Parafrasa yang dibuktikan sitasi kuat TIDAK ditolak: support rendah
+        // pada satu kalimat sering berarti parafrasa, bukan out-of-scope.
+        // Tolak hanya bila support di bawah ambang DAN tidak ada sitasi kuat.
+        const hasAnyStrongCitation = (input.citationScores ?? []).some(
+          (s) => typeof s === 'number' && Number.isFinite(s) && s >= STRONG_CITATION_SCORE,
+        );
+        if (answerabilitySupport(q, String(input.evidenceText ?? '')) < threshold && !hasAnyStrongCitation) {
           type = 'out_of_scope';
         }
       }

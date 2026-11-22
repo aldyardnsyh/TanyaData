@@ -28,11 +28,11 @@ export function mirrorDocumentChunksToCore(
   chunks: MirrorChunk[],
 ): void {
   const now = nowJakartaIso();
-  const docId = `doc_${source.id}`;
+  const docId = source.id;
   const mirror = db.transaction(() => {
     db.prepare(
       `INSERT INTO core_datasets(id, name, kind, source_type, doc_type, status, schema_json, row_count, quality_report, storage_path, size_bytes, is_demo, created_at, updated_at)
-       VALUES (?, ?, 'document', ?, 'general', 'READY', '{}', 0, '{}', ?, ?, ?, ?, ?)
+       VALUES (?, ?, 'document', ?, 'general', 'READY', '{\"version\":1,\"tables\":[],\"relations\":[],\"enums\":{}}', 0, '{}', ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET status = 'READY', name = excluded.name, updated_at = excluded.updated_at`,
     ).run(source.id, source.name, source.format, source.storagePath ?? null, source.sizeBytes ?? 0, 0, now, now);
     db.prepare(

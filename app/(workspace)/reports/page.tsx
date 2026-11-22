@@ -1,32 +1,88 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import type { ReportDetailResponse, ReportListResponse } from '@/lib/contracts/http';
+import type { ReportDetailResponse, ReportListItem, ReportListResponse } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { Icon } from '@/components/ui/icons';
 import { SectionRule } from '@/components/signal/section-rule';
 import { StatusBadge } from '@/components/signal/status-badge';
 import { ReportDocument } from '@/components/reports/report-document';
+import { Pagination } from '@/components/ui/pagination';
 import { toast } from '@/components/ui/toaster';
 
+// Pagination server-side: 8 laporan per halaman, filter judul via ?q=.
+const PAGE_SIZE = 8;
+
 export default function ReportsPage() {
-  const reports = useApi<ReportListResponse>('/api/reports?limit=20');
   const [query, setQuery] = useState('');
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState('');
+
+  // Filter judul di-debounce 250ms lalu diteruskan ke server (reset ke halaman 1).
+  useEffect(() => {
+    const t = window.setTimeout(() => { setQ(query.trim()); setPage(1); }, 250);
+    return () => window.clearTimeout(t);
+  }, [query]);
+
+  const reports = useApi<ReportListResponse>(
+    `/api/reports?limit=${PAGE_SIZE}&offset=${(page - 1) * PAGE_SIZE}${q ? `&q=${encodeURIComponent(q)}` : ''}`,
+  );
+  // Metrik band diambil terpisah (limit 1) agar tetap global di halaman mana pun.
+  const latest = useApi<ReportListResponse>('/api/reports?limit=1');
+
+  // Setelah hapus di halaman terakhir, halaman bisa kosong — kembali ke halaman 1.
+  useEffect(() => {
+    if (!reports.loading && reports.data && reports.data.items.length === 0 && page > 1) setPage(1);
+  }, [reports.loading, reports.data, page]);
 
   useEffect(() => {
     if (!selectedId && reports.data?.items.length) setSelectedId(reports.data.items[0].id);
   }, [reports.data, selectedId]);
 
-  const items = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const all = reports.data?.items ?? [];
-    return q ? all.filter((report) => report.title.toLowerCase().includes(q)) : all;
-  }, [reports.data, query]);
+  const items = reports.data?.items ?? [];
+  const total = reports.data?.total ?? 0;
 
   const detail = useApi<ReportDetailResponse>(selectedId ? `/api/reports/${selectedId}` : '/api/reports?limit=1');
   const detailReady = Boolean(selectedId) && Boolean(detail.data?.report);
+
+  // Kelola laporan per kartu: ganti nama (inline) + hapus (konfirmasi dua langkah).
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [armedId, setArmedId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const beginEdit = (report: ReportListItem) => { setEditingId(report.id); setEditTitle(report.title); setArmedId(null); };
+  const saveEdit = async () => {
+    if (!editingId || !editTitle.trim() || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/reports/${editingId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: editTitle.trim() }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error?.message ?? 'Gagal menyimpan judul.');
+      toast({ status: 'success', message: 'Judul laporan diperbarui.' });
+      setEditingId(null);
+      reports.retry();
+      detail.retry();
+    } catch (err) {
+      toast({ status: 'error', message: err instanceof Error ? err.message : 'Gagal menyimpan judul.' });
+    } finally { setSaving(false); }
+  };
+  const removeReport = async (id: string) => {
+    if (armedId !== id) { setArmedId(id); setEditingId(null); return; }
+    try {
+      const res = await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error?.message ?? 'Gagal menghapus laporan.');
+      toast({ status: 'success', message: 'Laporan dihapus.' });
+      if (id === selectedId) setSelectedId('');
+      reports.retry();
+    } catch (err) {
+      toast({ status: 'error', message: err instanceof Error ? err.message : 'Gagal menghapus laporan.' });
+    } finally { setArmedId(null); }
+  };
 
   const exportListCsv = () => {
     const header = ['id', 'title', 'period', 'dataset', 'createdAt'];
@@ -45,8 +101,8 @@ export default function ReportsPage() {
 
   // Metrik band dari data existing: total laporan tersimpan + jejak laporan
   // terbaru (daftar diurutkan created_at DESC, items[0] = laporan terakhir).
-  const datasetName = reports.data?.items[0]?.dataset.name;
-  const latestReport = reports.data?.items[0];
+  const datasetName = latest.data?.items[0]?.dataset.name;
+  const latestReport = latest.data?.items[0];
   const bannerStats = [
     { id: 'created', label: 'Terakhir dibuat', value: latestReport ? latestReport.createdAt.slice(0, 10) : '—' },
     { id: 'period', label: 'Periode terakhir', value: latestReport?.period || '—' },
@@ -103,7 +159,7 @@ export default function ReportsPage() {
                   <p className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
                     Laporan tersimpan
                   </p>
-                  <p className="text-stat-lg text-lime text-glow-lime">{reports.data?.total ?? 0}</p>
+                  <p className="text-stat-lg text-lime text-glow-lime">{latest.data?.total ?? 0}</p>
                   <p className="mt-s2 font-mono text-[11px] uppercase tracking-[0.06em] text-dark-muted">
                     SQLITE · SQL + FTS5 · READ ONLY
                   </p>
@@ -134,7 +190,7 @@ export default function ReportsPage() {
       <div className="page-container pb-s6" data-nav-theme="light">
         <div className="grid-dashboard mt-s5">
           {/* Daftar: 4 kolom. Kartu laporan memakai grammar hover lift. */}
-          <section className="surface col-span-4 flex flex-col p-s4 xl:col-span-4" aria-labelledby="daftar-heading">
+          <section className="print-no-print surface col-span-4 flex flex-col p-s4 xl:col-span-4" aria-labelledby="daftar-heading">
             <div className="mb-s3 flex flex-wrap items-start justify-between gap-s2">
               <div>
                 <h2 id="daftar-heading" className="font-display text-title text-ink">Daftar laporan</h2>
@@ -161,31 +217,64 @@ export default function ReportsPage() {
               <ul className="flex flex-col gap-s2">
                 {items.map((report) => {
                   const active = report.id === selectedId;
+                  if (editingId === report.id) {
+                    return (
+                      <li key={report.id} className="flex flex-col gap-s2 rounded-surface border border-forest bg-forest-08 px-s3 py-s3">
+                        <input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') void saveEdit(); if (e.key === 'Escape') setEditingId(null); }}
+                          maxLength={120}
+                          aria-label="Judul laporan"
+                          className="min-h-11 w-full rounded-control border border-[var(--border-hairline)] bg-porcelain px-s3 font-body text-caption text-ink focus-ring"
+                          autoFocus
+                        />
+                        <div className="flex gap-s2">
+                          <button type="button" onClick={() => setEditingId(null)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring">Batal</button>
+                          <button type="button" onClick={() => void saveEdit()} disabled={!editTitle.trim() || saving} className="touch-44 rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring disabled:opacity-50">{saving ? 'Menyimpan' : 'Simpan'}</button>
+                        </div>
+                      </li>
+                    );
+                  }
                   return (
-                    <li key={report.id}>
+                    <li key={report.id} className="group flex items-stretch gap-s1">
                       <button
                         type="button"
-                        onClick={() => setSelectedId(report.id)}
+                        onClick={() => { setSelectedId(report.id); setArmedId(null); }}
                         aria-current={active ? 'true' : undefined}
-                        className={`flex min-h-11 w-full flex-col items-start gap-s1 rounded-surface border px-s3 py-s3 text-left transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none focus-ring ${active ? 'border-forest bg-forest-08' : 'border-[var(--border-hairline)]'}`}
+                        className={`flex min-h-11 min-w-0 flex-1 flex-col items-start gap-s1 rounded-surface border px-s3 py-s3 text-left transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none focus-ring ${active ? 'border-forest bg-forest-08' : 'border-[var(--border-hairline)]'}`}
                       >
                         <span className="flex w-full items-center justify-between gap-s2">
-                          <span className="inline-flex items-center gap-s2 font-body text-body font-semibold text-ink"><span className={`state-dot ${active ? 'state-dot-active' : ''}`} aria-hidden="true" />{report.title}</span>
+                          <span className="inline-flex min-w-0 items-center gap-s2 font-body text-body font-semibold text-ink"><span className={`state-dot ${active ? 'state-dot-active' : ''}`} aria-hidden="true" /><span className="truncate">{report.title}</span></span>
                           {active && <Icon name="arrow_forward" className="text-[16px] text-forest" />}
                         </span>
                         <span className="mono-meta max-w-full truncate">{[report.period, report.dataset.name, report.createdAt.slice(0, 10)].filter(Boolean).join(' · ')}</span>
                       </button>
+                      {/* Aksi per laporan: selalu tampak (redup) agar bisa ditemukan;
+                          hover hanya mempertegas. */}
+                      <div className="flex flex-col justify-center gap-s1">
+                        <button type="button" onClick={() => beginEdit(report)} title="Ganti nama laporan" aria-label={`Ganti nama laporan ${report.title}`} className="touch-44 flex items-center justify-center rounded-control text-ink-72 transition-colors hover:bg-forest-08 hover:text-forest focus-ring"><Icon name="edit" className="text-[16px]" /></button>
+                        <button
+                          type="button"
+                          onClick={() => void removeReport(report.id)}
+                          title="Hapus laporan"
+                          aria-label={`Hapus laporan ${report.title}`}
+                          className={`touch-44 flex items-center justify-center rounded-control transition-colors focus-ring ${armedId === report.id ? 'bg-terracotta px-s2 font-display text-label font-semibold text-porcelain' : 'text-ink-72 hover:bg-forest-08 hover:text-terracotta'}`}
+                        >
+                          {armedId === report.id ? <span className="whitespace-nowrap">Hapus?</span> : <Icon name="delete" className="text-[16px]" />}
+                        </button>
+                      </div>
                     </li>
                   );
                 })}
               </ul>
             )}
-            <div className="mt-auto border-t border-[var(--border-hairline)] pt-s2"><span className="mono-meta">{items.length} LAPORAN</span></div>
+            <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPage={setPage} label="laporan" />
           </section>
 
           {/* Pratinjau: 8 kolom. Dokumen cetak A4 di panggung rounded-card-lg. */}
-          <section className="col-span-4 flex flex-col gap-s3 xl:col-span-8" aria-labelledby="pratinjau-heading">
-            <div className="flex flex-wrap items-center justify-between gap-s2">
+          <section className="print-main-col col-span-4 flex flex-col gap-s3 xl:col-span-8" aria-labelledby="pratinjau-heading">
+            <div className="print-no-print flex flex-wrap items-center justify-between gap-s2">
               <div className="flex items-center gap-s2"><span className="mono-meta" id="pratinjau-heading">PRATINJAU DOKUMEN</span><span className="state-dot" aria-hidden="true" /><span className="font-body text-body font-semibold text-ink">Pratinjau cetak</span></div>
               <div className="flex items-center gap-s2"><span className="mono-meta">A4 · 100%</span><button type="button" onClick={() => window.print()} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="print" className="text-[16px]" /> Cetak</button></div>
             </div>
@@ -198,7 +287,7 @@ export default function ReportsPage() {
               )}
             </div>
             {detailReady && (
-              <div className="sticky bottom-s3 z-sticky flex flex-wrap items-center justify-center gap-s2 self-center rounded-overlay border border-[var(--border-hairline)] bg-porcelain p-s2 elevated">
+              <div className="print-no-print sticky bottom-s3 z-sticky flex flex-wrap items-center justify-center gap-s2 self-center rounded-overlay border border-[var(--border-hairline)] bg-porcelain p-s2 elevated">
                 <a href={`/api/reports/${selectedId}/export?format=pdf`} download className="touch-44 inline-flex items-center gap-s2 rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring"><Icon name="picture_as_pdf" className="text-[16px]" /> Unduh PDF</a>
                 <a href={`/api/reports/${selectedId}/export?format=csv`} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="download" className="text-[16px]" /> Ekspor CSV</a>
                 <button type="button" onClick={() => void shareLink()} className="touch-44 inline-flex items-center gap-s2 rounded-control px-s3 font-display text-label text-ink-72 focus-ring"><Icon name="link" className="text-[16px]" /> Salin tautan</button>

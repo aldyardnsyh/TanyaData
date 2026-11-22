@@ -32,14 +32,12 @@ const id = {
   'shell.goTo': 'Buka',
   'shell.close': 'Tutup',
   'shell.docsIntro': 'Panduan singkat workspace TanyaData.',
-  'shell.docsOverview': 'Pantau metrik operasional dan temukan perubahan yang bermakna.',
   'shell.docsAssistant': 'Ajukan pertanyaan memakai bahasa alami dan dapatkan jawaban bersumber.',
   'shell.docsSources': 'Kelola dataset dan dokumen yang menjadi sumber jawaban.',
   'shell.docsInvestigations': 'Selidiki anomali dan korelasikan bukti lintas sumber.',
   'shell.docsReports': 'Tinjau dan ekspor laporan yang tersimpan.',
   'shell.docsSettings': 'Atur bahasa, dataset aktif, dan preferensi workspace.',
 
-  'nav.overview': 'Ringkasan',
   'nav.assistant': 'Asisten',
   'nav.dataSources': 'Sumber Data',
   'nav.investigations': 'Investigasi',
@@ -186,14 +184,12 @@ const en: Record<keyof typeof id, string> = {
   'shell.goTo': 'Go to',
   'shell.close': 'Close',
   'shell.docsIntro': 'A short guide to the TanyaData workspace.',
-  'shell.docsOverview': 'Monitor operational metrics and spot meaningful changes.',
   'shell.docsAssistant': 'Ask questions in natural language and get grounded answers.',
   'shell.docsSources': 'Manage the datasets and documents behind every answer.',
   'shell.docsInvestigations': 'Investigate anomalies and correlate evidence across sources.',
   'shell.docsReports': 'Review and export saved reports.',
   'shell.docsSettings': 'Set the language, active dataset, and workspace preferences.',
 
-  'nav.overview': 'Overview',
   'nav.assistant': 'AI Assistant',
   'nav.dataSources': 'Data Sources',
   'nav.investigations': 'Investigations',
@@ -328,7 +324,6 @@ export function t(_lang: Lang, key: DictionaryKey, vars?: Record<string, string 
 }
 
 export const NAV_KEYS: DictionaryKey[] = [
-  'nav.overview',
   'nav.assistant',
   'nav.dataSources',
   'nav.investigations',

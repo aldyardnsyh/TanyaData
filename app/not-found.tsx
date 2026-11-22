@@ -34,10 +34,10 @@ export default function NotFound() {
           Alamat ini tidak tersedia pada workspace TanyaData.
         </p>
         <Link
-          href="/overview"
+          href="/assistant"
           className="inline-flex h-11 items-center rounded-md border border-outline-variant bg-surface-container-lowest px-5 font-body text-label-md text-on-surface transition-colors duration-[var(--motion-fast)] hover:bg-surface-container focus-ring"
         >
-          Kembali ke Ringkasan
+          Kembali ke Asisten
         </Link>
       </div>
     </main>

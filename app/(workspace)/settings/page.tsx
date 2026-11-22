@@ -1,13 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import type { MetaResponse, SettingsResponse } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { useI18n } from '@/lib/ui/i18n-provider';
 import { formatDateRangeId, formatNumber } from '@/lib/ui/format';
 import { BentoGrid, type BentoItem } from '@/components/signal/bento-grid';
-import { SpotlightCard } from '@/components/signal/spotlight-card';
 import { AnimatedTabs } from '@/components/signal/animated-tabs';
 import { SectionRule } from '@/components/signal/section-rule';
 import { StatusBadge } from '@/components/signal/status-badge';
@@ -30,7 +28,6 @@ const CHART_TYPES = [
 
 const TABS = [
   { id: 'general', label: 'Umum' },
-  { id: 'data', label: 'Data' },
   { id: 'assistant', label: 'Asisten' },
   { id: 'about', label: 'Tentang' },
 ] as const;
@@ -122,9 +119,6 @@ export default function SettingsPage() {
   const meta = useApi<MetaResponse>('/api/meta');
   const { lang, setLang } = useI18n();
 
-  const [name, setName] = useState('');
-  const [role, setRole] = useState('');
-  const [activeDataset, setActiveDataset] = useState('');
   const [preset, setPreset] = useState<string>('this_month');
   const [chartDefault, setChartDefault] = useState<string>('bar');
   const [denseTables, setDenseTables] = useState(true);
@@ -134,9 +128,6 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
 
   const resetForm = useCallback((data: SettingsResponse | null) => {
-    setName(data?.profile.name ?? '');
-    setRole(data?.profile.role ?? '');
-    setActiveDataset(data?.activeDatasetId ?? '');
     setPreset(data && PRESETS.some((item) => item.id === data.dateRange.preset) ? data.dateRange.preset : 'this_month');
     setChartDefault(data?.preferences.chartDefault ?? 'bar');
     setDenseTables(data?.preferences.denseTables ?? true);
@@ -178,8 +169,6 @@ export default function SettingsPage() {
       const range = settings.data?.dateRange;
       const body: Record<string, unknown> = {
         lang,
-        profile: { name, role },
-        activeDatasetId: activeDataset,
         preferences: { chartDefault, denseTables },
       };
       if (range?.start && range.end) {
@@ -211,11 +200,7 @@ export default function SettingsPage() {
     setNotice('hidden');
   };
 
-  const datasets = settings.data?.datasets ?? meta.data?.data.datasetChoices ?? [];
-  const activeDatasetName = datasets.find((dataset) => dataset.id === activeDataset)?.name ?? null;
-  const activeRowCount = datasets.find((dataset) => dataset.id === activeDataset)?.rowCount ?? null;
   const documentsTotal = meta.data?.data.documents.total ?? null;
-  const bounds = meta.data?.data.activeDataset;
   const rangeLabel =
     meta.data?.data.periodDefaults.label ??
     (settings.data?.dateRange.start && settings.data.dateRange.end
@@ -227,30 +212,23 @@ export default function SettingsPage() {
   const bentoItems: BentoItem[] = useMemo(
     () => [
       {
-        id: 'dataset',
-        label: 'Dataset aktif',
-        value: activeRowCount !== null ? formatNumber(activeRowCount) : 'Belum tersedia',
-        source: activeDatasetName ?? 'Belum dipilih',
-        span: 'hero',
-        active: Boolean(activeDataset),
-      },
-      { id: 'lang', label: 'Bahasa', value: lang === 'id' ? 'ID' : 'EN', source: 'ANTARMUKA' },
-      { id: 'range', label: 'Rentang bawaan', value: rangeLabel, source: presetLabel.toUpperCase() },
-      {
         id: 'documents',
         label: 'Dokumen',
         value: documentsTotal !== null ? formatNumber(documentsTotal) : 'Belum tersedia',
         source: 'TERINDEKS',
+        span: 'hero',
       },
+      { id: 'lang', label: 'Bahasa', value: lang === 'id' ? 'ID' : 'EN', source: 'ANTARMUKA' },
+      { id: 'range', label: 'Rentang bawaan', value: rangeLabel, source: presetLabel.toUpperCase() },
       { id: 'chart', label: 'Grafik', value: chartLabel, source: 'BAWAAN' },
     ],
-    [activeRowCount, activeDatasetName, activeDataset, lang, rangeLabel, presetLabel, documentsTotal, chartLabel],
+    [lang, rangeLabel, presetLabel, documentsTotal, chartLabel],
   );
 
   // Pasangan metrik kecil di band gelap: status ringkas dari data existing.
   const bandPairs = [
     { id: 'lang', label: 'Bahasa', value: lang === 'id' ? 'Bahasa Indonesia' : 'English' },
-    { id: 'dataset', label: 'Dataset aktif', value: activeDatasetName ?? 'Belum dipilih' },
+    { id: 'documents', label: 'Dokumen', value: documentsTotal !== null ? formatNumber(documentsTotal) : '—' },
     { id: 'range', label: 'Rentang bawaan', value: presetLabel },
   ];
 
@@ -273,11 +251,11 @@ export default function SettingsPage() {
         />
         <div className="page-container relative pb-s5 pt-s5">
           <p className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
-            {activeDatasetName ? `TanyaData · ${activeDatasetName}` : 'TanyaData'}
+            TanyaData
           </p>
           <h1 className="mt-s2 font-display text-display text-porcelain">Pengaturan</h1>
           <p className="mt-s2 max-w-[52ch] font-body text-body text-dark-muted">
-            Atur bahasa, dataset aktif, dan preferensi tampilan workspace.
+            Atur bahasa, preferensi tampilan, dan lihat status kapabilitas workspace.
           </p>
 
           <div className="mt-s5 grid items-end gap-s4 lg:grid-cols-12">
@@ -391,21 +369,6 @@ export default function SettingsPage() {
 
             <SectionRule className="mt-s5" />
 
-            {/* Purpose Gate: halo menandakan kartu bisa diklik untuk membuka pengaturan data. */}
-            <SpotlightCard
-              active={Boolean(activeDataset)}
-              onClick={() => setActiveTab('data')}
-              label="Buka pengaturan data"
-              className="mt-s5"
-            >
-              <span className="mono-meta">SUMBER DATA</span>
-              <span className="font-display text-title text-ink">{activeDatasetName ?? 'Belum dipilih'}</span>
-              <span className="font-body text-caption text-ink-72">
-                {activeRowCount !== null ? `${formatNumber(activeRowCount)} baris` : 'Jumlah baris belum tersedia'}
-                {bounds?.minDate && bounds.maxDate ? ` · ${formatDateRangeId(bounds.minDate, bounds.maxDate)}` : ''}
-              </span>
-            </SpotlightCard>
-
             <AnimatedTabs
               tabs={TABS.map((tab) => ({ id: tab.id, label: tab.label }))}
               activeId={activeTab}
@@ -424,41 +387,13 @@ export default function SettingsPage() {
                       Umum
                     </h2>
                     <p className="mt-s1 font-body text-caption text-ink-72">
-                      Identitas workspace, bahasa, dan rentang tanggal bawaan.
+                      Bahasa, zona waktu, dan rentang tanggal bawaan.
                     </p>
                   </div>
                   <span className="mono-meta">ANTARMUKA · {lang === 'id' ? 'ID' : 'EN'}</span>
                 </div>
                 <SectionRule />
                 <div className="grid grid-cols-1 gap-s4 md:grid-cols-2">
-                  <Field id="ws-name" label="Nama workspace">
-                    <input
-                      id="ws-name"
-                      type="text"
-                      value={name}
-                      maxLength={80}
-                      placeholder="Belum diisi"
-                      onChange={(event) => {
-                        setName(event.target.value);
-                        markDirty();
-                      }}
-                      className={INPUT_CLASS}
-                    />
-                  </Field>
-                  <Field id="ws-role" label="Peran">
-                    <input
-                      id="ws-role"
-                      type="text"
-                      value={role}
-                      maxLength={80}
-                      placeholder="Belum diisi"
-                      onChange={(event) => {
-                        setRole(event.target.value);
-                        markDirty();
-                      }}
-                      className={INPUT_CLASS}
-                    />
-                  </Field>
                   <ChoiceGroup
                     label="Bahasa antarmuka"
                     options={[
@@ -473,6 +408,21 @@ export default function SettingsPage() {
                       UTC+07:00 · Jakarta
                     </div>
                   </Field>
+                  <label className="flex min-h-11 items-start gap-s3 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3">
+                    <input
+                      type="checkbox"
+                      checked={denseTables}
+                      onChange={(event) => {
+                        setDenseTables(event.target.checked);
+                        markDirty();
+                      }}
+                      className="mt-s1 h-4 w-4 accent-forest"
+                    />
+                    <span className="flex flex-col gap-s1">
+                      <span className="font-display text-label font-semibold text-ink">Tabel ringkas</span>
+                      <span className="font-body text-caption text-ink-72">Gunakan jarak baris lebih rapat pada tabel analitik.</span>
+                    </span>
+                  </label>
                   <div className="md:col-span-2">
                     <Field id="ws-range" label="Rentang tanggal bawaan" hint="Diterapkan pada dashboard dan pertanyaan baru.">
                       <select
@@ -494,76 +444,6 @@ export default function SettingsPage() {
                     <p className="mono-meta mt-s2">{rangeLabel}</p>
                   </div>
                 </div>
-              </section>
-            )}
-
-            {activeTab === 'data' && (
-              <section
-                aria-labelledby="panel-data"
-                className="surface rounded-card-lg mt-s4 flex flex-col gap-s4 p-s4 transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none md:p-s5"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-s2">
-                  <div>
-                    <h2 id="panel-data" className="font-display text-title text-ink">
-                      Data
-                    </h2>
-                    <p className="mt-s1 font-body text-caption text-ink-72">
-                      Dataset aktif, preferensi tabel, dan ringkasan sumber data.
-                    </p>
-                  </div>
-                  <span className="mono-meta">{datasets.length} DATASET</span>
-                </div>
-                <SectionRule />
-                {datasets.length === 0 ? (
-                  <div className="flex flex-col items-start gap-s2">
-                    <StatusBadge label="Kosong" tone="neutral" />
-                    <p className="font-body text-body text-ink">Belum ada dataset yang tersedia.</p>
-                    <p className="font-body text-caption text-ink-72">Unggah berkas untuk memilih dataset aktif.</p>
-                    <Link href="/data-sources" className="touch-44 inline-flex items-center font-display text-label font-semibold text-forest focus-ring">
-                      Buka sumber data
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-s4 md:grid-cols-2">
-                    <Field id="dataset-select" label="Dataset aktif">
-                      <select
-                        id="dataset-select"
-                        value={activeDataset}
-                        onChange={(event) => {
-                          setActiveDataset(event.target.value);
-                          markDirty();
-                        }}
-                        className={INPUT_CLASS}
-                      >
-                        {datasets.map((dataset) => (
-                          <option key={dataset.id} value={dataset.id}>
-                            {dataset.name} ({formatNumber(dataset.rowCount)} baris)
-                          </option>
-                        ))}
-                      </select>
-                    </Field>
-                    <label className="flex min-h-11 items-start gap-s3 rounded-control border border-[var(--border-hairline)] bg-porcelain p-s3">
-                      <input
-                        type="checkbox"
-                        checked={denseTables}
-                        onChange={(event) => {
-                          setDenseTables(event.target.checked);
-                          markDirty();
-                        }}
-                        className="mt-s1 h-4 w-4 accent-forest"
-                      />
-                      <span className="flex flex-col gap-s1">
-                        <span className="font-display text-label font-semibold text-ink">Tabel ringkas</span>
-                        <span className="font-body text-caption text-ink-72">Gunakan jarak baris lebih rapat pada tabel analitik.</span>
-                      </span>
-                    </label>
-                    <dl className="flex flex-col gap-s2 md:col-span-2">
-                      <InfoRow label="Dokumen terindeks" value={documentsTotal !== null ? formatNumber(documentsTotal) : 'Belum tersedia'} />
-                      {activeRowCount !== null && <InfoRow label="Baris dataset aktif" value={`${formatNumber(activeRowCount)} BARIS`} />}
-                      {bounds?.minDate && bounds.maxDate && <InfoRow label="Rentang data" value={formatDateRangeId(bounds.minDate, bounds.maxDate)} />}
-                    </dl>
-                  </div>
-                )}
               </section>
             )}
 

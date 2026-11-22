@@ -19,8 +19,10 @@ const reportJobSchema = z.object({
 export async function GET(request: Request) {
   return handleRoute(() => {
     const db = ensureWorkspaceReady();
-    const { limit, offset } = parsePagination(new URL(request.url).searchParams, 20, 100);
-    return jsonResponse(listReports(db, limit, offset));
+    const params = new URL(request.url).searchParams;
+    const { limit, offset } = parsePagination(params, 20, 100);
+    const q = (params.get('q') ?? '').slice(0, 120);
+    return jsonResponse(listReports(db, limit, offset, q));
   });
 }
 

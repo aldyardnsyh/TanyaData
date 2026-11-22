@@ -13,6 +13,8 @@ import {
 } from './retrieval';
 import type { DataType, DocType, OutputDecision, OutputType, QuestionKind } from './types';
 
+import { domainPreference } from './domain-profile';
+
 export interface DecideInput {
   question: string;
   questionKind?: QuestionKind;
@@ -28,6 +30,9 @@ export interface DecideInput {
   hasVerifiableDate?: boolean;
   hasPasalNumber?: boolean;
   evidenceCount?: number;
+  /** POV domain (finance/engineering/hr/general) — menyusun ulang preferensi
+   * saat keputusan ambigu; tidak pernah memaksa chart tanpa data. */
+  domain?: import('./domain-profile').OutputDomain;
 }
 
 /** Generic question-kind inference. No domain intents or entity names. */
@@ -67,6 +72,17 @@ export function decideOutput(input: DecideInput): OutputDecision {
   const rows = input.rowCount ?? 0;
   const cats = input.categoryCount ?? 0;
   let entities = input.entityCount ?? 0;
+
+  // Dimensi domain/POV (arah user): urutan preferensi tipe output saat
+  // keputusan ambigu. Hanya menyusun ulang di antara tipe yang sah untuk
+  // bentuk data — guard ketersediaan data di bawah tetap berlaku (P-1/P-2).
+  const preferenceFor = (kindKey: string, allowed: OutputType[]): { type: OutputType; domainApplied: boolean } => {
+    const order = input.domain && input.domain !== 'general' ? domainPreference(input.domain, kindKey) : [];
+    const pick = order.find((t) => allowed.includes(t as OutputType));
+    return pick
+      ? { type: pick as OutputType, domainApplied: true }
+      : { type: allowed[0], domainApplied: false };
+  };
 
   // A document-backed comparison produces no SQL rows, so callers cannot
   // always derive entityCount from the data shape. Infer it from distinct
@@ -129,13 +145,24 @@ export function decideOutput(input: DecideInput): OutputDecision {
       [noChartForOne, quoteNeedsNumber]);
   }
 
-  // 7. Distribution → donut only for 3–4 compositional categories, else bar.
+  // 7. Distribution → komposisi 3–4 kategori donut (default); 5+ bar; 2 table.
+  //    Domain menyusun ulang preferensi (engineering membaca tabel, dsb.).
   if (kind === 'distribution' && cats >= 3) {
     if (cats <= 4) {
-      return decision('donut', 'Komposisi 3–4 kategori yang berjumlah 100%; donut + tabel.', 0.80,
+      const pick = preferenceFor('distribution', ['donut', 'bar', 'table']);
+      return decision(pick.type,
+        pick.domainApplied
+          ? `Komposisi 3–4 kategori; domain ${input.domain} lebih mudah membaca ${pick.type}.`
+          : 'Komposisi 3–4 kategori yang berjumlah 100%; donut + tabel.',
+        pick.domainApplied ? 0.78 : 0.80,
         [noDonutForTwo, noChartForOne]);
     }
-    return decision('bar', `${cats} kategori terlalu banyak untuk donut; bar + tabel lebih terbaca.`, 0.84,
+    const pick = preferenceFor('distribution', ['bar', 'table']);
+    return decision(pick.type,
+      pick.domainApplied
+        ? `${cats} kategori; domain ${input.domain} lebih mudah membaca ${pick.type}.`
+        : `${cats} kategori terlalu banyak untuk donut; bar + tabel lebih terbaca.`,
+      0.84,
       [noDonutForTwo, noChartForOne]);
   }
   if (kind === 'distribution' && cats === 2) {
@@ -143,9 +170,14 @@ export function decideOutput(input: DecideInput): OutputDecision {
       [noDonutForTwo]);
   }
 
-  // 8. Comparison → bar for 2–8 entities.
+  // 8. Comparison → bar untuk 2–8 entitas (default); domain bisa memilih tabel.
   if (kind === 'comparison' && entities >= 2 && entities <= 8) {
-    return decision('bar', `${entities} entitas dibandingkan; bar diurutkan berdasarkan nilai.`, 0.85,
+    const pick = preferenceFor('comparison', ['bar', 'table']);
+    return decision(pick.type,
+      pick.domainApplied
+        ? `${entities} entitas dibandingkan; domain ${input.domain} lebih mudah membaca ${pick.type}.`
+        : `${entities} entitas dibandingkan; bar diurutkan berdasarkan nilai.`,
+      0.85,
       [noChartForOne]);
   }
 
@@ -159,6 +191,13 @@ export function decideOutput(input: DecideInput): OutputDecision {
   if (input.docType === 'financial' && (!input.hasCurrency || !input.hasPeriod)) {
     return decision('table', 'Angka finansial tanpa mata uang/periode lengkap; tabel dengan flag incomplete.', 0.70,
       [financeNeedsMeta, noForcedViz]);
+  }
+
+  // 10b. Engineering POV: parameter teknis tetap parameter_report meski
+  //      doc_type sumber bukan technical_report (domain menyusun ulang).
+  if (input.domain === 'engineering' && kind === 'parameter') {
+    return decision('parameter_table', 'Parameter teknis disajikan sebagai tabel dengan satuan dan halaman; domain engineering membaca spesifikasi lewat tabel.', 0.88,
+      [paramNeedsUnit, noChartForText, noForcedViz]);
   }
 
   // 11. Procedure / prose → narrative text.

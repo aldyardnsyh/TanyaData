@@ -22,6 +22,11 @@ import { Dropzone } from '@/components/signal/dropzone';
 import { StatusBadge } from '@/components/signal/status-badge';
 import type { DotTone } from '@/components/signal/status-dot';
 import { toast } from '@/components/ui/toaster';
+import { Pagination } from '@/components/ui/pagination';
+
+// Pagination client-side: payload daftar sumber kecil (metadata), fetch semua
+// tetap murah; grid dibatasi 9 kartu per halaman agar komposisi tetap rapi.
+const SRC_PAGE_SIZE = 9;
 
 const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   VALIDATION_ERROR: 'Data yang dikirim tidak valid.',
@@ -62,6 +67,7 @@ export default function DataSourcesPage() {
   const meta = useApi<MetaResponse>('/api/meta');
 
   const [filter, setFilter] = useState('all');
+  const [srcPage, setSrcPage] = useState(1);
   const [uploading, setUploading] = useState(false);
   const [job, setJob] = useState<JobState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SourceListItem | null>(null);
@@ -95,6 +101,7 @@ export default function DataSourcesPage() {
     if (filter === 'failed') return s.status === 'FAILED';
     return s.kind === filter;
   });
+  const pageItems = visible.slice((srcPage - 1) * SRC_PAGE_SIZE, srcPage * SRC_PAGE_SIZE);
 
   const processingSource = items.find((s) => s.status === 'PROCESSING' || s.status === 'UPLOADED');
   useEffect(() => {
@@ -212,7 +219,7 @@ export default function DataSourcesPage() {
     { id: 'processing', label: 'Sumber diproses', value: num(counts?.processing) },
   ];
 
-  const cards: RevealCard[] = visible.map((source) => ({
+  const cards: RevealCard[] = pageItems.map((source) => ({
     id: source.id,
     title: source.name,
     meta: `${source.kind.toUpperCase()} · ${source.format.toUpperCase()} · ${formatBytes(source.sizeBytes)}`,
@@ -310,7 +317,7 @@ export default function DataSourcesPage() {
             <AnimatedTabs
               tabs={tabs}
               activeId={filter}
-              onChange={setFilter}
+              onChange={(id) => { setFilter(id); setSrcPage(1); }}
               tone="dark"
               state={sources.loading ? 'loading' : 'default'}
             />
@@ -384,6 +391,9 @@ export default function DataSourcesPage() {
             errorTitle="Daftar sumber gagal dimuat."
             onRetry={sources.retry}
           />
+          <div className="mt-s3">
+            <Pagination page={srcPage} pageSize={SRC_PAGE_SIZE} total={visible.length} onPage={setSrcPage} label="sumber" />
+          </div>
         </section>
 
         <SectionRule className="mt-s5" />

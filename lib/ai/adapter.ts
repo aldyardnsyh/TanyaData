@@ -24,7 +24,7 @@ import type {
   VizSpec,
 } from '@/lib/core/contracts';
 import type { CorePorts, SqlGenerateInput, ComposeInput, ComposeOutput } from '@/lib/core/ports';
-import { composeDeterministicAnswer } from '@/lib/core/answer';
+import { composeDeterministicAnswer, friendlySourceName } from '@/lib/core/answer';
 import { getDataset } from '@/lib/core/registry';
 import { activeAttachmentForConversation, getAttachment } from '@/lib/core/attachment-scope';
 import { generateSql } from '@/lib/ai/text2sql';
@@ -37,6 +37,7 @@ import {
 } from '@/lib/ai/retrieval';
 import { checkGuardrails, codeEntities, topicsFromRegistry } from '@/lib/ai/guardrails';
 import { classifyEvidenceConfidence, decideOutput } from '@/lib/ai/output';
+import { inferDomainProfile } from '@/lib/ai/domain-profile';
 import { callLlmStructured } from '@/lib/ai/llm';
 import type { DocType as AiDocType, SchemaJson as AiSchemaJson } from '@/lib/ai/types';
 
@@ -77,14 +78,68 @@ type ChunkRow = {
  * (atau hash deterministik teks) sehingga deep-link tidak pernah menunjuk ke
  * revisi yang sudah berubah. Registry kosong = semua deep-link ditolak.
  */
-export function buildCitationRegistry(db: DB, datasetId: string): CitationRegistryView {
+export function buildCitationRegistry(db: DB, datasets: string | string[]): CitationRegistryView {
   const registry: CitationRegistryView = { documents: {}, chunks: {} };
   try {
-    const dataset = getDataset(db, datasetId);
+    // '*' = registry lintas dokumen (chip "Semua dokumen"): sitasi dari
+    // dokumen mana pun tetap tervalidasi, bukan ditolak fail-closed.
+    // Array = kelompok dokumen percakapan (NotebookLM-style).
+    const allDocs = datasets === '*' || (Array.isArray(datasets) && datasets.includes('*'));
+    const datasetList = Array.isArray(datasets) ? datasets : [datasets];
+    const inClause = allDocs ? '' : `WHERE dataset_id IN (${datasetList.map(() => '?').join(',')})`;
+    const datasetArgs = allDocs ? [] : datasetList;
+
+    if (allDocs || Array.isArray(datasets)) {
+      const docs = db
+        .prepare(`SELECT id, dataset_id, pages FROM core_documents ${inClause}`)
+        .all(...datasetArgs) as Array<{ id: string; dataset_id: string; pages: number }>;
+      const statusCache = new Map<string, string>();
+      for (const doc of docs) {
+        let status = statusCache.get(doc.dataset_id);
+        if (status == null) {
+          try { status = getDataset(db, doc.dataset_id).status; } catch { status = 'READY'; }
+          statusCache.set(doc.dataset_id, status);
+        }
+        registry.documents[doc.id] = {
+          status: status as CitationRegistryView['documents'][string]['status'],
+          ...(doc.pages > 0 ? { pageCount: doc.pages } : {}),
+          rev: contentHash(`${doc.dataset_id}|${doc.id}|${doc.pages}`),
+        };
+      }
+      const chunks = db
+        .prepare(
+          `SELECT id, document_id, section_path, page, text, content_hash, page_span, ocr_status
+             FROM core_chunks ${inClause}`,
+        )
+        .all(...datasetArgs) as unknown as ChunkRow[];
+      for (const chunk of chunks) {
+        let pageEnd: number | null = null;
+        try {
+          const span = JSON.parse(chunk.page_span ?? 'null') as unknown;
+          if (Array.isArray(span) && span.length > 1) pageEnd = Number(span[1]);
+        } catch {
+          pageEnd = null;
+        }
+        const rev = (chunk.content_hash || contentHash(chunk.text)).slice(0, 8);
+        registry.chunks[String(chunk.id)] = {
+          document_id: chunk.document_id,
+          section_path: chunk.section_path,
+          page: chunk.page ?? null,
+          ...(Number.isInteger(pageEnd) && (pageEnd ?? 0) > 0 ? { page_end: pageEnd } : {}),
+          text: chunk.text,
+          parse_ok: chunk.ocr_status !== 'ocr_skipped' && chunk.ocr_status !== 'unreadable',
+          ocr_status: chunk.ocr_status ?? 'ok',
+          rev,
+        };
+      }
+      return registry;
+    }
+
+    const dataset = getDataset(db, datasetList[0]);
     const datasetRev = contentHash(`${dataset.id}|${dataset.name}|${dataset.sha256 ?? ''}`);
     const docs = db
       .prepare('SELECT id, pages FROM core_documents WHERE dataset_id = ?')
-      .all(datasetId) as Array<{ id: string; pages: number }>;
+      .all(datasetList[0]) as Array<{ id: string; pages: number }>;
     for (const doc of docs) {
       registry.documents[doc.id] = {
         status: dataset.status,
@@ -98,7 +153,7 @@ export function buildCitationRegistry(db: DB, datasetId: string): CitationRegist
         `SELECT id, document_id, section_path, page, text, content_hash, page_span, ocr_status
            FROM core_chunks WHERE dataset_id = ?`,
       )
-      .all(datasetId) as ChunkRow[];
+      .all(datasetList[0]) as ChunkRow[];
     for (const chunk of chunks) {
       let pageEnd: number | null = null;
       try {
@@ -135,17 +190,23 @@ export function buildCitationRegistry(db: DB, datasetId: string): CitationRegist
  */
 export function buildAiPortContext(
   db: DB,
-  input: { datasetId: string; conversationId?: string | null; attachmentId?: string | null },
+  input: { datasetId?: string; datasetIds?: string[] | null; conversationId?: string | null; attachmentId?: string | null },
 ): { citationRegistry: CitationRegistryView; scope: AttachmentScopeView | null } {
-  const citationRegistry = buildCitationRegistry(db, input.datasetId);
+  // Registry mengikuti domain: kelompok dokumen > dataset tunggal > semua ('*').
+  const registryDatasets = input.datasetIds?.length
+    ? input.datasetIds
+    : input.datasetId ?? '*';
+  const citationRegistry = buildCitationRegistry(db, registryDatasets);
   let scope: AttachmentScopeView | null = null;
   try {
+    // Scope FR-C hanya untuk SATU attachment aktif; kelompok dokumen
+    // dibatasi secara struktural oleh retrieval (IN-clause), jadi tanpa scope.
     const attachment = input.attachmentId
       ? getAttachment(db, input.attachmentId)
       : input.conversationId
         ? activeAttachmentForConversation(db, input.conversationId)
         : null;
-    if (attachment) {
+    if (attachment && !(input.datasetIds && input.datasetIds.length > 1)) {
       scope = {
         id: attachment.id,
         dataset_id: attachment.datasetId,
@@ -206,6 +267,27 @@ async function generateCandidate(db: DB, input: SqlGenerateInput): Promise<SqlCa
 
 /* ----------------------------------------------------------- answer composer */
 
+/**
+ * Pesan penolakan sadar-dataset: tanpa attachment aktif, menyarankan
+ * "pilih attachment" menyesatkan karena sumber aktif adalah dataset itu
+ * sendiri. Sebutkan namanya dan arahkan ke metrik yang tersedia.
+ */
+function outOfScopeDatasetMessage(db: DB, datasetId: string | null | undefined): string {
+  let name = 'sumber aktif';
+  if (datasetId) {
+    try {
+      name = friendlySourceName(getDataset(db, datasetId));
+    } catch {
+      // fallback ke nama generik
+    }
+  }
+  return (
+    `Pertanyaan ini di luar cakupan dataset "${name}". ` +
+    'Coba metrik yang tersedia (mis. distribusi status, tren harian, atau peringkat kanal/kategori), ' +
+    'atau lampirkan dokumen yang relevan dari panel sumber.'
+  );
+}
+
 type ValidatedAiCitation = {
   chunk_id: string;
   section_path: string;
@@ -229,7 +311,12 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
   const registryTopics = topicsFromRegistry(
     registryChunks.map((c) => ({ section_path: c.section_path, text: c.text })),
   );
-  const evidenceText = registryChunks.map((c) => c.text).join(' ');
+  // answerability dihitung terhadap BUKTI YANG TER-RETRIEVE untuk pertanyaan
+  // ini (kutipan sitasi), bukan seluruh korpus — support terhadap seluruh
+  // korpus membuat pertanyaan off-topic yang kebetulan share-token lolos.
+  const evidenceText = input.citations.length
+    ? input.citations.map((c) => c.quote ?? '').join(' ')
+    : registryChunks.map((c) => c.text).join(' ');
 
   // FR-C.1: scope gate sebelum retrieval/sitasi dipakai.
   const guard = checkGuardrails({
@@ -267,6 +354,14 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
   });
 
   if (guard.triggered) {
+    // Refusal out_of_scope TANPA scope (bukan pelanggaran attachment) tetapi
+    // retrieval sudah menemukan sitasi = false positive answerability —
+    // pertanyaan valid seperti "Berapa SLA penyelesaian transaksi gagal?"
+    // bisa punya support kalimat rendah padahal buktinya ada. Jawab dari
+    // bukti terbaik, jangan tolak. Scope refusal (FR-C) tetap mutlak.
+    const answerabilityFalsePositive =
+      !input.scope && guard.type === 'out_of_scope' && input.citations.length > 0;
+    if (!answerabilityFalsePositive) {
     // Jangan pernah memakai string yang sama untuk dua tempat: UI merender
     // `answer` sebagai jawaban dan `reason` sebagai penjelasan. Kalau keduanya
     // identik, user melihat kalimat yang sama dua kali.
@@ -274,8 +369,14 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
       guard.explanation && guard.explanation !== guard.message
         ? guard.explanation
         : 'Jawaban ditolak demi kejujuran sumber; tidak ada angka atau kutipan yang dipakai.';
+    // Tanpa attachment aktif, "pilih attachment" menyesatkan — sumber aktif
+    // adalah dataset. Sebutkan dataset-nya dan arahkan ke metrik yang ada.
+    const message =
+      !scope && (guard.type === 'out_of_scope' || guard.type === 'not_in_sources')
+        ? outOfScopeDatasetMessage(db, input.datasetId)
+        : guard.message;
     return {
-      answer: guard.message,
+      answer: message,
       vizSpec: {
         type: 'none',
         reason,
@@ -287,6 +388,7 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
       citations: [],
       meta: { aiActive: true, confidenceLevel: 'refused', fallbackReason: 'guardrail' },
     };
+    }
   }
 
   const knownChannels = input.schema.tables
@@ -296,9 +398,14 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
     .filter((v) => v.length >= 3 && v.length <= 40)
     .slice(0, 24);
 
+  // Domain retrieval: kelompok dokumen > dataset tunggal > seluruh dokumen.
+  const retrievalTargets: string | string[] = input.datasetIds?.length
+    ? input.datasetIds
+    : input.datasetId ?? '*';
+
   const candidates = retrieveWithEntityBoost(
     db,
-    input.datasetId ?? '',
+    retrievalTargets,
     input.question,
     20,
     knownChannels,
@@ -361,25 +468,58 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
     validated.sort((a, b) => priority(b) - priority(a));
   }
 
+  // Dedupe per (dokumen, bagian): parent+child dari bagian yang sama membuat
+  // jawaban mengulang paragraf yang sama dan sitasi S1..S11 penuh ganda.
+  // Simpan skor tertinggi (urutan sudah ranked), lalu batasi top-5.
+  const seenSection = new Set<string>();
+  const topValidated: CoreCitation[] = [];
+  for (const c of validated) {
+    const key = `${c.document_id ?? ''}::${c.section_path ?? ''}`;
+    if (seenSection.has(key)) continue;
+    seenSection.add(key);
+    topValidated.push(c);
+    if (topValidated.length >= 5) break;
+  }
+  const topAiCitations = topValidated.map((c) => ({
+    chunk_id: String(c.chunk_id),
+    section_path: c.section_path,
+    doc: c.document_id ?? '',
+    page: c.page,
+    quote: c.quote ?? '',
+    ...(typeof c.score === 'number' ? { score: c.score } : {}),
+    deep_link: c.deep_link,
+    deep_link_status: c.deep_link_status,
+    rev: c.rev,
+  }));
+
   const confidence = classifyEvidenceConfidence({
     question: input.question,
-    citations: aiCitations,
+    citations: topAiCitations,
     citationRegistry: registry,
   });
 
   const decision = decideOutput({
     question: input.question,
+    domain: inferDomainProfile({ question: input.question, docType: input.docType }).domain,
     docType: (input.docType === 'unknown' ? 'general' : input.docType) as AiDocType,
-    dataType: aiCitations.length ? 'document' : input.result.rowCount ? 'structured' : 'none',
+    dataType: topAiCitations.length ? 'document' : input.result.rowCount ? 'structured' : 'none',
     rowCount: input.result.rowCount,
     categoryCount: input.result.rowCount > 1 ? input.result.rowCount : 0,
     entityCount: input.result.rowCount > 1 ? input.result.rowCount : 0,
-    evidenceCount: aiCitations.length + (input.result.rowCount ? 1 : 0),
+    evidenceCount: topAiCitations.length + (input.result.rowCount ? 1 : 0),
     hasPasalNumber: /\bpasal\s*\d+/i.test(input.question),
   });
 
+  // Pertanyaan ber-domain dokumen (tanpa attachment / kelompok dokumen) yang
+  // retrieval-nya menemukan bukti kuat TIDAK boleh dijawab dari SQL baris
+  // tabular — kandidat SQL rule-based untuk pertanyaan dokumen hanyalah
+  // "hitung baris" yang bukan jawaban. Paksa jalur kutipan dokumen.
+  const documentPreferred =
+    (input.datasetId === '*' || (input.datasetIds?.length ?? 0) > 0) &&
+    topAiCitations.length >= 3;
+
   const vizType: VizSpec['type'] =
-    decision.type === 'quote' || decision.type === 'kpi_quote'
+    documentPreferred || decision.type === 'quote' || decision.type === 'kpi_quote'
       ? 'quote'
       : decision.type === 'kpi'
         ? 'kpi'
@@ -409,12 +549,12 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
     lang: input.lang,
     result: { ...input.result, truncated: false },
     viz: vizSpec,
-    citations: validated,
+    citations: topValidated,
     sqlExplanation: input.sqlExplanation,
     mode: input.mode,
   });
   const answer =
-    validated.length || input.result.rowCount
+    topValidated.length || input.result.rowCount
       ? deterministic
       : input.lang === 'id'
         ? 'Informasi ini tidak ditemukan pada sumber yang tersedia. Saya tidak akan mengarang jawaban.'
@@ -427,7 +567,7 @@ function composeWithAi(db: DB, input: ComposeInput): ComposeOutput {
       ? { alternativeKeywords: confidence.alternativeKeywords }
       : {}),
   };
-  return { answer, vizSpec, citations: validated, meta };
+  return { answer, vizSpec, citations: topValidated, meta };
 }
 
 /* ------------------------------------------------------------------- factory */

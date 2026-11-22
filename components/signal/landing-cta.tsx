@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { GlowingCTA } from '@/components/signal/glowing-cta';
 
 /**
- * CTA navigasi landing menuju Overview, tempat data contoh sudah siap.
+ * CTA navigasi landing menuju Asisten (chat-first: permukaan utama produk).
  * Purpose Gate: satu CTA menyala di hero dan satu di band CTA akhir; keduanya
  * menuju rute nyata yang ada (LandingCopySEO §2-S1/S7).
  * Microcopy state dari LANDING_COPY_SEO §4: loading "Membuka...", error
- * "Gagal membuka. Coba lagi." Success = halaman Overview tampil, sehingga
+ * "Gagal membuka. Coba lagi." Success = halaman Asisten tampil, sehingga
  * state sukses tidak pernah terlihat di halaman ini.
  */
 export function LandingCTA({
@@ -28,7 +28,7 @@ export function LandingCTA({
     setNavigating(true);
     void (async () => {
       try {
-        await router.push('/overview');
+        await router.push('/assistant');
       } catch {
         setNavigating(false);
         setFailed(true);

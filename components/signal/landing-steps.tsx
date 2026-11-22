@@ -158,7 +158,7 @@ export function LandingSteps() {
   const pair = QA_PAIRS[pairIndex] ?? QA_PAIRS[0];
 
   const trackClass = (active: boolean) =>
-    `relative hidden h-px flex-none w-14 lg:w-32 transition-all duration-[var(--motion-expand)] lg:block ${
+    `relative hidden h-px flex-none w-14 lg:w-16 xl:w-28 transition-all duration-[var(--motion-expand)] lg:block ${
       active ? 'bg-lime opacity-100' : 'opacity-0'
     }`;
   // Alur vertikal untuk viewport < lg: penghubung antar node supaya alur tetap terbaca.
@@ -181,9 +181,11 @@ export function LandingSteps() {
         Tanpa setup, tanpa menulis query: dari unggahan ke jawaban yang bisa dibagikan.
       </p>
 
-      {/* Diagram alur. Hover menjeda putaran supaya fase bisa diperhatikan. */}
+      {/* Diagram alur. Hover menjeda putaran supaya fase bisa diperhatikan.
+          Padding-inline menjaga aset tidak menempel ke tepi layar saat baris
+          diagram lebih lebar dari kontainer (lg:justify-center meluber dua sisi). */}
       <div
-        className="relative mt-s6"
+        className="relative mt-s6 px-s3 sm:px-s4 lg:px-s5"
         onPointerEnter={() => setPaused(true)}
         onPointerLeave={() => setPaused(false)}
       >
@@ -197,14 +199,14 @@ export function LandingSteps() {
               Dokumen pop masuk di fase unggah lalu TETAP ADA sampai siklus
               berikutnya menyembunyikannya kembali (docsShown). */}
           <div
-            className={`flex items-start gap-s2 transition-all duration-[var(--motion-expand)] ${
+            className={`flex flex-wrap items-start justify-center gap-s2 sm:gap-s3 transition-all duration-[var(--motion-expand)] ${
               docsShown ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'
             }`}
           >
             {/* PDF: kertas dengan strip judul merah dan garis teks. */}
-            <div className="flex flex-col items-center gap-s2">
+            <div className="flex w-max flex-col items-center gap-s2">
               <div
-                className={`relative w-16 rotate-[-4deg] rounded-control bg-porcelain p-s2 shadow-lift transition-transform duration-[var(--motion-expand)] motion-reduce:rotate-0 ${
+                className={`relative w-14 xl:w-16 rotate-[-4deg] rounded-control bg-porcelain p-s2 shadow-lift transition-transform duration-[var(--motion-expand)] motion-reduce:rotate-0 ${
                   phase === 0 ? 'scale-100' : 'scale-95'
                 }`}
               >
@@ -219,12 +221,12 @@ export function LandingSteps() {
                   PDF
                 </span>
               </div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">LAPORAN-OKT.PDF</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">LAPORAN-OKT.PDF</span>
             </div>
             {/* CSV: kartu tabel dengan baris header hijau. */}
-            <div className="flex flex-col items-center gap-s2 translate-y-2">
+            <div className="flex w-max flex-col items-center gap-s2 translate-y-2">
               <div
-                className={`relative w-16 rotate-[2deg] rounded-control bg-porcelain p-s1 shadow-lift transition-transform duration-[var(--motion-expand)] motion-reduce:rotate-0 ${
+                className={`relative w-14 xl:w-16 rotate-[2deg] rounded-control bg-porcelain p-s1 shadow-lift transition-transform duration-[var(--motion-expand)] motion-reduce:rotate-0 ${
                   phase === 0 ? 'scale-100' : 'scale-95'
                 }`}
               >
@@ -240,12 +242,12 @@ export function LandingSteps() {
                   CSV
                 </span>
               </div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">TRANSACTIONS.CSV</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">TRANSACTIONS.CSV</span>
             </div>
             {/* DOCX: kertas biru Word dengan blok judul dan paragraf menjorok. */}
-            <div className="flex flex-col items-center gap-s2">
+            <div className="flex w-max flex-col items-center gap-s2">
               <div
-                className={`relative w-16 rotate-[3deg] rounded-control bg-porcelain p-s2 shadow-lift transition-transform duration-[var(--motion-expand)] motion-reduce:rotate-0 ${
+                className={`relative w-14 xl:w-16 rotate-[3deg] rounded-control bg-porcelain p-s2 shadow-lift transition-transform duration-[var(--motion-expand)] motion-reduce:rotate-0 ${
                   phase === 0 ? 'scale-100' : 'scale-95'
                 }`}
               >
@@ -259,17 +261,17 @@ export function LandingSteps() {
                   DOCX
                 </span>
               </div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">KATALOG.DOCX</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">KATALOG.DOCX</span>
             </div>
             {/* SQL: silinder bank data (bentuk gentong klasik database) memakai
                 warna brand, digambar SVG agar elips atas dan garis piringan rapi. */}
-            <div className="flex flex-col items-center gap-s2 translate-y-2">
+            <div className="flex w-max flex-col items-center gap-s2 translate-y-2">
               <div
                 className={`relative rounded-control bg-porcelain p-s1 shadow-lift transition-transform duration-[var(--motion-expand)] ${
                   phase === 0 ? 'scale-100' : 'scale-95'
                 }`}
               >
-                <svg viewBox="0 0 44 52" className="h-[72px] w-16" aria-hidden="true">
+                <svg viewBox="0 0 44 52" className="h-[72px] w-14 xl:w-16" aria-hidden="true">
                   <path
                     d="M6 8 L6 44 C6 48 13 51 22 51 C31 51 38 48 38 44 L38 8"
                     fill="var(--color-porcelain)"
@@ -304,7 +306,7 @@ export function LandingSteps() {
                   SQL
                 </span>
               </div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">ANALYTICS.SQL</span>
+              <span className="font-mono text-[10px] uppercase tracking-[0.06em] text-porcelain text-glow-lime">ANALYTICS.SQL</span>
             </div>
           </div>
 
@@ -325,19 +327,13 @@ export function LandingSteps() {
 
           {/* Inti TanyaData: pop saat fase tanyakan (momen mesin), menyala sambil
               memproses, lalu tenang di fase bagikan. Tanpa bayang-bayang: node
-              tidak terlihat sebelum gilirannya (aturan muncul satu per satu). */}
-          <div
-            className={`relative flex h-16 w-16 flex-none flex-col items-center justify-center rounded-card-lg border transition-all duration-[var(--motion-expand)] ${
-              phase === 0 ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100'
-            } ${
-              phase >= 1 && phase <= 2
-                ? 'border-lime glow-lime bg-[color-mix(in_srgb,var(--color-forest)_72%,var(--color-lime)_10%)]'
-                : 'border-hairline-dark bg-forest-08'
-            }`}
-          >
+              tidak terlihat sebelum gilirannya (aturan muncul satu per satu).
+              Bubble pertanyaan IN-FLOW (bukan absolute) supaya ruangnya selalu
+              disediakan — dulu absolute bottom-full menimpa konten di atasnya. */}
+          <div className="relative flex flex-none flex-col items-center">
             <span
               aria-hidden="true"
-              className={`absolute bottom-full left-1/2 mb-s2 w-max max-w-[80vw] -translate-x-1/2 transition-all duration-[var(--motion-expand)] ${
+              className={`mb-s2 w-max max-w-[80vw] text-center transition-all duration-[var(--motion-expand)] ${
                 phase === 1
                   ? 'translate-y-0 opacity-100'
                   : 'pointer-events-none translate-y-1 opacity-0'
@@ -347,23 +343,33 @@ export function LandingSteps() {
                 &quot;{QA_PAIRS[pairIndex].question}&quot;
               </span>
             </span>
-            <span className="state-dot state-dot-active" aria-hidden="true" />
-            <span className="mt-1 font-display text-caption font-bold text-porcelain">TanyaData</span>
-            {(phase === 1 || phase === 2) && (
-              <span className="mt-1 flex gap-1" role="status" aria-label="Memproses pertanyaan">
-                <span className="animate-typing-dot state-dot state-dot-active" aria-hidden="true" />
-                <span
-                  className="animate-typing-dot state-dot state-dot-active"
-                  style={{ animationDelay: '150ms' }}
-                  aria-hidden="true"
-                />
-                <span
-                  className="animate-typing-dot state-dot state-dot-active"
-                  style={{ animationDelay: '300ms' }}
-                  aria-hidden="true"
-                />
-              </span>
-            )}
+            <div
+              className={`relative flex h-16 w-16 flex-none flex-col items-center justify-center rounded-card-lg border transition-all duration-[var(--motion-expand)] ${
+                phase === 0 ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100'
+              } ${
+                phase >= 1 && phase <= 2
+                  ? 'border-lime glow-lime bg-[color-mix(in_srgb,var(--color-forest)_72%,var(--color-lime)_10%)]'
+                  : 'border-hairline-dark bg-forest-08'
+              }`}
+            >
+              <span className="state-dot state-dot-active" aria-hidden="true" />
+              <span className="mt-1 font-display text-caption font-bold text-porcelain">TanyaData</span>
+              {(phase === 1 || phase === 2) && (
+                <span className="mt-1 flex gap-1" role="status" aria-label="Memproses pertanyaan">
+                  <span className="animate-typing-dot state-dot state-dot-active" aria-hidden="true" />
+                  <span
+                    className="animate-typing-dot state-dot state-dot-active"
+                    style={{ animationDelay: '150ms' }}
+                    aria-hidden="true"
+                  />
+                  <span
+                    className="animate-typing-dot state-dot state-dot-active"
+                    style={{ animationDelay: '300ms' }}
+                    aria-hidden="true"
+                  />
+                </span>
+              )}
+            </div>
           </div>
 
           <div aria-hidden="true" className={trackClass(phase >= 2)}>
@@ -385,7 +391,7 @@ export function LandingSteps() {
               aktif (rows / bars / donut) dan menyusun bertahap saat fase periksa;
               header berubah menjadi selesai di fase akhir. */}
           <div
-            className={`w-full max-w-68 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-expand)] ${
+            className={`w-full max-w-52 xl:max-w-68 flex-none rounded-card-lg border border-hairline-dark bg-porcelain p-s3 text-ink transition-all duration-[var(--motion-expand)] ${
               phase >= 2 ? 'translate-y-0 opacity-100 shadow-float' : 'pointer-events-none translate-y-2 opacity-0'
             }`}
           >
@@ -403,7 +409,7 @@ export function LandingSteps() {
                     }`}
                     style={{ transitionDelay: phase >= 2 ? `${index * 120}ms` : '0ms' }}
                   >
-                    <span className="whitespace-nowrap font-body text-caption text-ink-72">{label}</span>
+                    <span className="font-body text-caption text-ink-72">{label}</span>
                     <span className="h-1.5 w-full overflow-hidden rounded-full bg-forest-08">
                       <span
                         className={`block h-full rounded-full transition-transform duration-[var(--motion-expand)] ease-[var(--ease-smooth)] ${
@@ -412,7 +418,7 @@ export function LandingSteps() {
                         style={{ width: `${BAR_WIDTHS[index] ?? 20}%` }}
                       />
                     </span>
-                    <span className="whitespace-nowrap font-mono text-caption tabular text-ink">{value}</span>
+                    <span className="font-mono text-caption tabular text-ink">{value}</span>
                   </div>
                 ))}
               </div>
@@ -444,8 +450,8 @@ export function LandingSteps() {
                 <div className="grid gap-1">
                   {pair.rows.map(([label, value]) => (
                     <div key={label} className="flex items-baseline justify-between gap-s3">
-                      <span className="whitespace-nowrap font-body text-caption text-ink-72">{label}</span>
-                      <span className="whitespace-nowrap font-mono text-caption tabular text-ink">{value}</span>
+                      <span className="font-body text-caption text-ink-72">{label}</span>
+                      <span className="font-mono text-caption tabular text-ink">{value}</span>
                     </div>
                   ))}
                 </div>
@@ -462,8 +468,8 @@ export function LandingSteps() {
                       transitionDelay: phase >= 2 ? `${index * 90}ms` : '0ms',
                     }}
                   >
-                    <span className="whitespace-nowrap text-ink-72">{kanal}</span>
-                    <span className="whitespace-nowrap tabular">{sla}</span>
+                    <span className="text-ink-72">{kanal}</span>
+                    <span className="tabular">{sla}</span>
                   </div>
                 ))}
               </div>
@@ -497,7 +503,7 @@ export function LandingSteps() {
           {/* Tahap keempat berdiri sendiri: halaman bagikan muncul pop dengan
               cincin lime saat fase bagikan. */}
           <div
-            className={`w-full max-w-44 flex-none rounded-card-lg border transition-all duration-[var(--motion-expand)] ${
+            className={`w-full max-w-36 xl:max-w-44 flex-none rounded-card-lg border transition-all duration-[var(--motion-expand)] ${
               phase >= 3
                 ? 'scale-100 border-lime glow-lime bg-forest-08 opacity-100'
                 : 'pointer-events-none scale-90 border-hairline-dark bg-forest-08 opacity-0'

@@ -24,8 +24,10 @@ export function detectGuardrail(input: {
   question: string;
   dataset: Dataset;
   context: QueryContext | null;
+  /** Domain retrieval: 'all' = seluruh dokumen (tanpa attachment), 'document' = dokumen. */
+  domain?: 'tabular' | 'document' | 'all';
 }): Guardrail | null {
-  const { question, dataset, context } = input;
+  const { question, dataset, context, domain = 'tabular' } = input;
   if (DESTRUCTIVE_RE.test(question)) {
     return {
       type: 'destructive',
@@ -33,7 +35,12 @@ export function detectGuardrail(input: {
       explanation: 'Tidak ada pernyataan yang dieksekusi; data tidak berubah.',
     };
   }
-  if (PII_RE.test(question)) {
+  // PII hanya dijaga pada dataset tabular (baris berisi data pelanggan).
+  // Dokumen SOP/FAQ justru MENYEBUT email/telepon sebagai konten ("hubungi
+  // customer support via telepon") — menolaknya adalah false positive. Saat
+  // retrieval mengarah ke dokumen ('all'/'document'), pertanyaan dijawab dari
+  // kutipan yang di-ground, bukan dari baris data pelanggan.
+  if (domain === 'tabular' && dataset.kind !== 'document' && PII_RE.test(question)) {
     return {
       type: 'pii',
       answer: 'Dataset ini tidak menyediakan data pribadi yang dapat diidentifikasi. Saya tidak menebaknya.',
@@ -65,7 +72,9 @@ export function detectGuardrail(input: {
  */
 export function friendlySourceName(dataset: Dataset): string {
   const raw = String(dataset.name ?? '').trim();
-  const internal = /\b(legacy|adapter|demo|qris)\b/i.test(raw);
+  // "legacy/adapter" = jargon internal; "demo" sengaja TIDAK dianggap internal
+  // karena "Data demo · …" adalah label publik yang disengaja, bukan kebocoran.
+  const internal = /\b(legacy|adapter)\b/i.test(raw);
   const kindLabel =
     dataset.kind === 'tabular'
       ? 'Transaksi'
@@ -288,34 +297,63 @@ export function composeDeterministicAnswer(input: {
   mode: 'sql' | 'document' | 'hybrid';
 }): string {
   const { result, viz, citations, lang, sqlExplanation } = input;
-  const refs = citations.map((c) => c.section_path).filter(Boolean);
+  // Dedupe nama bagian: parent+child dari bagian yang sama membuat "Sumber:"
+  // menuliskan bagian yang sama dua kali.
+  const refs = [...new Set(citations.map((c) => c.section_path).filter(Boolean))];
   // ADR-OF-11: searchChunks mengirim teks chunk penuh; pemotongan relevan
   // terjadi di sini, di sekitar term pertanyaan — bukan 240/400 char pertama.
+  // Excerpt yang isinya sama (chunk duplikat) hanya diambil sekali.
+  const seenExcerpt = new Set<string>();
   const excerpts = citations
-    .slice(0, 3)
-    .map((c) => ({ ref: c.section_path, text: extractSnippetWindow(c.quote ?? '', input.question) }))
-    .filter((c) => c.text.length > 0);
+    .slice(0, 5)
+    .map((c, i) => ({ idx: i, ref: c.section_path, text: extractSnippetWindow(c.quote ?? '', input.question) }))
+    .filter((c) => c.text.length > 0)
+    .filter((c) => {
+      const key = normalizeForMatch(c.text).slice(0, 140);
+      if (seenExcerpt.has(key)) return false;
+      seenExcerpt.add(key);
+      return true;
+    })
+    .slice(0, 3);
+  // Marker inline ala NotebookLM: tiap kutipan diakhiri [n] yang menunjuk
+  // sitasi ke-n (urutan array citations = urutan [S1]..[S5] di UI). Hover
+  // marker menampilkan kalimat persis yang dikutip (kaca pembesar), klik
+  // membuka sumber. Daftar "Sumber:" di akhir dihapus — redundan dengan marker.
+  const mark = (e: { idx: number }): string => ` [${e.idx + 1}]`;
+
+  // Struktur jawaban: tiap kutipan menjadi blok "heading bagian + isi"
+  // (bullet bila teks memuat item "- ", paragraf bila tidak) — lebih mudah
+  // dibaca daripada satu paragraf panjang yang saling bertabrakan.
+  const excerptBlock = (e: { ref: string | null; text: string; idx: number }): string => {
+    const heading = `**${e.ref ?? 'Sumber'}**`;
+    const items = e.text
+      .split(/\s+(?=- )/)
+      .map((s) => s.replace(/^- /, '').trim())
+      .filter(Boolean);
+    if (items.length > 1) {
+      return `${heading}\n${items.map((i) => `- ${i}${mark(e)}`).join('\n')}`;
+    }
+    return `${heading}\n${e.text}${mark(e)}`;
+  };
+  const excerptBlocks = (intro: string): string =>
+    `${intro}\n\n${excerpts.map(excerptBlock).join('\n\n')}`;
 
   if (viz.type === 'quote' && citations.length) {
     if (!excerpts.length) {
       return lang === 'id'
-        ? `Bagian yang diminta adalah ${refs.join(', ')}. Sumber: ${refs.join(', ')}.`
-        : `The requested section is ${refs.join(', ')}. Sources: ${refs.join(', ')}.`;
+        ? `Bagian yang diminta adalah ${refs.join(', ')}.`
+        : `The requested section is ${refs.join(', ')}.`;
     }
-    const body = excerpts.map((e) => `${e.ref}: "${e.text}"`).join(' ');
-    return lang === 'id'
-      ? `Berikut kutipan dari sumber: ${body} Sumber: ${refs.join(', ')}.`
-      : `Excerpts from the source: ${body} Sources: ${refs.join(', ')}.`;
+    return excerptBlocks(lang === 'id' ? 'Berikut kutipan dari sumber:' : 'Excerpts from the source:');
   }
 
   // Dokumen ditemukan tetapi tidak ada baris SQL: jawab dari isi chunk sitasi.
   // Tidak ada angka yang ditambahkan — semua teks berasal dari evidence.
   if (!result.rows.length && citations.length) {
     if (excerpts.length) {
-      const body = excerpts.map((e) => `${e.ref}: ${e.text}`).join(' ');
-      return lang === 'id'
-        ? `Berdasarkan dokumen yang ditemukan: ${body} Sumber: ${refs.join(', ')}.`
-        : `Based on the retrieved document: ${body} Sources: ${refs.join(', ')}.`;
+      return excerptBlocks(
+        lang === 'id' ? 'Berdasarkan dokumen yang ditemukan:' : 'Based on the retrieved document:',
+      );
     }
     return lang === 'id'
       ? `Sumber yang relevan ditemukan pada ${refs.join(', ')}, tetapi isi bagian tersebut tidak dapat dikutip.`

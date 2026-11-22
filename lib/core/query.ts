@@ -19,17 +19,33 @@ import type {
 import type { CorePorts } from '@/lib/core/ports';
 import { getCachedQuery, queryCacheKey, setCachedQuery } from '@/lib/core/cache';
 import { getDataset } from '@/lib/core/registry';
+import { buildDocumentProfile, isDocumentMetaQuestion } from '@/lib/core/doc-profile';
 import { buildRuleBasedCandidate, runCandidate } from '@/lib/core/sql';
 import { searchChunks } from '@/lib/core/store';
+import { rerankCitations, retrieveWithEntityBoost } from '@/lib/ai/retrieval';
 import {
   ambiguousGuardrail,
   buildVizSpec,
   composeDeterministicAnswer,
   detectGuardrail,
   evaluateGrounding,
+  extractSnippetWindow,
   friendlySourceName,
   notInSourcesGuardrail,
 } from '@/lib/core/answer';
+
+/**
+ * Persempit quote sitasi ke jendela kalimat paling relevan dengan pertanyaan
+ * (bukan satu paragraf hasil chunking). Deterministik: extractSnippetWindow
+ * memilih kalimat ber-skor term tertinggi ± tetangga. Dipakai di dua titik:
+ * hasil reranker (sebelum composer) dan hasil composer (quote LLM bisa mentah).
+ */
+function narrowCitations(citations: Citation[], question: string): Citation[] {
+  return citations.map((citation) => {
+    const narrowed = extractSnippetWindow(citation.quote ?? '', question);
+    return narrowed ? { ...citation, quote: narrowed } : citation;
+  });
+}
 
 export type AnswerQuestionInput = {
   datasetId: string;
@@ -41,9 +57,38 @@ export type AnswerQuestionInput = {
   citationRegistry?: CitationRegistryView | null;
   scope?: AttachmentScopeView | null;
   conversationId?: string | null;
+  /** Kelompok dokumen percakapan (NotebookLM-style): retrieval terbatas ke daftar ini. */
+  retrievalDatasetIds?: string[] | null;
 };
 
 const EMPTY_RESULT: QueryResultJson = { columns: [], rows: [], rowCount: 0, truncated: false };
+
+/** Verba permintaan rincian + penanda anafora ("laporan ini", "hasil tadi"). */
+const FOLLOWUP_VERB_RE = /\b(jabarkan|rinci|uraikan|perinci|breakdown)\b/i;
+const FOLLOWUP_ANAPHORA_RE = /\b(ini|itu|tersebut|tadi|di atas)\b/i;
+const FOLLOWUP_LIMIT = 200;
+
+function expandLimit(sql: string, limit: number): string {
+  const trimmed = sql.trim().replace(/;\s*$/, '');
+  if (/\bLIMIT\s+\d+/i.test(trimmed)) {
+    return trimmed.replace(/\bLIMIT\s+\d+/i, `LIMIT ${limit}`);
+  }
+  return `${trimmed} LIMIT ${limit}`;
+}
+
+/**
+ * Resolusi follow-up anafora: "Tolong jabarkan laporan ini" merujuk hasil
+ * sebelumnya, bukan pertanyaan baru. Tanpa ini pertanyaan lanjutan ditolak
+ * out_of_scope padahal konteksnya jelas. Hanya aktif bila turn sebelumnya
+ * menghasilkan SQL; pertanyaan baru tidak pernah dibajak.
+ */
+function resolveFollowUpSql(input: AnswerQuestionInput): string | null {
+  const question = String(input.question ?? '');
+  if (!FOLLOWUP_VERB_RE.test(question) || !FOLLOWUP_ANAPHORA_RE.test(question)) return null;
+  const lastSql = input.context?.lastResult?.sql;
+  if (!lastSql) return null;
+  return expandLimit(lastSql, FOLLOWUP_LIMIT);
+}
 
 function baseQuery(input: AnswerQuestionInput): Query {
   return {
@@ -85,7 +130,48 @@ export async function answerQuestion(
     return query;
   }
 
-  const guardrail = detectGuardrail({ question: input.question, dataset, context: input.context ?? null });
+  // Pertanyaan meta-dokumen ("ini dokumen terkait apa?", "apa isi dokumen ini?")
+  // dijawab dari STRUKTUR dokumen (judul + daftar bagian + kalimat pembuka),
+  // bukan retrieval — tidak mungkin halusinasi dan tidak kena guardrail.
+  if (dataset.kind === 'document' && isDocumentMetaQuestion(input.question)) {
+    const profile = buildDocumentProfile(db, dataset);
+    if (profile.sections.length) {
+      const intro = input.lang === 'id'
+        ? `Berkas "${profile.title}" (${profile.pages} halaman, ${profile.sections.length} bagian) berisi:`
+        : `"${profile.title}" (${profile.pages} pages, ${profile.sections.length} sections) contains:`;
+      const listing = profile.sections
+        .slice(0, 8)
+        .map((s) => `• ${s.title}${s.page != null ? ` (hlm ${s.page})` : ''}: ${s.excerpt}`)
+        .join('\n');
+      query.mode = 'document';
+      query.answer = `${intro}\n${listing}`;
+      query.citations = profile.sections.slice(0, 5).map((s) => ({
+        chunk_id: s.chunkId,
+        document_id: s.documentId,
+        section_path: s.title,
+        page: s.page,
+        quote: s.excerpt,
+        score: 1,
+      }));
+      query.duration_ms = Math.round(performance.now() - started);
+      return query;
+    }
+  }
+
+  // Domain retrieval menentukan guardrail: dokumen ('*'/'document') menjawab
+  // dari kutipan yang di-ground, jadi guardrail PII tabular tidak berlaku.
+  const retrievalDomain: 'all' | 'document' | 'tabular' =
+    input.retrievalDatasetIds?.length
+      ? 'document'
+      : dataset.kind === 'document'
+        ? 'document'
+        : 'all';
+  const guardrail = detectGuardrail({
+    question: input.question,
+    dataset,
+    context: input.context ?? null,
+    domain: retrievalDomain,
+  });
   if (guardrail) {
     query.guardrail = guardrail;
     query.answer = guardrail.answer ?? guardrail.explanation;
@@ -128,7 +214,23 @@ export async function answerQuestion(
   let candidate: SqlCandidate | null = null;
   let rejection: string | null = null;
   let aiActive = false;
-  if (ports.sqlGenerator) {
+  const followUpSql = resolveFollowUpSql(input);
+  if (followUpSql) {
+    // Follow-up anafora: langsung pakai SQL turn sebelumnya (lebih banyak
+    // baris) — generator LLM tidak dipanggil supaya konteks tidak hilang.
+    candidate = {
+      sql: followUpSql,
+      explanation: 'Rincian dari hasil pertanyaan sebelumnya',
+      confidence: 0.9,
+      referenced_tables: [],
+      referenced_columns: [],
+      params: {},
+      mode: 'generated',
+    };
+  } else if (ports.sqlGenerator && dataset.schema_json.tables.length > 0) {
+    // Dataset dokumen (tanpa tabel) TIDAK memanggil generator SQL: tanpa FROM
+    // yang sah, LLM bisa membuat `SELECT '<teks karangan>'` dan lolos validator
+    // — jawaban dokumen wajib datang dari sitasi, bukan literal SQL.
     try {
       candidate = await ports.sqlGenerator.generate({
         question: input.question,
@@ -152,8 +254,26 @@ export async function answerQuestion(
   if (!candidate) candidate = buildRuleBasedCandidate(input.question, dataset.schema_json, input.context ?? null);
 
   let citations: Citation[] = [];
+  let docCitations: Citation[] = [];
   try {
-    citations = searchChunks(db, { datasetId: dataset.id, question: input.question, limit: 5 });
+    // Kandidat LEBAR (20) + entity boost, lalu rerank deterministik → top 5.
+    // searchChunks mentah (limit 5) membuat BM25 OR mengisi top-k dengan chunk
+    // generik padahal reranker + boostSection sudah tersedia.
+    // Domain retrieval: kelompok dokumen percakapan > dokumen tunggal >
+    // seluruh dokumen ('*' — dataset tabular tidak punya core_chunks).
+    const retrievalDatasetId: string | string[] = input.retrievalDatasetIds?.length
+      ? input.retrievalDatasetIds
+      : dataset.kind === 'document'
+        ? dataset.id
+        : '*';
+    const knownChannels = dataset.schema_json.tables
+      .flatMap((t) => t.columns ?? [])
+      .filter((c) => c.semantic_role === 'dimension')
+      .flatMap((c) => (c.sample_values ?? []).map(String))
+      .filter((v) => v.length >= 3 && v.length <= 40)
+      .slice(0, 24);
+    const candidates = retrieveWithEntityBoost(db, retrievalDatasetId, input.question, 20, knownChannels);
+    citations = narrowCitations(rerankCitations(input.question, candidates).slice(0, 5), input.question);
   } catch {
     citations = [];
   }
@@ -169,6 +289,13 @@ export async function answerQuestion(
         rowCount: execution.rowCount,
         truncated: execution.truncated,
       };
+      // Pertanyaan SQL yang SUKSES tidak butuh sitasi dokumen — sitasi hasil
+      // pencarian '*' hanya konteks; kalau ikut tampil jadi derau (S1..S11).
+      // Sitasi dokumen TETAP dipakai sebagai input composer (line di bawah):
+      // tanpa itu guardrail composer menilai pertanyaan "tanpa bukti" dan
+      // menolak padahal retrieval dokumen menemukan jawabannya.
+      docCitations = citations;
+      if (execution.rowCount > 0 && dataset.kind !== 'document') citations = [];
       query.mode = citations.length ? 'hybrid' : 'sql';
     } catch (error) {
       rejection = error instanceof Error ? error.message : String(error);
@@ -213,18 +340,21 @@ export async function answerQuestion(
         docType: dataset.doc_type,
         schema: dataset.schema_json,
         result: query.result_json,
-        citations,
+        citations: citations.length ? citations : docCitations,
         sqlExplanation: query.sql_explanation,
         mode: query.mode === 'guardrail' ? 'document' : query.mode,
         citationRegistry: input.citationRegistry ?? null,
         scope: input.scope ?? null,
         context: input.context ?? null,
-        datasetId: input.datasetId,
+        // Registry/komposer mengikuti domain retrieval: dokumen tunggal,
+        // kelompok dokumen, atau seluruh dokumen ('*').
+        datasetId: dataset.kind === 'document' ? input.datasetId : '*',
+        datasetIds: input.retrievalDatasetIds ?? null,
       });
       answer = composed?.answer ?? null;
       if (composed) {
         query.viz_spec = composed.vizSpec;
-        query.citations = composed.citations;
+        query.citations = narrowCitations(composed.citations, input.question);
         if (composed.meta) query.meta = { ...(query.meta ?? {}), ...composed.meta };
         aiActive = true;
       }

@@ -72,12 +72,9 @@ export default function LandingPage() {
             aria-hidden="true"
             className="glow-radial-lime absolute -top-32 left-1/4 h-[460px] w-[760px] max-w-none -translate-x-1/2"
           />
-          <div className="page-container relative pb-16 pt-32 md:pb-20 md:pt-44">
+          <div className="page-container relative pb-14 pt-16 md:pb-20 md:pt-20 lg:pt-24">
             <div className="grid items-center gap-s5 lg:grid-cols-12">
               <ScrollReveal className="lg:col-span-7">
-                <p className="inline-flex items-center rounded-chip border border-hairline-dark px-s3 py-1 font-body text-caption text-dark-muted">
-                  Asisten analisis untuk dokumen dan data
-                </p>
                 <HeroHighlight tone="dark" size="hero" highlight="Tanyakan isinya." className="mt-s4">
                   Unggah dokumen dan datanya. Tanyakan isinya.
                 </HeroHighlight>

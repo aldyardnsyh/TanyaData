@@ -25,6 +25,12 @@ const CITATION_COLUMNS: Array<[string, string]> = [
   ['reject_reason', 'TEXT'],
 ];
 
+// Pengelompokan + penyematan percakapan (NotebookLM-style sidebar).
+const CONVERSATION_COLUMNS: Array<[string, string]> = [
+  ['group_name', 'TEXT'],
+  ['pinned', "INTEGER NOT NULL DEFAULT 0"],
+];
+
 function addColumns(db: DB, table: string, columns: Array<[string, string]>): void {
   const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   const existing = new Set(rows.map((r) => r.name));
@@ -36,4 +42,5 @@ function addColumns(db: DB, table: string, columns: Array<[string, string]>): vo
 export function ensureCoreV2Columns(db: DB): void {
   addColumns(db, 'core_chunks', CHUNK_COLUMNS);
   addColumns(db, 'core_citations', CITATION_COLUMNS);
+  addColumns(db, 'conversations', CONVERSATION_COLUMNS);
 }

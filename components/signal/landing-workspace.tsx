@@ -1,39 +1,42 @@
 /**
  * Purpose Gate: section ini memperkenalkan isi workspace (enam halaman aplikasi
  * yang benar-benar ada, dengan rute aslinya) agar pembaca paham produk lebih
- * dari sekadar percakapan. Deskripsi disarikan dari PRD dan modul yang
- * di-shipping, tanpa klaim baru.
+ * dari sekadar percakapan. Deskripsi disarikan dari modul yang di-shipping,
+ * tanpa klaim baru. Ringkasan hidup per dokumen (bukan halaman global), jadi
+ * keenam kartu mengikuti navigasi workspace saat ini + halaman bagikan publik.
  */
+import { Icon } from '@/components/ui/icons';
+
 const SURFACES = [
   {
-    route: '/OVERVIEW',
-    title: 'Ringkasan',
-    copy: 'Metrik transaksi, tren, dan temuan dalam satu dashboard.',
-  },
-  {
-    route: '/ASSISTANT',
+    icon: 'forum',
     title: 'Asisten',
-    copy: 'Percakapan dengan jawaban yang menyertakan kutipan sumber.',
+    copy: 'Ruang chat dengan riwayat tersimpan; setiap sitasi bisa dibuka ke potongan dokumen aslinya.',
   },
   {
-    route: '/DATA-SOURCES',
+    icon: 'upload_file',
     title: 'Sumber data',
-    copy: 'Kelola unggahan dan lihat status indeks setiap berkas.',
+    copy: 'Unggah dataset dan dokumen; ringkasan serta analitik per dokumen tersusun otomatis begitu terindeks.',
   },
   {
-    route: '/INVESTIGATIONS',
+    icon: 'fact_check',
     title: 'Investigasi',
-    copy: 'Telusuri penyebab anomali lintas data dan dokumen.',
+    copy: 'Dossier analisis mendalam per sumber data: klaim, kanal dominan, dan kesimpulan.',
   },
   {
-    route: '/REPORTS',
+    icon: 'receipt_long',
     title: 'Laporan',
-    copy: 'Susun temuan menjadi laporan yang bisa diekspor.',
+    copy: 'Dokumen cetak dengan template sendiri per jenis laporan, lengkap header, footer, dan ekspor PDF.',
   },
   {
-    route: '/SHARE',
+    icon: 'tune',
+    title: 'Pengaturan',
+    copy: 'Atur bahasa, zona waktu, dan rentang tanggal sesuai cara kerja tim Anda.',
+  },
+  {
+    icon: 'ios_share',
     title: 'Bagikan',
-    copy: 'Kirim hasil sebagai halaman read-only tanpa login.',
+    copy: 'Kirim hasil sebagai halaman read-only yang bisa dibuka tanpa login.',
   },
 ];
 
@@ -49,10 +52,12 @@ export function LandingWorkspace() {
       <div className="mt-s5 grid gap-s3 md:grid-cols-2 lg:grid-cols-3">
         {SURFACES.map((surface) => (
           <article
-            key={surface.route}
+            key={surface.title}
             className="surface rounded-card-lg flex flex-col gap-s2 p-s4 shadow-lift transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest motion-reduce:transform-none"
           >
-            <span className="mono-meta">{surface.route}</span>
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-control bg-forest-08">
+              <Icon name={surface.icon} className="text-[20px] text-forest" />
+            </span>
             <h3 className="font-display text-label font-semibold text-ink">{surface.title}</h3>
             <p className="font-body text-body text-ink-72">{surface.copy}</p>
           </article>

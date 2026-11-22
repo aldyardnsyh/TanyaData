@@ -6,10 +6,10 @@ import type {
   ConversationListResponse,
   ConversationSummary,
 } from '@/lib/contracts/http';
-import { notFound } from '@/lib/errors';
+import { notFound, validationError } from '@/lib/errors';
 import { nowJakartaIso, truncateText } from '@/lib/date';
 import { datasetName, resolveScope } from '@/lib/analytics/scope';
-import { activeAttachmentForConversation } from '@/lib/core/attachment-scope';
+import { activeAttachmentForConversation, activeAttachmentsForConversation } from '@/lib/core/attachment-scope';
 
 type ConversationRow = {
   id: string;
@@ -34,7 +34,7 @@ export const DEFAULT_TITLE = 'Percakapan baru';
 
 function summaryFrom(
   db: DB,
-  row: ConversationRow,
+  row: ConversationRow & { group_name?: string | null; pinned?: number | null },
   counts: { messageCount: number; lastMessageAt: string | null; preview: string | null },
 ): ConversationSummary {
   return {
@@ -46,6 +46,8 @@ function summaryFrom(
     lastMessageAt: counts.lastMessageAt,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    groupName: row.group_name ?? null,
+    pinned: Boolean(row.pinned),
     ...(counts.preview ? { preview: counts.preview } : {}),
   };
 }
@@ -71,7 +73,7 @@ export function listConversations(db: DB, limit: number, offset: number, q?: str
               (SELECT content FROM messages m WHERE m.conversation_id = c.id AND m.role = 'assistant' ORDER BY seq DESC LIMIT 1) AS preview
          FROM conversations c
          ${where}
-        ORDER BY c.updated_at DESC
+        ORDER BY c.pinned DESC, c.updated_at DESC
         LIMIT ? OFFSET ?`,
     )
     .all(...params, limit, offset) as (ConversationRow & {
@@ -123,7 +125,9 @@ export function conversationDetail(db: DB, id: string): ConversationDetailRespon
     .all(id) as MessageRow[];
   // FR-C: attachment aktif menentukan konteks chat; diekspos agar UI bisa
   // menunjukkan dokumen mana yang sedang berada dalam lingkup percakapan.
-  const active = activeAttachmentForConversation(db, id);
+  // Kelompok (plural) = basis pengetahuan percakapan, NotebookLM-style.
+  const actives = activeAttachmentsForConversation(db, id);
+  const active = actives[actives.length - 1] ?? null;
 
   return {
     conversation: summaryFrom(db, row, {
@@ -132,6 +136,7 @@ export function conversationDetail(db: DB, id: string): ConversationDetailRespon
       preview: [...messages].reverse().find((m) => m.role === 'assistant')?.content ?? null,
     }),
     activeAttachment: active ? { id: active.id, name: active.name, docType: active.docType } : null,
+    activeAttachments: actives.map((a) => ({ id: a.id, name: a.name, docType: a.docType })),
     messages: messages.map(hydrateMessage),
   };
 }
@@ -155,6 +160,69 @@ export function hydrateMessage(row: MessageRow): ChatMessage {
 export function removeConversation(db: DB, id: string): void {
   getConversationRow(db, id);
   db.prepare('DELETE FROM conversations WHERE id = ?').run(id);
+}
+
+/** Ganti judul / pindahkan grup / sematkan percakapan (menu ⋯ di sidebar). */
+export function updateConversation(
+  db: DB,
+  id: string,
+  patch: { title?: string; group?: string | null; pinned?: boolean },
+): ConversationSummary {
+  getConversationRow(db, id);
+  if (patch.title !== undefined) {
+    const clean = patch.title.trim().slice(0, 60);
+    if (!clean) throw validationError('Judul tidak boleh kosong');
+    db.prepare('UPDATE conversations SET title = ? WHERE id = ?').run(clean, id);
+  }
+  if (patch.group !== undefined) {
+    const group = patch.group?.trim().slice(0, 40) || null;
+    db.prepare('UPDATE conversations SET group_name = ? WHERE id = ?').run(group, id);
+  }
+  if (patch.pinned !== undefined) {
+    db.prepare('UPDATE conversations SET pinned = ? WHERE id = ?').run(patch.pinned ? 1 : 0, id);
+  }
+  return summaryFrom(db, getConversationRow(db, id), {
+    messageCount: 0,
+    lastMessageAt: null,
+    preview: null,
+  });
+}
+
+/**
+ * Edit isi pesan pengguna (konsep ChatGPT/Claude: pertanyaan dikoreksi di
+ * tempat). Hanya role='user'; jawaban asisten tidak dapat diedit.
+ */
+export function updateUserMessage(db: DB, conversationId: string, msgId: string, content: string): ChatMessage {
+  getConversationRow(db, conversationId);
+  const row = db
+    .prepare('SELECT * FROM messages WHERE id = ? AND conversation_id = ?')
+    .get(msgId, conversationId) as MessageRow | undefined;
+  if (!row) throw notFound('Pesan tidak ditemukan');
+  if (row.role !== 'user') throw validationError('Hanya pertanyaan pengguna yang dapat diedit');
+  db.prepare('UPDATE messages SET content = ? WHERE id = ?').run(content, msgId);
+  touchConversation(db, conversationId);
+  const updated = db.prepare('SELECT * FROM messages WHERE id = ?').get(msgId) as MessageRow;
+  return hydrateMessage(updated);
+}
+
+/**
+ * Hapus pertanyaan pengguna BESERTA jawaban asisten tepat setelahnya (satu
+ * pasangan tanya-jawab) — menghapus pertanyaan saja meninggalkan jawaban
+ * yatim yang membingungkan.
+ */
+export function deleteUserMessage(db: DB, conversationId: string, msgId: string): void {
+  getConversationRow(db, conversationId);
+  const row = db
+    .prepare('SELECT * FROM messages WHERE id = ? AND conversation_id = ?')
+    .get(msgId, conversationId) as MessageRow | undefined;
+  if (!row) throw notFound('Pesan tidak ditemukan');
+  if (row.role !== 'user') throw validationError('Hanya pertanyaan pengguna yang dapat dihapus');
+  const reply = db
+    .prepare("SELECT id FROM messages WHERE conversation_id = ? AND seq > ? AND role = 'assistant' ORDER BY seq LIMIT 1")
+    .get(conversationId, row.seq) as { id: string } | undefined;
+  db.prepare('DELETE FROM messages WHERE id = ?').run(msgId);
+  if (reply) db.prepare('DELETE FROM messages WHERE id = ?').run(reply.id);
+  touchConversation(db, conversationId);
 }
 
 export function touchConversation(db: DB, id: string, patch?: { title?: string }): ConversationRow {

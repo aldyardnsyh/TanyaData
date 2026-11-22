@@ -81,6 +81,7 @@ export const IconArrowUpDown = symbol('swap_vert');
 export const IconCheck = symbol('check');
 export const IconCheckCircle = symbol('check_circle');
 export const IconChevronDown = symbol('expand_more');
+export const IconChevronLeft = symbol('chevron_left');
 export const IconChevronRight = symbol('chevron_right');
 export const IconClock = symbol('schedule');
 export const IconCopy = symbol('content_copy');

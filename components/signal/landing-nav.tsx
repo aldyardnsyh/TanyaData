@@ -103,7 +103,7 @@ export function LandingNav() {
           ))}
         </div>
         <Link
-          href="/overview"
+          href="/assistant"
           className="touch-44 inline-flex items-center rounded-chip bg-lime px-s3 font-display text-label font-semibold text-ink transition-[box-shadow,transform] duration-[var(--motion-expand)] hover:shadow-[0_0_32px_color-mix(in_srgb,var(--color-lime)_28%,transparent)] active:scale-[var(--scale-press)] focus-ring-forest motion-reduce:transform-none"
         >
           Coba data contoh

@@ -4,20 +4,108 @@ import { useEffect, useState } from 'react';
 import type { ComponentState, StateCopy } from '@/lib/ui/component-state';
 import { DEFAULT_STATE_COPY } from '@/lib/ui/component-state';
 import { motionTokens, shouldAnimate } from '@/lib/motion-tokens';
+import type { SourceCitation } from '@/lib/contracts/http';
+import { InlineCitationMark } from '@/components/signal/citation-marks';
 
 /**
  * C-08 Answer Reveal (dari Text Generate Effect + Typewriter).
  * Purpose Gate: menandakan jawaban baru dibuat. Efek mengetik per karakter
  * ditolak karena menyerupai AI generik dan mengubah cara membaca bukti.
  * Motion: 120ms per frasa, maksimal 8 frasa; sisanya tampil sekaligus (M6).
+ * Token sitasi inline [n] dalam teks dirender sebagai InlineCitationMark
+ * (hover = kaca pembesar kutipan, klik = buka sumber).
  */
 export interface TextGenerateProps extends StateCopy {
   text: string;
   state?: ComponentState;
   className?: string;
+  /** Sitasi [S1]..[Sn] untuk marker inline [n] dalam teks jawaban. */
+  citations?: SourceCitation[];
+  onOpenCitation?: (citation: SourceCitation) => void;
 }
 
 const MAX_PHRASES = 8;
+const CITE_TOKEN_RE = /\[(\d+)\]/g;
+
+/** Render teks sebaris: **bold** + marker sitasi inline [n]. */
+function InlineText({
+  text,
+  citations,
+  onOpenCitation,
+}: {
+  text: string;
+  citations?: SourceCitation[];
+  onOpenCitation?: (citation: SourceCitation) => void;
+}) {
+  // Pecah dulu per segmen bold, lalu marker sitasi dalam tiap segmen.
+  const segments = text.split(/\*\*(.+?)\*\*/g);
+  return (
+    <>
+      {segments.map((seg, i) =>
+        i % 2 === 1 ? (
+          <strong key={i} className="font-semibold text-ink">
+            <PhraseWithCitations phrase={seg} citations={citations} onOpenCitation={onOpenCitation} />
+          </strong>
+        ) : (
+          <PhraseWithCitations key={i} phrase={seg} citations={citations} onOpenCitation={onOpenCitation} />
+        ),
+      )}
+    </>
+  );
+}
+
+function PhraseWithCitations({
+  phrase,
+  citations,
+  onOpenCitation,
+}: {
+  phrase: string;
+  citations?: SourceCitation[];
+  onOpenCitation?: (citation: SourceCitation) => void;
+}) {
+  if (!citations?.length || !/\[\d+\]/.test(phrase)) return <>{phrase}</>;
+  const nodes: React.ReactNode[] = [];
+  let last = 0;
+  for (const match of phrase.matchAll(CITE_TOKEN_RE)) {
+    const start = match.index ?? 0;
+    if (start > last) nodes.push(phrase.slice(last, start));
+    const n = Number(match[1]);
+    const citation = citations[n - 1];
+    if (citation) {
+      nodes.push(
+        <InlineCitationMark key={`${start}-${n}`} index={n - 1} citation={citation} onOpen={onOpenCitation} />,
+      );
+    } else {
+      nodes.push(match[0]);
+    }
+    last = start + match[0].length;
+  }
+  if (last < phrase.length) nodes.push(phrase.slice(last));
+  return <>{nodes}</>;
+}
+
+/** Blok jawaban: paragraf, bullet (- ), atau bernomor (1. ). */
+type AnswerBlock = { kind: 'p' | 'ul' | 'ol'; lines: string[] };
+
+function parseBlocks(text: string): AnswerBlock[] {
+  const blocks: AnswerBlock[] = [];
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (line.startsWith('- ')) {
+      const last = blocks[blocks.length - 1];
+      if (last?.kind === 'ul') last.lines.push(line.slice(2));
+      else blocks.push({ kind: 'ul', lines: [line.slice(2)] });
+    } else if (/^\d+\.\s/.test(line)) {
+      const last = blocks[blocks.length - 1];
+      if (last?.kind === 'ol') last.lines.push(line.replace(/^\d+\.\s/, ''));
+      else blocks.push({ kind: 'ol', lines: [line.replace(/^\d+\.\s/, '')] });
+    } else {
+      blocks.push({ kind: 'p', lines: [line] });
+    }
+  }
+  return blocks;
+}
 
 export function TextGenerate({
   text,
@@ -26,15 +114,19 @@ export function TextGenerate({
   emptyAction,
   errorTitle = 'Jawaban gagal dibuat.',
   onRetry,
+  citations,
+  onOpenCitation,
   className = '',
 }: TextGenerateProps) {
-  const phrases = text.split(/(?<=[.!?])\s+/).filter(Boolean);
-  const [visible, setVisible] = useState(() => (shouldAnimate() ? 0 : phrases.length));
+  // Jawaban terstruktur: blok paragraf/bullet/nomor (parse dari \n), bukan
+  // satu paragraf panjang. Animasi reveal per blok (maks 8 blok, M6).
+  const blocks = parseBlocks(text);
+  const [visible, setVisible] = useState(() => (shouldAnimate() ? 0 : blocks.length));
 
   useEffect(() => {
     if (state !== 'default' && state !== 'success') return;
     if (!shouldAnimate()) {
-      setVisible(phrases.length);
+      setVisible(blocks.length);
       return;
     }
     setVisible(0);
@@ -43,7 +135,7 @@ export function TextGenerate({
     const step = () => {
       index += 1;
       setVisible(Math.min(index, MAX_PHRASES));
-      if (index < Math.min(phrases.length, MAX_PHRASES)) {
+      if (index < Math.min(blocks.length, MAX_PHRASES)) {
         timer = window.setTimeout(step, motionTokens.duration.fast * 1000);
       }
     };
@@ -92,14 +184,38 @@ export function TextGenerate({
   }
 
   // hover/focus/active: teks statis, tanpa efek tambahan (n/a beralasan).
-  const shown = phrases.slice(0, visible).join(' ');
-  const rest = phrases.slice(visible).join(' ');
+  const shown = blocks.slice(0, visible);
+  const rest = blocks.slice(visible);
 
   return (
-    <p className={`max-w-[68ch] font-body text-body leading-relaxed text-ink ${className}`} data-state={state}>
-      {shown}
-      {rest && <span className="sr-only">{rest}</span>}
-      {visible < phrases.length && <span aria-hidden="true"> </span>}
-    </p>
+    <div className={`flex max-w-[68ch] flex-col gap-s2 font-body text-body leading-relaxed text-ink ${className}`} data-state={state}>
+      {shown.map((block, i) => {
+        if (block.kind === 'ul') {
+          return (
+            <ul key={i} className="flex list-disc flex-col gap-s1 pl-s4">
+              {block.lines.map((line, j) => (
+                <li key={j}><InlineText text={line} citations={citations} onOpenCitation={onOpenCitation} /></li>
+              ))}
+            </ul>
+          );
+        }
+        if (block.kind === 'ol') {
+          return (
+            <ol key={i} className="flex list-decimal flex-col gap-s1 pl-s4">
+              {block.lines.map((line, j) => (
+                <li key={j}><InlineText text={line} citations={citations} onOpenCitation={onOpenCitation} /></li>
+              ))}
+            </ol>
+          );
+        }
+        return (
+          <p key={i}>
+            <InlineText text={block.lines[0]} citations={citations} onOpenCitation={onOpenCitation} />
+          </p>
+        );
+      })}
+      {rest.length > 0 && <span className="sr-only">{rest.map((b) => b.lines.join(' ')).join(' ')}</span>}
+      {visible < blocks.length && <span aria-hidden="true"> </span>}
+    </div>
   );
 }

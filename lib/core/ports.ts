@@ -47,6 +47,8 @@ export type ComposeInput = {
   context?: QueryContext | null;
   /** Dataset aktif — dipakai adapter untuk retrieval & pembangunan registry. */
   datasetId?: string;
+  /** Kelompok dokumen percakapan (NotebookLM-style): retrieval terbatas ke daftar ini. */
+  datasetIds?: string[] | null;
 };
 
 export type ComposeOutput = {

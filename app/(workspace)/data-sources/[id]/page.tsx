@@ -1,8 +1,10 @@
 'use client';
 
-import { use, useCallback, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import type { ApiErrorCode, PreviewResponse, SourceDetailResponse } from '@/lib/contracts/http';
+import { useRouter, useSearchParams } from 'next/navigation';
+import type { ApiErrorCode, CitationChunkResponse, Investigation, InvestigateResponse, PreviewResponse, SourceAnalyticsResponse, SourceDetailResponse, SourceSummaryResponse } from '@/lib/contracts/http';
+import { parseCiteParam } from '@/lib/ui/citation-target';
 import { formatNumber } from '@/lib/ui/format';
 import { Icon } from '@/components/ui/icons';
 import { SectionRule } from '@/components/signal/section-rule';
@@ -52,6 +54,69 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
   const [limit, setLimit] = useState(20);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // D2: ringkasan deterministik per dokumen (dari chunk terindeks).
+  const [summary, setSummary] = useState<SourceSummaryResponse | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  // Analytics per dokumen: tipe + metrik + insight, deterministik dari chunk.
+  const [analytics, setAnalytics] = useState<SourceAnalyticsResponse | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  // Investigasi per sumber (dataset): analisis mendalam dari detail sumber ini.
+  const [invQuestion, setInvQuestion] = useState('Mengapa tingkat kegagalan transaksi meningkat?');
+  const [invRunning, setInvRunning] = useState(false);
+  const [invResult, setInvResult] = useState<Investigation | null>(null);
+  const [invError, setInvError] = useState<string | null>(null);
+  const [invSaving, setInvSaving] = useState(false);
+  const [invSavedId, setInvSavedId] = useState<string | null>(null);
+
+  // Bukti sitasi (deep-link dari chat): ?cite=chunk=..&page=..&section=..
+  // → tampilkan chunk yang dirujuk, ter-highlight, auto-scroll ke sana.
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const cite = parseCiteParam(searchParams.get('cite'));
+  const [citeChunk, setCiteChunk] = useState<CitationChunkResponse['chunk'] | null>(null);
+  const [citeError, setCiteError] = useState<string | null>(null);
+  const citeRef = useRef<HTMLDivElement>(null);
+  const citeActive = Boolean(cite.chunk || cite.page || cite.section);
+
+  useEffect(() => {
+    if (!detail || detail.source.kind !== 'document' || !citeActive) { setCiteChunk(null); setCiteError(null); return; }
+    let cancelled = false;
+    const params = new URLSearchParams();
+    if (cite.chunk != null) params.set('chunk', String(cite.chunk));
+    if (cite.page != null) params.set('page', String(cite.page));
+    if (cite.section) params.set('section', cite.section);
+    fetch(`/api/sources/${id}/chunk?${params.toString()}`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error((await r.json().catch(() => null))?.error?.message ?? 'Potongan sitasi tidak ditemukan.');
+        return r.json() as Promise<CitationChunkResponse>;
+      })
+      .then((json) => { if (!cancelled) { setCiteChunk(json.chunk); setCiteError(null); } })
+      .catch((err: unknown) => { if (!cancelled) { setCiteChunk(null); setCiteError(err instanceof Error ? err.message : 'Potongan sitasi gagal dimuat.'); } });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detail?.source.id, id, searchParams]);
+
+  useEffect(() => {
+    if (citeChunk) citeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [citeChunk]);
+
+  useEffect(() => {
+    if (detail?.source.kind !== 'document') { setSummary(null); return; }
+    let cancelled = false;
+    setSummaryLoading(true);
+    fetch(`/api/sources/${id}/summary`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json: SourceSummaryResponse | null) => { if (!cancelled) setSummary(json); })
+      .catch(() => { if (!cancelled) setSummary(null); })
+      .finally(() => { if (!cancelled) setSummaryLoading(false); });
+    setAnalyticsLoading(true);
+    fetch(`/api/sources/${id}/analytics`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json: SourceAnalyticsResponse | null) => { if (!cancelled) setAnalytics(json); })
+      .catch(() => { if (!cancelled) setAnalytics(null); })
+      .finally(() => { if (!cancelled) setAnalyticsLoading(false); });
+    return () => { cancelled = true; };
+  }, [detail?.source.kind, id]);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null); setNotFound(false);
@@ -100,6 +165,44 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
     }
   };
 
+  /** Investigasi per sumber: jalankan analisis (persist=false) atau simpan dossier (persist=true). */
+  const runInvestigation = async (persist: boolean) => {
+    const q = invQuestion.trim();
+    if (q.length < 3) { toast({ status: 'error', message: 'Pertanyaan minimal 3 karakter.' }); return; }
+    if (persist) {
+      if (!invResult || invSaving || invSavedId) return;
+      setInvSaving(true);
+    } else {
+      setInvRunning(true);
+      setInvResult(null);
+      setInvError(null);
+      setInvSavedId(null);
+    }
+    try {
+      const res = await fetch('/api/investigations/analyze', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, dataset: id, persist, lang: 'id' }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
+      }
+      const json: InvestigateResponse = await res.json();
+      setInvResult(json.investigation);
+      if (persist) {
+        setInvSavedId(json.investigation.id);
+        toast({ status: 'success', message: 'Investigasi disimpan.', action: 'Buka', onAction: () => { window.location.href = `/investigations/${json.investigation.id}`; } });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Analisis gagal.';
+      setInvError(message);
+      if (persist) toast({ status: 'error', message });
+    } finally {
+      setInvRunning(false);
+      setInvSaving(false);
+    }
+  };
+
   const confirmDelete = async () => {
     setDeleting(true);
     try {
@@ -117,6 +220,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
   };
 
   const isDocument = detail !== null && 'sections' in detail;
+  const isDataset = detail !== null && 'schema' in detail;
   const previewColumns = preview?.columns ?? [];
   const previewRows = preview?.rows ?? [];
 
@@ -232,7 +336,149 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
           </div>
         ) : detail ? (
           <>
+            {/* Bukti sitasi: potongan yang dirujuk dari jawaban chat,
+                di-highlight dan di-scroll ke tempatnya. */}
+            {citeActive && (
+              <div ref={citeRef} role="region" aria-label="Bukti sitasi" className="mt-s5 rounded-card-lg border-2 border-lime bg-forest-08 p-s4 shadow-float">
+                <div className="flex items-center justify-between gap-s2">
+                  <span className="mono-meta inline-flex items-center gap-s1 text-forest"><Icon name="fact_check" className="text-[14px]" /> BUKTI SITASI</span>
+                  <button type="button" onClick={() => router.replace(`/data-sources/${id}`)} aria-label="Tutup bukti sitasi" className="touch-44 flex items-center justify-center rounded-control text-ink-72 transition-colors hover:text-ink focus-ring"><Icon name="close" className="text-[18px]" /></button>
+                </div>
+                {(citeChunk?.section || citeChunk?.page != null) && (
+                  <div className="mt-s2 flex flex-wrap gap-s3">
+                    {citeChunk?.section && <span className="mono-meta">BAGIAN · {citeChunk.section}</span>}
+                    {citeChunk?.page != null && <span className="mono-meta">HALAMAN · {citeChunk.page}</span>}
+                  </div>
+                )}
+                {citeError && <p className="mt-s2 font-body text-caption text-terracotta" role="alert">{citeError}</p>}
+                {citeChunk ? (
+                  <blockquote className="mt-s2 border-l-2 border-lime pl-s3 font-body text-body leading-relaxed text-ink">{citeChunk.content}</blockquote>
+                ) : !citeError && <div className="skeleton mt-s3 h-24 w-full" />}
+              </div>
+            )}
+
             <section aria-label="Metadata sumber" className="mt-s5"><BentoGrid items={summaryItems} /></section>
+
+            <SectionRule className="mt-s5" />
+
+            {/* D2 — Ringkasan dokumen: struktur deterministik dari chunk
+                terindeks (tanpa LLM), dengan CTA tanya-dokumen-ini (FR-C). */}
+            {isDocument && (
+              <section aria-labelledby="summary-heading" className="mt-s5">
+                <div className="mb-s3 flex flex-wrap items-end justify-between gap-s2">
+                  <div>
+                    <h2 id="summary-heading" className="font-display text-title text-ink">Ringkasan dokumen</h2>
+                    <p className="mt-s1 font-body text-caption text-ink-72">
+                      Struktur dan isi per bagian, dari chunk yang terindeks — bukan parafrasa model.
+                    </p>
+                  </div>
+                  <Link
+                    href={`/assistant?attach=${id}&source=${encodeURIComponent(detail.source.name)}`}
+                    className="touch-44 inline-flex items-center gap-s2 rounded-chip bg-lime px-s3 font-display text-label font-semibold text-ink transition-transform hover:scale-[1.02] focus-ring-forest motion-reduce:transform-none"
+                  >
+                    Tanya dokumen ini
+                    <Icon name="arrow_forward" className="text-[16px]" />
+                  </Link>
+                </div>
+                <SectionRule className="mb-s4" />
+                {/* Analytics per dokumen: tipe, metrik sesuai tipe, chart, dan
+                    insight deterministik — siap demo tanpa membuka chat. */}
+                {analyticsLoading && (
+                  <div className="mb-s4 grid gap-s3 md:grid-cols-4" aria-busy="true">
+                    {[0, 1, 2, 3].map((i) => <div key={i} className="skeleton h-s6 w-full rounded-card-lg" />)}
+                  </div>
+                )}
+                {!analyticsLoading && analytics && (
+                  <div className="mb-s4 flex flex-col gap-s3">
+                    {/* Klasifikasi tipe + sinyal. */}
+                    <div className="flex flex-wrap items-center gap-s2">
+                      <StatusBadge label={analytics.docTypeLabel} tone={analytics.docType === 'general' ? 'neutral' : 'active'} />
+                      <span className="mono-meta">{Math.round(analytics.confidence * 100)}% KEYAKINAN</span>
+                      {analytics.signals.slice(0, 4).map((s) => <span key={s} className="rounded-chip border border-[var(--border-hairline)] px-s2 py-s1 font-mono text-[11px] uppercase tracking-[0.06em] text-ink-72">{s}</span>)}
+                    </div>
+                    {/* Stat tiles. */}
+                    <div className="grid gap-s3 sm:grid-cols-2 lg:grid-cols-4">
+                      {([
+                        ['BAGIAN', analytics.totals.sections],
+                        ['CHUNK', analytics.totals.chunks],
+                        ['HALAMAN', analytics.totals.pages ?? '—'],
+                        ['KATA', analytics.totals.words],
+                      ] as const).map(([label, value]) => (
+                        <div key={label} className="surface rounded-card-lg p-s3">
+                          <span className="mono-meta">{label}</span>
+                          <p className="mt-s1 font-body text-metric tabular text-ink">{num(typeof value === 'number' ? value : null)}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Chart entitas: bar horizontal dengan bagian teratas. */}
+                    {(() => {
+                      const chart = analytics.docType === 'financial-report'
+                        ? { title: 'Nominal & persentase', items: [...analytics.entities.amounts.slice(0, 5), ...analytics.entities.percentages.slice(0, 5)] }
+                        : analytics.docType === 'incident-report'
+                          ? { title: 'Istilah kegagalan & kanal', items: [...analytics.entities.failureCodes.slice(0, 5), ...analytics.entities.channels.slice(0, 4)] }
+                          : { title: 'Istilah dominan', items: analytics.entities.failureCodes.slice(0, 6) };
+                      const max = Math.max(1, ...chart.items.map((i) => i.count));
+                      return chart.items.length > 0 && (
+                        <div className="surface rounded-card-lg p-s3">
+                          <span className="mono-meta">{chart.title.toUpperCase()}</span>
+                          <div className="mt-s2 space-y-s2">
+                            {chart.items.map((item) => (
+                              <div key={item.label}>
+                                <div className="mb-s1 flex items-center justify-between gap-s2 font-body text-caption">
+                                  <span className="min-w-0 truncate text-ink">{item.label}</span>
+                                  <span className="shrink-0 tabular text-ink-72">{item.count}×</span>
+                                </div>
+                                <div className="h-s2 w-full overflow-hidden rounded-control bg-forest-08">
+                                  <div className="h-full bg-forest" style={{ width: `${Math.max(3, (item.count / max) * 100)}%` }} />
+                                </div>
+                                {item.topSection && <p className="mt-s1 font-body text-caption text-ink-72">Terbanyak di "{item.topSection}"{item.topPage != null ? ` · hlm ${item.topPage}` : ''}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    {/* Insight: pernyataan dari angka yang dihitung, bukan parafrasa. */}
+                    <div className="surface rounded-card-lg p-s3">
+                      <span className="mono-meta">INSIGHT</span>
+                      <ul className="mt-s2 space-y-s2">
+                        {analytics.insights.map((insight, i) => (
+                          <li key={i} className="flex items-start gap-s2 font-body text-caption leading-relaxed text-ink">
+                            <span className="mt-1 h-s2 w-s2 shrink-0 rounded-full bg-lime" aria-hidden="true" />{insight}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+                {summaryLoading && (
+                  <div className="grid gap-s3" aria-busy="true">
+                    <div className="skeleton h-s4 w-1/2" />
+                    <div className="skeleton h-s4 w-3/4" />
+                  </div>
+                )}
+                {!summaryLoading && summary && (
+                  <>
+                    <p className="mono-meta mb-s3">
+                      {summary.totals.sections} BAGIAN · {summary.totals.chunks} CHUNK
+                      {summary.totals.ocrSkipped > 0 ? ` · ${summary.totals.ocrSkipped} HALAMAN TANDAI OCR` : ''}
+                    </p>
+                    <div className="grid gap-s3 md:grid-cols-2">
+                      {summary.sections.map((section) => (
+                        <article key={section.title + String(section.page)} className="surface flex flex-col gap-s1 rounded-card-lg p-s3">
+                          <div className="flex items-baseline justify-between gap-s2">
+                            <h3 className="min-w-0 truncate font-display text-label font-semibold text-ink">{section.title}</h3>
+                            {section.page !== null && <span className="mono-meta shrink-0">HAL {section.page}</span>}
+                          </div>
+                          <p className="font-body text-caption leading-relaxed text-ink-72">{section.excerpt}</p>
+                          <span className="mono-meta">{section.chunkCount} CHUNK</span>
+                        </article>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </section>
+            )}
 
             <SectionRule className="mt-s5" />
 
@@ -306,6 +552,65 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
                     </dl>
                   </section>
                 </div>
+              </>
+            )}
+            {/* Investigasi per sumber (dataset): paralel ringkasan per dokumen —
+                analisis mendalam dijalankan DARI sumbernya, hasil jadi dossier. */}
+            {isDataset && (
+              <>
+                <SectionRule className="mt-s5" />
+                <section aria-labelledby="investigasi-heading" className="surface mt-s5 p-s4">
+                  <div className="mb-s3 flex flex-wrap items-end justify-between gap-s2">
+                    <div>
+                      <h2 id="investigasi-heading" className="font-display text-title text-ink">Investigasi</h2>
+                      <p className="mt-s1 font-body text-caption text-ink-72">
+                        Analisis mendalam atas sumber ini: apa yang berubah, faktor penyebabnya, dan seberapa jauh buktinya.
+                      </p>
+                    </div>
+                    <Link href="/investigations" className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring">
+                      Dossier tersimpan <Icon name="arrow_forward" className="text-[16px]" />
+                    </Link>
+                  </div>
+                  <SectionRule className="mb-s3" />
+                  <label className="flex flex-col gap-s1">
+                    <span className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-ink-72">Pertanyaan investigasi</span>
+                    <input type="text" value={invQuestion} onChange={(e) => setInvQuestion(e.target.value)} className="min-h-11 w-full rounded-control border border-[var(--border-hairline)] bg-porcelain px-s3 font-body text-body text-ink focus-ring" />
+                  </label>
+                  <div className="mt-s3 flex flex-wrap justify-end gap-s2">
+                    <button type="button" disabled={invRunning || invSaving} onClick={() => void runInvestigation(false)} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring disabled:opacity-50">
+                      <Icon name="query_stats" className="text-[16px]" /> {invRunning ? 'Menganalisis' : 'Jalankan analisis'}
+                    </button>
+                    <button type="button" disabled={!invResult || invRunning || invSaving || !!invSavedId} onClick={() => void runInvestigation(true)} className="touch-44 inline-flex items-center gap-s2 rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring disabled:opacity-50">
+                      {invSavedId ? 'Tersimpan' : invSaving ? 'Menyimpan' : 'Simpan investigasi'}
+                    </button>
+                  </div>
+                  {invError && <p role="alert" className="mt-s3 font-body text-caption text-terracotta">{invError}</p>}
+                  {invRunning && <div className="mt-s3 skeleton h-24 w-full" aria-busy="true" />}
+                  {!invRunning && invResult && (
+                    <div className="mt-s3 grid gap-s3 border-t border-[var(--border-hairline)] pt-s3 md:grid-cols-3">
+                      <div>
+                        <span className="mono-meta">TINGKAT KLAIM</span>
+                        <p className="mt-s1 font-body text-body font-semibold text-ink">
+                          {invResult.conclusion.claimLevel === 'proven' ? 'Terbukti' : invResult.conclusion.claimLevel === 'measured' ? 'Terukur' : 'Indikasi'}
+                        </p>
+                        <p className="mt-s1 font-body text-caption text-ink-72">
+                          Kanal dominan: {invResult.contribution.channels[0]?.channelName ?? '—'}
+                          {invResult.contribution.channels[0] ? ` (+${invResult.contribution.channels[0].excessFailures} gagal)` : ''}
+                        </p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <span className="mono-meta">KESIMPULAN</span>
+                        <p className="mt-s1 font-body text-caption leading-relaxed text-ink">{invResult.conclusion.text}</p>
+                        {invResult.evidence.sql.length > 0 && <p className="mt-s1 mono-meta">{invResult.evidence.sql.length} QUERY SQL · {invResult.documents.length} BUKTI DOKUMEN</p>}
+                      </div>
+                    </div>
+                  )}
+                  {!invRunning && invSavedId && (
+                    <p className="mt-s3">
+                      <Link href={`/investigations/${invSavedId}`} className="inline-flex items-center gap-s1 font-display text-label font-semibold text-forest focus-ring">Buka dossier <Icon name="arrow_forward" className="text-[14px]" /></Link>
+                    </p>
+                  )}
+                </section>
               </>
             )}
             {'sections' in detail && (
