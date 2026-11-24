@@ -1,0 +1,93 @@
+# Compose app TanyaData untuk VPS yang SUDAH menjalankan Qdrant
+# (deploy/qdrant/docker-compose.yml) dan reverse proxy Caddy milik stack lain
+# pada network `ida_internal`.
+#
+# Kenapa file terpisah, bukan docker-compose.prod.yml:
+#   docker-compose.prod.yml memakai path relatif `../..` yang mengasumsikan
+#   repo berada satu level di bawah direktori kerja. Di repo ini root-nya
+#   adalah folder ini sendiri, sehingga path tersebut menunjuk ke /root dan
+#   build context menjadi salah. File ini memakai `..` (root repo) secara
+#   eksplisit.
+#
+# Kenapa QDRANT_URL di-override:
+#   Di dalam container, 127.0.0.1 adalah container itu sendiri, bukan host.
+#   Qdrant dijangkau lewat nama container pada network bersama.
+#
+# Kenapa EMBEDDING_PROVIDER=off:
+#   VPS 2 GB tidak cukup memuat model e5-small (ONNX) bersamaan dengan stack
+#   lain; percobaan reindex dengan embedding aktif berakhir OOM (exit 137).
+#   Indeks Qdrant saat ini berisi BM25 (text_fts) tanpa dense vector, jadi
+#   runtime harus konsisten dengan isi indeks. Mengaktifkan kembali dense
+#   memerlukan RAM tambahan dan pengisian ulang vector.
+#
+# Jalankan dari direktori ini:
+#   docker compose -f docker-compose.app.yml up -d
+#
+# Prasyarat: `npm run build` dengan SEED_PROFILE yang sama sudah dijalankan di
+# root repo (postbuild menghasilkan .next/standalone yang disalin Dockerfile).
+
+name: tanyadata-app
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/app/Dockerfile
+    image: tanyadata-app:1.0.0
+    container_name: tanyadata-app
+    restart: unless-stopped
+
+    # Tanpa `user:` — container berjalan sebagai root agar bisa menulis
+    # data/workspace milik root di host. Single-tenant VPS, bukan multi-user.
+    env_file:
+      - ../.env.local
+
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      # Batasi heap V8: tanpa ini Node tumbuh sampai OOM killer turun tangan.
+      NODE_OPTIONS: "--max-old-space-size=512"
+      # Nama service/container Qdrant pada network bersama, bukan loopback.
+      QDRANT_URL: http://tanyadata-qdrant:6333
+      RETRIEVAL_MODE: qdrant
+      EMBEDDING_PROVIDER: "off"
+
+    volumes:
+      - ../data/workspace:/app/data/workspace
+      - ../data/seed:/app/data/seed
+
+    # Loopback host saja: verifikasi lokal. Trafik publik masuk lewat Caddy
+    # yang menjangkau container ini sebagai `tanyadata-app:3000`.
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    networks:
+      - ida_internal
+      - qdrant_net
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/meta').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  ida_internal:
+    external: true
+  qdrant_net:
+    external: true
+    name: qdrant_default
