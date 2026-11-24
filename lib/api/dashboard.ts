@@ -35,11 +35,28 @@ export function dashboardContext(db: DB, searchParams: URLSearchParams): Dashboa
 
   const explicitRange = Boolean(searchParams.get('start') || searchParams.get('end'));
   const requestedPreset = searchParams.get('period');
+
+  // SET-01 / DECISION-036 keputusan 3: bila URL tidak menentukan periode,
+  // dashboard memakai `settings.dateRange` — sumber yang sama dengan Asisten.
+  // `this_month` hanya fallback bila settings tidak tersedia, atau rentangnya
+  // tidak valid untuk scope dataset yang sedang dilihat (mis. override
+  // `?dataset=` ke dataset dengan batas tanggal berbeda).
+  const settingsRange = settings?.dateRange ?? null;
+  const useSettingsRange =
+    !requestedPreset &&
+    !explicitRange &&
+    settingsRange !== null &&
+    settingsRange.start <= settingsRange.end &&
+    settingsRange.start >= scope.ref.minDate &&
+    settingsRange.end <= scope.ref.maxDate;
+  const rangeStart = useSettingsRange && settingsRange ? settingsRange.start : null;
+  const rangeEnd = useSettingsRange && settingsRange ? settingsRange.end : null;
+
   const period = resolvePeriod(
     {
-      period: requestedPreset ?? (explicitRange ? 'custom' : 'this_month'),
-      start: searchParams.get('start'),
-      end: searchParams.get('end'),
+      period: requestedPreset ?? (explicitRange || useSettingsRange ? 'custom' : 'this_month'),
+      start: searchParams.get('start') ?? rangeStart,
+      end: searchParams.get('end') ?? rangeEnd,
       compare: searchParams.get('compare'),
     },
     { minDate: scope.ref.minDate, maxDate: scope.ref.maxDate },

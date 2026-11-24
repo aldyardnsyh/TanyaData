@@ -272,7 +272,8 @@ function gradeGuardrail(c: AnyRecord, query: AnyRecord): { pass: boolean; score:
   const coreType = (query.guardrail as AnyRecord | null)?.type as string | undefined;
   const meta = (query.meta as AnyRecord | undefined) ?? {};
   const aiRefused = meta.confidenceLevel === 'refused' || meta.fallbackReason === 'guardrail';
-  const effectiveType = coreType ?? (aiRefused ? 'refused' : null);
+  const aiType = meta.guardrailType as string | undefined;
+  const effectiveType = coreType ?? aiType ?? (aiRefused ? 'refused' : null);
   const g = phraseScore(String(query.answer ?? ''), c.must_contain as string[]);
 
   let pass = false;
@@ -412,6 +413,7 @@ export async function runRealDocsEval(options: {
       ? (query.citations as AnyRecord[]).map((x) => String(x.section_path ?? ''))
       : [];
     const meta = (query.meta as AnyRecord | undefined) ?? {};
+    const aiType = meta.guardrailType as string | undefined;
     const evaluation = (query.evaluation as AnyRecord | undefined) ?? {};
     const metrics = (evaluation.metrics as AnyRecord | undefined) ?? {};
 
@@ -422,7 +424,7 @@ export async function runRealDocsEval(options: {
         answer: truncate(String(query.answer ?? '')),
         citations,
         guardrail: ((query.guardrail as AnyRecord | null)?.type as string | undefined) ?? null,
-        aiGuardrail: meta.confidenceLevel === 'refused' ? 'refused' : (meta.confidenceLevel as string | undefined) ?? null,
+        aiGuardrail: aiType ?? (meta.confidenceLevel === 'refused' ? 'refused' : (meta.confidenceLevel as string | undefined) ?? null),
         sql: (query.generated_sql as string | undefined) ?? null,
         sqlRows: ((query.result_json as AnyRecord)?.rows ?? []) as AnyRecord[],
         expectedRows,

@@ -1,3 +1,4 @@
+import { sanitizeStoredError } from '@/lib/api/sanitize';
 import type { DB } from '@/lib/db/client';
 import { isAppError } from '@/lib/errors';
 import { ingestDataset } from '@/lib/ingest/dataset';
@@ -34,7 +35,7 @@ export async function processSource(db: DB, sourceId: string, buffer: Buffer): P
     updateJob(db, job.id, { status: 'DONE', step: 'done', progress: 100, finished: true });
     return { row: getSourceRow(db, row.id), job: jobDto(getJob(db, job.id)) };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = sanitizeStoredError(error);
     updateSource(db, row.id, { status: 'FAILED', error: message });
     updateJob(db, job.id, { status: 'FAILED', step: 'failed', error: message, finished: true });
     if (isAppError(error)) throw error;

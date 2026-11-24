@@ -11,8 +11,36 @@ import type { DB } from '@/lib/db/client';
 
 const DIACRITIC_RE = /[\u0300-\u036f]/g;
 
+const TYPO_CORRECTIONS: Record<string, string> = {
+  'succes ratenya': 'success rate',
+  succesratenya: 'success rate',
+  'succes rate': 'success rate',
+  succesrate: 'success rate',
+  succes: 'success',
+  'falure rate': 'failure rate',
+  falure: 'failure',
+  'transakasi': 'transaksi',
+  'persentasi': 'persentase',
+  alay: 'alat',
+  'didalamnya': 'di dalamnya',
+  'kinerjanya': 'kinerja',
+  'efisiennya': 'efisien',
+  'hasilnya': 'hasil',
+};
+
+const TYPO_KEYS = Object.keys(TYPO_CORRECTIONS).sort((a, b) => b.length - a.length);
+
+export function correctQueryTypos(text: string): string {
+  let out = String(text ?? '').toLowerCase();
+  for (const from of TYPO_KEYS) {
+    const pattern = new RegExp(`\\b${from.replace(/\s+/g, '\\s+')}\\b`, 'g');
+    if (pattern.test(out)) out = out.replace(pattern, TYPO_CORRECTIONS[from]);
+  }
+  return out;
+}
+
 export function normalizeText(text: string): string {
-  return text
+  return correctQueryTypos(text)
     .toLowerCase()
     .normalize('NFKD')
     .replace(DIACRITIC_RE, '')

@@ -1,0 +1,13 @@
+# Versi diverifikasi dari PyPI JSON API pada 2026-11-24.
+# Rujukan: docs/OCR_PP_OCRV6_IMPL.md. onnxocr 4.x = PP-OCRv6 tiny/small,
+# ONNX Runtime saja (tanpa PaddlePaddle), Python >= 3.11.
+# Wheel onnxocr 4.0.0 (~75 MB) sudah membundel model deteksi + recognisi tiny.
+# numpy: 2.5.x mensyaratkan Python >=3.12 (PyPI requires_python), jadi gagal
+# dipasang di venv Python 3.11. 2.4.6 = rilis terakhir yang mendukung >=3.11
+# (terverifikasi: requires_python ">=3.11", sudah terpasang di venv).
+# Rentang ini membiarkan pip memilih versi kompatibel tertinggi untuk interpreter.
+onnxocr>=4,<5
+fastapi==0.165.0
+uvicorn==0.54.0
+pillow==13.0.0
+numpy>=2.4.6,<3

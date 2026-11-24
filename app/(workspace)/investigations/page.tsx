@@ -9,13 +9,14 @@
  */
 import { useState } from 'react';
 import Link from 'next/link';
-import type { InvestigationsListResponse } from '@/lib/contracts/http';
+import type { InvestigationsListResponse, MetaResponse } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { formatNumber } from '@/lib/ui/format';
 import { Icon } from '@/components/ui/icons';
 import { SectionRule } from '@/components/signal/section-rule';
 import { StatusBadge } from '@/components/signal/status-badge';
 import { GlowingCTA } from '@/components/signal/glowing-cta';
+import { NoDocumentsEmpty } from '@/components/ui/no-documents-empty';
 
 const num = (v: number | null | undefined) => (v == null ? '0' : formatNumber(v));
 const CLAIM_LABEL: Record<string, string> = { proven: 'Terbukti', measured: 'Terukur', indication: 'Indikasi' };
@@ -27,8 +28,11 @@ function wibDate(iso: string): string {
 
 export default function InvestigationsPage() {
   const saved = useApi<InvestigationsListResponse>('/api/investigations?limit=50');
+  const meta = useApi<MetaResponse>('/api/meta');
   const [query, setQuery] = useState('');
 
+  // null = belum tahu; jangan klaim "tidak ada dokumen" sebelum meta siap.
+  const hasDocuments = meta.loading || meta.error ? null : (meta.data?.data.documents.total ?? 0) > 0;
   const items = saved.data?.items ?? [];
   const filtered = (() => {
     const q = query.trim().toLowerCase();
@@ -88,19 +92,25 @@ export default function InvestigationsPage() {
             </div>
           )}
           {!saved.loading && !saved.error && filtered.length === 0 && (
-            <div className="surface flex flex-col items-start gap-s3 p-s4">
-              <p className="font-body text-body text-ink">
-                {items.length === 0 ? 'Belum ada investigasi tersimpan.' : 'Tidak ada yang cocok dengan pencarian.'}
-              </p>
-              {items.length === 0 && (
-                <>
-                  <p className="font-body text-caption text-ink-72">Buka sumber data bertipe dataset, lalu jalankan analisis dari section Investigasi.</p>
-                  <Link href="/data-sources" className="touch-44 inline-flex items-center gap-s2 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">
-                    <Icon name="database" className="text-[16px]" /> Buka sumber data
-                  </Link>
-                </>
-              )}
-            </div>
+            items.length === 0 && hasDocuments === false ? (
+              <div className="surface rounded-card-lg p-s4">
+                <NoDocumentsEmpty heading="Belum ada investigasi" />
+              </div>
+            ) : (
+              <div className="surface flex flex-col items-start gap-s3 p-s4">
+                <p className="font-body text-body text-ink">
+                  {items.length === 0 ? 'Belum ada investigasi tersimpan.' : 'Tidak ada yang cocok dengan pencarian.'}
+                </p>
+                {items.length === 0 && (
+                  <>
+                    <p className="font-body text-caption text-ink-72">Buka sumber data bertipe dataset, lalu jalankan analisis dari section Investigasi.</p>
+                    <Link href="/data-sources" className="touch-44 inline-flex items-center gap-s2 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">
+                      <Icon name="database" className="text-[16px]" /> Buka sumber data
+                    </Link>
+                  </>
+                )}
+              </div>
+            )
           )}
 
           <ul className="space-y-s2">
@@ -136,7 +146,7 @@ export default function InvestigationsPage() {
             </div>
             <div className="col-span-4 sm:col-span-2 xl:col-span-4">
               <span className="mono-meta">3 · SIMPAN DOSSIER</span>
-              <p className="mt-s2 font-body text-caption text-ink-72">Hasil — kontribusi, linimasa, kesimpulan, jejak SQL — tersimpan dan dapat dibuka kembali dari halaman ini.</p>
+              <p className="mt-s2 font-body text-caption text-ink-72">Dossier menyimpan kontribusi, linimasa, kesimpulan, dan jejak SQL, lalu dapat dibuka kembali dari halaman ini.</p>
             </div>
           </div>
         </section>

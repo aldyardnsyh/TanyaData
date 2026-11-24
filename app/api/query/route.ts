@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { handleRoute, jsonResponse } from '@/lib/api/respond';
+import { rateLimit } from '@/lib/api/rate-limit';
 import { parseJsonBody } from '@/lib/api/validate';
 import { ensureWorkspaceReady } from '@/lib/db/migrate';
 import { answerQuestion } from '@/lib/core/query';
@@ -30,6 +31,8 @@ const querySchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const limited = rateLimit(request, 'query');
+  if (limited) return limited;
   return handleRoute(async () => {
     const db = ensureWorkspaceReady();
     const body = await parseJsonBody(request, querySchema);

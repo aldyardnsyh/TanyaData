@@ -1,0 +1,49 @@
+# OCR on-demand — PP-OCRv6 tiny (DECISION-034 / ADR-11).
+#
+# - HANYA loopback 127.0.0.1:6334 di HOST. Container bind 0.0.0.0 agar
+#   port-mapping bisa menjangkau; jangan expose ke jaringan publik.
+# - Resource limit: ~1 GB RAM, 1 CPU. DECISION-034 mencatat puncak RAM tiny
+#   1,3-1,4 GB pada benchmark 4 vCPU — naikkan OCR_MEM_LIMIT setelah diukur
+#   di VPS 2 GB, dan JANGAN jalankan OCR bareng embedding/Qdrant.
+# - Nyalakan container HANYA saat Fase A ingestion, lalu `docker compose down`.
+# - Agent tidak menjalankan file ini. Lihat README.md di folder yang sama.
+
+services:
+  ocr:
+    build: .
+    image: tanyadata-ocr:1.0.0
+    container_name: tanyadata-ocr
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:6334:6334"
+
+    environment:
+      # Rahasia — diisi dari secret manager / .env VPS. Jangan commit.
+      OCR_API_KEY: ${OCR_API_KEY:?OCR_API_KEY wajib di .env VPS}
+      # Harus LEBIH KECIL dari OCR_TIMEOUT_MS klien (5000 ms).
+      OCR_TIMEOUT_S: "20.0"
+      OCR_MAX_IMAGE_BYTES: "2097152"
+      XDG_CACHE_HOME: /opt/ocr/.cache
+
+    volumes:
+      # onnxocr 4.x membundel model tiny di wheel; volume ini untuk cache
+      # forward-compatible bila model diunduh terpisah kemudian.
+      - ocr_model_cache:/opt/ocr/.cache
+
+    # Batas resource. Override lewat env bila pengukuran RSS menunjukkan perlu.
+    mem_limit: ${OCR_MEM_LIMIT:-1g}
+    cpus: ${OCR_CPUS:-1}
+
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # onnxocr perlu menulis cache model ke direktori paket saat load pertama.
+    # read_only dinonaktifkan; root filesystem tetap dilindungi no-new-privileges
+    # dan cap_drop. Volume ocr_model_cache menyimpan cache lintas restart.
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+
+volumes:
+  ocr_model_cache:

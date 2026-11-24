@@ -1,0 +1,121 @@
+{
+  "generatedAt": "2026-11-24T12:11:00.000Z",
+  "role": "backend",
+  "phase": "P4",
+  "task": "extraction_regression_fix — perbaiki regresi kualitas ekstraksi tanpa mengorbankan perbaikan dua kolom KB01",
+  "root": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot",
+  "app": "tanyadata",
+  "hard_rules": {
+    "untouched": [
+      "lib/ai/*",
+      "lib/core/answer.ts",
+      "data/fixtures/perpres76/ground_truth.json (GT)",
+      "file tuning (eval/TUNING_REPORT.md, eval/results/* baseline, eval/transfer_set/*)"
+    ],
+    "no_full_build_or_dev_server": true,
+    "timeout_and_retry": "safe_exec.py timeout keras; maks 2 percobaan per perintah; tidak ada retry perintah yang menggantung"
+  },
+  "root_causes": [
+    {
+      "id": "RC-1",
+      "file": "lib/ingest/extract.ts",
+      "function": "detectColumnSplit",
+      "cause": "Ambang lama (gap >= max(24, 6% lebar), tanpa uji bimodalitas) mengira halaman satu kolom sebagai dua kolom. Terukur: Perpres p2 gap=24/lebar=370.6 (midFrac=0.491), p9 gap=27.8/378.2 (0.402), p12 gap=28.3/295.2 (0.341); SOP p2 gap=73.7/445.6 (0.379), p3 gap=113.4/445.6 (0.310). Akibatnya halaman Pasal 1 Perpres dipecah: 'Dalam Peraturan Presiden' dan 'Pelayanan publik' terpisah dari isi butir, dan tabel eskalasi SOP (cto / head of operations) terbaca terinterleave."
+    },
+    {
+      "id": "RC-2",
+      "file": "lib/ingest/mojibake.ts",
+      "function": "applyGenericOcrRules",
+      "cause": "Hanya aturan cl->d dan rn->m. Empat residual nyata tidak tersentuh: Rcpublik (1), PRES IDEN (1), kelo7ok (2). Selain itu 10 artifact text-layer lain (negLrmasi, la n, ha!, penelaaahan, pa~a, infonnasi, publilc, nasionak, berz/tanggai/diund:g~·-, LEMBARANNEGARA) merusak exact_text_units meski token_coverage tinggi."
+    },
+    {
+      "id": "RC-3",
+      "file": "lib/ingest/chunker.ts",
+      "function": "splitButir",
+      "cause": "Regex ^(\\d+)\\.\\s+ hanya menerima digit. Text-layer Perpres membaca penomor butir pertama sebagai 'l.' (huruf el), sehingga butir 1 masuk ke 'pengantar' dan tidak dihitung: butir_count 33/34."
+    }
+  ],
+  "changes": [
+    {
+      "file": "lib/ingest/extract.ts",
+      "function": "detectColumnSplit",
+      "what": "Deteksi dua kolom hanya aktif bila ada bukti kolom nyata: lebar >= 150, jurang > max(40, 25% lebar), fraksi item di zona tengah (0.3-0.7 lebar) <= 0.15 (distribusi x bimodal), minimal 2 item per sisi, dan minimal 2 baris yang memiliki item di kedua sisi. Ambang lama 6% dan uji '2 baris per sisi' dihapus."
+    },
+    {
+      "file": "lib/ingest/mojibake.ts",
+      "function": "applyGenericOcrRules",
+      "what": "Ditambahkan, SEMUANYA sebelum numericChecksum dihitung: (a) c->e di antara dua konsonan (y dikecualikan agar 'ternyata' aman) menangani Rcpublik/pcngaduan/pclayanan/pemcriksaan/kementcrian/lcmbaga; (b) digit di tengah kata -> pasangan konsonan (kelo7ok -> kelompok); (c) spasi dalam akronim PRES IDEN -> PRESIDEN; (d) titik/slash di tengah kata (d.imaksud, dim/sud); (e) huruf rangkap berlebih, tilde->d, hyphen awal kata; (f) 10 artifact OCR terverifikasi terhadap GT. Koreksi cl->d dan rn->m yang sudah benar TIDAK dihapus."
+    },
+    {
+      "file": "lib/ingest/chunker.ts",
+      "function": "splitButir",
+      "what": "Menerima /^([1-9]\\d*|l)\\.\\s+/ dan menormalkan 'l.' menjadi '1.' pada teks butir, sehingga butir pertama Perpres tidak lagi jadi pengantar."
+    }
+  ],
+  "before": {
+    "eval:extraction-gt": {
+      "exit": 1,
+      "exact_text_units": "58/94",
+      "token_coverage": 0.9736,
+      "butir_count": "33/34",
+      "mojibake_residual": 4
+    },
+    "eval:real-docs": {
+      "exit": 1,
+      "cases": "23/24",
+      "RD-SOP-02": "phrase 6/8 · miss=[cto, head of operations]"
+    }
+  },
+  "after": {
+    "eval:extraction-gt": {
+      "exit": 0,
+      "verdict": "PASS",
+      "chunks": 101,
+      "exact_text_units": "94/94",
+      "token_coverage": 1.0,
+      "doc_type": "legal",
+      "page_count": "14/14",
+      "pasal_count": "21/21",
+      "ayat_count": "41/41",
+      "butir_count": "34/34",
+      "hierarchy": { "parent": 18, "child": 83 },
+      "mojibake_residual": 0
+    },
+    "eval:real-docs": {
+      "exit": 0,
+      "overallPass": true,
+      "documents": "6/6 ingest OK",
+      "cases": "24/24",
+      "bugs": 0,
+      "RD-SOP-02": "phrase 8/8 · miss=[] · citations=8"
+    }
+  },
+  "verification": [
+    { "command": "npm run eval:extraction-gt", "exit": 0, "elapsed_s": 2.7, "wrapper": "safe_exec.py --timeout 300" },
+    { "command": "npm run eval:real-docs", "exit": 0, "elapsed_s": 5.2, "wrapper": "safe_exec.py --timeout 600" },
+    { "command": "npm run eval:ground-truth", "exit": 0, "elapsed_s": 1.6, "wrapper": "safe_exec.py --timeout 300", "detail": "12 legacy + 2 realSeed + 11 capability + 6 perpres — PASS" },
+    { "command": "npm run eval:holdout", "exit": 0, "elapsed_s": 1.7, "wrapper": "safe_exec.py --timeout 300", "detail": "11/11 — answerable 1.0, refusal 1.0, hallucination 0" },
+    { "command": "npm run typecheck", "exit": 0, "elapsed_s": 13.3, "wrapper": "safe_exec.py --timeout 240" }
+  ],
+  "kb01_two_column_probe": {
+    "method": "Reproduksi scripts/_probe_layout.mjs (phase2_upstream): layoutAwarePdfTexts dengan content stream dua kolom sengaja diinterleave; kiri = bagian 1..6, kanan = 7..8. GT dipakai hanya sebagai referensi urutan, bukan teks indeks.",
+    "layout": {
+      "columns": 2,
+      "columnSplitX": 150,
+      "readingOrder": "column",
+      "repeatedLines": [],
+      "pageNumber": null,
+      "tables": 0
+    },
+    "positions": { "s1": 0, "s6": 5, "s7": 6, "s8": 7 },
+    "assertion": "1 < 6 < 7 < 8 — bagian 7-8 kolom kanan terbaca setelah 1-6 kolom kiri, tidak terinterleave",
+    "pass": true
+  },
+  "notes": [
+    "Perpres/SOP satu kolom kini tidak lagi dipaksa split; KB01 dua kolom tetap terdeteksi karena jurang 200 pt pada lebar 200 pt dan midFrac=0.",
+    "RD-SOP-02 membaik sebagai efek samping perbaikan urutan baca SOP — TIDAK ada perubahan di lib/ai/* maupun lib/core/answer.ts.",
+    "Koreksi OCR artifact bersifat deterministik, dicatat di cleaningLog, dan dijalankan sebelum numericChecksum sehingga numeric_guard tetap menjaga angka.",
+    "Tidak ada build penuh, dev server, watcher, perubahan GT, atau perubahan file tuning."
+  ],
+  "handoff": "from: backend\nto: agentic\nphase: P4\ntype: deliverable\nrefs: [lib/ingest/extract.ts, lib/ingest/mojibake.ts, lib/ingest/chunker.ts, eval/results/extraction_regression_fix.json, docs/EXTRACTION_GT_RESULT.json, docs/ROBUSTNESS_RESULT.json, docs/EVAL_RESULTS.md, docs/HOLDOUT_RESULT.json]\nsummary: Regresi ekstraksi diperbaiki di akarnya — deteksi dua kolom kini butuh bukti bimodal + baris sejajar (Perpres/SOP tidak lagi dipaksa split, KB01 tetap columns=2 dengan urutan 1<6<7<8), koreksi OCR artifact menuntaskan residual dan butir 'l.' dinormalisasi jadi '1.'. eval:extraction-gt PASS 94/94 exact, coverage 1.0, butir 34/34, residual 0; eval:real-docs PASS 24/24 dengan RD-SOP-02 8/8 (cto dan head of operations kembali terbaca).\nevidence: eval/results/extraction_regression_fix.json + 5 perintah verifikasi EXIT 0 (extraction-gt, real-docs, ground-truth, holdout, typecheck) + probe KB01 dua kolom PASS\nblocking: false\nneeds: QA menguji end-user lewat UI (upload PDF satu kolom vs dua kolom, kutipan butir, dan eskalasi SOP) serta security tetap mengaudit batas input/secret seperti biasa."
+}

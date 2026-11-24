@@ -1,0 +1,17 @@
+from: backend
+to: agentic
+phase: P4
+type: deliverable
+refs:
+  - docs/EVAL_RESULTS.md
+  - docs/HOLDOUT_RESULT.json
+  - lib/ingest/extract.ts
+  - lib/ingest/mojibake.ts
+  - lib/ingest/chunker.ts
+  - eval/results/extraction_regression_fix.json
+  - docs/EXTRACTION_GT_RESULT.json
+  - docs/ROBUSTNESS_RESULT.json
+summary: "Regresi ekstraksi diperbaiki di akarnya — deteksi dua kolom kini butuh bukti bimodal + baris sejajar (Perpres/SOP tidak lagi dipaksa split, KB01 tetap columns=2 dengan urutan 1<6<7<8), koreksi OCR artifact menuntaskan residual 4->0, dan butir 'l.' dinormalisasi jadi '1.'. eval:extraction-gt PASS 94/94 exact, coverage 1.0, butir 34/34, residual 0; eval:real-docs PASS 24/24 dengan RD-SOP-02 8/8 (cto dan head of operations kembali terbaca)."
+evidence: "eval/results/extraction_regression_fix.json + 5 verifikasi EXIT 0 berurutan (eval:extraction-gt 2.7s, eval:real-docs 5.2s, eval:ground-truth 1.6s, eval:holdout 1.7s, typecheck 13.3s) + probe KB01 dua kolom PASS (columns=2, readingOrder=column, s1<s6<s7<s8). Setup dari nol: salin .env.example -> .env.local, npm install, jalankan migrasi workspace, lalu npm run typecheck dan kelima eval di atas via safe_exec.py."
+blocking: false
+needs: "QA menguji end-user lewat UI (upload PDF satu kolom vs dua kolom, kutipan butir, dan eskalasi SOP) serta security tetap mengaudit batas input/secret seperti biasa."

@@ -1,0 +1,376 @@
+{
+  "metadata": {
+    "name": "General questions - dev-extra generalization probe (4 KB documents)",
+    "language": "id",
+    "phase": "P1 / FASE 1C",
+    "role": "analyst",
+    "purpose": "Pertanyaan umum/luas untuk mengukur generalisasi di luar GT. BUKAN untuk tuning parameter.",
+    "total_questions": 35,
+    "flags": ["dev-extra"],
+    "needs_manual_review": true,
+    "rules": [
+      "Tidak menyalin pertanyaan GT (GT-xxx) maupun contoh tuning.",
+      "expected_sections memakai ID KBxx#n yang benar-benar ada di corpus_sections GT.",
+      "Split 'dev-extra': boleh dipakai untuk diagnosis, DILARANG dipakai untuk tuning threshold/parameter.",
+      "Setiap item wajib ditinjau manual sebelum dipakai sebagai ukuran."
+    ],
+    "documents": {
+      "KB01": "KB_01_Penanganan_Tiket_Layanan.pdf",
+      "KB02": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+      "KB03": "KB_03_Panduan_Operasional_Layanan.pdf",
+      "KB04": "KB_04_Eskalasi_dan_Insiden.pdf"
+    }
+  },
+  "questions": [
+    {
+      "id": "GEN-01",
+      "question": "Beri gambaran umum siklus hidup tiket layanan mulai dari pembuatan hingga penutupan.",
+      "expected_sections": ["KB01#1", "KB01#2", "KB01#5", "KB01#6", "KB01#7"],
+      "scope": "single_doc",
+      "documents_involved": ["KB01"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": "Pertanyaan payung, bukan variasi GT-001..GT-015."
+    },
+    {
+      "id": "GEN-02",
+      "question": "Jelaskan bagaimana panduan penanganan tiket mengatur pencatatan dan klasifikasi awal.",
+      "expected_sections": ["KB01#1", "KB01#2", "KB01#3"],
+      "scope": "single_doc",
+      "documents_involved": ["KB01"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-03",
+      "question": "Ringkas seluruh kategori prioritas tiket beserta makna masing-masing.",
+      "expected_sections": ["KB01#3"],
+      "scope": "single_doc",
+      "documents_involved": ["KB01"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": "Bukan menyalin GT-007; meminta ringkasan menyeluruh."
+    },
+    {
+      "id": "GEN-04",
+      "question": "Apa saja aturan yang mengatur kecepatan tanggapan petugas terhadap tiket?",
+      "expected_sections": ["KB01#4", "KB03#4"],
+      "scope": "cross_doc",
+      "documents_involved": ["KB01", "KB03"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-05",
+      "question": "Jelaskan pembagian tugas antar tim dalam penanganan tiket.",
+      "expected_sections": ["KB01#5"],
+      "scope": "single_doc",
+      "documents_involved": ["KB01"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-06",
+      "question": "Bagaimana sistem status tiket bekerja dan apa kewajiban yang menyertai perubahannya?",
+      "expected_sections": ["KB01#6"],
+      "scope": "single_doc",
+      "documents_involved": ["KB01"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-07",
+      "question": "Jelaskan ketentuan penutupan tiket secara menyeluruh beserta pengecualiannya.",
+      "expected_sections": ["KB01#7"],
+      "scope": "single_doc",
+      "documents_involved": ["KB01"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-08",
+      "question": "Apa saja tindakan yang harus diambil bila ada indikasi kebocoran data?",
+      "expected_sections": ["KB01#8", "KB04#6"],
+      "scope": "cross_doc",
+      "documents_involved": ["KB01", "KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-09",
+      "question": "Jelaskan ruang lingkup dan pengertian keluhan pelanggan.",
+      "expected_sections": ["KB02#1"],
+      "scope": "single_doc",
+      "documents_involved": ["KB02"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-10",
+      "question": "Bagaimana prosedur verifikasi identitas pelapor keluhan?",
+      "expected_sections": ["KB02#2"],
+      "scope": "single_doc",
+      "documents_involved": ["KB02"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-11",
+      "question": "Apa saja kategori keluhan yang dikenal dalam panduan pengelolaan keluhan?",
+      "expected_sections": ["KB02#3"],
+      "scope": "single_doc",
+      "documents_involved": ["KB02"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-12",
+      "question": "Jelaskan tahapan konfirmasi penerimaan keluhan sampai pelanggan mendapat informasi.",
+      "expected_sections": ["KB02#4"],
+      "scope": "single_doc",
+      "documents_involved": ["KB02"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-13",
+      "question": "Bagaimana penanganan keluhan dilakukan hingga dinyatakan selesai?",
+      "expected_sections": ["KB02#5", "KB02#8"],
+      "scope": "single_doc",
+      "documents_involved": ["KB02"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-14",
+      "question": "Apa aturan untuk keluhan yang muncul berulang kali dari waktu ke waktu?",
+      "expected_sections": ["KB02#6"],
+      "scope": "single_doc",
+      "documents_involved": ["KB02"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-15",
+      "question": "Jelaskan kebijakan kompensasi dalam pengelolaan keluhan pelanggan.",
+      "expected_sections": ["KB02#7"],
+      "scope": "single_doc",
+      "documents_involved": ["KB02"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-16",
+      "question": "Bagaimana umpan balik negatif setelah penutupan keluhan diperlakukan?",
+      "expected_sections": ["KB02#8"],
+      "scope": "single_doc",
+      "documents_involved": ["KB02"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-17",
+      "question": "Jelaskan jadwal dan mekanisme operasional layanan sehari-hari.",
+      "expected_sections": ["KB03#1", "KB03#2", "KB03#3"],
+      "scope": "single_doc",
+      "documents_involved": ["KB03"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-18",
+      "question": "Apa yang harus dicatat dan disiapkan saat serah terima shift?",
+      "expected_sections": ["KB03#2"],
+      "scope": "single_doc",
+      "documents_involved": ["KB03"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-19",
+      "question": "Jelaskan pemeriksaan rutin yang dilakukan petugas tiap awal hari kerja.",
+      "expected_sections": ["KB03#3"],
+      "scope": "single_doc",
+      "documents_involved": ["KB03"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-20",
+      "question": "Bagaimana aturan pembaruan berkala kepada pelanggan selama gangguan berlangsung?",
+      "expected_sections": ["KB03#4"],
+      "scope": "single_doc",
+      "documents_involved": ["KB03"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-21",
+      "question": "Apa saja ketentuan penggunaan kanal komunikasi resmi dengan pelanggan?",
+      "expected_sections": ["KB03#5"],
+      "scope": "single_doc",
+      "documents_involved": ["KB03"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-22",
+      "question": "Jelaskan tata kelola dokumen dan bukti pelanggan menurut panduan operasional.",
+      "expected_sections": ["KB03#6"],
+      "scope": "single_doc",
+      "documents_involved": ["KB03"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-23",
+      "question": "Apa isi laporan mingguan yang disusun koordinator?",
+      "expected_sections": ["KB03#7"],
+      "scope": "single_doc",
+      "documents_involved": ["KB03"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-24",
+      "question": "Bagaimana prosedur yang dijalankan saat sistem tiket tidak tersedia?",
+      "expected_sections": ["KB03#8"],
+      "scope": "single_doc",
+      "documents_involved": ["KB03"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-25",
+      "question": "Jelaskan pengertian insiden dan cara menilai apakah suatu gangguan termasuk insiden.",
+      "expected_sections": ["KB04#1"],
+      "scope": "single_doc",
+      "documents_involved": ["KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-26",
+      "question": "Apa saja tingkatan insiden yang dikenal dalam panduan eskalasi?",
+      "expected_sections": ["KB04#2"],
+      "scope": "single_doc",
+      "documents_involved": ["KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-27",
+      "question": "Bagaimana mekanisme aktivasi eskalasi insiden diatur?",
+      "expected_sections": ["KB04#3"],
+      "scope": "single_doc",
+      "documents_involved": ["KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-28",
+      "question": "Jelaskan pembagian peran antar pihak saat insiden berlangsung.",
+      "expected_sections": ["KB04#4"],
+      "scope": "single_doc",
+      "documents_involved": ["KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-29",
+      "question": "Bagaimana komunikasi insiden dilakukan kepada pihak internal dan kepada pelanggan?",
+      "expected_sections": ["KB04#5"],
+      "scope": "single_doc",
+      "documents_involved": ["KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-30",
+      "question": "Apa saja langkah penanganan keamanan yang harus diambil saat insiden?",
+      "expected_sections": ["KB04#6"],
+      "scope": "single_doc",
+      "documents_involved": ["KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-31",
+      "question": "Jelaskan tahapan pemulihan insiden dan dampaknya terhadap tiket pelanggan.",
+      "expected_sections": ["KB04#7"],
+      "scope": "single_doc",
+      "documents_involved": ["KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-32",
+      "question": "Bagaimana evaluasi pascainsiden dilakukan dan apa saja yang dicakup?",
+      "expected_sections": ["KB04#8"],
+      "scope": "single_doc",
+      "documents_involved": ["KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-33",
+      "question": "Bandingkan cara kerja prioritas tiket dengan tingkat insiden yang dijelaskan di dokumen.",
+      "expected_sections": ["KB01#3", "KB04#2"],
+      "scope": "cross_doc",
+      "documents_involved": ["KB01", "KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": "Menguji apakah model membedakan dua sistem klasifikasi yang mirip."
+    },
+    {
+      "id": "GEN-34",
+      "question": "Jelaskan hubungan antara penanganan tiket, pengelolaan keluhan, dan penanganan insiden.",
+      "expected_sections": ["KB01#1", "KB02#1", "KB04#1"],
+      "scope": "cross_doc",
+      "documents_involved": ["KB01", "KB02", "KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": ""
+    },
+    {
+      "id": "GEN-35",
+      "question": "Apa saja peran koordinator yang disebut di seluruh panduan layanan?",
+      "expected_sections": ["KB02#5", "KB03#7", "KB04#4"],
+      "scope": "cross_doc",
+      "documents_involved": ["KB02", "KB03", "KB04"],
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "notes": "Istilah 'koordinator' tidak disamakan eksplisit antar dokumen; butuh tinjauan manual."
+    }
+  ]
+}

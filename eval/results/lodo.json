@@ -1,0 +1,195 @@
+{
+  "generatedAt": "2026-11-24T06:34:07.314674+00:00",
+  "role": "qa",
+  "phase": "P4",
+  "type": "lodo",
+  "method": "Harness bawaan: --ingest-kb = 3 dokumen lain, --eval-kb = dokumen ke-4. Tidak ada tahap kalibrasi parameter (pipeline terkunci); 3 dokumen adalah satu-satunya indeks yang tersedia saat soal dokumen ke-4 dijawab.",
+  "known_limitation": "KB01 dan KB04 adalah PDF image-only; bila masuk ke set 3 dokumen, bridge memakai gt_text_fallback (KNOWN_BASELINE_VIOLATION). Fold dengan KB01/KB04 di training MEWARISI pelanggaran baseline — lihat known_violations per fold.",
+  "folds": [
+    {
+      "held_out": "KB01",
+      "train": [
+        "KB02",
+        "KB03",
+        "KB04"
+      ],
+      "status": "OK",
+      "questions": 41,
+      "sections_indexed": 24,
+      "metrics": {
+        "section_recovery": 0.9167,
+        "self_retrieval_hit_at_1": 0.8333,
+        "retrieval_hit_at_1_production": 0.1389,
+        "retrieval_hit_at_5_production": 0.1944,
+        "false_abstain_rate": 0.3611,
+        "false_answer_rate": 0.2,
+        "faithfulness": 0.5556,
+        "citation_source_accuracy": 0.1379,
+        "evidence_span_F1": 0.1949,
+        "quote_validity": 1.0,
+        "inline_ratio": 1.0,
+        "end_dump_rate": 0.0
+      },
+      "known_violations": [
+        {
+          "id": "KNOWN_BASELINE_VIOLATION",
+          "kb": "KB04",
+          "pdf": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "rule": "Korpus evaluasi tidak boleh berasal dari ground truth",
+          "detail": "PDF image-only tanpa text layer; OCR offline tidak tersedia. Teks diambil dari corpus_sections GT.",
+          "reason": "Dokumen tidak memiliki text layer yang dapat diekstrak",
+          "phase_to_fix": "Fase 2 (owner lane)"
+        }
+      ],
+      "artifact": "tanyadata\\eval\\results\\_lodo_KB01.json"
+    },
+    {
+      "held_out": "KB02",
+      "train": [
+        "KB01",
+        "KB03",
+        "KB04"
+      ],
+      "status": "OK",
+      "questions": 31,
+      "sections_indexed": 24,
+      "metrics": {
+        "section_recovery": 0.9167,
+        "self_retrieval_hit_at_1": 0.8333,
+        "retrieval_hit_at_1_production": 0.1304,
+        "retrieval_hit_at_5_production": 0.1739,
+        "false_abstain_rate": 0.6087,
+        "false_answer_rate": 0.125,
+        "faithfulness": 0.6957,
+        "citation_source_accuracy": 0.0909,
+        "evidence_span_F1": 0.1559,
+        "quote_validity": 1.0,
+        "inline_ratio": 1.0,
+        "end_dump_rate": 0.0
+      },
+      "known_violations": [
+        {
+          "id": "KNOWN_BASELINE_VIOLATION",
+          "kb": "KB01",
+          "pdf": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "rule": "Korpus evaluasi tidak boleh berasal dari ground truth",
+          "detail": "PDF image-only tanpa text layer; OCR offline tidak tersedia. Teks diambil dari corpus_sections GT.",
+          "reason": "Dokumen tidak memiliki text layer yang dapat diekstrak",
+          "phase_to_fix": "Fase 2 (owner lane)"
+        },
+        {
+          "id": "KNOWN_BASELINE_VIOLATION",
+          "kb": "KB04",
+          "pdf": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "rule": "Korpus evaluasi tidak boleh berasal dari ground truth",
+          "detail": "PDF image-only tanpa text layer; OCR offline tidak tersedia. Teks diambil dari corpus_sections GT.",
+          "reason": "Dokumen tidak memiliki text layer yang dapat diekstrak",
+          "phase_to_fix": "Fase 2 (owner lane)"
+        }
+      ],
+      "artifact": "tanyadata\\eval\\results\\_lodo_KB02.json"
+    },
+    {
+      "held_out": "KB03",
+      "train": [
+        "KB01",
+        "KB02",
+        "KB04"
+      ],
+      "status": "OK",
+      "questions": 35,
+      "sections_indexed": 24,
+      "metrics": {
+        "section_recovery": 1.0,
+        "self_retrieval_hit_at_1": 1.0,
+        "retrieval_hit_at_1_production": 0.2222,
+        "retrieval_hit_at_5_production": 0.2222,
+        "false_abstain_rate": 0.5185,
+        "false_answer_rate": 0.375,
+        "faithfulness": 0.7407,
+        "citation_source_accuracy": 0.1786,
+        "evidence_span_F1": 0.2381,
+        "quote_validity": 1.0,
+        "inline_ratio": 1.0,
+        "end_dump_rate": 0.0
+      },
+      "known_violations": [
+        {
+          "id": "KNOWN_BASELINE_VIOLATION",
+          "kb": "KB01",
+          "pdf": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "rule": "Korpus evaluasi tidak boleh berasal dari ground truth",
+          "detail": "PDF image-only tanpa text layer; OCR offline tidak tersedia. Teks diambil dari corpus_sections GT.",
+          "reason": "Dokumen tidak memiliki text layer yang dapat diekstrak",
+          "phase_to_fix": "Fase 2 (owner lane)"
+        },
+        {
+          "id": "KNOWN_BASELINE_VIOLATION",
+          "kb": "KB04",
+          "pdf": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "rule": "Korpus evaluasi tidak boleh berasal dari ground truth",
+          "detail": "PDF image-only tanpa text layer; OCR offline tidak tersedia. Teks diambil dari corpus_sections GT.",
+          "reason": "Dokumen tidak memiliki text layer yang dapat diekstrak",
+          "phase_to_fix": "Fase 2 (owner lane)"
+        }
+      ],
+      "artifact": "tanyadata\\eval\\results\\_lodo_KB03.json"
+    },
+    {
+      "held_out": "KB04",
+      "train": [
+        "KB01",
+        "KB02",
+        "KB03"
+      ],
+      "status": "OK",
+      "questions": 32,
+      "sections_indexed": 24,
+      "metrics": {
+        "section_recovery": 0.9167,
+        "self_retrieval_hit_at_1": 0.8333,
+        "retrieval_hit_at_1_production": 0.08,
+        "retrieval_hit_at_5_production": 0.08,
+        "false_abstain_rate": 0.64,
+        "false_answer_rate": 0.1429,
+        "faithfulness": 0.76,
+        "citation_source_accuracy": 0.0833,
+        "evidence_span_F1": 0.1137,
+        "quote_validity": 1.0,
+        "inline_ratio": 1.0,
+        "end_dump_rate": 0.0
+      },
+      "known_violations": [
+        {
+          "id": "KNOWN_BASELINE_VIOLATION",
+          "kb": "KB01",
+          "pdf": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "rule": "Korpus evaluasi tidak boleh berasal dari ground truth",
+          "detail": "PDF image-only tanpa text layer; OCR offline tidak tersedia. Teks diambil dari corpus_sections GT.",
+          "reason": "Dokumen tidak memiliki text layer yang dapat diekstrak",
+          "phase_to_fix": "Fase 2 (owner lane)"
+        }
+      ],
+      "artifact": "tanyadata\\eval\\results\\_lodo_KB04.json"
+    }
+  ],
+  "mean_across_folds": {
+    "section_recovery": 0.9375,
+    "self_retrieval_hit_at_1": 0.875,
+    "retrieval_hit_at_1_production": 0.1429,
+    "retrieval_hit_at_5_production": 0.1676,
+    "false_abstain_rate": 0.5321,
+    "false_answer_rate": 0.2107,
+    "faithfulness": 0.688,
+    "citation_source_accuracy": 0.1227,
+    "evidence_span_F1": 0.1757,
+    "quote_validity": 1.0,
+    "inline_ratio": 1.0,
+    "end_dump_rate": 0.0
+  },
+  "summary": {
+    "folds_ok": 4,
+    "folds_total": 4,
+    "status": "PERFORMED"
+  }
+}

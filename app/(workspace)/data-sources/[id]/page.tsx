@@ -7,6 +7,7 @@ import type { ApiErrorCode, CitationChunkResponse, Investigation, InvestigateRes
 import { parseCiteParam } from '@/lib/ui/citation-target';
 import { formatNumber } from '@/lib/ui/format';
 import { Icon } from '@/components/ui/icons';
+import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { SectionRule } from '@/components/signal/section-rule';
 import { BentoGrid, type BentoItem } from '@/components/signal/bento-grid';
 import { StatusBadge } from '@/components/signal/status-badge';
@@ -22,8 +23,14 @@ const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   UNSUPPORTED_MEDIA_TYPE: 'Format file tidak didukung.',
   UNPROCESSABLE_SOURCE: 'File tidak dapat diproses.',
   INTERNAL_ERROR: 'Terjadi kesalahan internal. Silakan coba lagi.',
+  RATE_LIMITED: 'Terlalu banyak permintaan. Coba lagi beberapa saat lagi.',
+  PUBLIC_DEPLOY_BLOCKED: 'Fitur ini tidak tersedia pada deployment publik tanpa autentikasi.',
 };
-const num = (v: number | null | undefined) => (v == null ? 'Belum dihitung' : formatNumber(v));
+// "Belum dihitung" menyiratkan proses yang tertunda. Field memang null bila
+// tipe sumbernya tidak memiliki metrik itu, jadi labelnya harus jujur.
+const num = (v: number | null | undefined) => (v == null ? 'Tidak tersedia' : formatNumber(v));
+const ROW_COUNT_REASON = 'Jumlah baris hanya tersedia untuk dataset. Dokumen tidak memiliki baris data terstruktur.';
+const CHUNK_COUNT_REASON = 'Jumlah potongan teks hanya tersedia untuk dokumen terindeks. Dataset tidak memiliki potongan teks.';
 function formatBytes(bytes: number | null | undefined): string {
   if (bytes == null) return '—';
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -226,14 +233,14 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
 
   // Pasangan metrik kecil di sisi kanan band — dari detail sumber yang sudah ada.
   const bannerStats = [
-    { id: 'rows', label: 'Baris tersimpan', value: detail ? num(detail.source.rowCount) : '—' },
-    { id: 'chunks', label: 'Potongan terindeks', value: detail ? num(detail.source.chunkCount) : '—' },
-    { id: 'size', label: 'Ukuran berkas', value: detail ? formatBytes(detail.source.sizeBytes) : '—' },
+    { id: 'rows', label: 'Baris tersimpan', value: detail ? num(detail.source.rowCount) : '—', reason: ROW_COUNT_REASON },
+    { id: 'chunks', label: 'Potongan terindeks', value: detail ? num(detail.source.chunkCount) : '—', reason: CHUNK_COUNT_REASON },
+    { id: 'size', label: 'Ukuran berkas', value: detail ? formatBytes(detail.source.sizeBytes) : '—', reason: undefined },
   ];
 
   const summaryItems: BentoItem[] = detail ? [
-    { id: 'rows', label: 'Baris tersimpan', value: num(detail.source.rowCount), source: detail.source.format.toUpperCase(), span: 'support' },
-    { id: 'detail', label: isDocument ? 'Potongan terindeks' : 'Kolom', value: num(isDocument ? detail.source.chunkCount : 'schema' in detail ? detail.schema?.columns.length : null), source: isDocument ? `${num(detail.source.pageCount)} HALAMAN` : 'schema' in detail ? detail.schema?.tableName ?? '—' : '—', span: 'support' },
+    { id: 'rows', label: 'Baris tersimpan', value: num(detail.source.rowCount), source: detail.source.format.toUpperCase(), tooltip: ROW_COUNT_REASON, span: 'support' },
+    { id: 'detail', label: isDocument ? 'Potongan terindeks' : 'Kolom', value: num(isDocument ? detail.source.chunkCount : 'schema' in detail ? detail.schema?.columns.length : null), source: isDocument ? `${num(detail.source.pageCount)} HALAMAN` : 'schema' in detail ? detail.schema?.tableName ?? '—' : '—', tooltip: isDocument ? CHUNK_COUNT_REASON : undefined, span: 'support' },
     { id: 'size', label: 'Ukuran penyimpanan', value: formatBytes(detail.source.sizeBytes), source: 'SUMBER', span: 'support' },
     { id: 'status', label: 'Status', value: statusLabel(detail.source.status), source: 'SQLITE · FTS5', span: 'support' },
   ] : [];
@@ -298,7 +305,13 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
             <dl className="grid grid-cols-1 gap-s4 sm:grid-cols-3 lg:col-span-7">
               {bannerStats.map((item) => (
                 <div key={item.id} className="min-w-0">
-                  <dt className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">{item.label}</dt>
+                  <dt className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
+                    {item.reason && item.value === 'Tidak tersedia' ? (
+                      <IconTooltip label={item.reason}>
+                        <span tabIndex={0} className="inline-flex items-center focus-ring">{item.label}</span>
+                      </IconTooltip>
+                    ) : item.label}
+                  </dt>
                   <dd className="mt-s1 font-body text-metric tabular text-porcelain">
                     {loading ? (
                       <span className="animate-skeleton inline-block h-s5 w-24 rounded-control bg-porcelain/10" aria-hidden="true" />
@@ -412,11 +425,20 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
                     </div>
                     {/* Chart entitas: bar horizontal dengan bagian teratas. */}
                     {(() => {
-                      const chart = analytics.docType === 'financial-report'
+                      const raw = analytics.docType === 'financial-report'
                         ? { title: 'Nominal & persentase', items: [...analytics.entities.amounts.slice(0, 5), ...analytics.entities.percentages.slice(0, 5)] }
                         : analytics.docType === 'incident-report'
                           ? { title: 'Istilah kegagalan & kanal', items: [...analytics.entities.failureCodes.slice(0, 5), ...analytics.entities.channels.slice(0, 4)] }
                           : { title: 'Istilah dominan', items: analytics.entities.failureCodes.slice(0, 6) };
+                      const byLabel = new Map<string, (typeof raw.items)[number]>();
+                      for (const item of raw.items) {
+                        const prior = byLabel.get(item.label);
+                        if (!prior || item.count > prior.count) byLabel.set(item.label, item);
+                      }
+                      const chart = {
+                        title: raw.title,
+                        items: [...byLabel.values()].sort((a, b) => b.count - a.count),
+                      };
                       const max = Math.max(1, ...chart.items.map((i) => i.count));
                       return chart.items.length > 0 && (
                         <div className="surface rounded-card-lg p-s3">
@@ -465,13 +487,13 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
                     </p>
                     <div className="grid gap-s3 md:grid-cols-2">
                       {summary.sections.map((section) => (
-                        <article key={section.title + String(section.page)} className="surface flex flex-col gap-s1 rounded-card-lg p-s3">
+                        <article key={section.title + String(section.page)} className="surface flex min-w-0 flex-col gap-s1 rounded-card-lg p-s3">
                           <div className="flex items-baseline justify-between gap-s2">
                             <h3 className="min-w-0 truncate font-display text-label font-semibold text-ink">{section.title}</h3>
                             {section.page !== null && <span className="mono-meta shrink-0">HAL {section.page}</span>}
                           </div>
-                          <p className="font-body text-caption leading-relaxed text-ink-72">{section.excerpt}</p>
-                          <span className="mono-meta">{section.chunkCount} CHUNK</span>
+                          <p className="break-words font-body text-caption leading-relaxed text-ink-72">{section.excerpt}</p>
+                          <span className="mono-meta break-words">{section.chunkCount} CHUNK</span>
                         </article>
                       ))}
                     </div>

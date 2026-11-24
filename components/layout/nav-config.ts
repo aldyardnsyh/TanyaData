@@ -13,7 +13,7 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { key: 'nav.assistant', href: '/assistant', icon: 'forum', docKey: 'shell.docsAssistant' },
   { key: 'nav.dataSources', href: '/data-sources', icon: 'database', docKey: 'shell.docsSources' },
-  { key: 'nav.investigations', href: '/investigations', icon: 'query_stats', docKey: 'shell.docsInvestigations' },
+  { key: 'nav.investigations', href: '/investigations', icon: 'fact_check', docKey: 'shell.docsInvestigations' },
   { key: 'nav.reports', href: '/reports', icon: 'summarize', docKey: 'shell.docsReports' },
   { key: 'nav.settings', href: '/settings', icon: 'settings', docKey: 'shell.docsSettings' },
 ];

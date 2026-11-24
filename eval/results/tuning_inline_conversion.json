@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-11-24T10:36:15",
+  "role": "aiml",
+  "phase": "P1",
+  "type": "deliverable",
+  "task": "FASE 1B — konversi data tuning ke format sitasi inline",
+  "inputs_read_only": [
+    "knowledge_tuning_sop.json",
+    "knowledge_tuning_sop_pairs.jsonl",
+    "knowledge_tuning_sop_sft.jsonl",
+    "ground_truth_KB01..KB04 (validasi saja)",
+    "tanyadata/eval/PIPELINE_MAP.md",
+    "tanyadata/eval/results/baseline.json"
+  ],
+  "outputs": [
+    "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\ai_chatbot_testdata\\ai_chatbot_testdata\\Knowledge Base\\Tuningan Knowledge\\knowledge_tuning_sop_inline.json",
+    "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\ai_chatbot_testdata\\ai_chatbot_testdata\\Knowledge Base\\Tuningan Knowledge\\knowledge_tuning_sop_inline_pairs.jsonl",
+    "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\tanyadata\\eval\\results\\tuning_inline_conversion.json"
+  ],
+  "results": {
+    "examples_total": 170,
+    "examples_eligible": 100,
+    "examples_needs_review": 67,
+    "examples_dropped_holdout_similar": 7,
+    "citations_verified_against_pdf": 210,
+    "citations_unverified": 0,
+    "pairs_written": 200,
+    "neutral_prompt_forbidden_term_hits": []
+  },
+  "key_findings": [
+    "KB02/KB03 memiliki text layer; quote diverifikasi sebagai substring persis dari potongan PDF.",
+    "KB01/KB04 image-only. OCR langsung dari PDF berhasil, tetapi spasi antar-kata hilang dan dua kolom terinterleave, sehingga quote tidak dapat diverifikasi → seluruh contoh KB01/KB04 ditandai needs_review dan tidak dipakai sebagai few-shot/SFT. GT transcript sengaja TIDAK dipakai sebagai indeks.",
+    "System prompt dinetralisasi: tidak memuat P1/SEV/KB0x/\"serah terima shift\"; istilah spesifik hanya muncul pada few-shot yang dipilih dinamis.",
+    "Filter holdout memakai kemiripan teks ternormalisasi + embedding e5-small lokal; contoh mirip dibuang dari few-shot/SFT dan pairs."
+  ],
+  "known_limitations": [
+    "OCR KB01/KB04 tidak menghasilkan teks yang bersih; perbaikan nyata memerlukan OCR produksi atau ekstraksi sadar-kolom (PIPELINE_MAP tahap 3).",
+    "Embedding e5-small memberi baseline kemiripan tinggi untuk semua pertanyaan domain yang sama; ambang embedding sengaja diketat (0.97) dan dikombinasikan dengan kemiripan teks.",
+    "Konversi ini adalah artefak data, bukan evaluasi model; tidak ada API model yang dipanggil."
+  ],
+  "handoff_yaml": "from: aiml\nto: agentic\nphase: P1\ntype: deliverable\nrefs: [docs/AI_SPEC.md, ai_chatbot_testdata/ai_chatbot_testdata/Knowledge Base/Tuningan Knowledge/knowledge_tuning_sop_inline.json, ai_chatbot_testdata/ai_chatbot_testdata/Knowledge Base/Tuningan Knowledge/knowledge_tuning_sop_inline_pairs.jsonl, tanyadata/eval/results/tuning_inline_conversion.json]\nsummary: Konversi 170 contoh tuning ke format sitasi inline; 100 layak few-shot, 67 needs_review (KB01/KB04 image-only), 7 dibuang karena mirip holdout. 210 sitasi terverifikasi sebagai substring PDF; 0 tidak terverifikasi. System prompt dinetralisasi (0 istilah spesifik).\nevidence: knowledge_tuning_sop_inline.json + knowledge_tuning_sop_inline_pairs.jsonl + tuning_inline_conversion.json\nblocking: false\nneeds: Verifikasi manual contoh needs_review, persetujuan ambang filter holdout, dan integrasi format inline ke generator oleh backend/frontend."
+}

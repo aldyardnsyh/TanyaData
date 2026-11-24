@@ -1,0 +1,148 @@
+{
+  "generatedAt": "2026-11-24T13:55:00.000Z",
+  "role": "backend",
+  "phase": "P2",
+  "task": "generic_structure_fix — pulihkan 94/94 exact_text_units tanpa membatalkan heading generik & perbaikan header/footer 2 halaman",
+  "root": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot",
+  "app": "tanyadata",
+  "hard_rules": {
+    "untouched": [
+      "data/fixtures/perpres76/ground_truth.json (GT)",
+      "file tuning (eval/TUNING_REPORT.md, eval/results baseline, eval/transfer_set/*)",
+      "lib/ai/*",
+      "lib/core/answer.ts"
+    ],
+    "no_dev_server_or_full_build": true,
+    "wrapper": "safe_exec.py --timeout 300 pada semua perintah; 1 percobaan per perintah (maks 2 diizinkan)"
+  },
+  "regression": {
+    "before": {
+      "eval:extraction-gt": {
+        "exit": 1,
+        "verdict": "FAIL",
+        "exact_text_units": "90/94",
+        "ayat": "41/41",
+        "butir": "34/34"
+      },
+      "changed_units": [
+        {
+          "label": "Pasal 8.ayat.2.butir.d",
+          "gt": "penyelesaian pengaduan, terdiri dari penyampaian saran penyelesaian ...",
+          "extracted": "penyelesaian pengaduan, tcrdiri dari penyampaian saran ..."
+        },
+        {
+          "label": "Pasal 18.ayat.2.teks",
+          "gt": "... dalam kerangka sistem informasi pelayanan publik.",
+          "extracted": "... dalam kerangka sistcm informasi pelayanan publik."
+        },
+        {
+          "label": "Pasal 18.ayat.3.teks",
+          "gt": "... diatur dengan Peraturan Menteri.",
+          "extracted": "... diatur dengan Peraturan Mentcri."
+        },
+        {
+          "label": "Pasal 19.ayat.1.teks",
+          "gt": "Pimpinan kementerian/lembaga atau pemerintah daerah ...",
+          "extracted": "Pimpinan kementcrian/lembaga atau pemerintah daerah ..."
+        }
+      ]
+    },
+    "root_cause": {
+      "file": "lib/ingest/mojibake.ts",
+      "function": "applyGenericOcrRules",
+      "detail": "Guard `left === 't' ||` pada aturan koreksi `c→e` di antara dua konsonan (ditambahkan saat iterasi deteksi heading generik untuk melindungi digraf `tch`) memblokir konfusi OCR nyata `tcr`/`tcm`. Digraf `tch` (Patch, match, technical) SUDAH dilindungi oleh `right === 'h'`, sehingga pengecualian `t` bersifat redundan sekaligus merusak: tcrdiri→terdiri, sistcm→sistem, Mentcri→Menteri, kementcrian→kementerian."
+    },
+    "fix": {
+      "file": "lib/ingest/mojibake.ts",
+      "change": "Hapus `left === 't' ||` dari guard; pertahankan `right === 'h'` dan `knownTerms.has(wordAt(...))`. Perbaikan tetap deterministik, dicatat di cleaningLog, dan dijalankan sebelum numericChecksum sehingga numeric_guard tidak terpicu.",
+      "files_changed_by_me": ["lib/ingest/mojibake.ts"]
+    }
+  },
+  "extraction": {
+    "eval:extraction-gt": {
+      "exit": 0,
+      "verdict": "PASS",
+      "chunks": 101,
+      "exact_text_units": "94/94",
+      "token_coverage": 1.0,
+      "doc_type": "legal",
+      "page_count": "14/14",
+      "pasal_count": "21/21",
+      "ayat_count": "41/41",
+      "butir_count": "34/34",
+      "hierarchy": { "parent": 18, "child": 83 },
+      "mojibake_residual": 0
+    },
+    "eval:real-docs": {
+      "exit": 0,
+      "verdict": "PASS",
+      "cases": "24/24",
+      "documents": "6/6 ingest OK",
+      "bugs": 0,
+      "RD-SOP-02": "phrase 8/8 · miss=[] · citations=8"
+    },
+    "typecheck": { "exit": 0 }
+  },
+  "preserved_features": {
+    "generic_headings": {
+      "CUTI#1 Tujuan: ...": "code_hash PASS",
+      "TI#1 | Kerahasiaan: ...": "code_hash PASS",
+      "2.1.1. Verifikasi: ...": "hierarchical PASS"
+    },
+    "two_page_header_footer": "Tidak diubah — stripRepeatedLines threshold max(2, ceil(n/2)) di lib/ingest/extract.ts tetap aktif; RD-PDF-SEP-01/02 & RD-PDF-OKT-01/02 PASS 24/24.",
+    "kb01_two_column": {
+      "method": "Probe read-only: layoutAwarePdfTexts dengan content stream dua kolom sengaja diinterleave (kiri = bagian 1..6, kanan = 7..8).",
+      "layout": { "columns": 2, "columnSplitX": 120, "readingOrder": "column" },
+      "positions": { "s1": 0, "s6": 5, "s7": 6, "s8": 7 },
+      "assertion": "1 < 6 < 7 < 8",
+      "pass": true
+    }
+  },
+  "transfer": {
+    "workspace": "C:\\Users\\aldya\\AppData\\Local\\Temp\\opencode\\tanyadata-transfer-ws3",
+    "ingest": {
+      "script": "scripts/qa-transfer-ingest.mjs (read-only, PDF bytes only, *_qa.json tidak dipakai sebagai korpus)",
+      "exit": 0,
+      "documents": [
+        { "key": "CUTI", "pdf": "kebijakan_cuti.pdf", "mode": "pdf", "chunks": 8, "textLayer": "YES", "ocrUsed": false },
+        { "key": "TI", "pdf": "keamanan_ti.pdf", "mode": "pdf", "chunks": 9, "textLayer": "YES", "ocrUsed": false },
+        { "key": "PD", "pdf": "pengadaan_barang.pdf", "mode": "pdf", "chunks": 8, "textLayer": "YES", "ocrUsed": false }
+      ]
+    },
+    "bridge": {
+      "script": "scripts/qa-transfer-bridge.mjs (QA_TRANSFER_WS sama)",
+      "exit": 0,
+      "cases": 66,
+      "gt_sections": 24,
+      "aligned_sections": 24
+    },
+    "section_recovery": {
+      "before": { "value": 0.125, "detail": "3/24", "source": "eval/results/TRANSFER_GENERALIZATION_REPORT.md" },
+      "after": { "value": 1.0, "detail": "24/24", "source": "eval/results/_transfer_ws3_stage_checks.json" },
+      "delta": "+0.875 (+87.5 pp)",
+      "per_kb": {
+        "CUTI": { "recovered": "8/8", "section_recovery": 1.0 },
+        "PD": { "recovered": "8/8", "section_recovery": 1.0 },
+        "TI": { "recovered": "8/8", "section_recovery": 1.0, "extracted_sections": 9 }
+      },
+      "reading_order_accuracy": { "value": 1.0, "n": 21 },
+      "text_fidelity": { "value": 0.9243, "threshold": 0.98, "pass": false, "note": "Metrik terpisah, tidak diminta dalam ticket; dilaporkan apa adanya." }
+    }
+  },
+  "verification": [
+    { "command": "npm run eval:extraction-gt", "exit": 0, "elapsed_s": 2.8, "wrapper": "safe_exec.py --timeout 300" },
+    { "command": "npm run eval:real-docs", "exit": 0, "elapsed_s": 5.5, "wrapper": "safe_exec.py --timeout 300" },
+    { "command": "npm run typecheck", "exit": 0, "elapsed_s": 5.3, "wrapper": "safe_exec.py --timeout 300" },
+    { "command": "node scripts/qa-transfer-ingest.mjs (QA_TRANSFER_WS=...ws3)", "exit": 0, "elapsed_s": 2.1, "wrapper": "safe_exec.py --timeout 300" },
+    { "command": "node scripts/qa-transfer-bridge.mjs --out ..._ws3_raw.json", "exit": 0, "elapsed_s": 2.8, "wrapper": "safe_exec.py --timeout 300" },
+    { "command": "python eval/run_stage_checks.py --raw ..._ws3_raw.json --out ..._ws3_stage_checks.json", "exit": 0, "elapsed_s": 0.2, "wrapper": "safe_exec.py --timeout 300" }
+  ],
+  "evidence": [
+    "docs/EXTRACTION_GT_RESULT.json — verdict PASS, exact 94/94, ayat 41, butir 34, residual 0",
+    "docs/ROBUSTNESS_RESULT.json — 24/24 kasus, 6/6 dokumen ingest OK, 0 bug",
+    "eval/results/_transfer_ws3_raw.json + eval/results/_transfer_ws3_stage_checks.json — section_recovery 1.0 (24/24)",
+    "Probe KB01 dua kolom: columns=2, urutan 1<6<7<8 PASS",
+    "Probe heading generik: CUTI#n, TI#n |, 2.1.1. PASS"
+  ],
+  "handoff": "from: backend\nto: agentic\nphase: P2\ntype: deliverable\nrefs: [lib/ingest/mojibake.ts, docs/EXTRACTION_GT_RESULT.json, docs/ROBUSTNESS_RESULT.json, eval/results/generic_structure_fix.json, eval/results/_transfer_ws3_stage_checks.json]\nsummary: Regresi 90/94 berakar pada guard `left === 't'` di koreksi OCR `c→e` (mojibake.ts) yang memblokir tcrdiri/sistcm/Mentcri/kementcrian; digraf tch sudah dilindungi `right === 'h'`, jadi guard dihapus tanpa menyentuh heading generik maupun header/footer 2 halaman. eval:extraction-gt kembali PASS 94/94 (ayat 41, butir 34, residual 0), eval:real-docs PASS 24/24, typecheck EXIT 0; KB01 dua kolom tetap 1<6<7<8. Transfer ke workspace ws3 naikkan section_recovery 0.125 (3/24) → 1.0 (24/24).\nevidence: docs/EXTRACTION_GT_RESULT.json + 6 perintah verifikasi EXIT 0 lewat safe_exec.py --timeout 300 + probe KB01/heading generik + eval/results/_transfer_ws3_stage_checks.json\nblocking: false\nneeds: QA menguji end-user lewat UI (upload PDF satu vs dua kolom, kutipan butir, eskalasi SOP) dan security tetap mengaudit batas input/secret; text_fidelity transfer 0.9243 (<0.98) perlu dicatat sebagai metrik terpisah bila dipakai gate."
+}

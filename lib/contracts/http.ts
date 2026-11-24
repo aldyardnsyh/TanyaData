@@ -105,7 +105,11 @@ export type ApiErrorCode =
   | 'FILE_TOO_LARGE'
   | 'UNSUPPORTED_MEDIA_TYPE'
   | 'UNPROCESSABLE_SOURCE'
-  | 'INTERNAL_ERROR';
+  | 'INTERNAL_ERROR'
+  /** P6-FIX / B2 — kuota permintaan terlampaui (HTTP 429). */
+  | 'RATE_LIMITED'
+  /** P6-FIX / SEC-001 — mode publik tanpa auth ditolak (HTTP 503). */
+  | 'PUBLIC_DEPLOY_BLOCKED';
 
 export type ApiErrorBody = {
   error: { code: ApiErrorCode; message: string; details?: unknown };
@@ -602,12 +606,80 @@ export type SettingsResponse = {
   lang: Lang;
   dateRange: { start: string; end: string; preset: string };
   activeDatasetId: string;
+  /**
+   * @deprecated DECISION-036 (P6-UI-HONESTY): tidak ada konsumen perilaku.
+   * `chartDefault`/`denseTables` hanya disimpan lalu dibaca ulang oleh form
+   * pengaturan; tidak ada pembaca di `lib/core`, `lib/ai`, dashboard, chart,
+   * maupun tabel (lihat `docs/SYSTEM_OVERVIEW.md` §7). UI berhenti mengirim
+   * field ini; backend mempertahankannya agar payload lama tetap valid.
+   * Pembersihan menyeluruh (termasuk skema + seed) dilacak di tiket SET-03.
+   */
   preferences: { chartDefault: string; denseTables: boolean };
   datasets: { id: string; name: string; rowCount: number }[];
   updatedAt: string;
 };
 
 /* -------------------------------------------------------------------- meta */
+
+/* -------------------------------------------- meta: payload `system` (aditif) */
+
+/** Satu baris tabel teknologi. `version` WAJIB dari `package.json`, bukan hafalan. */
+export type SystemStackItem = {
+  name: string;
+  version: string;
+  role: string;
+  stage: 'platform' | 'ingest' | 'retrieval' | 'compose' | 'output';
+  required: boolean;
+  /** Provenance untuk chip di tab Tentang (DESIGN_SYSTEM §J.3). */
+  source?: string;
+};
+
+/** Satu tahap pipeline. Teks berasal dari `docs/SYSTEM_OVERVIEW.md` §2. */
+export type SystemPipelineStage = {
+  id: 'ingest' | 'retrieval' | 'compose' | 'output';
+  label: string;
+  summary: string;
+  inputs: string[];
+  outputs: string[];
+  fallback?: string;
+  source?: string;
+};
+
+/** Status runtime yang diturunkan dari env + helper jalur query (API_CONTRACT §9.3.1). */
+export type SystemRuntime = {
+  /** TERKONFIGURASI — `getRetrievalMode()`; nilai mentah env yang sah. */
+  retrievalMode: 'fts5' | 'qdrant' | 'hybrid';
+  /** EFEKTIF — backend yang benar-benar dipakai (config + circuit + keterjangkauan). */
+  effectiveRetrieval: 'fts5' | 'qdrant' | 'hybrid';
+  qdrantMode: 'off' | 'on' | 'local' | 'required';
+  /** `false` bila `QDRANT_URL` kosong — beda kondisi dari `qdrantMode: 'off'`. */
+  qdrantConfigured: boolean;
+  /** `null` = tidak relevan (off/tak dikonfigurasi) atau belum diprobe. */
+  qdrantReachable: boolean | null;
+  embeddingProvider: 'off' | 'local';
+  llm: { enabled: boolean; mode: 'off' | 'assist' | 'full' };
+  ocrEnabled: boolean;
+  seedProfile: 'none' | 'demo';
+  /** Alasan fallback/circuit terakhir yang jujur; `null` bila tidak ada. */
+  fallbackReason: string | null;
+};
+
+/** Batasan yang terbukti (rujuk `docs/STATE.json`), bukan karangan. */
+export type SystemLimit = {
+  id: string;
+  label: string;
+  detail: string;
+  source?: string;
+};
+
+export type MetaSystemPayload = {
+  /** Satu paragraf ringkas (SYSTEM_OVERVIEW §1); opsional agar UI punya fallback faktual. */
+  summary?: string;
+  stack: SystemStackItem[];
+  pipeline: SystemPipelineStage[];
+  runtime: SystemRuntime;
+  limits: SystemLimit[];
+};
 
 export type MetaResponse = {
   app: { name: string; version: string; build: string };
@@ -619,6 +691,8 @@ export type MetaResponse = {
   };
   capabilities: { llm: boolean; llmMode: 'off' | 'assist' | 'full'; rag: string; sql: string };
   generatedAt: string;
+  /** Aditif (P6-UI-HONESTY / DECISION-035). Field lama tidak berubah. */
+  system?: MetaSystemPayload;
 };
 
 /* ------------------------------------------------- assistant service boundary */

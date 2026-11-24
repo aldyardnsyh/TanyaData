@@ -1,9 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { sanitizeStoredError } from '@/lib/api/sanitize';
 import type { DB } from '@/lib/db/client';
 import { seedDocPath } from '@/lib/db/paths';
 import { conflict, notFound, unprocessable } from '@/lib/errors';
 import { invalidateQueryCache } from '@/lib/core/cache';
+import { getIndexEngine } from '@/lib/qdrant/client';
+import { deleteBySource, drainOutbox } from '@/lib/qdrant/sync';
 import { readSettingsState } from '@/lib/settings';
 import { datasetStats, dropDatasetTable, tableNameFor } from '@/lib/ingest/dataset';
 import { ingestDocument } from '@/lib/ingest/documents';
@@ -130,7 +133,9 @@ export function sourceDetail(db: DB, id: string): SourceDetailResponse & { sourc
     index: {
       indexed: row.status === 'READY' && (row.chunk_count ?? 0) > 0,
       indexedAt: meta.indexedAt ?? row.updated_at,
-      engine: 'fts5-bm25',
+      // Nilai faktual engine aktif (DECISION-032 / ADR-QD-05). Bentuk respons
+      // tidak berubah → frontend hanya menampilkan string.
+      engine: getIndexEngine(),
     },
     job,
   };
@@ -202,16 +207,28 @@ function runningJob(db: DB, sourceId: string): boolean {
   return row.n > 0;
 }
 
-export function removeSource(db: DB, id: string): void {
+export async function removeSource(db: DB, id: string): Promise<void> {
   const row = findSourceRow(db, id);
   if (!row) throw notFound('Sumber data tidak ditemukan');
   if (id === 'seed') throw conflict('Dataset seed tidak dapat dihapus');
   if (activeDatasetId(db) === id) throw conflict('Dataset sedang aktif dan tidak dapat dihapus');
   if (runningJob(db, id)) throw conflict('Sumber sedang diproses; tunggu hingga selesai');
 
+  // Hapus point Qdrant LEBIH DULU, sebelum metadata SQLite hilang (filter
+  // source_id tidak lagi bisa dibangun setelah DELETE). Kegagalan ditulis
+  // sebagai tombstone; penghapusan SQLite tidak boleh diblokir.
+  try {
+    await deleteBySource(db, id);
+  } catch {
+    // deleteBySource sudah menulis tombstone; jangan menggagalkan request.
+  }
+
   if (row.kind === 'dataset') dropDatasetTable(db, row);
   removeStoredFile(row);
-  db.prepare('DELETE FROM data_sources WHERE id = ?').run(id);
+  db.transaction(() => {
+    db.prepare('DELETE FROM core_datasets WHERE id = ?').run(id);
+    db.prepare('DELETE FROM data_sources WHERE id = ?').run(id);
+  })();
   invalidateQueryCache(db);
 }
 
@@ -224,6 +241,28 @@ function docFilePath(row: SourceRow): string {
   throw unprocessable('File sumber tidak ditemukan di storage', { reason: 'FILE_MISSING' });
 }
 
+/**
+ * Kuras outbox Qdrant setelah reindex. Qdrant adalah indeks TURUNAN: kegagalan
+ * jaringan / Qdrant mati TIDAK BOLEH menggagalkan reindex. `drainOutbox()` sudah
+ * menulis retry/tombstone ke SQLite dan tidak pernah melempar; pembungkus ini
+ * tetap defensif dan mencatat hasil secara jujur (tanpa kredensial).
+ */
+async function drainAfterReindex(db: DB, sourceId: string): Promise<void> {
+  try {
+    const sync = await drainOutbox(db);
+    if (!sync.enabled) return;
+    console.log(
+      `[qdrant] drain ${sourceId}: attempted=${sync.attempted} synced=${sync.succeeded} ` +
+        `failed=${sync.failed} tombstoned=${sync.tombstoned}${sync.error ? ` error=${sync.error}` : ''}`,
+    );
+  } catch (error) {
+    console.warn(
+      `[qdrant] drain ${sourceId} dilewati (indeks turunan, FTS5 tetap dipakai): ` +
+        `${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
 export async function reindexSource(db: DB, id: string): Promise<ReindexResponse> {
   const row = getSourceRow(db, id);
   if (runningJob(db, id)) throw conflict('Job reindex lain sedang berjalan');
@@ -233,6 +272,13 @@ export async function reindexSource(db: DB, id: string): Promise<ReindexResponse
   if (row.kind === 'document') {
     const job = createJob(db, id, 'document');
     try {
+      // newDocumentId() menghasilkan chunk_id baru tiap reindex → hapus point
+      // lama by source_id SEBELUM ingest agar tidak ada point yatim (Q-B2).
+      try {
+        await deleteBySource(db, id);
+      } catch {
+        // Tombstone sudah ditulis; reindex tetap lanjut.
+      }
       const file = docFilePath(row);
       const buffer = fs.readFileSync(file);
       await ingestDocument(db, row, buffer);
@@ -240,9 +286,10 @@ export async function reindexSource(db: DB, id: string): Promise<ReindexResponse
         .prepare("UPDATE ingestion_jobs SET status='DONE', step='done', progress=100, finished_at=? WHERE id=?")
         .run(new Date().toISOString(), job.id);
       void jobs;
+      await drainAfterReindex(db, id);
       return { job: jobDto(getJob(db, job.id)) };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = sanitizeStoredError(error);
       updateSource(db, id, { status: 'FAILED', error: message });
       db.prepare("UPDATE ingestion_jobs SET status='FAILED', step='failed', error=?, finished_at=? WHERE id=?").run(
         message,
@@ -266,6 +313,7 @@ export async function reindexSource(db: DB, id: string): Promise<ReindexResponse
       new Date().toISOString(),
       job.id,
     );
+    await drainAfterReindex(db, id);
     return { job: jobDto(getJob(db, job.id)) };
   }
 
@@ -291,5 +339,6 @@ export async function reindexSource(db: DB, id: string): Promise<ReindexResponse
     new Date().toISOString(),
     job.id,
   );
+  await drainAfterReindex(db, id);
   return { job: jobDto(getJob(db, job.id)) };
 }

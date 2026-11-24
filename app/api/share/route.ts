@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { handleRoute, jsonResponse } from '@/lib/api/respond';
+import { rateLimit } from '@/lib/api/rate-limit';
 import { parseJsonBody, parsePagination } from '@/lib/api/validate';
 import { ensureWorkspaceReady } from '@/lib/db/migrate';
 import { createShareSnapshot, listShareSnapshots } from '@/lib/core/share';
@@ -19,6 +20,8 @@ const shareCreateSchema = z.object({
 });
 
 export async function GET(request: Request) {
+  const limited = rateLimit(request, 'share');
+  if (limited) return limited;
   return handleRoute(() => {
     const db = ensureWorkspaceReady();
     const { limit, offset } = parsePagination(new URL(request.url).searchParams, 20, 100);
@@ -27,6 +30,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const limited = rateLimit(request, 'share');
+  if (limited) return limited;
   return handleRoute(async () => {
     const db = ensureWorkspaceReady();
     const body = await parseJsonBody(request, shareCreateSchema);
@@ -39,6 +44,7 @@ export async function POST(request: Request) {
           byteSize: snapshot.byteSize,
           messageCount: snapshot.payload.messages.length,
           createdAt: snapshot.createdAt,
+          expiresAt: snapshot.expiresAt,
         },
       },
       201,

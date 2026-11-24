@@ -17,7 +17,8 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 
 import { CORE_SCHEMA_SQL, SEED_DB, WORKSPACE_DB } from '../db/paths';
-import { createDataset, emptySchema, emptyQualityReport } from '../core/registry';
+import { createDataset, emptySchema, emptyQualityReport, registerSeedDataset } from '../core/registry';
+import { buildAiPortContext, createCorePorts } from '../ai/adapter';
 import type { SchemaJson } from '../core/contracts';
 import { answerQuestion } from '../core/query';
 import { rerankCitations, retrieveWithEntityBoost } from '../ai/retrieval';
@@ -389,7 +390,11 @@ function gradeOutput(testCase: Json, docType: DocType, question: string, rowCoun
 function gradeGeneration(answer: string, allowed: number[]): {
   pass: boolean; detail: string; rate: number; foreign: string[];
 } {
-  const tokens = answer.match(/\d+(?:[.,]\d+)*/g) ?? [];
+  // `[1]`, `[2]`, ... adalah penanda sitasi pada jawaban dokumen, bukan klaim
+  // angka. Menghitungnya sebagai angka asing membuat setiap jawaban bertanda
+  // sitasi selalu FAIL (false positive), padahal isi angkanya grounded.
+  const text = String(answer ?? '').replace(/\[\d+\]/g, ' ');
+  const tokens = text.match(/\d+(?:[.,]\d+)*/g) ?? [];
   const foreign = tokens.filter((t) => !verifyGrounding(t, allowed));
   const rate = tokens.length === 0 ? 0 : ratio(foreign.length, tokens.length);
   return { pass: rate <= 0.02, detail: `foreign=${JSON.stringify(foreign)} tokens=${tokens.length}`, rate, foreign };
@@ -618,6 +623,157 @@ export async function runEval(options: { fixturesDir: string; casesFile: string 
     byFixture,
     perCaseGate,
     overallPass: stageResults.every((s) => s.pass) && perCaseGate.pass,
+    notes,
+  };
+}
+
+/* ------------------------------------------------------- real-seed regression */
+
+export type RealSeedCaseResult = {
+  id: string;
+  question: string;
+  pass: boolean;
+  detail: string;
+  observed: {
+    mode?: string;
+    sql?: string | null;
+    rows?: number[][];
+    answer?: string;
+    guardrail?: string | null;
+  };
+};
+
+export type RealSeedReport = {
+  generatedAt: string;
+  datasetId: string;
+  dateColumn: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  cases: RealSeedCaseResult[];
+  passed: number;
+  total: number;
+  overallPass: boolean;
+  notes: string[];
+};
+
+/**
+ * BUG-001/002/004 coverage gap: `runEval` memakai fixture sintetis
+ * `tx_daily.period` (DATE) yang TIDAK pernah mengeksekusi `registerSeedDataset`.
+ * Suite ini mendaftarkan skema seed ASLI — `created_at` TIMESTAMP (cid=1)
+ * sebelum `transaction_date` DATE (cid=2) — lalu menjalankan pipeline produksi
+ * yang sama dengan `app/api/query` (termasuk AI adapter ports).
+ */
+export async function runRealSeedEval(): Promise<RealSeedReport> {
+  const notes: string[] = [
+    'Skema seed asli didaftarkan via registerSeedDataset — bukan fixture tx_daily.period.',
+    'Pipeline produksi dipakai penuh: answerQuestion + createCorePorts + buildAiPortContext, LLM_MODE=off.',
+    'RS-01 mengunci A1 = 8125 lewat transaction_date (bukan created_at yang memotong Nov 18).',
+    'RS-02 mengunci F3-1: periode di luar rentang ditolak guardrail dengan penyataan batas data, bukan COUNT(*) 46952.',
+  ];
+
+  const rw = new Database(WORKSPACE_DB);
+  const dataset = registerSeedDataset(rw);
+  rw.close();
+  if (!dataset) {
+    return {
+      generatedAt: new Date().toISOString(), datasetId: 'demo-qris-v1',
+      dateColumn: null, periodStart: null, periodEnd: null,
+      cases: [], passed: 0, total: 0, overallPass: false,
+      notes: [...notes, 'GAGAL: registerSeedDataset mengembalikan null (seed analytics.db tidak tersedia).'],
+    };
+  }
+
+  const db = new Database(WORKSPACE_DB, { readonly: true, fileMustExist: true });
+  db.pragma('query_only = 1');
+  const ports = createCorePorts(db);
+  const period = { start: '2026-11-01', end: '2026-11-18' };
+
+  const defs: Array<{
+    id: string;
+    question: string;
+    context: { period: typeof period } | null;
+    check: (q: any) => { pass: boolean; detail: string };
+  }> = [
+    {
+      id: 'RS-01',
+      question: 'Berapa total transaksi pada bulan ini?',
+      context: { period },
+      check: (q) => {
+        const rows = q.result_json?.rows ?? [];
+        const value = rows[0]?.value;
+        const sql = String(q.generated_sql ?? '');
+        const answer = String(q.answer ?? '');
+        const ok = value === 8125
+          && /transaction_date/.test(sql)
+          && !/created_at/.test(sql)
+          && /8\.?125/.test(answer);
+        return {
+          pass: ok,
+          detail: `expected=8125 via transaction_date | got=${value} | sql=${sql} | answer=${answer.replace(/\s+/g, ' ').slice(0, 140)}`,
+        };
+      },
+    },
+    {
+      id: 'RS-02',
+      question: 'Berapa total transaksi Desember 2026?',
+      context: null,
+      check: (q) => {
+        const guardrail = q.guardrail?.type ?? null;
+        const answer = String(q.answer ?? '');
+        const rows = q.result_json?.rows ?? [];
+        const ok = guardrail === 'out_of_range'
+          && answer.includes(String(dataset.period_start))
+          && answer.includes(String(dataset.period_end))
+          && rows.length === 0;
+        return {
+          pass: ok,
+          detail: `expected=out_of_range + batas data ${dataset.period_start}..${dataset.period_end}, 0 baris | got=${guardrail} rows=${rows.length} answer=${answer.replace(/\s+/g, ' ').slice(0, 180)}`,
+        };
+      },
+    },
+  ];
+
+  const cases: RealSeedCaseResult[] = [];
+  for (const def of defs) {
+    const aiContext = buildAiPortContext(db, { datasetId: dataset.id });
+    const q = await answerQuestion(db, {
+      datasetId: dataset.id,
+      question: def.question,
+      lang: 'id',
+      context: def.context,
+      evaluate: true,
+      ...aiContext,
+    }, ports);
+    const verdict = def.check(q);
+    cases.push({
+      id: def.id,
+      question: def.question,
+      pass: verdict.pass,
+      detail: verdict.detail,
+      observed: {
+        mode: q.mode,
+        sql: q.generated_sql,
+        rows: numericRows(q.result_json.rows),
+        answer: q.answer,
+        guardrail: q.guardrail?.type ?? null,
+      },
+    });
+  }
+  db.close();
+
+  const passed = cases.filter((c) => c.pass).length;
+  return {
+    generatedAt: new Date().toISOString(),
+    datasetId: dataset.id,
+    dateColumn: dataset.schema_json.tables.find((t) => t.sourceName === 'transactions')?.dateColumn
+      ?? dataset.schema_json.tables.find((t) => t.dateColumn)?.dateColumn
+      ?? null,
+    periodStart: dataset.period_start,
+    periodEnd: dataset.period_end,
+    cases,
+    passed,
+    total: cases.length,
+    overallPass: passed === cases.length,
     notes,
   };
 }

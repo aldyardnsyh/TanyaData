@@ -1,0 +1,1140 @@
+{
+  "metadata": {
+    "name": "Transfer set combined (3 documents, 66 questions) - QA eval input",
+    "role": "qa",
+    "purpose": "Generalization probe. DILARANG dipakai tuning parameter.",
+    "source_files": [
+      {
+        "file": "kebijakan_cuti_qa.json",
+        "metadata": {
+          "document": "kebijakan_cuti.pdf",
+          "domain": "SDM / kebijakan cuti karyawan",
+          "layout": "dua kolom (kiri: CUTI#1-#4, kanan: CUTI#5-#8)",
+          "language": "id",
+          "total_questions": 22,
+          "answerability_counts": {
+            "answerable": 15,
+            "partial": 2,
+            "not_answerable": 2,
+            "general": 3
+          },
+          "abstain_reference": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia.",
+          "evidence_rule": "Setiap evidence_spans adalah substring persis dari teks yang dicetak di kebijakan_cuti.pdf.",
+          "usage": "HANYA untuk mengukur generalisasi. DILARANG dipakai tuning parameter."
+        }
+      },
+      {
+        "file": "keamanan_ti_qa.json",
+        "metadata": {
+          "document": "keamanan_ti.pdf",
+          "domain": "Keamanan informasi / TI",
+          "layout": "tabel (kolom Bagian | Ketentuan, dengan garis pemisah baris)",
+          "language": "id",
+          "total_questions": 22,
+          "answerability_counts": {
+            "answerable": 15,
+            "partial": 2,
+            "not_answerable": 2,
+            "general": 3
+          },
+          "abstain_reference": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia.",
+          "evidence_rule": "Setiap evidence_spans adalah substring persis dari teks yang dicetak di keamanan_ti.pdf.",
+          "usage": "HANYA untuk mengukur generalisasi. DILARANG dipakai tuning parameter."
+        }
+      },
+      {
+        "file": "pengadaan_barang_qa.json",
+        "metadata": {
+          "document": "pengadaan_barang.pdf",
+          "domain": "Pengadaan barang / prosedur internal",
+          "layout": "penomoran berjenjang tidak konsisten (1, 2, 2.1, 2.1.1, 3, 3.2.1, 4, 4.1) + header/footer berulang di 2 halaman",
+          "language": "id",
+          "total_questions": 22,
+          "answerability_counts": {
+            "answerable": 14,
+            "partial": 2,
+            "not_answerable": 3,
+            "general": 3
+          },
+          "abstain_reference": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia.",
+          "evidence_rule": "Setiap evidence_spans adalah substring persis dari teks yang dicetak di pengadaan_barang.pdf (header/footer berulang tidak dipakai sebagai bukti).",
+          "usage": "HANYA untuk mengukur generalisasi. DILARANG dipakai tuning parameter."
+        }
+      }
+    ],
+    "total_questions": 66
+  },
+  "questions": [
+    {
+      "id": "TR-CUTI-01",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa tujuan kebijakan cuti ini?",
+      "ground_truth_answer": "Kebijakan ini mengatur pengajuan dan pencatatan cuti karyawan secara seragam.",
+      "source_sections": [
+        "CUTI#1"
+      ],
+      "evidence_spans": [
+        "Kebijakan ini mengatur pengajuan dan pencatatan cuti karyawan secara seragam."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-02",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa yang wajib dimiliki setiap pengajuan cuti?",
+      "ground_truth_answer": "Nomor pengajuan dan tanggal pengajuan.",
+      "source_sections": [
+        "CUTI#1"
+      ],
+      "evidence_spans": [
+        "Setiap cuti wajib memiliki nomor pengajuan dan tanggal pengajuan."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-03",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa saja jenis cuti yang diatur dalam kebijakan?",
+      "ground_truth_answer": "Cuti tahunan, cuti sakit, cuti melahirkan, dan cuti kematian.",
+      "source_sections": [
+        "CUTI#2"
+      ],
+      "evidence_spans": [
+        "Cuti terdiri atas cuti tahunan, cuti sakit, cuti melahirkan, dan cuti kematian."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-04",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Berapa hari cuti tahunan yang diberikan per tahun?",
+      "ground_truth_answer": "12 hari kerja per tahun.",
+      "source_sections": [
+        "CUTI#2"
+      ],
+      "evidence_spans": [
+        "Cuti tahunan diberikan 12 hari kerja per tahun."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-05",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Kapan paling lambat cuti tahunan harus diajukan?",
+      "ground_truth_answer": "Paling lambat 3 hari kerja sebelum tanggal mulai.",
+      "source_sections": [
+        "CUTI#3"
+      ],
+      "evidence_spans": [
+        "Cuti tahunan diajukan paling lambat 3 hari kerja sebelum tanggal mulai."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-06",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Bagaimana aturan pengajuan cuti sakit?",
+      "ground_truth_answer": "Dapat diajukan pada hari yang sama dengan keterangan dokter.",
+      "source_sections": [
+        "CUTI#3"
+      ],
+      "evidence_spans": [
+        "Cuti sakit dapat diajukan pada hari yang sama dengan keterangan dokter."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-07",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Berapa lama atasan memiliki waktu untuk menyetujui atau menolak pengajuan?",
+      "ground_truth_answer": "Paling lambat 2 hari kerja.",
+      "source_sections": [
+        "CUTI#4"
+      ],
+      "evidence_spans": [
+        "Atasan menyetujui atau menolak paling lambat 2 hari kerja."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-08",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa yang wajib menyertai penolakan pengajuan cuti?",
+      "ground_truth_answer": "Alasan tertulis.",
+      "source_sections": [
+        "CUTI#4"
+      ],
+      "evidence_spans": [
+        "Penolakan wajib disertai alasan tertulis."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-09",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Berapa saldo cuti tahunan yang boleh dibawa ke tahun berikutnya?",
+      "ground_truth_answer": "Tidak lebih dari 6 hari.",
+      "source_sections": [
+        "CUTI#5"
+      ],
+      "evidence_spans": [
+        "Saldo cuti tahunan tidak dapat dibawa lebih dari 6 hari ke tahun berikutnya."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-10",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apakah cuti sakit mengurangi saldo cuti tahunan?",
+      "ground_truth_answer": "Tidak, cuti sakit tidak mengurangi saldo cuti tahunan.",
+      "source_sections": [
+        "CUTI#5"
+      ],
+      "evidence_spans": [
+        "Cuti sakit tidak mengurangi saldo cuti tahunan."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-11",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Kapan cuti bersama diumumkan kepada karyawan?",
+      "ground_truth_answer": "Paling lambat 30 hari sebelum pelaksanaan.",
+      "source_sections": [
+        "CUTI#6"
+      ],
+      "evidence_spans": [
+        "Ditetapkan perusahaan dan diumumkan paling lambat 30 hari sebelum pelaksanaan."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-12",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apakah cuti bersama memotong saldo cuti tahunan?",
+      "ground_truth_answer": "Tidak memotong saldo cuti tahunan.",
+      "source_sections": [
+        "CUTI#6"
+      ],
+      "evidence_spans": [
+        "Cuti bersama tidak memotong saldo cuti tahunan."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-13",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Siapa yang mencatat cuti dan di mana catatan itu disimpan?",
+      "ground_truth_answer": "Bagian SDM mencatat seluruh cuti dalam sistem kehadiran.",
+      "source_sections": [
+        "CUTI#7"
+      ],
+      "evidence_spans": [
+        "Bagian SDM mencatat seluruh cuti dalam sistem kehadiran."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-14",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Seberapa sering laporan saldo cuti dibuat?",
+      "ground_truth_answer": "Setiap awal bulan.",
+      "source_sections": [
+        "CUTI#7"
+      ],
+      "evidence_spans": [
+        "Laporan saldo cuti dibuat setiap awal bulan."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-15",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apakah karyawan dengan masa kerja kurang dari satu tahun langsung memperoleh cuti tahunan?",
+      "ground_truth_answer": "Belum memperoleh cuti tahunan.",
+      "source_sections": [
+        "CUTI#8"
+      ],
+      "evidence_spans": [
+        "Karyawan dengan masa kerja kurang dari satu tahun belum memperoleh cuti tahunan."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-16",
+      "type": "partial",
+      "answerability": "partial",
+      "expected_behavior": "answer_with_caveat",
+      "question": "Jelaskan aturan cuti tahunan secara lengkap: jumlah, pengajuan, dan saldo.",
+      "ground_truth_answer": "Dokumen menyebut 12 hari kerja per tahun, pengajuan paling lambat 3 hari kerja sebelum tanggal mulai, dan saldo maksimal 6 hari dibawa ke tahun berikutnya. Dokumen tidak merinci perhitungan proporsional untuk karyawan baru.",
+      "source_sections": [
+        "CUTI#2",
+        "CUTI#3",
+        "CUTI#5"
+      ],
+      "evidence_spans": [
+        "Cuti tahunan diberikan 12 hari kerja per tahun.",
+        "Cuti tahunan diajukan paling lambat 3 hari kerja sebelum tanggal mulai.",
+        "Saldo cuti tahunan tidak dapat dibawa lebih dari 6 hari ke tahun berikutnya."
+      ],
+      "notes": "Caveat: tidak ada aturan proporsional.",
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-17",
+      "type": "partial",
+      "answerability": "partial",
+      "expected_behavior": "answer_with_caveat",
+      "question": "Apakah ada pengecualian bagi karyawan baru dan apa isinya?",
+      "ground_truth_answer": "Dokumen menyatakan pengecualian diatur oleh kebijakan terpisah, tetapi kebijakan tersebut tidak disertakan sehingga isinya tidak diketahui.",
+      "source_sections": [
+        "CUTI#8"
+      ],
+      "evidence_spans": [
+        "Pengecualian diatur oleh kebijakan terpisah."
+      ],
+      "notes": "Caveat: kebijakan terpisah tidak tersedia.",
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-18",
+      "type": "not_answerable",
+      "answerability": "none",
+      "expected_behavior": "abstain",
+      "question": "Berapa lama cuti melahirkan diberikan kepada karyawan?",
+      "ground_truth_answer": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia.",
+      "source_sections": [],
+      "evidence_spans": [],
+      "related_sections": [
+        "CUTI#2"
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-19",
+      "type": "not_answerable",
+      "answerability": "none",
+      "expected_behavior": "abstain",
+      "question": "Siapa nama kepala bagian SDM yang menandatangani laporan saldo cuti?",
+      "ground_truth_answer": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia.",
+      "source_sections": [],
+      "evidence_spans": [],
+      "related_sections": [
+        "CUTI#7"
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-20",
+      "type": "general",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Jelaskan isi kebijakan cuti secara ringkas.",
+      "ground_truth_answer": "Kebijakan mengatur pengajuan dan pencatatan cuti, jenis cuti, batas pengajuan, persetujuan atasan, saldo, cuti bersama, pelaporan SDM, dan ketentuan bagi karyawan baru.",
+      "source_sections": [
+        "CUTI#1",
+        "CUTI#2",
+        "CUTI#3",
+        "CUTI#4",
+        "CUTI#5",
+        "CUTI#6",
+        "CUTI#7",
+        "CUTI#8"
+      ],
+      "evidence_spans": [
+        "Kebijakan ini mengatur pengajuan dan pencatatan cuti karyawan secara seragam.",
+        "Cuti terdiri atas cuti tahunan, cuti sakit, cuti melahirkan, dan cuti kematian.",
+        "Cuti tahunan diajukan paling lambat 3 hari kerja sebelum tanggal mulai.",
+        "Atasan menyetujui atau menolak paling lambat 2 hari kerja.",
+        "Saldo cuti tahunan tidak dapat dibawa lebih dari 6 hari ke tahun berikutnya.",
+        "Bagian SDM mencatat seluruh cuti dalam sistem kehadiran."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-21",
+      "type": "general",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa saja aturan pengajuan dan persetujuan cuti?",
+      "ground_truth_answer": "Cuti tahunan diajukan paling lambat 3 hari kerja sebelum tanggal mulai; cuti sakit dapat diajukan pada hari yang sama dengan keterangan dokter; atasan memutuskan dalam 2 hari kerja dan penolakan disertai alasan tertulis.",
+      "source_sections": [
+        "CUTI#3",
+        "CUTI#4"
+      ],
+      "evidence_spans": [
+        "Cuti tahunan diajukan paling lambat 3 hari kerja sebelum tanggal mulai.",
+        "Cuti sakit dapat diajukan pada hari yang sama dengan keterangan dokter.",
+        "Atasan menyetujui atau menolak paling lambat 2 hari kerja.",
+        "Penolakan wajib disertai alasan tertulis."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-CUTI-22",
+      "type": "general",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Bagaimana pengelolaan saldo dan pelaporan cuti diatur?",
+      "ground_truth_answer": "Saldo tahunan maksimal 6 hari dibawa ke tahun berikutnya, cuti sakit dan cuti bersama tidak memotong saldo, SDM mencatat di sistem kehadiran, dan laporan saldo dibuat setiap awal bulan.",
+      "source_sections": [
+        "CUTI#5",
+        "CUTI#6",
+        "CUTI#7"
+      ],
+      "evidence_spans": [
+        "Saldo cuti tahunan tidak dapat dibawa lebih dari 6 hari ke tahun berikutnya.",
+        "Cuti sakit tidak mengurangi saldo cuti tahunan.",
+        "Cuti bersama tidak memotong saldo cuti tahunan.",
+        "Bagian SDM mencatat seluruh cuti dalam sistem kehadiran.",
+        "Laporan saldo cuti dibuat setiap awal bulan."
+      ],
+      "kb": "kebijakan_cuti"
+    },
+    {
+      "id": "TR-TI-01",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Siapa saja yang terkena kebijakan keamanan informasi ini?",
+      "ground_truth_answer": "Karyawan, kontraktor, dan mitra yang mengakses sistem perusahaan.",
+      "source_sections": [
+        "TI#1"
+      ],
+      "evidence_spans": [
+        "Berlaku untuk karyawan, kontraktor, dan mitra yang mengakses sistem perusahaan."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-02",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Berapa panjang minimal kata sandi dan komposisinya?",
+      "ground_truth_answer": "Minimal 12 karakter, terdiri atas huruf, angka, dan simbol.",
+      "source_sections": [
+        "TI#2"
+      ],
+      "evidence_spans": [
+        "Kata sandi minimal 12 karakter dengan huruf, angka, dan simbol; diganti tiap 90 hari."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-03",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Seberapa sering kata sandi wajib diganti?",
+      "ground_truth_answer": "Tiap 90 hari.",
+      "source_sections": [
+        "TI#2"
+      ],
+      "evidence_spans": [
+        "diganti tiap 90 hari."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-04",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Untuk akun apa autentikasi dua faktor wajib diterapkan?",
+      "ground_truth_answer": "Akun administrator dan akses jarak jauh.",
+      "source_sections": [
+        "TI#3"
+      ],
+      "evidence_spans": [
+        "Autentikasi dua faktor wajib untuk administrator dan akses jarak jauh; OTP tidak dibagikan."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-05",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apakah kode OTP boleh dibagikan kepada orang lain?",
+      "ground_truth_answer": "Tidak boleh, OTP tidak dibagikan.",
+      "source_sections": [
+        "TI#3"
+      ],
+      "evidence_spans": [
+        "OTP tidak dibagikan."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-06",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa saja kelas klasifikasi data dalam kebijakan?",
+      "ground_truth_answer": "Publik, Internal, Rahasia, dan Sangat Rahasia.",
+      "source_sections": [
+        "TI#4"
+      ],
+      "evidence_spans": [
+        "Data berkelas Publik, Internal, Rahasia, dan Sangat Rahasia; yang terakhir hanya untuk pihak ditunjuk."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-07",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Siapa yang boleh mengakses data Sangat Rahasia?",
+      "ground_truth_answer": "Hanya pihak yang ditunjuk.",
+      "source_sections": [
+        "TI#4"
+      ],
+      "evidence_spans": [
+        "yang terakhir hanya untuk pihak ditunjuk."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-08",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apakah perangkat pribadi boleh digunakan untuk mengakses data Rahasia?",
+      "ground_truth_answer": "Tidak boleh.",
+      "source_sections": [
+        "TI#5"
+      ],
+      "evidence_spans": [
+        "Perangkat pribadi dilarang mengakses data Rahasia; perangkat perusahaan wajib terenkripsi."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-09",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa kewajiban yang berlaku pada perangkat perusahaan?",
+      "ground_truth_answer": "Perangkat perusahaan wajib memiliki enkripsi penyimpanan aktif.",
+      "source_sections": [
+        "TI#5"
+      ],
+      "evidence_spans": [
+        "perangkat perusahaan wajib terenkripsi."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-10",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Dalam waktu berapa lama dugaan pelanggaran keamanan harus dilaporkan?",
+      "ground_truth_answer": "Paling lambat 1 jam sejak diketahui.",
+      "source_sections": [
+        "TI#6"
+      ],
+      "evidence_spans": [
+        "Dugaan pelanggaran keamanan dilaporkan ke tim keamanan dalam 1 jam sejak diketahui."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-11",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Kepada siapa dugaan pelanggaran keamanan dilaporkan?",
+      "ground_truth_answer": "Kepada tim keamanan.",
+      "source_sections": [
+        "TI#6"
+      ],
+      "evidence_spans": [
+        "dilaporkan ke tim keamanan dalam 1 jam sejak diketahui."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-12",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Berapa batas waktu pemasangan patch keamanan kritikal?",
+      "ground_truth_answer": "Dalam 7 hari sejak rilis.",
+      "source_sections": [
+        "TI#7"
+      ],
+      "evidence_spans": [
+        "Patch kritikal dipasang dalam 7 hari; patch non-kritikal dalam 30 hari sejak rilis."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-13",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Berapa batas waktu pemasangan patch non-kritikal?",
+      "ground_truth_answer": "Dalam 30 hari sejak rilis.",
+      "source_sections": [
+        "TI#7"
+      ],
+      "evidence_spans": [
+        "patch non-kritikal dalam 30 hari sejak rilis."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-14",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Kapan akses karyawan yang keluar harus dicabut?",
+      "ground_truth_answer": "Paling lambat pada hari kerja terakhir.",
+      "source_sections": [
+        "TI#8"
+      ],
+      "evidence_spans": [
+        "Akses karyawan keluar dicabut paling lambat hari kerja terakhir; akun tidak dihapus sebelum audit."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-15",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apakah akun karyawan yang keluar boleh langsung dihapus?",
+      "ground_truth_answer": "Tidak, akun tidak boleh dihapus sebelum audit selesai.",
+      "source_sections": [
+        "TI#8"
+      ],
+      "evidence_spans": [
+        "akun tidak dihapus sebelum audit."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-16",
+      "type": "partial",
+      "answerability": "partial",
+      "expected_behavior": "answer_with_caveat",
+      "question": "Jelaskan seluruh aturan kata sandi dan autentikasi.",
+      "ground_truth_answer": "Kata sandi minimal 12 karakter dengan huruf, angka, dan simbol serta diganti tiap 90 hari; autentikasi dua faktor wajib untuk administrator dan akses jarak jauh; OTP tidak dibagikan. Dokumen tidak menjelaskan pengecualian untuk akun non-administrator.",
+      "source_sections": [
+        "TI#2",
+        "TI#3"
+      ],
+      "evidence_spans": [
+        "Kata sandi minimal 12 karakter dengan huruf, angka, dan simbol; diganti tiap 90 hari.",
+        "Autentikasi dua faktor wajib untuk administrator dan akses jarak jauh; OTP tidak dibagikan."
+      ],
+      "notes": "Caveat: tidak ada detail pengecualian.",
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-17",
+      "type": "partial",
+      "answerability": "partial",
+      "expected_behavior": "answer_with_caveat",
+      "question": "Bagaimana penanganan insiden keamanan dan kapan akun boleh dihapus?",
+      "ground_truth_answer": "Dugaan pelanggaran dilaporkan ke tim keamanan dalam 1 jam; akun karyawan yang keluar dicabut pada hari kerja terakhir dan tidak dihapus sebelum audit. Dokumen tidak merinci lamanya audit.",
+      "source_sections": [
+        "TI#6",
+        "TI#8"
+      ],
+      "evidence_spans": [
+        "Dugaan pelanggaran keamanan dilaporkan ke tim keamanan dalam 1 jam sejak diketahui.",
+        "Akses karyawan keluar dicabut paling lambat hari kerja terakhir; akun tidak dihapus sebelum audit."
+      ],
+      "notes": "Caveat: durasi audit tidak disebut.",
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-18",
+      "type": "not_answerable",
+      "answerability": "none",
+      "expected_behavior": "abstain",
+      "question": "Siapa nama kepala tim keamanan yang menerima laporan insiden?",
+      "ground_truth_answer": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia.",
+      "source_sections": [],
+      "evidence_spans": [],
+      "related_sections": [
+        "TI#6"
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-19",
+      "type": "not_answerable",
+      "answerability": "none",
+      "expected_behavior": "abstain",
+      "question": "Berapa denda bagi karyawan yang membagikan kode OTP?",
+      "ground_truth_answer": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia.",
+      "source_sections": [],
+      "evidence_spans": [],
+      "related_sections": [
+        "TI#3"
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-20",
+      "type": "general",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Jelaskan isi kebijakan keamanan TI secara ringkas.",
+      "ground_truth_answer": "Kebijakan mencakup cakupan subjek, kata sandi, autentikasi dua faktor, klasifikasi data, penggunaan perangkat, pelaporan insiden, patch, dan pencabutan akses.",
+      "source_sections": [
+        "TI#1",
+        "TI#2",
+        "TI#3",
+        "TI#4",
+        "TI#5",
+        "TI#6",
+        "TI#7",
+        "TI#8"
+      ],
+      "evidence_spans": [
+        "Berlaku untuk karyawan, kontraktor, dan mitra yang mengakses sistem perusahaan.",
+        "Kata sandi minimal 12 karakter dengan huruf, angka, dan simbol; diganti tiap 90 hari.",
+        "Autentikasi dua faktor wajib untuk administrator dan akses jarak jauh; OTP tidak dibagikan.",
+        "Data berkelas Publik, Internal, Rahasia, dan Sangat Rahasia; yang terakhir hanya untuk pihak ditunjuk.",
+        "Perangkat pribadi dilarang mengakses data Rahasia; perangkat perusahaan wajib terenkripsi.",
+        "Dugaan pelanggaran keamanan dilaporkan ke tim keamanan dalam 1 jam sejak diketahui.",
+        "Patch kritikal dipasang dalam 7 hari; patch non-kritikal dalam 30 hari sejak rilis.",
+        "Akses karyawan keluar dicabut paling lambat hari kerja terakhir; akun tidak dihapus sebelum audit."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-21",
+      "type": "general",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa saja aturan klasifikasi data dan penggunaan perangkat?",
+      "ground_truth_answer": "Data berkelas Publik, Internal, Rahasia, dan Sangat Rahasia; data Sangat Rahasia hanya untuk pihak ditunjuk; perangkat pribadi dilarang mengakses data Rahasia dan perangkat perusahaan wajib terenkripsi.",
+      "source_sections": [
+        "TI#4",
+        "TI#5"
+      ],
+      "evidence_spans": [
+        "Data berkelas Publik, Internal, Rahasia, dan Sangat Rahasia; yang terakhir hanya untuk pihak ditunjuk.",
+        "Perangkat pribadi dilarang mengakses data Rahasia; perangkat perusahaan wajib terenkripsi."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-TI-22",
+      "type": "general",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Bagaimana aturan insiden, patch, dan penghentian akses?",
+      "ground_truth_answer": "Insiden dilaporkan dalam 1 jam, patch kritikal dalam 7 hari dan non-kritikal dalam 30 hari, akses dicabut pada hari kerja terakhir dengan akun tidak dihapus sebelum audit.",
+      "source_sections": [
+        "TI#6",
+        "TI#7",
+        "TI#8"
+      ],
+      "evidence_spans": [
+        "Dugaan pelanggaran keamanan dilaporkan ke tim keamanan dalam 1 jam sejak diketahui.",
+        "Patch kritikal dipasang dalam 7 hari; patch non-kritikal dalam 30 hari sejak rilis.",
+        "Akses karyawan keluar dicabut paling lambat hari kerja terakhir; akun tidak dihapus sebelum audit."
+      ],
+      "kb": "keamanan_ti"
+    },
+    {
+      "id": "TR-PD-01",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa tujuan prosedur pengadaan barang?",
+      "ground_truth_answer": "Prosedur pengadaan mengatur permintaan, persetujuan, pemesanan, dan penerimaan barang.",
+      "source_sections": [
+        "PD#1"
+      ],
+      "evidence_spans": [
+        "Prosedur pengadaan mengatur permintaan, persetujuan, pemesanan, dan penerimaan barang."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-02",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa saja yang harus ada dalam formulir permintaan barang?",
+      "ground_truth_answer": "Spesifikasi, jumlah, dan perkiraan anggaran.",
+      "source_sections": [
+        "PD#2"
+      ],
+      "evidence_spans": [
+        "Unit peminta mengajukan formulir dengan spesifikasi, jumlah, dan perkiraan anggaran."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-03",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Siapa yang menyetujui permintaan di bawah 5 juta rupiah?",
+      "ground_truth_answer": "Kepala unit.",
+      "source_sections": [
+        "PD#3"
+      ],
+      "evidence_spans": [
+        "Permintaan di bawah 5 juta rupiah disetujui kepala unit."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-04",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Siapa yang menyetujui permintaan di atas 5 juta rupiah?",
+      "ground_truth_answer": "Direktur.",
+      "source_sections": [
+        "PD#3"
+      ],
+      "evidence_spans": [
+        "Di atas itu disetujui direktur."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-05",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa yang diperiksa tim pengadaan pada tahap verifikasi spesifikasi?",
+      "ground_truth_answer": "Tim pengadaan memeriksa spesifikasi agar tidak mengarah pada merek tertentu.",
+      "source_sections": [
+        "PD#4"
+      ],
+      "evidence_spans": [
+        "Tim pengadaan memeriksa spesifikasi agar tidak mengarah pada merek tertentu."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-06",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Berapa minimal penyedia untuk pemesanan dengan nilai di atas 10 juta rupiah?",
+      "ground_truth_answer": "Minimal tiga penyedia.",
+      "source_sections": [
+        "PD#5"
+      ],
+      "evidence_spans": [
+        "Pemesanan dilakukan kepada minimal tiga penyedia untuk nilai di atas 10 juta rupiah."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-07",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa saja kriteria penilaian penawaran?",
+      "ground_truth_answer": "Harga, kesesuaian spesifikasi, dan waktu pengiriman.",
+      "source_sections": [
+        "PD#6"
+      ],
+      "evidence_spans": [
+        "Penawaran dinilai dari harga, kesesuaian spesifikasi, dan waktu pengiriman."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-08",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Siapa yang menerima barang dan dengan dokumen apa?",
+      "ground_truth_answer": "Unit peminta menerima barang dengan berita acara yang ditandatangani dua pihak.",
+      "source_sections": [
+        "PD#7"
+      ],
+      "evidence_spans": [
+        "Barang diterima oleh unit peminta dengan berita acara yang ditandatangani dua pihak."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-09",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa syarat pembayaran dapat diproses?",
+      "ground_truth_answer": "Setelah berita acara penerimaan dan faktur lengkap diverifikasi.",
+      "source_sections": [
+        "PD#8"
+      ],
+      "evidence_spans": [
+        "Pembayaran diproses setelah berita acara dan faktur lengkap diverifikasi."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-10",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apakah berita acara penerimaan memerlukan tanda tangan dua pihak?",
+      "ground_truth_answer": "Ya, ditandatangani dua pihak.",
+      "source_sections": [
+        "PD#7"
+      ],
+      "evidence_spans": [
+        "dengan berita acara yang ditandatangani dua pihak."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-11",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Pada bagian bernomor berapa pengadaan diatur agar tidak mengarah pada merek tertentu?",
+      "ground_truth_answer": "Bagian 2.1.1 (Verifikasi Spesifikasi).",
+      "source_sections": [
+        "PD#4"
+      ],
+      "evidence_spans": [
+        "2.1.1. Verifikasi Spesifikasi: Tim pengadaan memeriksa spesifikasi agar tidak mengarah pada merek tertentu."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-12",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apakah dokumen ini berulang di setiap halaman?",
+      "ground_truth_answer": "Ya, header 'PENGADAAN BARANG - DOKUMEN INTERNAL' dan footer nomor halaman muncul di kedua halaman.",
+      "source_sections": [
+        "PD#1",
+        "PD#5"
+      ],
+      "evidence_spans": [
+        "PENGADAAN BARANG - DOKUMEN INTERNAL",
+        "Halaman 1 dari 2",
+        "Halaman 2 dari 2"
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-13",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa yang diajukan unit peminta pada bagian 2?",
+      "ground_truth_answer": "Formulir permintaan berisi spesifikasi, jumlah, dan perkiraan anggaran.",
+      "source_sections": [
+        "PD#2"
+      ],
+      "evidence_spans": [
+        "2. Permintaan: Unit peminta mengajukan formulir dengan spesifikasi, jumlah, dan perkiraan anggaran."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-14",
+      "type": "answerable",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa yang dinilai pada bagian 3.2.1?",
+      "ground_truth_answer": "Penawaran dinilai dari harga, kesesuaian spesifikasi, dan waktu pengiriman.",
+      "source_sections": [
+        "PD#6"
+      ],
+      "evidence_spans": [
+        "3.2.1. Evaluasi Penawaran: Penawaran dinilai dari harga, kesesuaian spesifikasi, dan waktu pengiriman."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-15",
+      "type": "not_answerable",
+      "answerability": "none",
+      "expected_behavior": "abstain",
+      "question": "Apa yang terjadi setelah fungsi utama diverifikasi dalam prosedur ini?",
+      "ground_truth_answer": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia; dokumen ini mengatur pengadaan, bukan pemulihan sistem.",
+      "source_sections": [],
+      "evidence_spans": [],
+      "related_sections": [
+        "PD#7"
+      ],
+      "notes": "Sengaja memakai frasa dari domain lain (KB04) untuk menguji abstain.",
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-16",
+      "type": "partial",
+      "answerability": "partial",
+      "expected_behavior": "answer_with_caveat",
+      "question": "Jelaskan seluruh alur persetujuan pengadaan.",
+      "ground_truth_answer": "Permintaan di bawah 5 juta rupiah disetujui kepala unit dan di atas itu disetujui direktur; spesifikasi diverifikasi agar tidak mengarah pada merek tertentu. Dokumen tidak menjelaskan batas persetujuan untuk nilai tepat 5 juta rupiah.",
+      "source_sections": [
+        "PD#3",
+        "PD#4"
+      ],
+      "evidence_spans": [
+        "Permintaan di bawah 5 juta rupiah disetujui kepala unit.",
+        "Di atas itu disetujui direktur.",
+        "Tim pengadaan memeriksa spesifikasi agar tidak mengarah pada merek tertentu."
+      ],
+      "notes": "Caveat: nilai tepat 5 juta tidak diatur.",
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-17",
+      "type": "partial",
+      "answerability": "partial",
+      "expected_behavior": "answer_with_caveat",
+      "question": "Bagaimana aturan pemesanan dan evaluasi penawaran?",
+      "ground_truth_answer": "Pemesanan minimal kepada tiga penyedia untuk nilai di atas 10 juta rupiah; penawaran dinilai dari harga, kesesuaian spesifikasi, dan waktu pengiriman. Dokumen tidak merinci bobot tiap kriteria.",
+      "source_sections": [
+        "PD#5",
+        "PD#6"
+      ],
+      "evidence_spans": [
+        "Pemesanan dilakukan kepada minimal tiga penyedia untuk nilai di atas 10 juta rupiah.",
+        "Penawaran dinilai dari harga, kesesuaian spesifikasi, dan waktu pengiriman."
+      ],
+      "notes": "Caveat: bobot penilaian tidak disebut.",
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-18",
+      "type": "not_answerable",
+      "answerability": "none",
+      "expected_behavior": "abstain",
+      "question": "Berapa anggaran maksimal pengadaan barang per tahun?",
+      "ground_truth_answer": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia.",
+      "source_sections": [],
+      "evidence_spans": [],
+      "related_sections": [
+        "PD#3"
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-19",
+      "type": "not_answerable",
+      "answerability": "none",
+      "expected_behavior": "abstain",
+      "question": "Siapa direktur yang menandatangani persetujuan pengadaan?",
+      "ground_truth_answer": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia.",
+      "source_sections": [],
+      "evidence_spans": [],
+      "related_sections": [
+        "PD#3"
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-20",
+      "type": "general",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Jelaskan isi prosedur pengadaan barang secara ringkas.",
+      "ground_truth_answer": "Prosedur mengatur permintaan, persetujuan anggaran, verifikasi spesifikasi, pemesanan, evaluasi penawaran, penerimaan, dan pembayaran.",
+      "source_sections": [
+        "PD#1",
+        "PD#2",
+        "PD#3",
+        "PD#4",
+        "PD#5",
+        "PD#6",
+        "PD#7",
+        "PD#8"
+      ],
+      "evidence_spans": [
+        "Prosedur pengadaan mengatur permintaan, persetujuan, pemesanan, dan penerimaan barang.",
+        "Unit peminta mengajukan formulir dengan spesifikasi, jumlah, dan perkiraan anggaran.",
+        "Permintaan di bawah 5 juta rupiah disetujui kepala unit.",
+        "Tim pengadaan memeriksa spesifikasi agar tidak mengarah pada merek tertentu.",
+        "Pemesanan dilakukan kepada minimal tiga penyedia untuk nilai di atas 10 juta rupiah.",
+        "Penawaran dinilai dari harga, kesesuaian spesifikasi, dan waktu pengiriman.",
+        "Barang diterima oleh unit peminta dengan berita acara yang ditandatangani dua pihak.",
+        "Pembayaran diproses setelah berita acara dan faktur lengkap diverifikasi."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-21",
+      "type": "general",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Apa saja aturan persetujuan dan verifikasi dalam pengadaan?",
+      "ground_truth_answer": "Permintaan di bawah 5 juta disetujui kepala unit, di atas itu direktur, dan tim pengadaan memeriksa spesifikasi agar tidak mengarah pada merek tertentu.",
+      "source_sections": [
+        "PD#3",
+        "PD#4"
+      ],
+      "evidence_spans": [
+        "Permintaan di bawah 5 juta rupiah disetujui kepala unit.",
+        "Di atas itu disetujui direktur.",
+        "Tim pengadaan memeriksa spesifikasi agar tidak mengarah pada merek tertentu."
+      ],
+      "kb": "pengadaan_barang"
+    },
+    {
+      "id": "TR-PD-22",
+      "type": "general",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "question": "Bagaimana tahapan pemesanan sampai pembayaran diatur?",
+      "ground_truth_answer": "Pemesanan minimal tiga penyedia untuk nilai di atas 10 juta, penawaran dinilai dari harga/kesesuaian/waktu kirim, barang diterima dengan berita acara dua pihak, lalu pembayaran setelah berita acara dan faktur diverifikasi.",
+      "source_sections": [
+        "PD#5",
+        "PD#6",
+        "PD#7",
+        "PD#8"
+      ],
+      "evidence_spans": [
+        "Pemesanan dilakukan kepada minimal tiga penyedia untuk nilai di atas 10 juta rupiah.",
+        "Penawaran dinilai dari harga, kesesuaian spesifikasi, dan waktu pengiriman.",
+        "Barang diterima oleh unit peminta dengan berita acara yang ditandatangani dua pihak.",
+        "Pembayaran diproses setelah berita acara dan faktur lengkap diverifikasi."
+      ],
+      "kb": "pengadaan_barang"
+    }
+  ]
+}

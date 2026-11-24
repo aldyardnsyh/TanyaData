@@ -27,6 +27,8 @@
   --color-ink-72: color-mix(in srgb, var(--color-ink) 72%, var(--color-porcelain));
   --color-forest-08: color-mix(in srgb, var(--color-forest) 8%, transparent);
   --color-terracotta-16: color-mix(in srgb, var(--color-terracotta) 16%, transparent);
+  /* Hover tombol primer: turunan forest + ink, bukan hex ketujuh (F-04). */
+  --color-forest-hover: color-mix(in srgb, var(--color-forest) 90%, var(--color-ink));
 
   /* ---- Tipografi baru (§3.1). Alasan tiap token ada di kontrak. ---- */
   --text-display: 40px;
@@ -103,6 +105,8 @@
   --animate-toast-in: toast-in var(--motion-toast) var(--ease-smooth) both;
   --animate-skeleton: skeleton-pulse 1.2s var(--ease-smooth) infinite;
   --animate-typing-dot: typing-dot 1.2s var(--ease-smooth) infinite;
+  /* Progres unggah indeterminate: satu sapuan tipis, bukan angka palsu (F-02). */
+  --animate-progress-indeterminate: progress-indeterminate 1.4s var(--ease-smooth) infinite;
 
   @keyframes spotlight-in { from { opacity: 0; } to { opacity: 1; } }
   @keyframes border-orbit { to { --border-angle: 360deg; } }
@@ -117,6 +121,11 @@
   @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
   @keyframes typing-dot { 0%, 60%, 100% { opacity: 0.35; } 30% { opacity: 1; } }
+  /* Bar lebar 1/3 track: -100% → 320% (dari ukuran bar sendiri) menyapu penuh. */
+  @keyframes progress-indeterminate {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(320%); }
+  }
 }
 
 /* Durasi numerik (§6). Dipakai utility & komponen lewat var(), bukan angka inline. */
@@ -510,7 +519,8 @@
 
 /* Hentikan loop transient saat tab tersembunyi (§6 aturan 7). */
 [data-tab-hidden="true"] .animate-skeleton,
-[data-tab-hidden="true"] .animate-typing-dot {
+[data-tab-hidden="true"] .animate-typing-dot,
+[data-tab-hidden="true"] .animate-progress-indeterminate {
   animation-play-state: paused !important;
 }
 
@@ -523,6 +533,13 @@
     scroll-behavior: auto !important;
   }
   .animate-skeleton, .animate-typing-dot { animation: none !important; }
+  /* Indeterminate tetap terbaca tanpa gerak: bar penuh redup, bukan bar kosong. */
+  .animate-progress-indeterminate {
+    animation: none !important;
+    transform: none !important;
+    width: 100% !important;
+    opacity: 0.5 !important;
+  }
   .attention-border::before { animation: none !important; opacity: 0 !important; }
   [data-motion] { transform: none !important; }
 }

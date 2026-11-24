@@ -302,7 +302,13 @@ export function listSteps(db: DB, datasetId: string): IngestionStep[] {
 type SeedColumn = { name: string; type: string; notnull: number; pk: number };
 
 const DATE_NAME_RE = /(date|tanggal|time|waktu|period|periode)/i;
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}/;
+/** DATE murni — TIMESTAMP "2026-08-01 00:53:11" sengaja TIDAK cocok (anchor `$`). */
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const ISO_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/;
+/** Kolom metadata ingestion, bukan tanggal bisnis/transaksi. */
+const INGEST_TIME_RE = /^(created|updated|inserted|modified|deleted)_at$/i;
+/** Nama kolom tanggal bisnis yang diprioritaskan saat memilih dateColumn. */
+const BUSINESS_DATE_RE = /^(transaction_date|transaksi_date|tanggal_transaksi|tgl_transaksi|order_date|invoice_date|payment_date|period|periode|date|tanggal|tgl)$/i;
 
 function inferSeedType(decl: string): 'integer' | 'number' | 'text' {
   const t = decl.toUpperCase();
@@ -341,6 +347,8 @@ export function registerSeedDataset(db: DB): Dataset | null {
     const tables = names.map(({ name }) => {
       const info = seed.prepare(`PRAGMA table_info("${name.replace(/"/g, '')}")`).all() as SeedColumn[];
       const rowCount = (seed.prepare(`SELECT COUNT(*) AS n FROM "${name.replace(/"/g, '')}"`).get() as { n: number }).n;
+      let dateColumn: string | null = null;
+      let bestTimeScore = 0;
       const columns = info.map((col, ordinal) => {
         const inferred = inferSeedType(col.type);
         const sampleRows = seed
@@ -349,7 +357,29 @@ export function registerSeedDataset(db: DB): Dataset | null {
         const values = sampleRows.map((r) => r.v).filter((v) => v !== null && v !== undefined);
         const distinct = new Set(values.map(String)).size;
         const looksDate = values.length > 0 && values.every((v) => ISO_DATE_RE.test(String(v)));
-        const role = looksDate || DATE_NAME_RE.test(col.name)
+        const looksTimestamp = values.length > 0 && values.every((v) => ISO_TIMESTAMP_RE.test(String(v)));
+        const declaredDate = /\bDATE\b/i.test(col.type) && !/\bTIMESTAMP\b|\bDATETIME\b/i.test(col.type);
+        const declaredTimestamp = /\bTIMESTAMP\b|\bDATETIME\b/i.test(col.type);
+
+        // BUG-001: kolom tanggal bisnis (DATE / transaction_date) harus menang
+        // atas metadata ingestion (created_at TIMESTAMP). Skor positif hanya
+        // untuk kolom yang benar-benar berperan sebagai waktu; created_at
+        // dipenalti supaya tidak pernah terpilih walaupun nilainya diawali
+        // pola "YYYY-MM-DD".
+        let timeScore = 0;
+        if (declaredDate) timeScore += 4;
+        if (looksDate) timeScore += 2;
+        if (BUSINESS_DATE_RE.test(col.name)) timeScore += 3;
+        else if (DATE_NAME_RE.test(col.name) && (looksDate || looksTimestamp || declaredDate || declaredTimestamp)) {
+          timeScore += 2;
+        }
+        if (INGEST_TIME_RE.test(col.name)) timeScore -= 8;
+        if (timeScore > bestTimeScore) {
+          bestTimeScore = timeScore;
+          dateColumn = col.name;
+        }
+
+        const role = timeScore > 0
           ? 'time'
           : inferred === 'number'
             ? 'measure'
@@ -370,13 +400,14 @@ export function registerSeedDataset(db: DB): Dataset | null {
           description: null,
         };
       });
-      const dateColumn = columns.find((c) => c.semantic_role === 'time')?.name ?? null;
       return {
         name: `seed.${name}`,
         sourceName: name,
         rowCount,
         columns,
-        dateColumn,
+        // TS tidak melacak assignment di dalam callback `info.map`; tanpa cast
+        // nilai ini menyempit menjadi `null` dan memicu TS2339 di bawah.
+        dateColumn: dateColumn as string | null,
       };
     });
 

@@ -20,7 +20,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 /* S-05: semua tombol punya area sentuh ≥44px. Visual dibedakan oleh padding. */
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-on-primary border border-primary hover:bg-[#0A3A2C] focus-ring-forest',
+  primary: 'bg-primary text-on-primary border border-primary hover:bg-forest-hover focus-ring-forest',
   secondary: 'bg-surface text-ink border border-border-control hover:border-primary focus-ring',
   ghost: 'bg-transparent text-ink-muted-strong border border-transparent hover:bg-row-hover hover:text-ink focus-ring',
   danger: 'bg-surface text-error-text border border-signal-terracotta hover:bg-row-hover focus-ring',

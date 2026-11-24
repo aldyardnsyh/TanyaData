@@ -6,11 +6,9 @@ import { resolvePeriod } from '@/lib/analytics/period';
 import { readSettingsState } from '@/lib/settings';
 import { oneRow, num } from '@/lib/analytics/sql';
 import { nowJakartaIso } from '@/lib/date';
-
-function llmMode(): 'off' | 'assist' | 'full' {
-  const value = (process.env.LLM_MODE ?? 'off').toLowerCase();
-  return value === 'assist' || value === 'full' ? value : 'off';
-}
+import { deriveSystemRuntime } from '@/lib/meta/runtime';
+import { buildSystemPayload } from '@/lib/meta/system';
+import pkg from '../package.json';
 
 export function getMeta(db: DB = getWorkspaceDb()): MetaResponse {
   const state = readSettingsState(db);
@@ -25,10 +23,13 @@ export function getMeta(db: DB = getWorkspaceDb()): MetaResponse {
     "SELECT COUNT(*) AS n FROM data_sources WHERE kind = 'dataset' AND status = 'READY'",
   );
 
-  const mode = llmMode();
+  // META-01: status runtime diturunkan dari env + helper jalur query, bukan
+  // string mati. `capabilities.rag` = mode EFEKTIF, karena itulah yang dialami
+  // pengguna (API_CONTRACT §9.3.1).
+  const runtime = deriveSystemRuntime();
 
   return {
-    app: { name: 'TanyaData', version: '1.0.0', build: process.env.BUILD_ID ?? 'local' },
+    app: { name: 'TanyaData', version: pkg.version, build: process.env.BUILD_ID ?? 'local' },
     data: {
       activeDataset: { ...scope.ref, tables: num(tables?.n) },
       periodDefaults: {
@@ -45,11 +46,12 @@ export function getMeta(db: DB = getWorkspaceDb()): MetaResponse {
       datasetChoices: datasetChoices(db),
     },
     capabilities: {
-      llm: mode !== 'off',
-      llmMode: mode,
-      rag: 'fts5',
+      llm: runtime.llm.enabled,
+      llmMode: runtime.llm.mode,
+      rag: runtime.effectiveRetrieval,
       sql: 'sqlite',
     },
     generatedAt: nowJakartaIso(),
+    system: buildSystemPayload(runtime),
   };
 }

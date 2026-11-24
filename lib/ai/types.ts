@@ -269,10 +269,31 @@ export type LlmFallback =
   | 'llm_timeout'
   | 'llm_error'
   | 'llm_invalid'
-  | 'llm_ungrounded';
+  | 'llm_ungrounded'
+  | 'llm_all_models_failed';
+
+/**
+ * Observability untuk rantai fallback model. Sengaja hanya berisi label aman:
+ * nama model, jumlah attempt, dan alasan kegagalan. TIDAK ADA API key, header,
+ * body, atau teks prompt — aman untuk dicatat ke log/eval.
+ */
+export interface LlmCallMeta {
+  /** Model yang dipakai (atau model terakhir yang dicoba bila semua gagal). */
+  model: string | null;
+  /** Jumlah percobaan HTTP yang benar-benar dikirim. */
+  attempts: number;
+  /** Urutan model yang dicoba (model utama lebih dulu). */
+  modelsTried: string[];
+  /** Alasan kegagalan per model, berurutan. */
+  failures: Array<{ model: string; reason: LlmFallback; detail?: string }>;
+}
 
 export interface LlmOutcome<T> {
   ok: boolean;
   data: T | null;
   fallbackReason: LlmFallback | null;
+  /** Label pendek aman untuk log (mis. `http_429`). Tidak pernah berisi kunci. */
+  detail?: string;
+  /** Observability rantai fallback (opsional; tidak mengubah kontrak lama). */
+  meta?: LlmCallMeta;
 }

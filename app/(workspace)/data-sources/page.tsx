@@ -23,6 +23,7 @@ import { StatusBadge } from '@/components/signal/status-badge';
 import type { DotTone } from '@/components/signal/status-dot';
 import { toast } from '@/components/ui/toaster';
 import { Pagination } from '@/components/ui/pagination';
+import { NO_DOCUMENTS_MESSAGE } from '@/components/ui/no-documents-empty';
 
 // Pagination client-side: payload daftar sumber kecil (metadata), fetch semua
 // tetap murah; grid dibatasi 9 kartu per halaman agar komposisi tetap rapi.
@@ -37,11 +38,18 @@ const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   UNSUPPORTED_MEDIA_TYPE: 'Format file tidak didukung.',
   UNPROCESSABLE_SOURCE: 'File tidak dapat diproses. Periksa format atau kolom wajibnya.',
   INTERNAL_ERROR: 'Terjadi kesalahan internal. Silakan coba lagi.',
+  RATE_LIMITED: 'Terlalu banyak permintaan. Coba lagi beberapa saat lagi.',
+  PUBLIC_DEPLOY_BLOCKED: 'Fitur ini tidak tersedia pada deployment publik tanpa autentikasi.',
 };
 const DATASET_EXTS = ['.csv', '.xlsx'];
 const DOCUMENT_EXTS = ['.pdf', '.docx', '.txt', '.md'];
 const MAX_BYTES = 25 * 1024 * 1024;
-const num = (v: number | null | undefined) => (v == null ? 'Belum dihitung' : formatNumber(v));
+// Label jujur untuk metrik yang memang tidak tersedia. "Belum dihitung"
+// menyiratkan ada proses tertunda, padahal field memang null karena tipe
+// sumbernya (dokumen tidak punya baris, dataset tidak punya potongan teks).
+const num = (v: number | null | undefined) => (v == null ? 'Tidak tersedia' : formatNumber(v));
+const ROW_COUNT_REASON = 'Jumlah baris dihitung dari dataset yang terdaftar. Dokumen tidak memiliki baris data terstruktur, jadi tidak menyumbang angka.';
+const CHUNK_COUNT_REASON = 'Jumlah potongan teks terindeks dari dokumen. Dataset tidak memiliki potongan teks.';
 
 function formatBytes(bytes: number | null | undefined): string {
   if (bytes == null) return '—';
@@ -69,6 +77,7 @@ export default function DataSourcesPage() {
   const [filter, setFilter] = useState('all');
   const [srcPage, setSrcPage] = useState(1);
   const [uploading, setUploading] = useState(false);
+  const [uploadName, setUploadName] = useState<string | null>(null);
   const [job, setJob] = useState<JobState | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SourceListItem | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -78,6 +87,10 @@ export default function DataSourcesPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewLimit, setPreviewLimit] = useState(5);
+  // Seleksi eksplisit: tepat satu kartu menjadi primary, sisanya secondary.
+  // Dipegang di sini (bukan di dalam LayoutGrid) agar bisa di-reset saat
+  // filter, halaman, atau sumber berubah.
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
 
   const items = sources.data?.items ?? [];
   const counts = sources.data?.counts;
@@ -87,6 +100,10 @@ export default function DataSourcesPage() {
   const activeCount = items.filter((s) => s.status === 'READY').length;
   const datasetName = meta.data?.data.activeDataset.name;
   const ragLabel = meta.data?.capabilities.rag.toUpperCase() ?? 'FTS5';
+  // Workspace kosong (SEED_PROFILE=none): tidak ada sumber sama sekali.
+  // Dipakai untuk mengganti KPI/chart bernilai 0 dengan empty state jujur.
+  const noDocuments = !sources.loading && !sources.error && items.length === 0;
+  const scrollToUpload = () => document.getElementById('dropzone-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const tabs = [
     { id: 'all', label: `Semua (${items.length})` },
@@ -140,11 +157,39 @@ export default function DataSourcesPage() {
     } finally { setPreviewLoading(false); }
   }, []);
 
-  useEffect(() => {
-    if (previewId || sources.loading || items.length === 0) return;
-    const first = items.find((s) => s.kind === 'dataset') ?? items[0];
-    void loadPreview(first.id, 5);
-  }, [sources.loading, items, previewId, loadPreview]);
+  // Pratinjau tidak pernah dimuat otomatis. User harus menekan "Pratinjau"
+  // pada kartu sumber terlebih dahulu (F-03: state jujur, tanpa data diam-diam).
+  const resetPreview = useCallback(() => {
+    setPreviewId(null);
+    setPreviewDetail(null);
+    setPreview(null);
+    setPreviewError(null);
+    setPreviewLoading(false);
+    setPreviewLimit(5);
+  }, []);
+
+  const resetSelection = useCallback(() => {
+    setSelectedSourceId(null);
+    resetPreview();
+  }, [resetPreview]);
+
+  // Klik kartu = pilih sumber. Berpindah ke sumber lain mengosongkan pratinjau
+  // lama supaya baris dari dokumen sebelumnya tidak ikut tampil.
+  const selectSource = useCallback((id: string) => {
+    if (id === selectedSourceId) return;
+    resetPreview();
+    setSelectedSourceId(id);
+  }, [selectedSourceId, resetPreview]);
+
+  // Klik "Pratinjau" = pilih kartu itu lalu muat pratinjau secara eksplisit.
+  const previewSource = useCallback((id: string) => {
+    if (id !== selectedSourceId) setSelectedSourceId(id);
+    void loadPreview(id, 5);
+  }, [selectedSourceId, loadPreview]);
+
+  // Kembali dari halaman detail (atau restore dari router cache) mengembalikan
+  // kartu ke ukuran awal: tidak ada kartu yang tetap membesar/aktif.
+  useEffect(() => { resetSelection(); }, [resetSelection]);
 
   const upload = useCallback(async (files: FileList | null) => {
     const file = files?.[0];
@@ -152,6 +197,7 @@ export default function DataSourcesPage() {
     const ext = `.${file.name.split('.').pop()?.toLowerCase() ?? ''}`;
     if (![...DATASET_EXTS, ...DOCUMENT_EXTS].includes(ext)) { toast({ status: 'error', message: ERROR_MESSAGES.UNSUPPORTED_MEDIA_TYPE }); return; }
     if (file.size > MAX_BYTES) { toast({ status: 'error', message: ERROR_MESSAGES.FILE_TOO_LARGE }); return; }
+    setUploadName(file.name);
     setUploading(true);
     try {
       const form = new FormData();
@@ -164,11 +210,12 @@ export default function DataSourcesPage() {
         throw new Error(ERROR_MESSAGES[code] ?? body?.error?.message ?? 'Unggah gagal.');
       }
       toast({ status: 'success', message: 'File ditambahkan. Pemrosesan dimulai.' });
+      resetSelection();
       sources.retry();
     } catch (err) {
       toast({ status: 'error', message: err instanceof Error ? err.message : 'Unggah gagal.' });
-    } finally { setUploading(false); }
-  }, [sources]);
+    } finally { setUploading(false); setUploadName(null); }
+  }, [sources, resetSelection]);
 
   const reindex = async (source: SourceListItem) => {
     try {
@@ -198,7 +245,7 @@ export default function DataSourcesPage() {
         throw new Error(code === 'CONFLICT' ? ERROR_MESSAGES.CONFLICT : ERROR_MESSAGES[code]);
       }
       toast({ status: 'success', message: 'Sumber dihapus.' });
-      if (previewId === deleteTarget.id) { setPreviewId(null); setPreviewDetail(null); setPreview(null); }
+      resetSelection();
       setDeleteTarget(null); sources.retry();
     } catch (err) {
       toast({ status: 'error', message: err instanceof Error ? err.message : 'Penghapusan gagal.' });
@@ -206,9 +253,9 @@ export default function DataSourcesPage() {
   };
 
   const summaryItems: BentoItem[] = [
-    { id: 'storage', label: 'Total penyimpanan', value: sources.loading ? '…' : `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`, source: `${num(counts?.dataset)} DATASET`, span: 'support' },
-    { id: 'docs', label: 'Dokumen terindeks', value: sources.loading ? '…' : num(counts?.document), source: `${num(totalChunks)} POTONGAN`, span: 'support' },
-    { id: 'rows', label: 'Baris tersimpan', value: sources.loading ? '…' : num(totalRows), source: 'SQLITE · SQL', span: 'support' },
+    { id: 'storage', label: 'Total penyimpanan', value: sources.loading ? '…' : `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`, source: `${num(counts?.dataset)} DATASET`, tooltip: 'Jumlah berkas dataset yang terdaftar di workspace ini.', span: 'support' },
+    { id: 'docs', label: 'Dokumen terindeks', value: sources.loading ? '…' : num(counts?.document), source: `${num(totalChunks)} POTONGAN`, tooltip: CHUNK_COUNT_REASON, span: 'support' },
+    { id: 'rows', label: 'Baris tersimpan', value: sources.loading ? '…' : num(totalRows), source: 'SQLITE · SQL', tooltip: ROW_COUNT_REASON, span: 'support' },
     { id: 'status', label: 'Status pemrosesan', value: (counts?.failed ?? 0) > 0 ? `${counts?.failed} perlu diperiksa` : 'Semua siap', source: 'SQLITE · FTS5', span: 'support' },
   ];
 
@@ -219,28 +266,40 @@ export default function DataSourcesPage() {
     { id: 'processing', label: 'Sumber diproses', value: num(counts?.processing) },
   ];
 
-  const cards: RevealCard[] = pageItems.map((source) => ({
-    id: source.id,
-    title: source.name,
-    meta: `${source.kind.toUpperCase()} · ${source.format.toUpperCase()} · ${formatBytes(source.sizeBytes)}`,
-    preview: (
-      <div className="flex flex-wrap items-center justify-between gap-s2">
-        <StatusBadge label={statusLabel(source.status)} tone={statusTone(source.status)} />
-        <span className="mono-meta">{source.kind === 'dataset' ? `${num(source.rowCount)} BARIS` : `${num(source.chunkCount)} POTONGAN`}</span>
-      </div>
-    ),
-    detail: (
-      <div className="flex flex-col gap-s2">
-        <p className="font-body text-caption text-ink-72">Dibuat {source.createdAt.slice(0, 10)}</p>
-        <div className="flex flex-wrap gap-s2">
-          <Link href={`/data-sources/${source.id}`} className="touch-44 inline-flex items-center rounded-control border border-forest px-s2 font-display text-label font-semibold text-forest focus-ring">Buka detail</Link>
-          <button type="button" onClick={() => void loadPreview(source.id, 5)} className="touch-44 inline-flex items-center rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink focus-ring">Pratinjau</button>
-          <button type="button" onClick={() => void reindex(source)} className="touch-44 inline-flex items-center rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink focus-ring">Indeks ulang</button>
-          {source.id !== 'seed' && <button type="button" onClick={() => setDeleteTarget(source)} className="touch-44 inline-flex items-center rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink focus-ring">Hapus</button>}
+  const cards: RevealCard[] = pageItems.map((source) => {
+    const previewed = previewId === source.id;
+    return {
+      id: source.id,
+      title: source.name,
+      meta: `${source.kind.toUpperCase()} · ${source.format.toUpperCase()} · ${formatBytes(source.sizeBytes)}`,
+      selectedLabel: 'Dipilih',
+      preview: (
+        <div className="flex flex-wrap items-center justify-between gap-s2">
+          <StatusBadge label={statusLabel(source.status)} tone={statusTone(source.status)} />
+          <span className="mono-meta">{source.kind === 'dataset' ? `${num(source.rowCount)} BARIS` : `${num(source.chunkCount)} POTONGAN`}</span>
         </div>
-      </div>
-    ),
-  }));
+      ),
+      detail: (
+        <div className="flex flex-col gap-s2">
+          <p className="font-body text-caption text-ink-72">Dibuat {source.createdAt.slice(0, 10)}</p>
+          <div className="flex flex-wrap gap-s2">
+            <Link href={`/data-sources/${source.id}`} className="touch-44 inline-flex items-center rounded-control border border-forest px-s2 font-display text-label font-semibold text-forest focus-ring">Buka detail</Link>
+            <button
+              type="button"
+              onClick={() => previewSource(source.id)}
+              aria-pressed={previewed}
+              className={`touch-44 inline-flex items-center gap-s1 rounded-control px-s2 font-display text-label font-semibold focus-ring ${previewed ? 'border border-forest bg-forest text-porcelain' : 'border border-forest text-forest'}`}
+            >
+              {previewed && <span className="state-dot state-dot-active" aria-hidden="true" />}
+              Pratinjau
+            </button>
+            <button type="button" onClick={() => void reindex(source)} className="touch-44 inline-flex items-center rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink focus-ring">Indeks ulang</button>
+            {source.id !== 'seed' && <button type="button" onClick={() => setDeleteTarget(source)} className="touch-44 inline-flex items-center rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink focus-ring">Hapus</button>}
+          </div>
+        </div>
+      ),
+    };
+  });
 
   const previewColumns = preview?.columns ?? [];
   const previewRows = preview?.rows ?? [];
@@ -284,40 +343,57 @@ export default function DataSourcesPage() {
                 </div>
               )}
               {!sources.loading && !sources.error && (
-                <>
-                  <p className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
-                    Sumber terdaftar
-                  </p>
-                  <p className="text-stat-lg text-lime text-glow-lime">{num(items.length)}</p>
-                  <p className="mt-s2 font-mono text-[11px] uppercase tracking-[0.06em] text-dark-muted">
-                    SQLITE · SQL + {ragLabel}
-                  </p>
-                </>
+                noDocuments ? (
+                  <div className="flex flex-col items-start gap-s3">
+                    <p className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
+                      Sumber terdaftar
+                    </p>
+                    <p className="max-w-[46ch] font-body text-body text-porcelain">{NO_DOCUMENTS_MESSAGE}</p>
+                    <button type="button" onClick={scrollToUpload} className="touch-44 rounded-control bg-lime px-s3 font-display text-label font-semibold text-ink focus-ring-forest">
+                      Unggah dokumen
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">
+                      Sumber terdaftar
+                    </p>
+                    <p className="text-stat-lg text-lime text-glow-lime">{num(items.length)}</p>
+                    <p className="mt-s2 font-mono text-[11px] uppercase tracking-[0.06em] text-dark-muted">
+                      SQLITE · SQL + {ragLabel}
+                    </p>
+                  </>
+                )
               )}
             </div>
-            <dl className="grid grid-cols-1 gap-s4 sm:grid-cols-3 lg:col-span-7">
-              {bannerStats.map((item) => (
-                <div key={item.id} className="min-w-0">
-                  <dt className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">{item.label}</dt>
-                  <dd className="mt-s1 font-body text-metric tabular text-porcelain">
-                    {sources.loading ? (
-                      <span className="animate-skeleton inline-block h-s5 w-24 rounded-control bg-porcelain/10" aria-hidden="true" />
-                    ) : sources.error ? (
-                      '—'
-                    ) : (
-                      item.value
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            {noDocuments ? (
+              <p className="font-body text-caption text-dark-muted">Ringkasan muncul setelah berkas diunggah.</p>
+            ) : (
+              <dl className="grid grid-cols-1 gap-s4 sm:grid-cols-3 lg:col-span-7">
+                {bannerStats.map((item) => (
+                  <div key={item.id} className="min-w-0">
+                    <dt className="font-display text-caption font-semibold uppercase tracking-[0.12em] text-dark-muted">{item.label}</dt>
+                    <dd className="mt-s1 font-body text-metric tabular text-porcelain">
+                      {sources.loading ? (
+                        <span className="animate-skeleton inline-block h-s5 w-24 rounded-control bg-porcelain/10" aria-hidden="true" />
+                      ) : sources.error ? (
+                        '—'
+                      ) : (
+                        item.value
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </div>
 
           <div className="mt-s5 max-w-2xl">
             <AnimatedTabs
               tabs={tabs}
               activeId={filter}
-              onChange={(id) => { setFilter(id); setSrcPage(1); }}
+              onChange={(id) => { setFilter(id); setSrcPage(1); resetSelection(); }}
+              ariaLabel="Filter sumber data"
               tone="dark"
               state={sources.loading ? 'loading' : 'default'}
             />
@@ -352,12 +428,37 @@ export default function DataSourcesPage() {
               {(uploading || job) && (
                 <div className="mt-s3 rounded-control border border-hairline-dark bg-porcelain/10 p-s3">
                   <div className="flex items-center justify-between gap-s2">
-                    <span className="min-w-0 truncate font-body text-body text-porcelain">{uploading ? 'Mengunggah berkas' : job?.name}</span>
-                    <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-dark-muted">{uploading ? 'MENGUNGGAH' : `${job?.step ?? 'MEMPROSES'} · ${job?.progress ?? 0}%`}</span>
+                    <span className="min-w-0 truncate font-body text-body text-porcelain">
+                      {uploading ? `Mengunggah ${uploadName ?? 'berkas'}…` : job?.name}
+                    </span>
+                    <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-dark-muted">
+                      {uploading ? 'MENGUNGGAH' : `${job?.step ?? 'MEMPROSES'} · ${job?.progress ?? 0}%`}
+                    </span>
                   </div>
-                  <div className="mt-s2 h-s2 w-full overflow-hidden rounded-control bg-porcelain/10" role="progressbar" aria-valuenow={uploading ? undefined : job?.progress} aria-valuemin={0} aria-valuemax={100}>
-                    <div className="h-full bg-lime transition-[width] duration-[var(--motion-slow)]" style={{ width: uploading ? '33%' : `${job?.progress ?? 0}%` }} />
-                  </div>
+                  {uploading ? (
+                    /* fetch tidak mengekspos progres unggah dan kontrak API tidak
+                       punya endpoint progres upload: indeterminate, tanpa angka
+                       palsu (F-02 / P5 "state jujur"). Progres determinate di bawah
+                       berasal dari polling job nyata (GET /api/sources/:id). */
+                    <div
+                      className="mt-s2 h-s2 w-full overflow-hidden rounded-control bg-porcelain/10"
+                      role="progressbar"
+                      aria-label={`Mengunggah ${uploadName ?? 'berkas'}`}
+                    >
+                      <div className="animate-progress-indeterminate h-full w-1/3 rounded-control bg-lime" />
+                    </div>
+                  ) : (
+                    <div
+                      className="mt-s2 h-s2 w-full overflow-hidden rounded-control bg-porcelain/10"
+                      role="progressbar"
+                      aria-label={`Memproses ${job?.name ?? 'berkas'}`}
+                      aria-valuenow={job?.progress ?? 0}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
+                      <div className="h-full bg-lime transition-[width] duration-[var(--motion-slow)]" style={{ width: `${job?.progress ?? 0}%` }} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -366,9 +467,17 @@ export default function DataSourcesPage() {
 
         <SectionRule className="mt-s5" />
 
-        {/* Ringkasan sumber: Bento metrik pendukung. */}
+        {/* Ringkasan sumber: Bento metrik pendukung. Saat workspace kosong,
+            KPI tidak menampilkan 0 yang menyesatkan melainkan empty state. */}
         <section aria-label="Ringkasan sumber" className="mt-s5">
-          <BentoGrid items={summaryItems} state={sources.loading ? 'loading' : sources.error ? 'error' : 'default'} errorTitle="Ringkasan gagal dimuat." onRetry={sources.retry} />
+          <BentoGrid
+            items={summaryItems}
+            state={sources.loading ? 'loading' : sources.error ? 'error' : noDocuments ? 'empty' : 'default'}
+            emptyTitle={NO_DOCUMENTS_MESSAGE}
+            emptyAction={noDocuments ? { label: 'Unggah dokumen', onClick: scrollToUpload } : undefined}
+            errorTitle="Ringkasan gagal dimuat."
+            onRetry={sources.retry}
+          />
         </section>
 
         <SectionRule className="mt-s5" />
@@ -385,14 +494,16 @@ export default function DataSourcesPage() {
           <SectionRule className="mb-s4" />
           <LayoutGrid
             cards={cards}
+            selectedId={selectedSourceId}
+            onSelect={selectSource}
             state={sources.loading ? 'loading' : sources.error ? 'error' : visible.length === 0 ? 'empty' : 'default'}
-            emptyTitle="Belum ada sumber pada filter ini. Unggah berkas untuk menambah sumber."
-            emptyAction={{ label: 'Unggah berkas', onClick: () => document.getElementById('dropzone-heading')?.scrollIntoView({ behavior: 'smooth' }) }}
+            emptyTitle={items.length === 0 ? NO_DOCUMENTS_MESSAGE : 'Belum ada sumber pada filter ini. Unggah berkas untuk menambah sumber.'}
+            emptyAction={{ label: 'Unggah dokumen', onClick: scrollToUpload }}
             errorTitle="Daftar sumber gagal dimuat."
             onRetry={sources.retry}
           />
           <div className="mt-s3">
-            <Pagination page={srcPage} pageSize={SRC_PAGE_SIZE} total={visible.length} onPage={setSrcPage} label="sumber" />
+            <Pagination page={srcPage} pageSize={SRC_PAGE_SIZE} total={visible.length} onPage={(page) => { setSrcPage(page); resetSelection(); }} label="sumber" />
           </div>
         </section>
 
@@ -416,7 +527,7 @@ export default function DataSourcesPage() {
               {previewId && <button type="button" onClick={() => void loadPreview(previewId, previewLimit)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>}
             </div>
           ) : !previewDetail ? (
-            <div className="surface flex items-center gap-s2 rounded-card-lg p-s4"><StatusBadge label="Belum ada pratinjau" tone="neutral" /><span className="font-body text-body text-ink-72">Pilih sumber untuk melihat pratinjau.</span></div>
+            <div className="surface flex items-center gap-s2 rounded-card-lg p-s4"><StatusBadge label="Belum ada pratinjau" tone="neutral" /><span className="font-body text-body text-ink-72">{noDocuments ? NO_DOCUMENTS_MESSAGE : 'Pilih sumber, lalu klik Pratinjau pada kartunya untuk melihat baris data.'}</span></div>
           ) : previewRows.length === 0 ? (
             <div className="surface flex items-center gap-s2 rounded-card-lg p-s4"><StatusBadge label="Kosong" tone="neutral" /><span className="font-body text-body text-ink-72">Tidak ada baris untuk ditampilkan.</span></div>
           ) : (

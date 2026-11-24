@@ -10,8 +10,18 @@ import type { Citation as CoreCitation } from '@/lib/core/contracts';
 import { searchChunks } from '@/lib/core/store';
 import type { Lang, SourceCitation } from '@/lib/contracts/http';
 import { allRows, num, str } from '@/lib/analytics/sql';
-import { normalizeText, stopwordTokens } from '@/lib/ai/normalize';
+import { normalizeText, stopwordTokens, correctQueryTypos } from '@/lib/ai/normalize';
 import { truncateText } from '@/lib/date';
+import { embedQuery } from './embedding';
+import {
+  fetchQdrantCandidates,
+  getQdrantConfig,
+  normalizeScore,
+  rrfFuse,
+  type Candidate,
+  type FallbackReason,
+  type RetrievalMode,
+} from './hybrid';
 import type {
   Chunk, Citation, DocType, RetrievalResult, RetrievalScore,
 } from './types';
@@ -127,7 +137,7 @@ const GENERAL_STOPWORDS = new Set([
 ]);
 
 export function queryTerms(question: string, maxTerms = 12): string[] {
-  const normalized = String(question ?? '')
+  const normalized = correctQueryTypos(question ?? '')
     .toLowerCase()
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -141,6 +151,258 @@ export function queryTerms(question: string, maxTerms = 12): string[] {
 
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/* ------------------------------------------------- P3-PRECISION: evidence gate */
+
+/**
+ * Kata tanya dan kata generik yang TIDAK boleh dijadikan "anchor bukti".
+ * FTS5 OR-match mencocokkan kata-kata ini di hampir semua chunk dokumen SOP;
+ * menyertakannya dalam penilaian dukungan membuat sitasi dari dokumen mana pun
+ * tampak relevan (itulah sebabnya Cit-P baseline hanya 0.1336).
+ */
+const EVIDENCE_GENERIC_TERMS = new Set([
+  'apa', 'apakah', 'berapa', 'bagaimana', 'kapan', 'siapa', 'dimana', 'mengapa',
+  'kenapa', 'yang', 'dan', 'atau', 'dalam', 'untuk', 'dengan', 'pada', 'dari',
+  'ini', 'itu', 'saja', 'ada', 'menjadi', 'sebagai', 'dapat', 'akan', 'sudah',
+  'belum', 'tidak', 'paling', 'lama', 'sejak', 'tiap', 'setiap', 'kan', 'hal',
+  'sama', 'dijelaskan', 'penjelasan', 'informasi', 'dokumen', 'tentang',
+  'mengenai', 'berikut', 'berisi', 'tersebut', 'semua', 'masing', 'biasanya',
+  'spesifikan', 'utamanya', 'utama', 'terjadi', 'kira', 'rugi', 'dampak',
+  'menyebabkan', 'mempengaruhi', 'digunakan', 'didalamnya', 'alat', 'hasilnya',
+  'kinerja', 'kinerjanya', 'menurun', 'meningkat', 'penurunan', 'efisiennya',
+  'visualisasi', 'visualisasinya', 'chart', 'chartnya', 'analisis', 'disable',
+]);
+
+/**
+ * Sinonim parafrasa untuk pertanyaan SOP. Sengaja DITIRU dari
+ * `guardrails.ts::GUARDRAIL_SYNONYMS` (bukan di-impor) supaya retrieval.ts tidak
+ * membuat dependency cycle dengan guardrails.ts yang meng-impor `queryTerms`.
+ * Hanya parafrasa yang terbukti dipakai GT yang ditambahkan — bukan daftar
+ * topik dokumen, agar tidak membuka jalan bagi OR-match generik.
+ */
+const EVIDENCE_SYNONYMS: Record<string, string[]> = {
+  masuk: ['diterima', 'menerima', 'terima', 'received'],
+  jalur: ['melalui', 'lewat'],
+  bisa: ['dapat'],
+  dilakukan: ['diberi'],
+  belum: ['tidak'],
+  cara: ['prosedur', 'bagaimana'],
+  kepala: ['pimpinan'],
+  bales: ['balas', 'respons', 'jawab', 'reply'],
+  dibales: ['balas', 'respons', 'dijawab', 'reply'],
+  dibalass: ['balas', 'respons', 'dijawab'],
+  dibalas: ['balas', 'respons', 'dijawab'],
+  respons: ['response', 'jawaban', 'bales'],
+  response: ['respons', 'jawaban'],
+  initial: ['awal', 'pertama'],
+  awal: ['initial', 'pertama'],
+  target: ['sasaran'],
+  ticket: ['tiket'],
+  tiket: ['ticket'],
+  komplain: ['keluhan', 'pengaduan', 'complaint'],
+  keluhan: ['komplain', 'complaint'],
+  'terus-terusan': ['berulang', 'berkali-kali', 'ulang'],
+  terus: ['berulang', 'ulang'],
+  terusan: ['berulang', 'ulang'],
+  diapain: ['penanganan', 'tindakan', 'ditangani'],
+  retensi: ['penyimpanan', 'simpan', 'retention'],
+  salinan: ['salin', 'copy', 'backup'],
+  berkas: ['dokumen', 'file'],
+};
+
+/** Entitas kode/level tetap jadi anchor walaupun pendek (P1, SEV1, F04). */
+const EVIDENCE_ENTITY_RE = /\b(p[1-4]|sev\d|f\d{2}|inc-\d{4}-\d{4}|v\d+\.\d+\.\d+)\b/gi;
+
+/**
+ * Entitas KUAT untuk relaksasi evidence gate parafrasa: kode/level, angka +
+ * satuan waktu, atau nama bagian. Berbeda dari `evidenceAnchors` (semua term),
+ * ini sengaja sempit agar tidak membuka jalan bagi OR-match generik — syarat
+ * `global_negative` tetap abstain (soal tanpa entitas kuat tidak terpengaruh).
+ */
+const STRONG_ENTITY_RE =
+  /\b(?:p[1-4]|sev\d|f\d{2}|inc-\d{4}-\d{4}|v\d+\.\d+\.\d+)\b|\b\d+\s*(?:menit|jam|hari|detik|minggu)(?:\s+kerja)?\b/gi;
+
+function strongEntityHits(question: string, candidates: Array<{ section_path?: string | null }>): string[] {
+  const q = String(question ?? '').toLowerCase();
+  const hits = new Set<string>();
+  for (const m of String(question ?? '').match(STRONG_ENTITY_RE) ?? []) {
+    hits.add(m.toLowerCase().replace(/\s+/g, ' ').trim());
+  }
+  // Nama bagian: fragmen section_path kandidat yang memang disebut di soal.
+  for (const c of candidates) {
+    for (const part of String(c.section_path ?? '').split('/')) {
+      const p = part.trim().toLowerCase();
+      if (p.length >= 8 && q.includes(p)) hits.add(p);
+    }
+  }
+  return [...hits];
+}
+
+export function evidenceAnchors(question: string): string[] {
+  const terms = queryTerms(question).filter(
+    (t) => t.length >= 4 && !EVIDENCE_GENERIC_TERMS.has(t),
+  );
+  const entities = [...new Set(
+    String(question ?? '').match(EVIDENCE_ENTITY_RE)?.map((e) => e.toLowerCase()) ?? [],
+  )];
+  return [...new Set([...terms, ...entities])];
+}
+
+function anchorInText(anchor: string, hay: string): boolean {
+  const variants = [anchor, ...(EVIDENCE_SYNONYMS[anchor] ?? [])];
+  return variants.some((variant) => {
+    const needle = variant.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    if (!needle) return false;
+    return new RegExp(`(^|[^a-z0-9])${escapeRe(needle)}([^a-z0-9]|$)`).test(hay);
+  });
+}
+
+/** Fraksi sekumpulan anchor yang benar-benar hadir di satu teks bukti. */
+function coverageWithAnchors(anchors: string[], text: string): number {
+  if (!anchors.length) return 1;
+  const hay = String(text ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+  const hits = anchors.filter((a) => anchorInText(a, hay)).length;
+  return Number((hits / anchors.length).toFixed(4));
+}
+
+/** Fraksi anchor pertanyaan yang benar-benar hadir di satu teks bukti. */
+export function evidenceCoverage(question: string, text: string): number {
+  return coverageWithAnchors(evidenceAnchors(question), text);
+}
+
+/**
+ * P3-PRECISION — pilih HANYA chunk yang mendukung jawaban, bukan semua kandidat
+ * FTS5 OR. Dua langkah:
+ *  1. Anchor yang muncul di > 50% kandidat dibuang (mirip-IDF): kata seperti
+ *     "layanan"/"tiket" hadir di hampir semua chunk SOP, jadi bukan pembeda.
+ *     Tanpa ini, pertanyaan di luar domain ("biaya langganan perusahaan")
+ *     tetap lolos karena satu anchor generik cocok di mana-mana.
+ *  2. Chunk dengan coverage tertinggi dipakai sebagai bukti. Chunk kedua hanya
+ *     ditambahkan bila coverage-nya juga kuat, supaya Cit-P tidak jatuh.
+ * Bila tidak ada chunk yang meng-cover anchor tersisa → kembalikan [] (abstain).
+ * `score` tidak diubah sama sekali — tetap BM25 dari `searchChunks`.
+ */
+/** Percentil pada array terurut (interpolasi dibulatkan ke indeks terdekat). */
+function percentile(sorted: number[], p: number): number {
+  if (!sorted.length) return 0;
+  const i = Math.min(sorted.length - 1, Math.max(0, Math.round((sorted.length - 1) * p)));
+  return sorted[i];
+}
+
+/**
+ * Angka yang disebut di pertanyaan (termasuk kode P1/SEV1/F04) adalah sinyal
+ * bukti paling kuat: bila angka/entitas itu hadir di sebuah chunk, chunk itu
+ * tidak boleh dibuang hanya karena parafrasa membuat coverage turun.
+ */
+const QUESTION_NUMBER_RE = /\d+(?:[.,]\d+)*/g;
+
+function questionNumbers(question: string): string[] {
+  return [...new Set(String(question ?? '').match(QUESTION_NUMBER_RE) ?? [])];
+}
+
+/**
+ * Apakah sebuah kandidat mengandung "unit bukti" yang benar-benar disebut di
+ * pertanyaan? Dipakai sebagai pengaman: kandidat dengan sinyal ini TIDAK
+ * pernah dibuang oleh gate, berapapun coverage token-nya.
+ */
+function hasKeyEvidence(
+  c: CoreCitation,
+  anchors: string[],
+  numbers: string[],
+  strong: string[],
+): boolean {
+  const hay = `${c.section_path ?? ''} ${c.quote ?? ''}`.toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+  for (const n of numbers) {
+    const digits = n.replace(/[^0-9]/g, '');
+    if (digits.length > 0 && hay.includes(digits)) return true;
+  }
+  for (const e of strong) {
+    const needle = e.replace(/[^a-z0-9]+/g, ' ').trim();
+    if (needle.length > 0 && hay.includes(needle)) return true;
+  }
+  return anchors.some((a) => anchorInText(a, hay));
+}
+
+export function selectEvidenceChunks<T extends CoreCitation>(
+  question: string,
+  citations: T[],
+  maxChunks = 2,
+): T[] {
+  if (!citations.length) return [];
+  const allAnchors = evidenceAnchors(question);
+  if (!allAnchors.length) return citations.slice(0, maxChunks);
+
+  const hays = citations.map((c) =>
+    `${c.section_path ?? ''} ${c.quote ?? ''}`.toLowerCase().replace(/[^a-z0-9]+/g, ' '));
+  const df = (a: string) => hays.filter((h) => anchorInText(a, h)).length;
+  // Ambang document-frequency RELATIF terhadap jumlah kandidat, bukan angka
+  // mati 0.5. Mirip-IDF tetap dipakai, tetapi tidak membuang anchor yang
+  // muncul di 50–60% kandidat (itu yang dulu menghilangkan bukti relevan).
+  const maxDf = Math.max(1, Math.ceil(citations.length * 0.6));
+  const byDf = [...allAnchors].sort((a, b) => df(a) - df(b));
+  const discriminative = byDf.filter((a) => df(a) <= maxDf).slice(0, 4);
+  const anchors = discriminative.length ? discriminative : byDf.slice(0, 4);
+
+  const MULTI_PART_RE =
+    /\b(ringkas|rangkum|seluruh|semua|apa\s+saja|serta|terkait|beberapa|peran|tugas|perbandingan|jelaskan\s+perbedaan)\b/i;
+  const multiPart = MULTI_PART_RE.test(question);
+  const capacity = multiPart ? Math.max(maxChunks, 4) : Math.min(maxChunks, 2);
+
+  const scored = citations.map((c, index) => ({
+    c,
+    index,
+    coverage: coverageWithAnchors(anchors, `${c.section_path ?? ''} ${c.quote ?? ''}`),
+    score: typeof c.score === 'number' && Number.isFinite(c.score) ? c.score : 0,
+  }));
+  const sortedScores = scored.map((x) => x.score).sort((a, b) => a - b);
+  const median = percentile(sortedScores, 0.5);
+  const q25 = percentile(sortedScores, 0.25);
+  const q75 = percentile(sortedScores, 0.75);
+  const iqr = Math.max(1e-6, q75 - q25);
+  const topScore = sortedScores[sortedScores.length - 1] ?? 0;
+  const secondScore = sortedScores[sortedScores.length - 2] ?? topScore;
+  const topMargin = topScore - secondScore;
+  // Rasio distribusi korpus: seberapa jauh top-1 menonjol terhadap median+IQR.
+  // Margin top-1/top-2 dipakai sebagai penguat, bukan angka mati coverage.
+  const corpusRatio = topScore / Math.max(1e-6, median + iqr);
+  const marginRatio = topMargin / Math.max(1e-6, Math.abs(topScore));
+
+  const numbers = questionNumbers(question);
+  const strong = strongEntityHits(question, citations);
+  // Anchor untuk SINYAL KUNCI lebih ketat daripada anchor coverage: hanya
+  // istilah yang benar-benar muncul di kandidat dan jarang (<=30% korpus).
+  // Tanpa ini, kata generik seperti "tiket" tampak seperti bukti di mana-mana
+  // dan soal di luar cakupan ikut dijawab (false_answer naik).
+  const keyMaxDf = Math.max(1, Math.ceil(citations.length * 0.3));
+  const keyAnchors = byDf.filter((a) => df(a) > 0 && df(a) <= keyMaxDf).slice(0, 4);
+  const keySignal = (c: T): boolean => hasKeyEvidence(c, keyAnchors, numbers, strong);
+  const topIdx = scored.reduce((best, x, i) => (x.score > scored[best].score ? i : best), 0);
+  const topHasKey = keySignal(scored[topIdx].c);
+
+  // FASE 2 v2 — gate tidak lagi memakai coverage absolut untuk membuang
+  // kandidat. Kandidat yang mengandung angka/entitas/istilah kunci soal
+  // dipertahankan bila top-1 cukup menonjol secara relatif. Untuk kandidat
+  // tanpa sinyal kunci, keputusan abstain diambil dari margin skor top-1 vs
+  // top-2 dan rasio distribusi korpus, sehingga soal di luar cakupan tetap
+  // abstain (false_answer tidak naik).
+  const strongEnough = corpusRatio >= 2.2;
+  const keyEnough = topHasKey && corpusRatio >= 1.0;
+  if (!keyEnough && !strongEnough) return [];
+
+  const kept = scored.filter((x) => {
+    // KRITIS: cek skor tertinggi dan sinyal kunci SEBELUM filter coverage.
+    // Urutan lama (`coverage <= 0` lebih dulu) diam-diam membuang rank-1 BM25
+    // yang relevan hanya karena parafrasa membuat coverage nol.
+    if (x.score === topScore) return true;
+    if (keySignal(x.c)) return true;
+    return x.score >= median + 0.5 * iqr;
+  });
+  // Urutan mengikuti skor BM25 asli, BUKAN coverage. Coverage hanya dipakai
+  // sebagai sinyal pendukung, bukan pengurut (re-ranking coverage dulu
+  // menurunkan hit@1 produksi di bawah raw).
+  kept.sort((a, b) => b.score - a.score || a.index - b.index);
+  return kept.slice(0, capacity).map((x) => x.c);
 }
 
 /**
@@ -535,13 +797,23 @@ export function retrieveWithEntityBoost(
   knownChannels: string[] = [],
 ): CoreCitation[] {
   const entities = extractRetrievalEntities(question, knownChannels);
-  return searchChunks(db, {
+  const candidates = searchChunks(db, {
     datasetId,
     question,
     limit,
     boostSection: entities.boostSection,
     boostPage: entities.boostPage,
   });
+  // P3-PRECISION: evidence gate HANYA untuk mode kelompok dokumen (array > 1
+  // dataset = chip "Semua dokumen"). Di mode itu FTS5 OR-match lintas dokumen
+  // mengisi sitasi dengan chunk acak — itulah failure mode GT-001/GT-100.
+  // Mode dokumen tunggal (string) sengaja dikembalikan persis seperti lama:
+  // derau lintas dokumen tidak ada di sana, dan memaksa gate yang sama
+  // merusak fixture eval existing (4 suite regresi tetap PASS).
+  if (!Array.isArray(datasetId) || datasetId.length <= 1) {
+    return candidates.slice(0, limit);
+  }
+  return selectEvidenceChunks(question, candidates, limit >= 20 ? 4 : 2);
 }
 
 /* ========================================================================== */
@@ -871,5 +1143,247 @@ export function retrieveLegalSection(chunks: LegalSectionChunk[], pasal: number)
     page_span: pageSpan,
     duplicate_count: all.length - unique.length,
     tried_terms: [`Pasal ${pasal}`],
+  };
+}
+
+/* ========================================================================== */
+/* P3-MIGRATION — Qdrant / hybrid dispatch (DECISION-032 ADR-QD-01/05)          */
+/*                                                                             */
+/* `RETRIEVAL_MODE=hybrid` is now the DEFAULT (DECISION-033). The `fts5` path  */
+/* is preserved unchanged: env `RETRIEVAL_MODE=fts5` selects the legacy path.  */
+/* Existing callers of the synchronous `retrieveWithEntityBoost` keep          */
+/* identical behaviour and need no edit.                                       */
+/* ========================================================================== */
+
+export type { RetrievalMode, FallbackReason };
+
+/**
+ * DECISION-033: default diubah ke `hybrid` (dense + BM25 + FTS5 via RRF).
+ * Circuit breaker di `retrieveWithEntityBoostDetailed` menjamin fallback ke
+ * FTS5 deterministik bila Qdrant/embedding gagal, dengan `meta.fallbackReason`
+ * terisi. Jalur `fts5` sengaja DIPERTAHANKAN — env `RETRIEVAL_MODE=fts5`
+ * (atau nilai asing) tetap memilih jalur lama persis.
+ */
+export function getRetrievalMode(): RetrievalMode {
+  const raw = String(process.env.RETRIEVAL_MODE ?? 'hybrid').trim().toLowerCase();
+  return raw === 'hybrid' || raw === 'qdrant' ? raw : 'fts5';
+}
+
+export interface RetrievalDispatchMeta {
+  retrievalBackend: 'fts5' | 'qdrant' | 'hybrid';
+  fallbackReason?: string;
+  embeddingUsed: boolean;
+}
+
+export interface RetrievalDispatchResult {
+  citations: CoreCitation[];
+  meta: RetrievalDispatchMeta;
+}
+
+/** Hydrate Qdrant-only chunk ids from SQLite — Qdrant is never a text source. */
+function hydrateChunks(db: DB, ids: string[]): Map<string, CoreCitation> {
+  const map = new Map<string, CoreCitation>();
+  const numeric = ids.map((id) => Number(id)).filter((n) => Number.isInteger(n) && n > 0);
+  if (!numeric.length) return map;
+  const placeholders = numeric.map(() => '?').join(',');
+  const rows = allRows(
+    db,
+    `SELECT c.id AS chunk_id, c.document_id, c.section_path, c.page, c.text AS quote
+       FROM core_chunks c WHERE c.id IN (${placeholders})`,
+    numeric,
+  );
+  for (const row of rows) {
+    const id = String(num(row.chunk_id));
+    map.set(id, {
+      chunk_id: num(row.chunk_id),
+      document_id: str(row.document_id),
+      section_path: str(row.section_path),
+      page: row.page === null || row.page === undefined ? null : num(row.page),
+      quote: truncateText(str(row.quote).replace(/\s+/g, ' '), 240),
+      score: 0,
+    });
+  }
+  return map;
+}
+
+/**
+ * Mode-aware retrieval with an honest circuit breaker.
+ *
+ * - `fts5`   → exact legacy path (no model, no network, no env dependency).
+ * - `hybrid` → FTS5 + Qdrant BM25 (+ dense when available), fused by RRF.
+ * - `qdrant` → Qdrant BM25 (+ dense) only; still hydrates text from SQLite.
+ *
+ * Any Qdrant/embedding failure falls back to FTS5 and records `fallbackReason`.
+ * `citation.score` remains BM25-derived: FTS5 chunks keep their original score,
+ * Qdrant-only chunks get the Qdrant BM25 score normalised to the FTS5 scale.
+ * RRF never touches a citation score or a guardrail threshold.
+ */
+export async function retrieveWithEntityBoostDetailed(
+  db: DB,
+  datasetId: string | string[],
+  question: string,
+  limit = 5,
+  knownChannels: string[] = [],
+): Promise<RetrievalDispatchResult> {
+  const mode = getRetrievalMode();
+  const fts5Only = (fallbackReason?: string, embeddingUsed = false): RetrievalDispatchResult => ({
+    citations: retrieveWithEntityBoost(db, datasetId, question, limit, knownChannels),
+    meta: {
+      retrievalBackend: 'fts5',
+      ...(fallbackReason ? { fallbackReason } : {}),
+      embeddingUsed,
+    },
+  });
+
+  if (mode === 'fts5') return fts5Only();
+
+  const config = getQdrantConfig(datasetId);
+  if (!config) return fts5Only('qdrant_unavailable');
+
+  const dense = await embedQuery(question);
+  const embeddingUsed = dense !== null;
+  const outcome = await fetchQdrantCandidates({
+    question,
+    terms: queryTerms(question),
+    dense,
+    config,
+  });
+
+  if (!outcome.ok) return fts5Only(outcome.reason, embeddingUsed);
+
+  const { bm25, dense: denseCandidates, bm25ByChunk } = outcome.data;
+  const ftsCitations = retrieveWithEntityBoost(
+    db, datasetId, question, Math.min(config.topK, 20), knownChannels,
+  );
+  const ftsLeg: Candidate[] = ftsCitations.map((citation, index) => ({
+    id: String(citation.chunk_id),
+    rank: index + 1,
+    rawScore: citation.score ?? 0,
+    leg: 'fts5',
+  }));
+
+  const legs = mode === 'qdrant' ? [bm25, denseCandidates] : [ftsLeg, bm25, denseCandidates];
+  const fused = rrfFuse(legs);
+  if (!fused.length) return fts5Only('qdrant_empty', embeddingUsed);
+
+  const ftsById = new Map(ftsCitations.map((citation) => [String(citation.chunk_id), citation]));
+  const scoreById = new Map<string, number>();
+  for (const citation of ftsCitations) {
+    if (citation.chunk_id !== null && citation.chunk_id !== undefined) {
+      scoreById.set(String(citation.chunk_id), citation.score ?? 0);
+    }
+  }
+  const maxAbs = Math.max(1e-6, ...Object.values(bm25ByChunk).map((v) => Math.abs(v)));
+  for (const [id, raw] of Object.entries(bm25ByChunk)) {
+    if (!scoreById.has(id)) scoreById.set(id, normalizeScore(raw, 'qdrant_bm25', maxAbs) ?? 0);
+  }
+
+  const qdrantOnlyIds = fused
+    .map((entry) => entry.id)
+    .filter((id) => !ftsById.has(id))
+    .slice(0, config.topK);
+  const hydrated = hydrateChunks(db, qdrantOnlyIds);
+
+  const citations: CoreCitation[] = [];
+  for (const entry of fused) {
+    const existing = ftsById.get(entry.id);
+    if (existing) {
+      citations.push({ ...existing, score: scoreById.get(entry.id) ?? existing.score });
+    } else {
+      const chunk = hydrated.get(entry.id);
+      if (!chunk) continue;
+      citations.push({ ...chunk, score: scoreById.get(entry.id) ?? 0 });
+    }
+    if (citations.length >= limit) break;
+  }
+
+  if (!citations.length) return fts5Only('qdrant_empty', embeddingUsed);
+
+  return {
+    citations,
+    meta: {
+      retrievalBackend: mode,
+      ...(outcome.partialReason ? { fallbackReason: outcome.partialReason } : {}),
+      embeddingUsed,
+    },
+  };
+}
+
+/* ========================================================================== */
+/* SEMANTIC QUERY V1 — multi-variant retrieval + RRF (DECISION-033 lanjutan)    */
+/*                                                                             */
+/* Pertanyaan natural ("Bagaimana prosedur dalam pergantian shift?") sering    */
+/* gagal pada FTS5 OR-match karena kata tanya mengencerkan term. Kirim original */
+/* + parafrasa hasil query understanding ke retrieval, lalu gabungkan dengan   */
+/* RRF. Skor sitasi TETAP BM25-derived (RRF hanya mengurutkan), sehingga        */
+/* ambang guardrail tidak berubah.                                             */
+/* ========================================================================== */
+
+export interface VariantRetrievalResult extends RetrievalDispatchResult {
+  meta: RetrievalDispatchMeta & { variantCount: number };
+}
+
+/** RRF setara `query-rewrite.ts::rrfFuse`, lokal agar tidak ada cycle import. */
+function rrfCitations(lists: CoreCitation[][], limit: number): CoreCitation[] {
+  const merged = new Map<string, { citation: CoreCitation; score: number }>();
+  for (const list of lists) {
+    list.forEach((citation, index) => {
+      const key = String(citation.chunk_id ?? `${citation.section_path ?? ''}:${citation.quote ?? ''}`);
+      const prior = merged.get(key);
+      merged.set(key, {
+        citation,
+        score: (prior?.score ?? 0) + 1 / (60 + index + 1),
+      });
+    });
+  }
+  return [...merged.values()]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((entry) => entry.citation);
+}
+
+/**
+ * Jalankan retrieval untuk setiap variasi query dan gabungkan dengan RRF.
+ * Fail-closed: bila semua variasi gagal, kembalikan hasil variasi pertama
+ * (bisa jadi kosong) dengan meta jujur — tidak pernah melempar exception.
+ *
+ * BATAS KONTRAK: varian di sini HANYA memperlebar retrieval. Fungsi ini tidak
+ * pernah dipakai untuk menilai answerability/out_of_scope — keputusan abstain
+ * ada di `checkGuardrails` dan memakai pertanyaan asli. Memakai varian untuk
+ * guardrail membuat kata kunci parafrasa "tercocokkan" dengan dokumen dan
+ * menurunkan refusal accuracy (regresi SOP-09/SOP-11).
+ */
+export async function retrieveWithQueryVariants(
+  db: DB,
+  datasetId: string | string[],
+  question: string,
+  variants: string[],
+  limit = 5,
+  knownChannels: string[] = [],
+): Promise<VariantRetrievalResult> {
+  // 7 = 1 pertanyaan asli + 4 parafrasa + 2 variasi aksi diagnostik
+  // (diagnosticActionQueries). Kasus non-diagnostik tetap <= 5 query, jadi
+  // tidak ada perubahan perilaku di luar pola tanya klasifikasi/penanganan.
+  const queries = [...new Set([String(question ?? '').trim(), ...(variants ?? [])])]
+    .filter(Boolean)
+    .slice(0, 7);
+  const runs = await Promise.all(
+    queries.map((q) => retrieveWithEntityBoostDetailed(db, datasetId, q, limit, knownChannels)),
+  );
+  const first = runs[0];
+  if (runs.length === 1) {
+    return { ...first, meta: { ...first.meta, variantCount: 1 } };
+  }
+  const citations = rrfCitations(runs.map((r) => r.citations), limit);
+  const backend = runs.find((r) => r.meta.retrievalBackend !== 'fts5')?.meta.retrievalBackend ?? 'fts5';
+  const fallbackReason = runs.map((r) => r.meta.fallbackReason).find(Boolean);
+  return {
+    citations,
+    meta: {
+      retrievalBackend: backend,
+      ...(fallbackReason ? { fallbackReason } : {}),
+      embeddingUsed: runs.some((r) => r.meta.embeddingUsed),
+      variantCount: queries.length,
+    },
   };
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import type { ReportDetailResponse, ReportListItem, ReportListResponse } from '@/lib/contracts/http';
+import type { MetaResponse, ReportDetailResponse, ReportListItem, ReportListResponse } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { Icon } from '@/components/ui/icons';
 import { SectionRule } from '@/components/signal/section-rule';
@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/signal/status-badge';
 import { ReportDocument } from '@/components/reports/report-document';
 import { Pagination } from '@/components/ui/pagination';
 import { toast } from '@/components/ui/toaster';
+import { NoDocumentsEmpty } from '@/components/ui/no-documents-empty';
 
 // Pagination server-side: 8 laporan per halaman, filter judul via ?q=.
 const PAGE_SIZE = 8;
@@ -31,6 +32,9 @@ export default function ReportsPage() {
   );
   // Metrik band diambil terpisah (limit 1) agar tetap global di halaman mana pun.
   const latest = useApi<ReportListResponse>('/api/reports?limit=1');
+  // Dipakai hanya untuk membedakan "workspace kosong" dari "belum simpan laporan".
+  const meta = useApi<MetaResponse>('/api/meta');
+  const hasDocuments = meta.loading || meta.error ? null : (meta.data?.data.documents.total ?? 0) > 0;
 
   // Setelah hapus di halaman terakhir, halaman bisa kosong — kembali ke halaman 1.
   useEffect(() => {
@@ -90,7 +94,7 @@ export default function ReportsPage() {
     const lines = [header.join(','), ...items.map((report) => [report.id, report.title, report.period, report.dataset.name, report.createdAt].map(escape).join(','))];
     const url = URL.createObjectURL(new Blob([`\uFEFF${lines.join('\n')}`], { type: 'text/csv; charset=utf-8' }));
     const anchor = document.createElement('a');
-    anchor.href = url; anchor.download = 'tanyadata-laporan.csv'; anchor.click();
+    anchor.href = url; anchor.download = `tanyadata_daftar-laporan_${new Date().toISOString().slice(0, 10)}.csv`; anchor.click();
     URL.revokeObjectURL(url);
   };
 
@@ -207,12 +211,18 @@ export default function ReportsPage() {
             ) : reports.error ? (
               <div className="flex flex-col items-start gap-s2" role="alert"><StatusBadge label="Gagal" tone="error" /><span className="font-body text-body text-ink">{reports.error}</span><button type="button" onClick={reports.retry} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button></div>
             ) : items.length === 0 ? (
-              <div className="flex flex-col items-start gap-s2 py-s4">
-                <StatusBadge label="Kosong" tone="neutral" />
-                <p className="font-body text-body text-ink">{query ? 'Tidak ada laporan yang cocok.' : 'Belum ada laporan.'}</p>
-                <p className="font-body text-caption text-ink-72">Simpan jawaban dari asisten untuk membuat laporan.</p>
-                <Link href="/assistant" className="touch-44 inline-flex items-center font-display text-label font-semibold text-forest focus-ring">Buka asisten</Link>
-              </div>
+              !query && hasDocuments === false ? (
+                <div className="py-s4">
+                  <NoDocumentsEmpty heading="Belum ada laporan" />
+                </div>
+              ) : (
+                <div className="flex flex-col items-start gap-s2 py-s4">
+                  <StatusBadge label="Kosong" tone="neutral" />
+                  <p className="font-body text-body text-ink">{query ? 'Tidak ada laporan yang cocok.' : 'Belum ada laporan.'}</p>
+                  <p className="font-body text-caption text-ink-72">Simpan jawaban dari asisten untuk membuat laporan.</p>
+                  <Link href="/assistant" className="touch-44 inline-flex items-center font-display text-label font-semibold text-forest focus-ring">Buka asisten</Link>
+                </div>
+              )
             ) : (
               <ul className="flex flex-col gap-s2">
                 {items.map((report) => {
@@ -238,22 +248,51 @@ export default function ReportsPage() {
                   }
                   return (
                     <li key={report.id} className="group flex items-stretch gap-s1">
-                      <button
-                        type="button"
-                        onClick={() => { setSelectedId(report.id); setArmedId(null); }}
-                        aria-current={active ? 'true' : undefined}
-                        className={`flex min-h-11 min-w-0 flex-1 flex-col items-start gap-s1 rounded-surface border px-s3 py-s3 text-left transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none focus-ring ${active ? 'border-forest bg-forest-08' : 'border-[var(--border-hairline)]'}`}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={active}
+                        aria-label={`Pilih laporan ${report.title}`}
+                        onClick={(event) => {
+                          if ((event.target as HTMLElement).closest('a')) return;
+                          setSelectedId(report.id);
+                          setArmedId(null);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.target !== event.currentTarget) return;
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setSelectedId(report.id);
+                            setArmedId(null);
+                          }
+                        }}
+                        className={`flex min-h-11 min-w-0 flex-1 cursor-pointer flex-col items-start gap-s1 rounded-surface border px-s3 py-s3 text-left transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none focus-ring ${active ? 'border-forest bg-forest-08' : 'border-[var(--border-hairline)]'}`}
                       >
                         <span className="flex w-full items-center justify-between gap-s2">
-                          <span className="inline-flex min-w-0 items-center gap-s2 font-body text-body font-semibold text-ink"><span className={`state-dot ${active ? 'state-dot-active' : ''}`} aria-hidden="true" /><span className="truncate">{report.title}</span></span>
-                          {active && <Icon name="arrow_forward" className="text-[16px] text-forest" />}
+                          <Link
+                            href={`/reports/${report.id}`}
+                            onClick={(event) => event.stopPropagation()}
+                            aria-label={`Buka laporan ${report.title}`}
+                            className="inline-flex min-w-0 items-center gap-s2 font-body text-body font-semibold text-ink underline-offset-2 hover:underline focus-ring"
+                          >
+                            <span className={`state-dot ${active ? 'state-dot-active' : ''}`} aria-hidden="true" />
+                            <span className="truncate">{report.title}</span>
+                          </Link>
+                          <Link
+                            href={`/reports/${report.id}`}
+                            onClick={(event) => event.stopPropagation()}
+                            aria-label={`Buka detail ${report.title}`}
+                            className="touch-44 inline-flex shrink-0 items-center justify-center text-forest focus-ring"
+                          >
+                            <Icon name="arrow_forward" className="text-[16px]" />
+                          </Link>
                         </span>
                         <span className="mono-meta max-w-full truncate">{[report.period, report.dataset.name, report.createdAt.slice(0, 10)].filter(Boolean).join(' · ')}</span>
-                      </button>
+                      </div>
                       {/* Aksi per laporan: selalu tampak (redup) agar bisa ditemukan;
                           hover hanya mempertegas. */}
                       <div className="flex flex-col justify-center gap-s1">
-                        <button type="button" onClick={() => beginEdit(report)} title="Ganti nama laporan" aria-label={`Ganti nama laporan ${report.title}`} className="touch-44 flex items-center justify-center rounded-control text-ink-72 transition-colors hover:bg-forest-08 hover:text-forest focus-ring"><Icon name="edit" className="text-[16px]" /></button>
+                        <button type="button" onClick={() => beginEdit(report)} title="Ganti nama laporan" aria-label={`Ganti nama laporan ${report.title}`} className="touch-44 flex items-center justify-center gap-s1 rounded-control px-s2 text-ink-72 transition-colors hover:bg-forest-08 hover:text-forest focus-ring"><Icon name="edit" className="text-[16px]" /><span className="hidden font-body text-caption sm:inline">Edit</span></button>
                         <button
                           type="button"
                           onClick={() => void removeReport(report.id)}
@@ -261,7 +300,9 @@ export default function ReportsPage() {
                           aria-label={`Hapus laporan ${report.title}`}
                           className={`touch-44 flex items-center justify-center rounded-control transition-colors focus-ring ${armedId === report.id ? 'bg-terracotta px-s2 font-display text-label font-semibold text-porcelain' : 'text-ink-72 hover:bg-forest-08 hover:text-terracotta'}`}
                         >
-                          {armedId === report.id ? <span className="whitespace-nowrap">Hapus?</span> : <Icon name="delete" className="text-[16px]" />}
+                          {armedId === report.id
+                            ? <span className="whitespace-nowrap">Hapus?</span>
+                            : <span className="flex items-center gap-s1"><Icon name="delete" className="text-[16px]" /><span className="hidden font-body text-caption sm:inline">Hapus</span></span>}
                         </button>
                       </div>
                     </li>
@@ -290,6 +331,7 @@ export default function ReportsPage() {
               <div className="print-no-print sticky bottom-s3 z-sticky flex flex-wrap items-center justify-center gap-s2 self-center rounded-overlay border border-[var(--border-hairline)] bg-porcelain p-s2 elevated">
                 <a href={`/api/reports/${selectedId}/export?format=pdf`} download className="touch-44 inline-flex items-center gap-s2 rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring"><Icon name="picture_as_pdf" className="text-[16px]" /> Unduh PDF</a>
                 <a href={`/api/reports/${selectedId}/export?format=csv`} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="download" className="text-[16px]" /> Ekspor CSV</a>
+                <a href={`/api/reports/${selectedId}/export?format=xlsx`} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="table_chart" className="text-[16px]" /> Ekspor XLSX</a>
                 <button type="button" onClick={() => void shareLink()} className="touch-44 inline-flex items-center gap-s2 rounded-control px-s3 font-display text-label text-ink-72 focus-ring"><Icon name="link" className="text-[16px]" /> Salin tautan</button>
               </div>
             )}

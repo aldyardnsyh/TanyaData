@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import type { DB } from '@/lib/db/client';
 import { nowJakartaIso } from '@/lib/date';
 import { stemIndonesian } from '@/lib/core/stem';
-import { expandSynonyms } from '@/lib/ai/normalize';
+import { expandSynonyms, correctQueryTypos } from '@/lib/ai/normalize';
 
 export { normalizeForFts } from '@/lib/core/stem';
 import type {
@@ -197,7 +197,7 @@ const STOPWORDS = new Set([
  *   tanpa mengubah skema atau menambah dependency berat.
  */
 export function searchTerms(question: string): string[] {
-  const lowered = question
+  const lowered = correctQueryTypos(question)
     .toLowerCase()
     .normalize('NFKD')
     .replace(/[^a-z0-9\s]/g, ' ');
@@ -250,6 +250,9 @@ function metadataBoost(citation: Citation, options: SearchChunksOptions): number
 export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
   const limit = Math.min(Math.max(options.limit ?? 5, 1), 20);
   const terms = searchTerms(options.question);
+  for (const number of options.boostSection?.match(/\d+/g) ?? []) {
+    if (!terms.includes(number)) terms.push(number);
+  }
   if (!terms.length) return [];
   const match = terms.map((term) => `"${term.replace(/"/g, '""')}"`).join(' OR ');
   const useBoost = Boolean(options.boostSection) || options.boostPage != null;
@@ -261,6 +264,14 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
   const allDocs = ids.includes('*');
   const datasetFilter = allDocs ? '' : `AND c.dataset_id IN (${ids.map(() => '?').join(',')})`;
   const datasetArgs = allDocs ? [] : ids;
+  const pasalBoost = /^Pasal\s+(\d+[a-z]?)$/i.exec(options.boostSection ?? '');
+  const sectionLabel = pasalBoost ? `Pasal ${pasalBoost[1]}` : null;
+  const sectionFilter = sectionLabel
+    ? ' AND (c.section_path = ? OR c.section_path LIKE ? OR c.section_path LIKE ?)'
+    : '';
+  const sectionArgs = sectionLabel
+    ? [sectionLabel, `${sectionLabel}/%`, `${sectionLabel} >%`]
+    : [];
 
   let results: Citation[];
   try {
@@ -270,10 +281,10 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
                 c.text AS quote, bm25(core_chunks_fts) AS raw_score
          FROM core_chunks_fts f
          JOIN core_chunks c ON c.id = f.rowid
-         WHERE core_chunks_fts MATCH ? ${datasetFilter} AND c.level = 'child'
-         ORDER BY raw_score ASC LIMIT ?`,
+          WHERE core_chunks_fts MATCH ? ${datasetFilter} AND c.level = 'child' ${sectionFilter}
+          ORDER BY raw_score ASC LIMIT ?`,
       )
-      .all(match, ...datasetArgs, fetchLimit) as Array<{
+      .all(match, ...datasetArgs, ...sectionArgs, fetchLimit) as Array<{
       chunk_id: number;
       document_id: string;
       section_path: string;
@@ -287,7 +298,7 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
       section_path: row.section_path,
       page: row.page,
       quote: row.quote,
-      score: Number((1 / (1 + Math.abs(row.raw_score))).toFixed(4)),
+      score: Number(Math.max(0, -row.raw_score).toFixed(4)),
     }));
   } catch {
     const like = terms.map(() => 'c.text LIKE ?').join(' OR ');
@@ -296,10 +307,10 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
         `SELECT c.id AS chunk_id, c.document_id, c.section_path, c.page,
                 c.text AS quote
          FROM core_chunks c
-         WHERE ${allDocs ? '' : 'c.dataset_id = ? AND '}c.level = 'child' AND (${like})
-         LIMIT ?`,
+          WHERE ${allDocs ? '' : 'c.dataset_id = ? AND '}c.level = 'child' ${sectionFilter} AND (${like})
+          LIMIT ?`,
       )
-      .all(...datasetArgs, ...terms.map((t) => `%${t}%`), fetchLimit) as Array<{
+      .all(...datasetArgs, ...sectionArgs, ...terms.map((t) => `%${t}%`), fetchLimit) as Array<{
       chunk_id: number;
       document_id: string;
       section_path: string;
@@ -307,6 +318,26 @@ export function searchChunks(db: DB, options: SearchChunksOptions): Citation[] {
       quote: string;
     }>;
     results = rows.map((row) => ({ ...row, score: 0.5 }));
+  }
+
+  if (!results.length && !allDocs && ids.length) {
+    const placeholders = ids.map(() => '?').join(',');
+    const rows = db
+      .prepare(
+        `SELECT c.id AS chunk_id, c.document_id, c.section_path, c.page,
+                c.text AS quote
+         FROM core_chunks c
+         WHERE c.dataset_id IN (${placeholders}) AND c.level = 'child'
+         ORDER BY c.id LIMIT ?`,
+      )
+      .all(...ids, fetchLimit) as Array<{
+      chunk_id: number;
+      document_id: string;
+      section_path: string;
+      page: number | null;
+      quote: string;
+    }>;
+    results = rows.map((row) => ({ ...row, score: 0.01 }));
   }
 
   if (!useBoost) return results.slice(0, limit);

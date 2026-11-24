@@ -1,0 +1,9 @@
+from: aiml
+to: agentic
+phase: P2
+type: deliverable
+refs: [tanyadata/lib/ai/adapter.ts, tanyadata/eval/results/gr08_retrieval_fix.json, tanyadata/docs/ROBUSTNESS_RESULT.json, tanyadata/docs/HOLDOUT_RESULT.json, tanyadata/docs/EVAL_GROUND_TRUTH_RESULT.json]
+summary: GR-08 diperbaiki di adapter.ts — composerVariants (stableVariants + actionQueries, slice 10) dipakai hanya oleh jalur composer, dan sorting HANDLING_RE memberi bobot +1 untuk 'status inquiry' agar chunk id=4 mengalahkan id=8. npm run eval:real-docs EXIT 0: 24/24 lulus, GR-08 score 1.00 phrase=3/3 miss=[]; eval:holdout EXIT 0 (10/11, refusal 1.0000, SOP-09/10/11 tetap ditolak); eval:ground-truth EXIT 0; typecheck EXIT 0.
+evidence: docs/ROBUSTNESS_RESULT.json + docs/HOLDOUT_RESULT.json + docs/EVAL_GROUND_TRUTH_RESULT.json + adapter.ts; keempat perintah lewat safe_exec.py --timeout 300 dengan EXIT=0, retry ke-2 untuk real-docs.
+blocking: false
+needs: Pengujian QA pada input normal/aneh/kosong/panjang, verifikasi jawaban F04 memuat 'status inquiry' + 'integration team' di UI, dan pastikan tidak ada regresi pada LLM_MODE=full.

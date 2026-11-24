@@ -1,0 +1,101 @@
+{
+  "task": "Implementasi fallback model LLM berantai (role aiml, phase P2)",
+  "date": "2026-11-24",
+  "root": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot",
+  "app": "tanyadata",
+  "summary": {
+    "status": "PASS",
+    "typecheck": "npm run typecheck EXIT 0 via safe_exec.py --timeout 240 (13.3s)",
+    "probe": "EXIT 0 via safe_exec.py --timeout 120 (4.4s), 3 skenario, tanpa panggilan jaringan nyata",
+    "files_changed": [
+      "tanyadata/lib/ai/llm.ts",
+      "tanyadata/lib/ai/types.ts"
+    ],
+    "files_read_only": [
+      "tanyadata/.env.example"
+    ],
+    "files_not_touched": [
+      "backend/GT/tuning",
+      "tanyadata/lib/ai/adapter.ts"
+    ]
+  },
+  "implementation": {
+    "new_env": {
+      "name": "LLM_FALLBACK_MODELS",
+      "format": "comma-separated model ids",
+      "default": "openai/gpt-oss-20b,qwen/qwen3.8-27b,allam-2-7b",
+      "note": "Model utama tetap dari LLM_MODEL (openai/gpt-oss-120b) dan sengaja tidak dimasukkan default agar tidak dicoba dua kali."
+    },
+    "chain": [
+      "model utama (LLM_MODEL)",
+      "openai/gpt-oss-20b",
+      "qwen/qwen3.8-27b",
+      "allam-2-7b"
+    ],
+    "max_models": 4,
+    "fallback_on": [
+      "429",
+      "5xx / network",
+      "timeout",
+      "llm_invalid"
+    ],
+    "no_fallback_on": [
+      "llm_ungrounded"
+    ],
+    "time_budget": "maksimal 4 x LLM_TIMEOUT_MS + backoff [200ms, 400ms, 200ms] antar model; tidak ada retry tak berbatas",
+    "exception_policy": "callLlmStructured tidak pernah melempar; guard try/catch terakhir mengembalikan llm_all_models_failed",
+    "observability": "LlmOutcome.meta = { model, attempts, modelsTried, failures:[{model, reason, detail?}] } — tanpa API key/header/body/prompt",
+    "ui_contract": "Semua kegagalan mengembalikan LlmOutcome fail-closed. Adapter sudah memakai jawaban deterministik + flag jujur (llm_fallback_failed + fallbackDetail); createCorePorts, lib/chat/messages.ts dan app/api/query/route.ts sudah membungkus throw → tidak ada error mentah ke UI. Tidak ada perubahan adapter yang diperlukan."
+  },
+  "probe_results": {
+    "fallback_success": {
+      "ok": true,
+      "fallbackReason": null,
+      "model_used": "openai/gpt-oss-20b",
+      "attempts": 2,
+      "models_requested": [
+        "model-tidak-ada",
+        "openai/gpt-oss-20b"
+      ],
+      "failures": [
+        {
+          "model": "model-tidak-ada",
+          "reason": "llm_error",
+          "detail": "http_429"
+        }
+      ],
+      "apiKeyLeaked": false
+    },
+    "all_models_failed": {
+      "ok": false,
+      "fallbackReason": "llm_all_models_failed",
+      "detail": "llm_error:http_429",
+      "attempts": 4,
+      "models_requested": [
+        "model-tidak-ada",
+        "openai/gpt-oss-20b",
+        "qwen/qwen3.8-27b",
+        "allam-2-7b"
+      ],
+      "apiKeyLeaked": false
+    },
+    "ungrounded_no_fallback": {
+      "ok": false,
+      "fallbackReason": "llm_ungrounded",
+      "detail": "foreign_number",
+      "attempts": 1,
+      "models_requested": [
+        "model-tidak-ada"
+      ],
+      "apiKeyLeaked": false
+    }
+  },
+  "known_limitations": [
+    "Retry 429/400 lama per-model dihapus; fallback antar model menggantikan peran retry agar total waktu tetap terikat. 400 kini jadi llm_error dan ikut fallback (model invalid/404 juga tertangani).",
+    "Dengan LLM_TIMEOUT_MS=12000, worst-case rantai ≈48s + 800ms backoff. Adapter ANSWER_COMPOSER_TIMEOUT_MS=30000 akan memotong lebih dulu → jawaban deterministik tetap dipakai, UI tidak melihat error. Bila ingin rantai penuh sempat jalan, turunkan LLM_TIMEOUT_MS atau naikkan budget adapter di luar lane ini.",
+    "llm_ungrounded sengaja tidak di-fallback: angka asing adalah masalah konten/grounding, bukan model.",
+    "Probe memakai fetch mock dan API key dummy; tidak ada kredensial nyata yang dipakai atau dicetak."
+  ],
+  "env_alignment_notice": "LLM_FALLBACK_MODELS belum ditambahkan ke .env.example sesuai instruksi (baca saja). Orchestrator perlu menyelaraskannya.",
+  "handoff_yaml": "from: aiml\nto: agentic\nphase: P2\ntype: deliverable\nrefs:\n  - tanyadata/lib/ai/llm.ts\n  - tanyadata/lib/ai/types.ts\n  - tanyadata/eval/results/llm_model_fallback.json\nsummary: \"Rantai fallback LLM berantai diimplementasikan: model utama lalu 3 fallback lewat LLM_FALLBACK_MODELS, fail-closed ke llm_all_models_failed tanpa exception dan tanpa API key di meta. Probe 3 skenario: fallback sukses 2 attempt, semua gagal 4 attempt, ungrounded tidak di-fallback 1 attempt. Typecheck EXIT 0.\"\nevidence: \"npm run typecheck via safe_exec.py --timeout 240: EXIT 0 (13.3s). Probe node via safe_exec.py --timeout 120: EXIT 0 (4.4s); fallback_success ok=true model=openai/gpt-oss-20b attempts=2; all_models_failed fallbackReason=llm_all_models_failed attempts=4; ungrounded_no_fallback fallbackReason=llm_ungrounded attempts=1; apiKeyLeaked=false di semua skenario.\"\nblocking: false\nneeds: \"Orchestrator selaraskan .env.example dengan env baru LLM_FALLBACK_MODELS (default openai/gpt-oss-20b,qwen/qwen3.8-27b,allam-2-7b) — sengaja tidak diubah. QA verifikasi UI tetap memuat saat fallback dan tidak ada error mentah; adapter/core sudah try/catch + flag jujur sehingga tidak perlu perubahan backend/frontend.\"\n"
+}

@@ -1,0 +1,33 @@
+from: qa
+to: agentic
+phase: P4
+type: deliverable
+refs:
+  - tanyadata/eval/results/transfer_indexed.json
+  - tanyadata/eval/results/TRANSFER_GENERALIZATION_REPORT.md
+  - tanyadata/eval/results/lodo.json
+  - tanyadata/eval/results/_transfer_indexed_raw.json
+  - tanyadata/eval/results/baseline.json
+  - tanyadata/scripts/qa-transfer-ingest.mjs
+  - tanyadata/scripts/qa-transfer-bridge.mjs
+  - tanyadata/scripts/qa_gap_report.py
+  - tanyadata/scripts/qa_lodo_runner.py
+  - tanyadata/eval/transfer_set/README.md
+summary: >-
+  Transfer set 66 QA diukur terhadap 3 PDF yang diindeks dari bytes PDF di workspace terpisah
+  (gt_text_fallback tidak dipakai; OCR tidak diperlukan karena ketiga PDF punya text layer).
+  Hanya 2/14 metrik dalam target gap ≤5 pp (quote_validity 1.0, end_dump_rate 0.0); pass rate 14,29%.
+  Runtuhnya deteksi bagian (section_recovery 0.125, −87,5 pp) menyeret retrieval hit@1 produksi ke 0,1864
+  (−53,4 pp), false_abstain 0,5085 (+34,6 pp), false_answer 0,8571 (+67,9 pp), citation_source_accuracy 0,2222.
+  LODO 4/4 fold PERFORMED dengan rata-rata hit@1 produksi 0,1429 dan false_abstain 0,5321;
+  fold yang mengindeks KB01/KB04 mewarisi KNOWN_BASELINE_VIOLATION (gt_text_fallback).
+evidence: >-
+  tanyadata/eval/results/transfer_indexed.json (generalization_gap 14 baris + measurement_notes + 66 per-question),
+  lodo.json (4 fold + mean), manifest ingest di %TEMP%\opencode\tanyadata-transfer-ws\qa-transfer-ingest-manifest.json
+  (textLayer=YES, ocrUsed=false, gtFallbackUsed=false), log safe_exec EXIT=0 untuk ingest/bridge/eval/gap/LODO.
+blocking: true
+needs: >-
+  Owner lane (backend/aiml) memperbaiki deteksi heading generik (CUTI#n, TI#n |, 2.1.1.), chunk boundary
+  sadar bagian, pembersihan teks overfit ('Patch'→'Pateh'), dan pembuangan header/footer 2 halaman;
+  QA melakukan re-verify dengan langkah yang sama setelah perbaikan. Jangan klaim generalisasi sebelum
+  gap ≤5 pp tercapai. Skrip pengukuran ini tidak boleh dipakai untuk tuning parameter.

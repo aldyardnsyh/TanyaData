@@ -32,6 +32,8 @@ export interface SqlGeneratorPort {
 
 export type ComposeInput = {
   question: string;
+  /** Pertanyaan yang dinormalisasi/standalone untuk retrieval & guardrail. */
+  effectiveQuestion?: string;
   lang: Lang;
   docType: DocType;
   schema: SchemaJson;
@@ -39,6 +41,8 @@ export type ComposeInput = {
   citations: Citation[];
   sqlExplanation: string | null;
   mode: 'sql' | 'document' | 'hybrid';
+  /** Jenis sumber; dipakai untuk membedakan dokumen dari dataset tabular. */
+  dataKind?: 'document' | 'tabular';
   /** CORE V2 — registry sitasi aktif untuk validasi deep-link fail-closed. */
   citationRegistry?: CitationRegistryView | null;
   /** CORE V2 — scope attachment aktif; menolak bukti lintas attachment. */
@@ -64,7 +68,27 @@ export interface AnswerComposerPort {
   compose(input: ComposeInput): Promise<ComposeOutput | null>;
 }
 
+/**
+ * Ringkasan dokumen untuk pertanyaan meta ("dokumen ini membahas apa?").
+ * Input berasal dari profil struktur dokumen (judul, jumlah halaman, daftar
+ * bagian + kalimat pembuka) — bukan retrieval — sehingga LLM hanya
+ * merangkum bukti yang sudah ada. Return `null` → fallback deterministik.
+ */
+export type DocumentOverviewInput = {
+  question: string;
+  lang: Lang;
+  title: string;
+  pages: number;
+  docType: DocType;
+  sections: Array<{ title: string; page: number | null; excerpt: string }>;
+};
+
+export interface DocumentOverviewPort {
+  overview(input: DocumentOverviewInput): Promise<string | null>;
+}
+
 export type CorePorts = {
   sqlGenerator?: SqlGeneratorPort;
   answerComposer?: AnswerComposerPort;
+  documentOverview?: DocumentOverviewPort;
 };

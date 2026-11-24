@@ -8,6 +8,11 @@ import {
   ensureDirs,
   resolveSeedDb,
 } from '@/lib/db/paths';
+import {
+  ensureCoreChunkColumns,
+  ensureQdrantOutboxSchema,
+  ensureShareSnapshotColumns,
+} from '@/lib/db/migrate-v2';
 
 export type DB = Database.Database;
 
@@ -24,6 +29,17 @@ let attachMode: 'uri' | 'plain' | 'unavailable' = 'unavailable';
 function applySchema(db: DB): void {
   if (globalThis.__tanyadataSchemaApplied) return;
   db.exec(fs.readFileSync(SCHEMA_SQL, 'utf8'));
+  // SEC-002: DB workspace lama belum punya expires_at/revoked_at/revoked_reason.
+  // Tambahkan kolom SEBELUM core-schema.sql membuat index ix_core_share_expiry,
+  // jika tidak CREATE INDEX akan gagal dengan "no such column: expires_at".
+  ensureShareSnapshotColumns(db);
+  // DECISION-032: outbox Qdrant dibuat lebih dulu seperti pola expires_at,
+  // sebelum core-schema.sql membuat index yang merujuk kolom-kolomnya.
+  ensureQdrantOutboxSchema(db);
+  // Fase 2A: DB workspace lama belum punya section_id/char_start/char_end/...
+  // Tambahkan SEBELUM core-schema.sql membuat ix_core_chunks_section,
+  // jika tidak CREATE INDEX akan gagal dengan "no such column: section_id".
+  ensureCoreChunkColumns(db);
   db.exec(fs.readFileSync(CORE_SCHEMA_SQL, 'utf8'));
   globalThis.__tanyadataSchemaApplied = true;
 }

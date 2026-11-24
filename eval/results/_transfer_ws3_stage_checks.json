@@ -1,0 +1,270 @@
+{
+  "extraction": {
+    "section_recovery": {
+      "value": 1.0,
+      "method": "GT section_id yang berhasil dipetakan ke section_path hasil ekstraksi produksi / 32",
+      "n": 24,
+      "threshold": 1.0,
+      "pass": true
+    },
+    "reading_order_accuracy": {
+      "value": 1.0,
+      "method": "Fraksi pasangan section GT bersebelahan yang muncul dalam urutan relatif sama di ekstraksi",
+      "n": 21,
+      "threshold": 1.0,
+      "pass": true
+    },
+    "text_fidelity": {
+      "value": 0.9243,
+      "method": "Rata-rata token-recall teks GT pada teks ekstraksi yang dipetakan",
+      "n": 24,
+      "threshold": 0.98,
+      "pass": false
+    },
+    "per_kb": {
+      "CUTI": {
+        "ingestMode": "pdf",
+        "gt_sections": 8,
+        "extracted_sections": 8,
+        "recovered": 8,
+        "section_recovery": 1.0,
+        "text_fidelity": 0.9267,
+        "reading_order_accuracy": 1.0
+      },
+      "PD": {
+        "ingestMode": "pdf",
+        "gt_sections": 8,
+        "extracted_sections": 8,
+        "recovered": 8,
+        "section_recovery": 1.0,
+        "text_fidelity": 0.9218,
+        "reading_order_accuracy": 1.0
+      },
+      "TI": {
+        "ingestMode": "pdf",
+        "gt_sections": 8,
+        "extracted_sections": 9,
+        "recovered": 8,
+        "section_recovery": 1.0,
+        "text_fidelity": 0.9244,
+        "reading_order_accuracy": 1.0
+      }
+    },
+    "interpretation": {
+      "fallback_kbs": [],
+      "note": "Angka ekstraksi untuk KB di atas SENGAJA mendekati 1.0 karena korpusnya direkonstruksi dari corpus_sections GT (KNOWN_BASELINE_VIOLATION). Jangan dipakai sebagai bukti kualitas ekstraksi PDF. Gunakan per-KB ingestMode='pdf' (KB02/KB03) sebagai ukuran jujur."
+    }
+  },
+  "chunking_unit": {
+    "chunk_section_alignment": {
+      "value": 0.96,
+      "method": "Fraksi chunk produksi yang berhasil dipetakan ke section_id GT via anchor teks",
+      "n": 25
+    },
+    "unit_segmentation_accuracy": {
+      "value": 0.2917,
+      "method": "Fraksi 32 GT section yang memiliki unit ekstraksi terpetakan dengan token-recall >= 0.98 (mapping GT->ekstraksi one-to-one by konstruksi)",
+      "n": 24,
+      "threshold": 0.98,
+      "pass": false
+    },
+    "offset_valid": {
+      "value": "NOT_MEASURED",
+      "reason": "Skema produksi core_chunks tidak menyimpan offset karakter (hanya char_count/token_count/page_span). Mengukur offset valid mensyaratkan perubahan kode aplikasi — dilarang di Fase 1A.",
+      "method": "Cek kolom offset pada artefak chunks_by_id hasil pipeline produksi"
+    },
+    "observed_chunk_columns": [
+      "char_count",
+      "dataset_id",
+      "document_id",
+      "gt_section",
+      "id",
+      "kb",
+      "level",
+      "page",
+      "page_span",
+      "parent_id",
+      "section_path",
+      "text",
+      "token_count"
+    ],
+    "per_kb": {
+      "CUTI": {
+        "ingestMode": "pdf",
+        "gt_sections": 8,
+        "good_units": 2,
+        "unit_segmentation_accuracy": 0.25
+      },
+      "PD": {
+        "ingestMode": "pdf",
+        "gt_sections": 8,
+        "good_units": 2,
+        "unit_segmentation_accuracy": 0.25
+      },
+      "TI": {
+        "ingestMode": "pdf",
+        "gt_sections": 8,
+        "good_units": 3,
+        "unit_segmentation_accuracy": 0.375
+      }
+    }
+  },
+  "indexing": {
+    "self_retrieval": {
+      "hit_at_1": {
+        "value": 1.0,
+        "method": "Fraksi entri dengan hit_at_1=true dari retrieval produksi",
+        "n": 24
+      },
+      "hit_at_5": {
+        "value": 1.0,
+        "method": "Fraksi entri dengan hit_at_5=true dari retrieval produksi",
+        "n": 24
+      },
+      "by_ingest_mode": {
+        "pdf": {
+          "n": 24,
+          "hit_at_1": {
+            "value": 1.0,
+            "method": "Fraksi entri dengan hit_at_1=true dari retrieval produksi",
+            "n": 24
+          },
+          "hit_at_5": {
+            "value": 1.0,
+            "method": "Fraksi entri dengan hit_at_5=true dari retrieval produksi",
+            "n": 24
+          }
+        }
+      },
+      "method": "Query = 220 karakter pertama teks GT section; diukur dari searchChunks produksi pada 4 dataset"
+    },
+    "alias_retrieval": {
+      "hit_at_1": {
+        "value": 0.0,
+        "method": "Fraksi entri dengan hit_at_1=true dari retrieval produksi",
+        "n": 0
+      },
+      "hit_at_3": {
+        "value": 0.0,
+        "method": "Fraksi entri dengan hit_at_3=true dari retrieval produksi",
+        "n": 0
+      },
+      "hit_at_5": {
+        "value": 0.0,
+        "method": "Fraksi entri dengan hit_at_5=true dari retrieval produksi",
+        "n": 0
+      },
+      "by_ingest_mode": {},
+      "method": "Query = alias dari knowledge_tuning_sop.json (dibaca saja); target = section_id alias; diukur dari searchChunks produksi",
+      "source": "ai_chatbot_testdata/.../Tuningan Knowledge/knowledge_tuning_sop.json (read-only)"
+    },
+    "counts": {
+      "self_queries": 24,
+      "alias_queries": 0
+    }
+  },
+  "retrieval": {
+    "variants": {
+      "raw": {
+        "hit_at_1": 0.7797,
+        "hit_at_3": 0.9661,
+        "hit_at_5": 0.9661,
+        "recall_at_5": 0.9117,
+        "mrr": 0.8644,
+        "context_precision_at_5": 0.2992,
+        "noise_rate_at_5": 0.7008,
+        "n": 59,
+        "by_split": {
+          "transfer": {
+            "n": 59,
+            "hit_at_1": 0.7797,
+            "hit_at_3": 0.9661,
+            "hit_at_5": 0.9661,
+            "recall_at_5": 0.9117,
+            "mrr": 0.8644,
+            "context_precision_at_5": 0.2992,
+            "noise_rate_at_5": 0.7008
+          }
+        }
+      },
+      "rewritten": {
+        "hit_at_1": 0.8136,
+        "hit_at_3": 0.9322,
+        "hit_at_5": 0.9661,
+        "recall_at_5": 0.9117,
+        "mrr": 0.8785,
+        "context_precision_at_5": 0.2788,
+        "noise_rate_at_5": 0.7212,
+        "n": 59,
+        "by_split": {
+          "transfer": {
+            "n": 59,
+            "hit_at_1": 0.8136,
+            "hit_at_3": 0.9322,
+            "hit_at_5": 0.9661,
+            "recall_at_5": 0.9117,
+            "mrr": 0.8785,
+            "context_precision_at_5": 0.2788,
+            "noise_rate_at_5": 0.7212
+          }
+        }
+      },
+      "production": {
+        "hit_at_1": 0.6949,
+        "hit_at_3": 0.8305,
+        "hit_at_5": 0.8305,
+        "recall_at_5": 0.7465,
+        "mrr": 0.7542,
+        "context_precision_at_5": 0.4647,
+        "noise_rate_at_5": 0.5353,
+        "n": 59,
+        "by_split": {
+          "transfer": {
+            "n": 59,
+            "hit_at_1": 0.6949,
+            "hit_at_3": 0.8305,
+            "hit_at_5": 0.8305,
+            "recall_at_5": 0.7465,
+            "mrr": 0.7542,
+            "context_precision_at_5": 0.4647,
+            "noise_rate_at_5": 0.5353
+          }
+        }
+      }
+    },
+    "delta": {
+      "production_minus_raw": {
+        "hit_at_1": -0.0848,
+        "hit_at_3": -0.1356,
+        "hit_at_5": -0.1356,
+        "recall_at_5": -0.1652,
+        "mrr": -0.1102,
+        "context_precision_at_5": 0.1655
+      },
+      "rewritten_minus_raw": {
+        "hit_at_1": 0.0339,
+        "hit_at_3": -0.0339,
+        "hit_at_5": 0.0,
+        "recall_at_5": 0.0,
+        "mrr": 0.0141,
+        "context_precision_at_5": -0.0204
+      }
+    },
+    "method": {
+      "relevant": "chunk produksi yang gt_section-nya masuk case.source_sections (GT)",
+      "raw": "searchChunks(question, limit=20) — tanpa rewriting, tanpa entity boost/evidence gate",
+      "rewritten": "correctQueryWithVocabulary(...) lalu searchChunks(..., limit=20) — rewriting saja",
+      "production": "retrieveWithEntityBoost(..., limit=20) — jalur produksi (entity boost + evidence gate)",
+      "hit@k": "fraksi soal dengan >=1 chunk relevan di top-k",
+      "recall@5": "fraksi chunk relevan yang muncul di top-5",
+      "mrr": "1/(peringkat relevan pertama), 0 bila tidak ada",
+      "context_precision@5": "fraksi top-5 yang relevan",
+      "noise_rate@5": "1 - context_precision@5"
+    },
+    "counts": {
+      "answerable_cases": 59,
+      "abstain_cases_excluded": 7
+    },
+    "caveat": "Perbandingan 'with/without rewriting & rerank' mengisolasi tiga entry point yang tersedia di pipeline. answerQuestion juga memanggil rewrite internal; tidak ada flag produksi untuk mematikan rewrite tersebut tanpa mengubah kode, jadi efek gabungannya tidak diukur terpisah."
+  }
+}

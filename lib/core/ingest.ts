@@ -24,13 +24,16 @@ import type {
   SchemaTable,
   SourceType,
 } from '@/lib/core/contracts';
-import { emptyQualityReport, newDocumentId, recordStep } from '@/lib/core/registry';
+import { emptyQualityReport, recordStep } from '@/lib/core/registry';
 import { invalidateQueryCache } from '@/lib/core/cache';
 import { normalizeForFts } from '@/lib/core/store';
-import { chunkDocument, type ChunkDocumentResult } from '@/lib/ingest/chunker';
+import { drainOutbox, enqueueUpserts } from '@/lib/qdrant/sync';
+import { chunkDocument, matchGenericHeading, type ChunkDocumentResult } from '@/lib/ingest/chunker';
+import { layoutAwarePdfTexts } from '@/lib/ingest/extract';
+import type { LayoutInfo } from '@/lib/ingest/types';
 import { LOW_TEXT_THRESHOLD, UNREADABLE_PAGE_TEXT, ocrPage, type OcrStatus } from '@/lib/ingest/ocr';
 import { detectPages, type PageLabel } from '@/lib/ingest/scan-detect';
-import { repairMojibake } from '@/lib/ingest/mojibake';
+import { buildDocumentVocabulary, repairMojibake } from '@/lib/ingest/mojibake';
 import { sampleRss } from '@/lib/ingest/watchdog';
 import {
   buildSchemaJson,
@@ -180,6 +183,8 @@ type ParsedPage = {
   ocrConfidence?: number;
   ocrLatencyMs?: number;
   label?: PageLabel;
+  readingOrder?: string[];
+  layout?: LayoutInfo;
 };
 
 export type ExtractOutcome = {
@@ -216,20 +221,16 @@ async function extractPages(format: SourceType, buffer: Buffer, docId: string): 
     } catch {
       throw unprocessable('PDF tidak dapat dibaca (rusak atau terenkripsi)', { reason: 'PARSE_ERROR' });
     }
-    const texts: string[] = [];
+    // Fase 2A: urutan baca sadar layout (kolom kiri → kanan), header/footer
+    // berulang dan nomor halaman dibuang. Sama dengan jalur workspace.
+    const pagesItems: unknown[][] = [];
     for (let i = 1; i <= pdf.numPages; i += 1) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      let text = '';
-      for (const raw of content.items) {
-        const item = raw as unknown as { str?: unknown; hasEOL?: boolean };
-        if (typeof item.str === 'string') {
-          text += item.str;
-          if (item.hasEOL) text += '\n';
-        }
-      }
-      texts.push(text);
+      pagesItems.push(content.items);
     }
+    const layouts = layoutAwarePdfTexts(pagesItems);
+    const texts = layouts.map((layout) => layout.text);
 
     const signals = await detectPages(pdf, texts);
     base.pageLabels = signals.map((s) => ({ page: s.page, label: s.label, needsOcr: s.needsOcr }));
@@ -241,7 +242,13 @@ async function extractPages(format: SourceType, buffer: Buffer, docId: string): 
       // Pemicu OCR: sinyal deteksi ATAU fallback char-count lama (< 40).
       const needsOcr = signal?.needsOcr || texts[i].replace(/\s/g, '').length < LOW_TEXT_THRESHOLD;
       if (!needsOcr) {
-        base.pages.push({ page: pageNo, text: texts[i], label: signal?.label });
+        base.pages.push({
+          page: pageNo,
+          text: texts[i],
+          label: signal?.label,
+          readingOrder: layouts[i].readingOrder,
+          layout: layouts[i].layout,
+        });
         continue;
       }
       base.ocrUsed = true;
@@ -265,6 +272,8 @@ async function extractPages(format: SourceType, buffer: Buffer, docId: string): 
           ocrConfidence: outcome.confidence,
           ocrLatencyMs: outcome.latencyMs,
           label: signal?.label,
+          readingOrder: [],
+          layout: layouts[i].layout,
         });
       } else {
         base.pages.push({
@@ -274,6 +283,8 @@ async function extractPages(format: SourceType, buffer: Buffer, docId: string): 
           ocrConfidence: outcome.confidence,
           ocrLatencyMs: outcome.latencyMs,
           label: signal?.label,
+          readingOrder: outcome.text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+          layout: layouts[i].layout,
         });
       }
     }
@@ -299,6 +310,72 @@ const HEADING_PATTERNS: Array<{ re: RegExp; kind: string }> = [
   { re: /^(\d{1,2})[.)]\s+(.+)$/, kind: 'numbered' },
 ];
 
+/**
+ * Heading yang menempel di tengah baris. Text layer PDF sering menggabungkan
+ * banyak item tanpa pemisah ("...PENGELOLAAN Pasal 4 ayat (1)..."), sehingga
+ * regex ber-anchor awal melewatkan batas pasal. Pola ini hanya dipakai bila
+ * baris pendek dan heading muncul dekat awal baris.
+ */
+const INLINE_HEADING_PATTERNS: Array<{ re: RegExp; kind: string }> = [
+  { re: /\b(pasal)\s+(\d+[a-z]?)\b/i, kind: 'pasal' },
+  { re: /\b(bab)\s+([ivxlcdm]+|\d+)\b/i, kind: 'bab' },
+  { re: /\b(ayat)\s*\((\d+)\)/i, kind: 'ayat' },
+];
+
+type HeadingHit = {
+  kind: string;
+  index: number;
+  title: string;
+  rest: string;
+  code: string | null;
+  match: RegExpExecArray;
+};
+
+/**
+ * Satu detektor heading generik dipakai core DAN workspace (chunker.ts).
+ * Pola lama tetap sebagai fallback untuk `Ayat (n)` di tengah baris, yang
+ * tidak tercakup aturan generik. Tidak ada regex khusus KB0x/P1/SEV.
+ */
+function headingFromLine(line: string): HeadingHit | null {
+  const generic = matchGenericHeading(line);
+  if (generic) {
+    const code = generic.code ?? '';
+    const title = generic.title;
+    const rest = generic.rest ?? '';
+    const match = Object.assign([line, code, title, rest], { index: 0 }) as unknown as RegExpExecArray;
+    return {
+      kind: generic.kind ?? 'generic',
+      index: 0,
+      title,
+      rest,
+      code: code || null,
+      match,
+    };
+  }
+  for (const { re, kind } of HEADING_PATTERNS) {
+    const match = re.exec(line);
+    if (!match) continue;
+    const title = kind === 'pasal' ? `Pasal ${match[2]}`
+      : kind === 'ayat' ? `Ayat (${match[2]})`
+        : kind === 'bab' ? `BAB ${match[2]}`
+          : kind === 'tabel' ? `Tabel ${match[2]}`
+            : (match[2] ?? match[1] ?? line);
+    const rest = (match[3] ?? line.slice(match[0].length)).trim();
+    return { kind, index: 0, title, rest, code: match[2] ?? null, match };
+  }
+  if (line.length > 160) return null;
+  for (const { re, kind } of INLINE_HEADING_PATTERNS) {
+    const match = re.exec(line);
+    if (!match || match.index > 60) continue;
+    const title = kind === 'pasal' ? `Pasal ${match[2]}`
+      : kind === 'bab' ? `BAB ${match[2]}`
+        : `Ayat (${match[2]})`;
+    const rest = line.slice(match.index + match[0].length).trim();
+    return { kind, index: match.index, title, rest, code: match[2] ?? null, match };
+  }
+  return null;
+}
+
 export type ParsedSection = DocumentSection & {
   text: string;
   ocrStatus?: OcrStatus;
@@ -306,6 +383,16 @@ export type ParsedSection = DocumentSection & {
   unreadable?: boolean;
   pageSpan?: [number, number];
   cleanFlags?: string[];
+  readingOrder?: string[];
+  layout?: LayoutInfo | null;
+  legalChildren?: Array<{
+    id: string;
+    type: 'ayat' | 'butir';
+    text: string;
+    page: number;
+    ayat: number | null;
+    butir: string | null;
+  }>;
 };
 
 /** Struktur dokumen generik → sections dengan section_path hierarkis. */
@@ -316,6 +403,8 @@ export function sectionsFromPages(pages: ParsedPage[], title: string): ParsedSec
   let currentOcr: OcrStatus | undefined;
   let currentConfidence: number | undefined;
   let currentUnreadable = false;
+  let currentReadingOrder: string[] | undefined;
+  let currentLayout: LayoutInfo | null | undefined;
   let buffer: string[] = [];
 
   const flush = () => {
@@ -330,6 +419,8 @@ export function sectionsFromPages(pages: ParsedPage[], title: string): ParsedSec
         ...(currentConfidence !== undefined ? { ocrConfidence: currentConfidence } : {}),
         ...(currentUnreadable ? { unreadable: true } : {}),
         pageSpan: [currentPage, currentPage],
+        readingOrder: currentReadingOrder,
+        layout: currentLayout,
       });
     }
     buffer = [];
@@ -339,28 +430,175 @@ export function sectionsFromPages(pages: ParsedPage[], title: string): ParsedSec
     currentOcr = page.ocrStatus;
     currentConfidence = page.ocrConfidence;
     currentUnreadable = page.unreadable === true;
+    currentReadingOrder = page.readingOrder;
+    currentLayout = page.layout;
     for (const rawLine of page.text.split(/\r?\n/)) {
-      const line = rawLine.trim();
+      const line = rawLine.replace(/[ \t]+/g, ' ').trim();
       if (!line) continue;
-      let matched = false;
-      for (const { re, kind } of HEADING_PATTERNS) {
-        const m = re.exec(line);
-        if (!m) continue;
-        flush();
-        currentPage = page.page;
-        if (kind === 'pasal') currentPath = `Pasal ${m[2]}`;
-        else if (kind === 'ayat') currentPath = `${currentPath}/Ayat (${m[2]})`;
-        else if (kind === 'bab') currentPath = `BAB ${m[2]}${m[3] ? ` — ${m[3]}` : ''}`;
-        else if (kind === 'tabel') currentPath = `Tabel ${m[2]}${m[3] ? ` — ${m[3]}` : ''}`;
-        else currentPath = m[2] ?? m[1] ?? line;
-        if (m[3] && kind !== 'ayat') buffer.push(m[3]);
-        matched = true;
-        break;
+      const hit = headingFromLine(line);
+      if (!hit) {
+        buffer.push(line);
+        continue;
       }
-      if (!matched) buffer.push(line);
+      const { kind, index, title, rest, code } = hit;
+      const prefix = index > 0 ? line.slice(0, index).trim() : '';
+      if (prefix) buffer.push(prefix);
+      flush();
+      currentPage = page.page;
+      currentPath = kind === 'ayat' ? `${currentPath}/${code ?? title}` : (title || code || line);
+      // Isi yang menempel di baris heading (CUTI#1 Tujuan: ..., 2.1.1. Verifikasi: ...)
+      // harus masuk ke bagian baru — jangan dibuang seperti heading lama.
+      if (rest) buffer.push(rest);
     }
   }
   flush();
+  return sections;
+}
+
+const PASAL_HEADING_RE = /^Pasal\s+(\d+[a-z]?)\s*[.:]?\s*$/i;
+const BAB_HEADING_RE = /^BAB\s*([IVX\d]+)\s*[.:]?\s*$/i;
+const BAGIAN_HEADING_RE = /^Bagi\.?an\s+\w+\s*$/i;
+const PAGE_FOOTER_RE = /^(?:PRESIDEN|PRE\s?SI\s?OEN|F>RESIDEN|PRESIOEN|REPUBLIK\s+(?:INDONESIA|INOONESIA)|REF>?UBL[I%]K|REPUBLlf:<)(?!\s*,)/;
+
+type LegalDraft = {
+  path: string;
+  lines: Array<{ text: string; page: number }>;
+  page: number;
+  lastPage: number;
+  ocrStatus?: OcrStatus;
+  ocrConfidence?: number;
+  unreadable?: boolean;
+  readingOrder?: string[];
+  layout?: LayoutInfo | null;
+};
+
+function legalChildrenFromLines(
+  path: string,
+  lines: Array<{ text: string; page: number }>,
+): NonNullable<ParsedSection['legalChildren']> {
+  const match = /^Pasal\s+(\d+)/i.exec(path);
+  const pasal = match ? Number(match[1]) : null;
+  if (pasal === null) return [];
+  const children: NonNullable<ParsedSection['legalChildren']> = [];
+  const intro: Array<{ text: string; page: number }> = [];
+  let current: NonNullable<ParsedSection['legalChildren']>[number] | null = null;
+  for (const line of lines) {
+    const ayat = /^\s*(?:[lLI]\s+)?[^\p{L}\p{N}]*\(\s*(\d+)\s*\)\s*(.*)$/u.exec(line.text);
+    const butir = /^(\d+|[a-z])\.\s+(.*)$/.exec(line.text);
+    if (ayat) {
+      current = {
+        id: `pasal-${pasal}-a${ayat[1]}`,
+        type: 'ayat',
+        text: line.text,
+        page: line.page,
+        ayat: Number(ayat[1]),
+        butir: null,
+      };
+      children.push(current);
+      continue;
+    }
+    if (butir) {
+      const label = butir[1] === 'l' && !children.some((c) => c.butir === '1') ? '1' : butir[1];
+      current = {
+        id: `pasal-${pasal}-b-${label}`,
+        type: 'butir',
+        text: line.text.replace(/^l\./, '1.'),
+        page: line.page,
+        ayat: null,
+        butir: label,
+      };
+      children.push(current);
+      continue;
+    }
+    if (current) current.text = `${current.text} ${line.text}`.trim();
+    else intro.push(line);
+  }
+  if (intro.length && children.length) {
+    children.unshift({
+      id: `pasal-${pasal}-b-pengantar`,
+      type: 'butir',
+      text: intro.map((l) => l.text).join(' '),
+      page: intro[0].page,
+      ayat: null,
+      butir: 'pengantar',
+    });
+  }
+  return children;
+}
+
+/**
+ * Sectioning khusus dokumen hukum Indonesia: hanya heading Pasal yang
+ * berdiri sendiri yang memulai bagian. Ayat "(n)" dan butir "n."/"a." tetap
+ * menjadi isi pasal; pemecahan child dilakukan oleh `chunkDocument`.
+ */
+export function legalSectionsFromPages(pages: ParsedPage[], title: string): ParsedSection[] {
+  const sections: ParsedSection[] = [];
+  const firstPage = pages[0]?.page ?? 1;
+  let draft: LegalDraft = { path: 'pembukaan', lines: [], page: firstPage, lastPage: firstPage };
+
+  const flush = () => {
+    const text = draft.lines.map((l) => l.text).join('\n').replace(/[ \t]+/g, ' ').trim();
+    if (!text) return;
+    const children = legalChildrenFromLines(draft.path, draft.lines);
+    sections.push({
+      section_path: draft.path,
+      page: draft.page,
+      char_count: text.length,
+      text,
+      pageSpan: [draft.page, draft.lastPage],
+      ...(children.length ? { legalChildren: children } : {}),
+      ...(draft.ocrStatus ? { ocrStatus: draft.ocrStatus } : {}),
+      ...(draft.ocrConfidence !== undefined ? { ocrConfidence: draft.ocrConfidence } : {}),
+      ...(draft.unreadable ? { unreadable: true } : {}),
+      readingOrder: draft.readingOrder,
+      layout: draft.layout,
+    });
+  };
+
+  const start = (path: string, page: number, current: ParsedPage) => {
+    flush();
+    draft = {
+      path,
+      lines: [],
+      page,
+      lastPage: page,
+      ocrStatus: current.ocrStatus,
+      ocrConfidence: current.ocrConfidence,
+      unreadable: current.unreadable,
+      readingOrder: current.readingOrder,
+      layout: current.layout,
+    };
+  };
+
+  for (const page of pages) {
+    for (const raw of page.text.split(/\r?\n/)) {
+      const line = raw.replace(/[ \t]+/g, ' ').trim();
+      if (!line) continue;
+      const pasal = PASAL_HEADING_RE.exec(line);
+      if (pasal) {
+        start(`Pasal ${pasal[1]}`, page.page, page);
+        continue;
+      }
+      if (BAB_HEADING_RE.test(line) || BAGIAN_HEADING_RE.test(line)) continue;
+      if (/^Agar\s+setiap\s+orang\s+mengetahui\b/i.test(line)) {
+        start('penutup', page.page, page);
+      }
+      if (/^\d+[.,]?\s*$/.test(line) || /^[lLI]\s*[.;]?\s*$/.test(line)
+        || /^[\\/]\s*\d+\s*-\s*$/.test(line) || PAGE_FOOTER_RE.test(line)) continue;
+      const hasEllipsis = /\.\s*\.\s*\./.test(line);
+      const withoutMarkers = line
+        .replace(/\.\s*\.\s*\.*/g, '')
+        .replace(/PRES\s?I\s?DEN/gi, '')
+        .trim();
+      if (!withoutMarkers || (hasEllipsis && withoutMarkers.split(/\s+/).filter(Boolean).length < 4)) continue;
+      draft.lastPage = page.page;
+      draft.lines.push({ text: line, page: page.page });
+    }
+  }
+  flush();
+  if (!sections.length) {
+    return sectionsFromPages(pages, title);
+  }
   return sections;
 }
 
@@ -372,8 +610,11 @@ export function cleanSections(
 ): ParsedSection[] {
   const seen = new Map<string, number>();
   const out: ParsedSection[] = [];
+  // Istilah dokumen dikumpulkan dulu supaya koreksi OCR tidak merusak kata
+  // yang sudah sah di domain ini (mis. `Patch` pada kebijakan TI).
+  const knownTerms = buildDocumentVocabulary(sections.map((section) => section.text));
   for (const section of sections) {
-    const repaired = repairMojibake(section.text);
+    const repaired = repairMojibake(section.text, { knownTerms });
     onClean?.(repaired, section);
     const text = repaired.text.replace(/\s+/g, ' ').trim();
     if (!text) continue;
@@ -407,6 +648,7 @@ function toChunkDrafts(
   chunks: ChunkDocumentResult[],
   documentId: string,
   datasetId: string,
+  docName: string,
 ): ChunkDraft[] {
   const legalParentKeys = new Set<string>();
   for (const chunk of chunks) {
@@ -436,6 +678,15 @@ function toChunkDrafts(
       clean_flags: chunk.clean_flags ?? [],
       clean_version: chunk.clean_flags?.length ? 2 : 0,
       content_hash: chunk.content_hash ?? null,
+      char_start: chunk.charStart ?? null,
+      char_end: chunk.charEnd ?? null,
+      unit_id: chunk.units?.[0]?.id ?? null,
+      section_id: chunk.sectionId ?? null,
+      section_hash: chunk.sectionHash ?? null,
+      units_json: JSON.stringify(chunk.units ?? []),
+      reading_order: chunk.readingOrder ? JSON.stringify(chunk.readingOrder) : null,
+      layout_json: chunk.layout ? JSON.stringify(chunk.layout) : null,
+      embed_text: `[${docName} | ${chunk.section ?? 'Bagian 1'}] ${chunk.content}`,
     };
   });
 }
@@ -527,12 +778,15 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
     let classification: Classification = { kind: 'tabular', doc_type: 'general', confidence: 0, signals: [] };
 
     await mark('classification', () => {
-      const sample = TABULAR.has(format) ? '' : buffer.toString('utf8').slice(0, 20_000);
+      // Dokumen: klasifikasi ditunda sampai text layer terbaca. Membaca
+      // `buffer.toString('utf8')` untuk PDF/DOCX menghasilkan sampah biner,
+      // sehingga dokumen hukum selalu jatuh ke 'general' (bug Perpres).
+      if (!TABULAR.has(format)) return;
       classification = classifySource({
         format,
         name: options.originalName,
-        sampleText: sample,
-        hasHeader: TABULAR.has(format),
+        sampleText: '',
+        hasHeader: true,
       });
     });
 
@@ -565,6 +819,17 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
           recordStep(db, dataset.id, 'ocr', 'SKIPPED', 0, 'text layer mencukupi; OCR tidak dipanggil');
         }
         sections = sectionsFromPages(extracted.pages, dataset.name);
+        // Klasifikasi SETELAH ekstraksi: sinyal "pasal/ayat/undang-undang"
+        // hanya ada di teks hasil ekstraksi, bukan di byte PDF/DOCX.
+        classification = classifySource({
+          format,
+          name: options.originalName,
+          sampleText: sections
+            .map((s) => s.text)
+            .join('\n')
+            .slice(0, 20_000),
+          hasHeader: false,
+        });
         const readableChars = sections
           .filter((s) => !s.unreadable)
           .reduce((sum, s) => sum + s.text.trim().length, 0);
@@ -630,15 +895,21 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
 
     await mark('chunking', () => {
       if (!sections.length) return;
-      const documentId = newDocumentId();
+      // Fase 2A: id dokumen STABIL dari isi file. Upload ulang PDF yang sama
+      // tidak menciptakan document_id/chunk_id baru (idempotensi).
+      const documentId = `doc_${createHash('sha256').update(buffer).digest('hex').slice(0, 12)}`;
       const drafts = toChunkDrafts(
         chunkDocument({ sections, docType: classification.doc_type, documentId }),
         documentId,
         dataset.id,
+        options.originalName,
       );
       db.prepare(
         `INSERT INTO core_documents(id, dataset_id, doc_type, mime, pages, sections_json, source_path, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           dataset_id = excluded.dataset_id, doc_type = excluded.doc_type, pages = excluded.pages,
+           sections_json = excluded.sections_json, source_path = excluded.source_path`,
       ).run(
         documentId,
         dataset.id,
@@ -649,12 +920,12 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
         options.storagePath ?? null,
         nowJakartaIso(),
       );
-      const parentIds = new Map<string, number>();
       const insert = db.prepare(
         `INSERT INTO core_chunks
            (document_id, dataset_id, section_path, page, text, token_count, char_count, level, parent_id, embedding_json,
-            content_hash, page_span, clean_version, clean_flags, ocr_status, confidence)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            content_hash, page_span, clean_version, clean_flags, ocr_status, confidence,
+            char_start, char_end, unit_id, section_id, section_hash, units_json, reading_order, layout_json, embed_text)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       );
       const values = (draft: ChunkDraft, parentId: number | null) => [
         draft.document_id,
@@ -673,21 +944,65 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
         JSON.stringify(draft.clean_flags ?? []),
         draft.ocr_status ?? 'ok',
         draft.confidence ?? 1,
+        draft.char_start ?? null,
+        draft.char_end ?? null,
+        draft.unit_id ?? null,
+        draft.section_id ?? null,
+        draft.section_hash ?? null,
+        draft.units_json ?? '[]',
+        draft.reading_order ?? null,
+        draft.layout_json ?? null,
+        draft.embed_text ?? null,
       ];
+      const childIds: number[] = [];
       db.transaction(() => {
+        // Re-index selektif per bagian: bagian dengan section_hash sama
+        // dipertahankan, hanya bagian berubah yang ditulis ulang.
+        const byHash = new Map<string, ChunkDraft[]>();
         for (const draft of drafts) {
-          if (draft.level !== 'parent') continue;
-          const result = insert.run(...values(draft, null));
-          parentIds.set(draft.key, Number(result.lastInsertRowid));
+          const hash = draft.section_hash ?? draft.content_hash ?? `c:${draft.key}`;
+          const group = byHash.get(hash) ?? [];
+          group.push(draft);
+          byHash.set(hash, group);
         }
-        for (const draft of drafts) {
-          if (draft.level !== 'child') continue;
-          insert.run(...values(draft, draft.parentKey ? parentIds.get(draft.parentKey) ?? null : null));
+        const existing = db
+          .prepare('SELECT id, section_hash FROM core_chunks WHERE document_id = ?')
+          .all(documentId) as Array<{ id: number; section_hash: string | null }>;
+        const keep = new Set(byHash.keys());
+        const stale = existing
+          .filter((row) => !row.section_hash || !keep.has(row.section_hash))
+          .map((row) => row.id);
+        if (stale.length) {
+          db.prepare(`DELETE FROM core_chunks WHERE id IN (${stale.map(() => '?').join(',')})`).run(...stale);
         }
+        const present = new Set(
+          existing
+            .filter((row) => row.section_hash && keep.has(row.section_hash))
+            .map((row) => row.section_hash as string),
+        );
+        const parentIds = new Map<string, number>();
+        for (const [hash, group] of byHash) {
+          if (present.has(hash)) continue;
+          for (const draft of group) {
+            if (draft.level !== 'parent') continue;
+            const result = insert.run(...values(draft, null));
+            parentIds.set(draft.key, Number(result.lastInsertRowid));
+          }
+          for (const draft of group) {
+            if (draft.level !== 'child') continue;
+            const result = insert.run(
+              ...values(draft, draft.parentKey ? parentIds.get(draft.parentKey) ?? null : null),
+            );
+            childIds.push(Number(result.lastInsertRowid));
+          }
+        }
+        // DECISION-032: chunk + op sync ditulis dalam SATU transaksi SQLite.
+        // Saat QDRANT_MODE=off enqueueUpserts() adalah no-op → perilaku lama.
+        enqueueUpserts(db, childIds, dataset.id, dataset.id);
       })();
     });
 
-    await mark('indexing', () => {
+    await mark('indexing', async () => {
       const n = (
         db.prepare('SELECT COUNT(*) AS n FROM core_chunks WHERE dataset_id = ?').get(dataset.id) as { n: number }
       ).n;
@@ -713,6 +1028,20 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
         quality.issues.push('fts_stemmed=1');
       } catch {
         quality.issues.push('fts_stemmed=0');
+      }
+
+      // Qdrant adalah derived index. Kuras outbox di sini, tetapi kegagalan
+      // Qdrant TIDAK BOLEH menggagalkan ingest — FTS5 tetap terisi.
+      try {
+        const sync = await drainOutbox(db);
+        quality.issues.push(`qdrant_sync_enabled=${sync.enabled ? 1 : 0}`);
+        if (sync.enabled) {
+          quality.issues.push(`qdrant_synced=${sync.succeeded}`);
+          if (sync.failed) quality.issues.push(`qdrant_failed=${sync.failed}`);
+          if (sync.error) quality.issues.push('qdrant_error=1');
+        }
+      } catch {
+        quality.issues.push('qdrant_sync=skipped');
       }
     });
 

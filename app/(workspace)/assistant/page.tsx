@@ -69,6 +69,10 @@ export default function AssistantPage() {
   }, [activeId]);
 
   const docCount = meta.data?.data.documents.total ?? docs.data?.total ?? 0;
+  // null = belum tahu (meta/docs masih dimuat atau gagal): jangan klaim kosong.
+  const hasDocuments = meta.loading || docs.loading || meta.error
+    ? null
+    : docCount > 0;
   // RAG-first: konteks yang ditampilkan adalah DOKUMEN (attachment aktif atau
   // seluruh dokumen terindeks), bukan dataset SQLite — dataset hanya sumber
   // SQL di belakang layar dan dipilih dari Pengaturan.
@@ -447,6 +451,7 @@ export default function AssistantPage() {
         <ChatMessages
           messages={messages}
           docCount={docCount}
+          hasDocuments={hasDocuments}
           detailLoading={detailLoading}
           detailError={detailError}
           sending={sending}

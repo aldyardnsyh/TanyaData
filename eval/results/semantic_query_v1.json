@@ -1,0 +1,149 @@
+{
+  "schema": "semantic_query_v1",
+  "generatedAt": "2026-11-24T07:20:00.000Z",
+  "role": "aiml",
+  "phase": "P2",
+  "scope": "Presisi komposisi sitasi — perbaikan sempit, tanpa perubahan backend/GT/tuning",
+  "change": {
+    "file": "tanyadata/lib/ai/citation-format.ts",
+    "from": "SEMANTIC COMPOSITION V2",
+    "to": "SEMANTIC COMPOSITION V3",
+    "summary": "Sisipan dua kolom hanya dipotong pada penanda eksplisit; anchor bukti dipertahankan; klausa di luar zona tidak pernah dipotong; kalimat yang terputus oleh titik sisipan disambung kembali; maksimal 3 kalimat utuh dengan marker [1] per kalimat.",
+    "helpers_removed": [
+      "trimInterleaveTail",
+      "FUNCTION_WORDS",
+      "INTERLEAVE_TAIL_RE",
+      "PURPOSE_RE"
+    ],
+    "helpers_added": [
+      "resumeAnchor",
+      "RESUME_RE",
+      "CloseKind"
+    ],
+    "helpers_changed": [
+      "splitAtInterleave (menolak pemotongan bila entitas intent mengapit penanda)",
+      "reconstructCleanSentences (state machine antar-kalimat)",
+      "composeDeterministicStructured (minScore=1 untuk sumber terbaik, batas 3 segmen, maks 2 per sumber)"
+    ]
+  },
+  "evaluation": {
+    "harness": "tanyadata/eval/bridge.mjs",
+    "questions": "tanyadata/eval/results/paraphrase_questions.json",
+    "mode": "LLM_MODE=off, RETRIEVAL_MODE=fts5, deterministik, tanpa jaringan",
+    "command": "node eval/bridge.mjs --questions tanyadata/eval/results/paraphrase_questions.json --out tanyadata/eval/results/paraphrase_raw_v3.json --llm-mode off",
+    "cwd": "tanyadata",
+    "before": {
+      "artifact": "tanyadata/eval/results/paraphrase_raw_v2.json",
+      "generatedAt": "2026-11-24T07:09:47.210Z",
+      "cases": [
+        {
+          "caseKey": "KB03:PARA-01",
+          "question": "Bagaimana prosedur dalam pergantian shift?",
+          "answer": "terima dilakukan sebelum pergantian petugas. [1]",
+          "abstain": false
+        },
+        {
+          "caseKey": "KB03:PARA-02",
+          "question": "pergantian shift",
+          "answer": "terima dilakukan sebelum pergantian petugas. [1]",
+          "abstain": false
+        }
+      ]
+    },
+    "after": {
+      "artifact": "tanyadata/eval/results/paraphrase_raw_v3.json",
+      "generatedAt": "2026-11-24T07:19:39.481Z",
+      "cases": [
+        {
+          "caseKey": "KB03:PARA-01",
+          "question": "Bagaimana prosedur dalam pergantian shift?",
+          "answer": "Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab. [1] Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan. [1]",
+          "abstain": false
+        },
+        {
+          "caseKey": "KB03:PARA-02",
+          "question": "pergantian shift",
+          "answer": "Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab. [1] Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan. [1]",
+          "abstain": false
+        }
+      ]
+    },
+    "metrics": {
+      "key_facts_coverage": {
+        "before": "1/6",
+        "after": "6/6",
+        "facts": [
+          "tiket aktif",
+          "pekerjaan tertunda",
+          "hambatan",
+          "PIC",
+          "tenggat pembaruan",
+          "sebelum pergantian petugas"
+        ]
+      },
+      "complete_evidence_sentences": {
+        "before": "0/2",
+        "after": "2/2"
+      },
+      "marker_per_sentence": {
+        "before": "1 marker untuk 1 potongan tengah kalimat",
+        "after": "2 marker [1], satu per kalimat utuh"
+      },
+      "variant_consistency": {
+        "before": "identik (2/2), tetapi kedua varian salah",
+        "after": "identik (2/2) dan benar"
+      },
+      "abstain_rate": {
+        "before": "0/2",
+        "after": "0/2"
+      },
+      "max_sentences": {
+        "target": "2-3",
+        "after": 2
+      }
+    },
+    "verification": {
+      "bridge": "QA_BRIDGE_OK cases=2 sections=32 aliases=144 violations=2 EXIT=0",
+      "typecheck": "npm run typecheck → tsc --noEmit → EXIT=0",
+      "retry_count": 2,
+      "retry_note": "Dua kegagalan awal hanya kesalahan path/CWD perintah bridge, bukan kegagalan kode; perbaikan kode tidak diulang."
+    },
+    "known_limitations": [
+      "Urutan kalimat mengikuti skor relevansi (kalimat 'Serah terima …' lebih dulu), bukan urutan asli dokumen KB03#2; keduanya tetap kalimat utuh dan bersitasi.",
+      "Deteksi ekor alur asing memakai huruf kecil di awal kalimat; OCR yang mengkapitalisasi semua awal kalimat dapat membuat ekor sisipan tidak terbuang.",
+      "Hanya dua varian parafrasa KB03 yang diuji; regresi chunk bersih dan LLM_MODE=full belum dijalankan ulang di perbaikan ini."
+    ]
+  },
+  "decimal_comma_fix": {
+    "scope": "Perbaikan sangat sempit — koma desimal Indonesia tidak boleh berspasi; tanpa perubahan backend/GT/tuning.",
+    "root_cause": "splitClauses memecah `12,5` pada koma menjadi `12` + `5`, lalu joinClauses menyisipkan spasi menjadi `12, 5`; gradeGeneration membacanya sebagai dua angka asing (foreign_numbers [12,5]) sehingga hallucination_rate = 0.0833 > ambang 0.02.",
+    "files": [
+      "tanyadata/lib/ai/citation-format.ts",
+      "tanyadata/lib/core/answer.ts"
+    ],
+    "fix": [
+      "normalizeDecimalCommaSpacing: `(\\d),\\s(\\d{1,2})` -> `\\d,\\d` hanya untuk konteks desimal; pemisah daftar dan ribuan dikecualikan via lookbehind/lookahead.",
+      "splitClauses: koma `\\d,\\d` tidak dijadikan batas klausa (isDecimalComma).",
+      "renderStructuredAnswer + formatValue + structuredAnswer: guard normalisasi akhir pada jalur dokumen dan SQL."
+    ],
+    "preserved": [
+      "4.200 (titik ribuan)",
+      "12,5 (koma desimal)",
+      "12, 5, 7 (pemisah daftar)",
+      "2.850, 1.200 (daftar ribuan)"
+    ],
+    "verification": {
+      "eval_command": "npm run eval:ground-truth --non-interactive",
+      "eval_exit": 0,
+      "hallucination_rate_before": 0.0833,
+      "hallucination_rate_after": 0.0,
+      "threshold": 0.02,
+      "drl02_answer": "Laju pemboran: 12,5 m/jam. [1] Tekanan formasi: 4.200 psi. [2] Tekanan formasi tetap dalam batas aman. [3]",
+      "drl02_foreign_numbers": [],
+      "typecheck_command": "npm run typecheck",
+      "typecheck_exit": 0,
+      "overall": "PASS 12 legacy + 2 realSeed + 11 capability + 6 perpres"
+    }
+  },
+  "handoff_yaml": "from: aiml\nto: agentic\nphase: P2\ntype: deliverable\nrefs: [tanyadata/lib/ai/citation-format.ts, tanyadata/lib/core/answer.ts, tanyadata/eval/results/semantic_query_v1.json, tanyadata/docs/EVAL_GROUND_TRUTH_RESULT.json]\nsummary: Perbaikan sempit koma desimal Indonesia: splitClauses tidak lagi memecah `12,5` pada koma dan normalizeDecimalCommaSpacing mengembalikan `12, 5` menjadi `12,5` tanpa mengubah daftar (`12, 5, 7`) maupun ribuan (`4.200`). npm run eval:ground-truth EXIT 0 dengan hallucination_rate 0.0000 (0/12, ambang ≤0.02); jawaban DRL-02 kini `12,5 m/jam`, foreign_numbers=[]. npm run typecheck EXIT 0.\nevidence: npm run eval:ground-truth EXIT=0 (generation hallucination_rate 0.0000, DRL-02 foreign_numbers=[]) + npm run typecheck EXIT=0 + docs/EVAL_GROUND_TRUTH_RESULT.json + docs/EVAL_RESULTS.md\nblocking: false\nneeds: Verifikasi QA pada variasi desimal koma lain (0,75; 1.234,56), daftar angka, dan fallback LLM_MODE=full; pastikan tidak ada regresi pada chunk tabel/daftar."
+}

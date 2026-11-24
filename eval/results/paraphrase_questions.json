@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "name": "Paraphrase probe — semantic query understanding",
+    "purpose": "Uji apakah pertanyaan natural/parafrasa dipahami sama dengan kata kunci persis"
+  },
+  "questions": [
+    {
+      "id": "PARA-01",
+      "question": "Bagaimana prosedur dalam pergantian shift?",
+      "kb": "KB03",
+      "source_sections": ["KB03#2"],
+      "key_facts": ["tiket aktif", "pekerjaan tertunda", "hambatan", "PIC", "tenggat pembaruan", "sebelum pergantian petugas"],
+      "evidence_spans": ["Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan.", "Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab."],
+      "evidence_text": ["Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan. Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab."]
+    },
+    {
+      "id": "PARA-02",
+      "question": "pergantian shift",
+      "kb": "KB03",
+      "source_sections": ["KB03#2"],
+      "key_facts": ["tiket aktif", "pekerjaan tertunda", "hambatan", "PIC", "tenggat pembaruan", "sebelum pergantian petugas"],
+      "evidence_spans": ["Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan.", "Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab."],
+      "evidence_text": ["Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan. Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab."]
+    }
+  ]
+}

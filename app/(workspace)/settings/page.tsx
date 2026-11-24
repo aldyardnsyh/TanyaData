@@ -373,6 +373,7 @@ export default function SettingsPage() {
               tabs={TABS.map((tab) => ({ id: tab.id, label: tab.label }))}
               activeId={activeTab}
               onChange={(id) => setActiveTab(id as TabId)}
+              ariaLabel="Bagian pengaturan"
               className="mt-s5"
             />
 

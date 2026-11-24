@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { redactForLog } from '@/lib/api/sanitize';
 import type { DB } from '@/lib/db/client';
 import type {
   AnswerQuestionResult,
@@ -481,7 +482,7 @@ export async function sendMessage(
       previous: previousContext,
     });
   } catch (error) {
-    console.error('[chat] core answerQuestion failed:', error instanceof Error ? error.message : error);
+    console.error('[chat] core answerQuestion failed:', redactForLog(error instanceof Error ? error.message : error));
     result = fallbackResult(error, lang, datasetRef, previousContext, Date.now() - started);
   }
 

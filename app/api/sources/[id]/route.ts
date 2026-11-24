@@ -19,7 +19,7 @@ export async function DELETE(_request: Request, ctx: Ctx) {
   return handleRoute(async () => {
     const db = ensureWorkspaceReady();
     const { id } = await ctx.params;
-    removeSource(db, id);
+    await removeSource(db, id);
     return noContent();
   });
 }

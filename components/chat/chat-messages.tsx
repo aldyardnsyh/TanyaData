@@ -14,6 +14,7 @@ import { StatusDot } from '@/components/signal/status-dot';
 import { TextGenerate } from '@/components/signal/text-generate';
 import { AdaptiveOutputView } from '@/components/signal/adaptive-output';
 import { CitationMarks } from '@/components/signal/citation-marks';
+import { NoDocumentsEmpty } from '@/components/ui/no-documents-empty';
 
 const SUGGESTED = [
   { icon: 'pinvoke', text: 'Berapa total transaksi bulan ini?' },
@@ -43,6 +44,8 @@ function TypingIndicator() {
 interface ChatMessagesProps {
   messages: ChatMessage[];
   docCount: number;
+  /** null = meta masih dimuat/gagal; jangan klaim "kosong" sebelum tahu. */
+  hasDocuments: boolean | null;
   detailLoading: boolean;
   detailError: string | null;
   sending: boolean;
@@ -58,7 +61,7 @@ interface ChatMessagesProps {
 }
 
 export function ChatMessages({
-  messages, docCount, detailLoading, detailError, sending, sendError, lastFailed,
+  messages, docCount, hasDocuments, detailLoading, detailError, sending, sendError, lastFailed,
   savingReportId, onFollowUp, onShare, onSaveReport, onRetry, onCopyQuestion, onOpenCitation,
 }: ChatMessagesProps) {
   const { lang } = useI18n();
@@ -75,35 +78,43 @@ export function ChatMessages({
     // agar tidak lolos clipping dan membuah halaman melebihi viewport.
     <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto px-s3 py-s4">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-s4" role="log" aria-live="polite" aria-relevant="additions">
-        {messages.length === 0 && !detailLoading && !sending && (
-          <div className="flex flex-col items-start gap-s4 py-s6">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-forest-08">
-              <Icon name="query_stats" className="text-[24px] text-forest" />
-            </span>
-            <div>
-              <h2 className="font-display text-title text-ink">
-                {lang === 'id' ? 'Halo, ada yang bisa saya bantu analisis?' : 'Hi, what can I help you analyze?'}
-              </h2>
-              <p className="mt-s1 font-body text-body text-ink-72">
-                {lang === 'id'
-                  ? `Ajukan pertanyaan tentang ${docCount} dokumen terindeks atau data transaksi. Setiap jawaban menyertakan sumbernya.`
-                  : `Ask about ${docCount} indexed documents or transaction data. Every answer includes its sources.`}
-              </p>
+        {messages.length === 0 && !detailLoading && !sending && hasDocuments !== null && (
+          hasDocuments ? (
+            <div className="flex flex-col items-start gap-s4 py-s6">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-forest-08">
+                <Icon name="query_stats" className="text-[24px] text-forest" />
+              </span>
+              <div>
+                <h2 className="font-display text-title text-ink">
+                  {lang === 'id' ? 'Halo, ada yang bisa saya bantu analisis?' : 'Hi, what can I help you analyze?'}
+                </h2>
+                <p className="mt-s1 font-body text-body text-ink-72">
+                  {lang === 'id'
+                    ? `Ajukan pertanyaan tentang ${docCount} dokumen terindeks atau data transaksi. Setiap jawaban menyertakan sumbernya.`
+                    : `Ask about ${docCount} indexed documents or transaction data. Every answer includes its sources.`}
+                </p>
+              </div>
+              <div className="grid w-full grid-cols-1 gap-s2 sm:grid-cols-2">
+                {SUGGESTED.map((item) => (
+                  <button
+                    key={item.text}
+                    type="button"
+                    onClick={() => onFollowUp(item.text)}
+                    className="touch-44 flex items-center justify-between gap-s2 rounded-control border border-[var(--border-hairline)] bg-porcelain px-s3 text-left font-body text-caption text-ink transition-colors hover:border-forest focus-ring"
+                  >
+                    <span className="flex items-center gap-s2"><Icon name={item.icon} className="text-[16px] text-forest" />{item.text}</span>
+                    <Icon name="arrow_forward" className="shrink-0 text-[16px] text-ink-72" />
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="grid w-full grid-cols-1 gap-s2 sm:grid-cols-2">
-              {SUGGESTED.map((item) => (
-                <button
-                  key={item.text}
-                  type="button"
-                  onClick={() => onFollowUp(item.text)}
-                  className="touch-44 flex items-center justify-between gap-s2 rounded-control border border-[var(--border-hairline)] bg-porcelain px-s3 text-left font-body text-caption text-ink transition-colors hover:border-forest focus-ring"
-                >
-                  <span className="flex items-center gap-s2"><Icon name={item.icon} className="text-[16px] text-forest" />{item.text}</span>
-                  <Icon name="arrow_forward" className="shrink-0 text-[16px] text-ink-72" />
-                </button>
-              ))}
+          ) : (
+            /* SEED_PROFILE=none: arahkan ke unggah, tanpa contoh pertanyaan
+               tentang data yang belum ada (R-17/R-38). */
+            <div className="py-s6">
+              <NoDocumentsEmpty heading="Belum ada yang bisa ditanyakan" />
             </div>
-          </div>
+          )
         )}
 
         {detailLoading && (

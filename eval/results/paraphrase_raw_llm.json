@@ -1,0 +1,3972 @@
+{
+  "generatedAt": "2026-11-24T06:57:11.900Z",
+  "role": "qa",
+  "phase": "P3-FASE3",
+  "harness": "eval/bridge.mjs",
+  "deterministic": true,
+  "config": {
+    "label": "baseline",
+    "questionsFile": "tanyadata\\eval\\results\\paraphrase_questions.json",
+    "ingestKb": [
+      "KB01",
+      "KB02",
+      "KB03",
+      "KB04"
+    ],
+    "evalKb": [
+      "KB01",
+      "KB02",
+      "KB03",
+      "KB04"
+    ],
+    "llmMode": "off",
+    "retrievalMode": "fts5",
+    "qdrantMode": "off",
+    "embeddingProvider": "off",
+    "runtimePatchApplied": false,
+    "pipeline": [
+      "validateUpload → ingestIntoDataset (PDF; image-only → gt_text_fallback, DILAPORKAN)",
+      "sectionsFromPages → cleanSections → chunkDocument → core_chunks + FTS5",
+      "searchChunks (raw) / correctQueryWithVocabulary+searchChunks (rewritten) / retrieveWithEntityBoost (production)",
+      "buildAiPortContext → answerQuestion(..., createCorePorts) — jalur produksi"
+    ]
+  },
+  "paths": {
+    "kbDir": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\ai_chatbot_testdata\\ai_chatbot_testdata\\Knowledge Base",
+    "gtDir": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\ai_chatbot_testdata\\ai_chatbot_testdata\\Knowledge Base\\GroundTruth Knowledge Based",
+    "sopFile": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\ai_chatbot_testdata\\ai_chatbot_testdata\\Knowledge Base\\Tuningan Knowledge\\knowledge_tuning_sop.json",
+    "workspace": "C:\\Users\\aldya\\AppData\\Local\\Temp\\opencode\\qa-baseline-11016-1795503429105"
+  },
+  "corpus": {
+    "KB01": {
+      "kb": "KB01",
+      "pdf": "KB_01_Penanganan_Tiket_Layanan.pdf",
+      "gtFile": "ground_truth_KB01_penanganan_tiket_layanan.json",
+      "ingest": {
+        "kb": "KB01",
+        "pdf": "KB_01_Penanganan_Tiket_Layanan.pdf",
+        "ingestMode": "gt_text_fallback",
+        "fallbackReason": "Dokumen tidak memiliki text layer yang dapat diekstrak",
+        "datasetId": "ds_e22164a8a031",
+        "sha256": "f1bf8aa93be51d77a700fe04cdc46ff8d9a14357bbb33b7c6381a9e8b198e71a"
+      },
+      "gt_sections": [
+        {
+          "section_id": "KB01#1",
+          "document": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "page": 1,
+          "number": 1,
+          "title": "Tujuan",
+          "text": "Panduan ini digunakan oleh petugas layanan untuk menerima, mengelompokkan, menangani, dan menutup tiket pelanggan secara konsisten. Setiap tiket wajib memiliki nomor referensi dan waktu pencatatan."
+        },
+        {
+          "section_id": "KB01#2",
+          "document": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "page": 1,
+          "number": 2,
+          "title": "Pencatatan Tiket",
+          "text": "Catat identitas pelanggan, kanal laporan, ringkasan masalah, waktu kejadian, dampak layanan, dan bukti pendukung. Apabila informasi belum lengkap, tiket tetap dibuat dengan status Menunggu Informasi."
+        },
+        {
+          "section_id": "KB01#3",
+          "document": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "page": 1,
+          "number": 3,
+          "title": "Tingkat Prioritas",
+          "text": "P1 Kritis: layanan utama tidak dapat digunakan oleh banyak pelanggan. P2 Tinggi: fungsi penting terganggu dengan solusi sementara terbatas. P3 Sedang: gangguan parsial yang masih memiliki alternatif. P4 Rendah: pertanyaan umum atau permintaan administratif."
+        },
+        {
+          "section_id": "KB01#4",
+          "document": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "page": 1,
+          "number": 4,
+          "title": "Target Respons Awal",
+          "text": "P1: 15 menit; P2: 1 jam; P3: 4 jam kerja; P4: 1 hari kerja. Respons awal berarti petugas telah mengakui laporan dan menyampaikan langkah berikutnya, bukan bahwa masalah sudah selesai."
+        },
+        {
+          "section_id": "KB01#5",
+          "document": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "page": 1,
+          "number": 5,
+          "title": "Penugasan",
+          "text": "Petugas layanan melakukan triase dan menetapkan penanggung jawab. Tim teknis menangani gangguan sistem, sedangkan tim administrasi menangani perubahan data dan permintaan dokumen."
+        },
+        {
+          "section_id": "KB01#6",
+          "document": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "page": 1,
+          "number": 6,
+          "title": "Status Tiket",
+          "text": "Status yang digunakan adalah Baru, Diproses, Menunggu Pelanggan, Menunggu Pihak Ketiga, Selesai, dan Ditutup. Perubahan status harus disertai catatan aktivitas."
+        },
+        {
+          "section_id": "KB01#7",
+          "document": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "page": 1,
+          "number": 7,
+          "title": "Penutupan",
+          "text": "Tiket dapat ditutup setelah penyelesaian dikonfirmasi pelanggan atau setelah dua hari kerja tanpa tanggapan sejak notifikasi selesai, kecuali tiket P1 yang memerlukan konfirmasi eksplisit."
+        },
+        {
+          "section_id": "KB01#8",
+          "document": "KB_01_Penanganan_Tiket_Layanan.pdf",
+          "page": 1,
+          "number": 8,
+          "title": "Catatan Khusus",
+          "text": "Apabila ada indikasi kebocoran data, jangan mencantumkan informasi rahasia dalam catatan tiket. Ikuti kebijakan insiden dan informasikan koordinator layanan."
+        }
+      ],
+      "extracted_sections": [
+        {
+          "section_path": "1. Tujuan",
+          "page": 1,
+          "text": "Panduan ini digunakan oleh petugas layanan untuk menerima, mengelompokkan, menangani, dan menutup tiket pelanggan secara konsisten. Setiap tiket wajib memiliki nomor referensi dan waktu pencatatan.",
+          "chunk_ids": [
+            "1"
+          ],
+          "first_id": 1
+        },
+        {
+          "section_path": "2. Pencatatan Tiket",
+          "page": 1,
+          "text": "Catat identitas pelanggan, kanal laporan, ringkasan masalah, waktu kejadian, dampak layanan, dan bukti pendukung. Apabila informasi belum lengkap, tiket tetap dibuat dengan status Menunggu Informasi.",
+          "chunk_ids": [
+            "2"
+          ],
+          "first_id": 2
+        },
+        {
+          "section_path": "3. Tingkat Prioritas",
+          "page": 1,
+          "text": "P1 Kritis: layanan utama tidak dapat digunakan oleh banyak pelanggan. P2 Tinggi: fungsi penting terganggu dengan solusi sementara terbatas. P3 Sedang: gangguan parsial yang masih memiliki alternatif. P4 Rendah: pertanyaan umum atau permintaan administratif.",
+          "chunk_ids": [
+            "3"
+          ],
+          "first_id": 3
+        },
+        {
+          "section_path": "4. Target Respons Awal",
+          "page": 1,
+          "text": "P1: 15 menit; P2: 1 jam; P3: 4 jam kerja; P4: 1 hari kerja. Respons awal berarti petugas telah mengakui laporan dan menyampaikan langkah berikutnya, bukan bahwa masalah sudah selesai.",
+          "chunk_ids": [
+            "4"
+          ],
+          "first_id": 4
+        },
+        {
+          "section_path": "5. Penugasan",
+          "page": 1,
+          "text": "Petugas layanan melakukan triase dan menetapkan penanggung jawab. Tim teknis menangani gangguan sistem, sedangkan tim administrasi menangani perubahan data dan permintaan dokumen.",
+          "chunk_ids": [
+            "5"
+          ],
+          "first_id": 5
+        },
+        {
+          "section_path": "6. Status Tiket",
+          "page": 1,
+          "text": "Status yang digunakan adalah Baru, Diproses, Menunggu Pelanggan, Menunggu Pihak Ketiga, Selesai, dan Ditutup. Perubahan status harus disertai catatan aktivitas.",
+          "chunk_ids": [
+            "6"
+          ],
+          "first_id": 6
+        },
+        {
+          "section_path": "7. Penutupan",
+          "page": 1,
+          "text": "Tiket dapat ditutup setelah penyelesaian dikonfirmasi pelanggan atau setelah dua hari kerja tanpa tanggapan sejak notifikasi selesai, kecuali tiket P1 yang memerlukan konfirmasi eksplisit.",
+          "chunk_ids": [
+            "7"
+          ],
+          "first_id": 7
+        },
+        {
+          "section_path": "8. Catatan Khusus",
+          "page": 1,
+          "text": "Apabila ada indikasi kebocoran data, jangan mencantumkan informasi rahasia dalam catatan tiket. Ikuti kebijakan insiden dan informasikan koordinator layanan.",
+          "chunk_ids": [
+            "8"
+          ],
+          "first_id": 8
+        }
+      ],
+      "chunk_count": 8
+    },
+    "KB02": {
+      "kb": "KB02",
+      "pdf": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+      "gtFile": "ground_truth_KB02_pengelolaan_keluhan_pelanggan.json",
+      "ingest": {
+        "kb": "KB02",
+        "pdf": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+        "ingestMode": "pdf",
+        "fallbackReason": null,
+        "datasetId": "ds_fda13db6800c",
+        "sha256": "7ce189a346545c84f5c40024dabef621cff7a8ed4aa2f8a42180148cf4585f92"
+      },
+      "gt_sections": [
+        {
+          "section_id": "KB02#1",
+          "document": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+          "page": 1,
+          "number": 1,
+          "title": "Ruang Lingkup",
+          "text": "Keluhan adalah pernyataan ketidakpuasan pelanggan atas layanan, komunikasi, hasil penanganan, atau perilaku petugas. Keluhan dapat diterima melalui email, telepon, formulir, dan percakapan resmi."
+        },
+        {
+          "section_id": "KB02#2",
+          "document": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+          "page": 1,
+          "number": 2,
+          "title": "Verifikasi",
+          "text": "Petugas mencocokkan identitas pelapor dengan informasi akun yang tersedia. Jangan meminta kata sandi, PIN, atau kode OTP. Bukti percakapan boleh dilampirkan setelah data sensitif disamarkan."
+        },
+        {
+          "section_id": "KB02#3",
+          "document": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+          "page": 1,
+          "number": 3,
+          "title": "Kategori Keluhan",
+          "text": "Kategori layanan mencakup kualitas respons, keterlambatan, kesalahan informasi, kendala pembayaran, dan sikap petugas. Satu keluhan dapat memiliki kategori utama dan kategori tambahan."
+        },
+        {
+          "section_id": "KB02#4",
+          "document": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+          "page": 1,
+          "number": 4,
+          "title": "Konfirmasi Penerimaan",
+          "text": "Keluhan harus diakui paling lambat satu hari kerja sejak diterima. Nomor referensi dan perkiraan waktu pembaruan disampaikan kepada pelanggan."
+        },
+        {
+          "section_id": "KB02#5",
+          "document": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+          "page": 1,
+          "number": 5,
+          "title": "Penanganan",
+          "text": "Petugas menelusuri kronologi, memeriksa bukti, menghubungi unit terkait, dan mendokumentasikan tindakan. Jika penyelesaian membutuhkan keputusan lintas tim, koordinator layanan menetapkan PIC utama."
+        },
+        {
+          "section_id": "KB02#6",
+          "document": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+          "page": 1,
+          "number": 6,
+          "title": "Keluhan Berulang",
+          "text": "Keluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator. Keluhan berulang tidak otomatis menjadi insiden P1; penentuan prioritas mengikuti dampak aktual."
+        },
+        {
+          "section_id": "KB02#7",
+          "document": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+          "page": 1,
+          "number": 7,
+          "title": "Kompensasi",
+          "text": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat berwenang. Semua keputusan kompensasi dicatat bersama dasar persetujuannya."
+        },
+        {
+          "section_id": "KB02#8",
+          "document": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+          "page": 1,
+          "number": 8,
+          "title": "Penyelesaian dan Umpan Balik",
+          "text": "Hasil penanganan disampaikan dengan bahasa yang mudah dipahami. Keluhan dianggap selesai setelah tindakan telah dilaksanakan dan pelanggan diberi penjelasan. Umpan balik negatif setelah penutupan dicatat sebagai tindak lanjut baru bila ada informasi baru."
+        }
+      ],
+      "extracted_sections": [
+        {
+          "section_path": "KB_02_Pengelolaan_Keluhan_Pelanggan",
+          "page": 1,
+          "text": "Pengelolaan Keluhan Pelanggan",
+          "chunk_ids": [
+            "9"
+          ],
+          "first_id": 9
+        },
+        {
+          "section_path": "1. Ruang Lingkup",
+          "page": 1,
+          "text": "Keluhan adalah pernyataan ketidakpuasan pelanggan atas layanan, komunikasi, hasil penanganan, atau perilaku petugas. Keluhan dapat diterima melalui email, telepon, formulir, dan percakapan resmi.",
+          "chunk_ids": [
+            "10"
+          ],
+          "first_id": 10
+        },
+        {
+          "section_path": "2. Verifikasi",
+          "page": 1,
+          "text": "Petugas mencocokkan identitas pelapor dengan informasi akun yang tersedia. Jangan meminta kata sandi, PIN, atau kode OTP. Bukti percakapan boleh dilampirkan setelah data sensitif disamarkan.",
+          "chunk_ids": [
+            "11"
+          ],
+          "first_id": 11
+        },
+        {
+          "section_path": "3. Kategori Keluhan",
+          "page": 1,
+          "text": "Kategori layanan mencakup kualitas respons, keterlambatan, kesalahan informasi, kendala pembayaran, dan sikap petugas. Satu keluhan dapat memiliki kategori utama dan kategori tambahan.",
+          "chunk_ids": [
+            "12"
+          ],
+          "first_id": 12
+        },
+        {
+          "section_path": "4. Konfirmasi Penerimaan",
+          "page": 1,
+          "text": "Keluhan harus diakui paling lambat satu hari kerja sejak diterima. Nomor referensi dan perkiraan waktu pembaruan disampaikan kepada pelanggan.",
+          "chunk_ids": [
+            "13"
+          ],
+          "first_id": 13
+        },
+        {
+          "section_path": "5. Penanganan",
+          "page": 1,
+          "text": "Petugas menelusuri kronologi, memeriksa bukti, menghubungi unit terkait, dan mendokumentasikan tindakan. Jika penyelesaian membutuhkan keputusan lintas tim, koordinator layanan menetapkan PIC utama.",
+          "chunk_ids": [
+            "14"
+          ],
+          "first_id": 14
+        },
+        {
+          "section_path": "6. Keluhan Berulang",
+          "page": 1,
+          "text": "Keluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator. Keluhan berulang tidak otomatis menjadi insiden P1; penentuan prioritas mengikuti dampak aktual.",
+          "chunk_ids": [
+            "15"
+          ],
+          "first_id": 15
+        },
+        {
+          "section_path": "7. Kompensasi",
+          "page": 1,
+          "text": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat berwenang. Semua keputusan kompensasi dicatat bersama dasar persetujuannya.",
+          "chunk_ids": [
+            "16"
+          ],
+          "first_id": 16
+        },
+        {
+          "section_path": "8. Penyelesaian dan Umpan Balik",
+          "page": 1,
+          "text": "Hasil penanganan disampaikan dengan bahasa yang mudah dipahami. Keluhan dianggap selesai setelah tindakan telah dilaksanakan dan pelanggan diberi penjelasan. Umpan balik negatif setelah penutupan dicatat sebagai tindak lanjut baru bila ada informasi baru. 1",
+          "chunk_ids": [
+            "17"
+          ],
+          "first_id": 17
+        }
+      ],
+      "chunk_count": 9
+    },
+    "KB03": {
+      "kb": "KB03",
+      "pdf": "KB_03_Panduan_Operasional_Layanan.pdf",
+      "gtFile": "ground_truth_KB03_panduan_operasional_layanan.json",
+      "ingest": {
+        "kb": "KB03",
+        "pdf": "KB_03_Panduan_Operasional_Layanan.pdf",
+        "ingestMode": "pdf",
+        "fallbackReason": null,
+        "datasetId": "ds_6315377cd687",
+        "sha256": "93dbdeeec44ce646fe1b79525a291cba441842e1b8570f985cd554b957a15910"
+      },
+      "gt_sections": [
+        {
+          "section_id": "KB03#1",
+          "document": "KB_03_Panduan_Operasional_Layanan.pdf",
+          "page": 1,
+          "number": 1,
+          "title": "Jam Layanan",
+          "text": "Layanan reguler beroperasi Senin sampai Jumat pukul 09.00-17.00 WIB, tidak termasuk hari libur nasional. Gangguan kritis diteruskan melalui jalur piket di luar jam tersebut."
+        },
+        {
+          "section_id": "KB03#2",
+          "document": "KB_03_Panduan_Operasional_Layanan.pdf",
+          "page": 1,
+          "number": 2,
+          "title": "Serah Terima Shift",
+          "text": "Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan. Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab."
+        },
+        {
+          "section_id": "KB03#3",
+          "document": "KB_03_Panduan_Operasional_Layanan.pdf",
+          "page": 1,
+          "number": 3,
+          "title": "Pemeriksaan Harian",
+          "text": "Pada awal hari kerja, petugas memeriksa antrean tiket baru, tiket mendekati batas respons, tiket menunggu pelanggan, dan pengumuman gangguan yang masih aktif."
+        },
+        {
+          "section_id": "KB03#4",
+          "document": "KB_03_Panduan_Operasional_Layanan.pdf",
+          "page": 1,
+          "number": 4,
+          "title": "Pembaruan Berkala",
+          "text": "Tiket P1 diperbarui kepada pelanggan setidaknya setiap 30 menit selama gangguan aktif. Tiket P2 diperbarui setiap 4 jam kerja jika belum selesai. Untuk P3 dan P4, pembaruan diberikan saat ada perkembangan penting atau sesuai janji petugas."
+        },
+        {
+          "section_id": "KB03#5",
+          "document": "KB_03_Panduan_Operasional_Layanan.pdf",
+          "page": 1,
+          "number": 5,
+          "title": "Kanal Komunikasi",
+          "text": "Informasi resmi diberikan melalui kanal layanan yang tercatat. Permintaan perubahan data akun tidak diproses melalui pesan pribadi petugas tanpa verifikasi."
+        },
+        {
+          "section_id": "KB03#6",
+          "document": "KB_03_Panduan_Operasional_Layanan.pdf",
+          "page": 1,
+          "number": 6,
+          "title": "Pengelolaan Dokumen",
+          "text": "Simpan bukti dan catatan kerja di lokasi yang disetujui. Berkas pelanggan tidak boleh dibagikan melalui tautan publik. Hapus salinan lokal yang tidak lagi dibutuhkan sesuai kebijakan retensi."
+        },
+        {
+          "section_id": "KB03#7",
+          "document": "KB_03_Panduan_Operasional_Layanan.pdf",
+          "page": 1,
+          "number": 7,
+          "title": "Pelaporan Mingguan",
+          "text": "Koordinator menyusun ringkasan jumlah tiket, kategori masalah, ketepatan respons, backlog, dan kendala operasional. Angka dihitung dari catatan sistem, bukan perkiraan manual."
+        },
+        {
+          "section_id": "KB03#8",
+          "document": "KB_03_Panduan_Operasional_Layanan.pdf",
+          "page": 1,
+          "number": 8,
+          "title": "Situasi Tidak Biasa",
+          "text": "Jika sistem tiket tidak tersedia, catat laporan dalam formulir sementara dengan waktu asli penerimaan. Setelah sistem pulih, masukkan data kembali dan tandai bahwa tiket berasal dari pencatatan sementara."
+        }
+      ],
+      "extracted_sections": [
+        {
+          "section_path": "KB_03_Panduan_Operasional_Layanan",
+          "page": 1,
+          "text": "Panduan Operasional Layanan",
+          "chunk_ids": [
+            "18"
+          ],
+          "first_id": 18
+        },
+        {
+          "section_path": "1. Jam Layanan 7. Pelaporan Mingguan",
+          "page": 1,
+          "text": "Layanan reguler beroperasi Senin sampai Jumat Koordinator menyusun ringkasan jumlah tiket, pukul 09.00-17.00 WIB, tidak termasuk hari libur kategori masalah, ketepatan respons, backlog, dan nasional. Gangguan kritis diteruskan melalui jalur kendala operasional. Angka dihitung dari catatan piket di luar jam tersebut. sistem, bukan perkiraan manual.",
+          "chunk_ids": [
+            "19"
+          ],
+          "first_id": 19
+        },
+        {
+          "section_path": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+          "page": 1,
+          "text": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara.",
+          "chunk_ids": [
+            "20"
+          ],
+          "first_id": 20
+        },
+        {
+          "section_path": "3. Pemeriksaan Harian",
+          "page": 1,
+          "text": "Pada awal hari kerja, petugas memeriksa antrean tiket baru, tiket mendekati batas respons, tiket menunggu pelanggan, dan pengumuman gangguan yang masih aktif.",
+          "chunk_ids": [
+            "21"
+          ],
+          "first_id": 21
+        },
+        {
+          "section_path": "4. Pembaruan Berkala",
+          "page": 1,
+          "text": "Tiket P1 diperbarui kepada pelanggan setidaknya setiap 30 menit selama gangguan aktif. Tiket P2 diperbarui setiap 4 jam kerja jika belum selesai. Untuk P3 dan P4, pembaruan diberikan saat ada perkembangan penting atau sesuai janji petugas.",
+          "chunk_ids": [
+            "22"
+          ],
+          "first_id": 22
+        },
+        {
+          "section_path": "5. Kanal Komunikasi",
+          "page": 1,
+          "text": "Informasi resmi diberikan melalui kanal layanan yang tercatat. Permintaan perubahan data akun tidak diproses melalui pesan pribadi petugas tanpa verifikasi.",
+          "chunk_ids": [
+            "23"
+          ],
+          "first_id": 23
+        },
+        {
+          "section_path": "6. Pengelolaan Dokumen",
+          "page": 1,
+          "text": "Simpan bukti dan catatan kerja di lokasi yang disetujui. Berkas pelanggan tidak boleh dibagikan melalui tautan publik. Hapus salinan lokal yang tidak lagi dibutuhkan sesuai kebijakan retensi. 1",
+          "chunk_ids": [
+            "24"
+          ],
+          "first_id": 24
+        }
+      ],
+      "chunk_count": 7
+    },
+    "KB04": {
+      "kb": "KB04",
+      "pdf": "KB_04_Eskalasi_dan_Insiden.pdf",
+      "gtFile": "ground_truth_KB04_eskalasi_dan_insiden.json",
+      "ingest": {
+        "kb": "KB04",
+        "pdf": "KB_04_Eskalasi_dan_Insiden.pdf",
+        "ingestMode": "gt_text_fallback",
+        "fallbackReason": "Dokumen tidak memiliki text layer yang dapat diekstrak",
+        "datasetId": "ds_c0ed996deefe",
+        "sha256": "f5694551f7f6f7fe2b8471c3f7603479e1108e53c09f1f15a20f745e8c74ed02"
+      },
+      "gt_sections": [
+        {
+          "section_id": "KB04#1",
+          "document": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "page": 1,
+          "number": 1,
+          "title": "Definisi",
+          "text": "Insiden adalah gangguan yang mengurangi ketersediaan, keamanan, atau fungsi layanan. Tidak setiap keluhan merupakan insiden; penilaian didasarkan pada dampak nyata dan risiko."
+        },
+        {
+          "section_id": "KB04#2",
+          "document": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "page": 1,
+          "number": 2,
+          "title": "Tingkat Insiden",
+          "text": "SEV1: gangguan menyeluruh atau dugaan paparan data sensitif. SEV2: layanan utama terdegradasi bagi banyak pengguna. SEV3: gangguan terbatas dengan alternatif operasional. SEV4: gangguan minor tanpa dampak signifikan."
+        },
+        {
+          "section_id": "KB04#3",
+          "document": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "page": 1,
+          "number": 3,
+          "title": "Aktivasi Eskalasi",
+          "text": "SEV1 harus segera dilaporkan kepada koordinator insiden dan tim teknis piket, termasuk di luar jam layanan. SEV2 dieskalasikan kepada penanggung jawab teknis paling lambat 30 menit sejak klasifikasi."
+        },
+        {
+          "section_id": "KB04#4",
+          "document": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "page": 1,
+          "number": 4,
+          "title": "Pembagian Peran",
+          "text": "Koordinator insiden memimpin keputusan dan komunikasi lintas tim. PIC teknis melakukan diagnosis serta pemulihan. Petugas layanan menyampaikan pembaruan pelanggan berdasarkan informasi yang sudah diverifikasi."
+        },
+        {
+          "section_id": "KB04#5",
+          "document": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "page": 1,
+          "number": 5,
+          "title": "Komunikasi Insiden",
+          "text": "Untuk SEV1, pembaruan status internal dibuat setiap 20 menit. Komunikasi pelanggan menggunakan ringkasan dampak, langkah mitigasi, dan waktu pembaruan berikutnya tanpa mengungkap detail keamanan sensitif."
+        },
+        {
+          "section_id": "KB04#6",
+          "document": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "page": 1,
+          "number": 6,
+          "title": "Penanganan Keamanan",
+          "text": "Indikasi kebocoran data harus segera dibatasi aksesnya dan dicatat melalui kanal keamanan. Jangan mengunggah contoh data pribadi ke tiket umum. Penilaian dampak dilakukan oleh pihak yang berwenang."
+        },
+        {
+          "section_id": "KB04#7",
+          "document": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "page": 1,
+          "number": 7,
+          "title": "Pemulihan",
+          "text": "Status pulih ditetapkan setelah fungsi utama diverifikasi. Penyelesaian insiden tidak otomatis menutup semua tiket pelanggan yang terkait; tiap tiket tetap mengikuti aturan penutupan tiket."
+        },
+        {
+          "section_id": "KB04#8",
+          "document": "KB_04_Eskalasi_dan_Insiden.pdf",
+          "page": 1,
+          "number": 8,
+          "title": "Evaluasi Pascainsiden",
+          "text": "Untuk SEV1 dan SEV2, tim menyusun tinjauan pascainsiden paling lambat lima hari kerja setelah pemulihan, meliputi kronologi, akar masalah yang diketahui, tindakan, dan langkah pencegahan."
+        }
+      ],
+      "extracted_sections": [
+        {
+          "section_path": "1. Definisi",
+          "page": 1,
+          "text": "Insiden adalah gangguan yang mengurangi ketersediaan, keamanan, atau fungsi layanan. Tidak setiap keluhan merupakan insiden; penilaian didasarkan pada dampak nyata dan risiko.",
+          "chunk_ids": [
+            "25"
+          ],
+          "first_id": 25
+        },
+        {
+          "section_path": "2. Tingkat Insiden",
+          "page": 1,
+          "text": "SEV1: gangguan menyeluruh atau dugaan paparan data sensitif. SEV2: layanan utama terdegradasi bagi banyak pengguna. SEV3: gangguan terbatas dengan alternatif operasional. SEV4: gangguan minor tanpa dampak signifikan.",
+          "chunk_ids": [
+            "26"
+          ],
+          "first_id": 26
+        },
+        {
+          "section_path": "3. Aktivasi Eskalasi",
+          "page": 1,
+          "text": "SEV1 harus segera dilaporkan kepada koordinator insiden dan tim teknis piket, termasuk di luar jam layanan. SEV2 dieskalasikan kepada penanggung jawab teknis paling lambat 30 menit sejak klasifikasi.",
+          "chunk_ids": [
+            "27"
+          ],
+          "first_id": 27
+        },
+        {
+          "section_path": "4. Pembagian Peran",
+          "page": 1,
+          "text": "Koordinator insiden memimpin keputusan dan komunikasi lintas tim. PIC teknis melakukan diagnosis serta pemulihan. Petugas layanan menyampaikan pembaruan pelanggan berdasarkan informasi yang sudah diverifikasi.",
+          "chunk_ids": [
+            "28"
+          ],
+          "first_id": 28
+        },
+        {
+          "section_path": "5. Komunikasi Insiden",
+          "page": 1,
+          "text": "Untuk SEV1, pembaruan status internal dibuat setiap 20 menit. Komunikasi pelanggan menggunakan ringkasan dampak, langkah mitigasi, dan waktu pembaruan berikutnya tanpa mengungkap detail keamanan sensitif.",
+          "chunk_ids": [
+            "29"
+          ],
+          "first_id": 29
+        },
+        {
+          "section_path": "6. Penanganan Keamanan",
+          "page": 1,
+          "text": "Indikasi kebocoran data harus segera dibatasi aksesnya dan dicatat melalui kanal keamanan. Jangan mengunggah contoh data pribadi ke tiket umum. Penilaian dampak dilakukan oleh pihak yang berwenang.",
+          "chunk_ids": [
+            "30"
+          ],
+          "first_id": 30
+        },
+        {
+          "section_path": "7. Pemulihan",
+          "page": 1,
+          "text": "Status pulih ditetapkan setelah fungsi utama diverifikasi. Penyelesaian insiden tidak otomatis menutup semua tiket pelanggan yang terkait; tiap tiket tetap mengikuti aturan penutupan tiket.",
+          "chunk_ids": [
+            "31"
+          ],
+          "first_id": 31
+        },
+        {
+          "section_path": "8. Evaluasi Pascainsiden",
+          "page": 1,
+          "text": "Untuk SEV1 dan SEV2, tim menyusun tinjauan pascainsiden paling lambat lima hari kerja setelah pemulihan, meliputi kronologi, akar masalah yang diketahui, tindakan, dan langkah pencegahan.",
+          "chunk_ids": [
+            "32"
+          ],
+          "first_id": 32
+        }
+      ],
+      "chunk_count": 8
+    }
+  },
+  "known_violations": [
+    {
+      "id": "KNOWN_BASELINE_VIOLATION",
+      "kb": "KB01",
+      "pdf": "KB_01_Penanganan_Tiket_Layanan.pdf",
+      "rule": "Korpus evaluasi tidak boleh berasal dari ground truth",
+      "detail": "PDF image-only tanpa text layer; OCR offline tidak tersedia. Teks diambil dari corpus_sections GT.",
+      "reason": "Dokumen tidak memiliki text layer yang dapat diekstrak",
+      "phase_to_fix": "Fase 2 (owner lane)"
+    },
+    {
+      "id": "KNOWN_BASELINE_VIOLATION",
+      "kb": "KB04",
+      "pdf": "KB_04_Eskalasi_dan_Insiden.pdf",
+      "rule": "Korpus evaluasi tidak boleh berasal dari ground truth",
+      "detail": "PDF image-only tanpa text layer; OCR offline tidak tersedia. Teks diambil dari corpus_sections GT.",
+      "reason": "Dokumen tidak memiliki text layer yang dapat diekstrak",
+      "phase_to_fix": "Fase 2 (owner lane)"
+    }
+  ],
+  "gt_summary": {
+    "files": [
+      "ground_truth_KB01_penanganan_tiket_layanan.json",
+      "ground_truth_KB02_pengelolaan_keluhan_pelanggan.json",
+      "ground_truth_KB03_panduan_operasional_layanan.json",
+      "ground_truth_KB04_eskalasi_dan_insiden.json"
+    ],
+    "total_questions": 2,
+    "dev": 0,
+    "holdout": 0,
+    "sections": 32
+  },
+  "chunks_by_id": {
+    "1": {
+      "id": "1",
+      "kb": "KB01",
+      "dataset_id": "ds_e22164a8a031",
+      "document_id": "doc_f1bf8aa93be5",
+      "section_path": "1. Tujuan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 50,
+      "char_count": 197,
+      "page_span": "[1,1]",
+      "gt_section": "KB01#1",
+      "text": "Panduan ini digunakan oleh petugas layanan untuk menerima, mengelompokkan, menangani, dan menutup tiket pelanggan secara konsisten. Setiap tiket wajib memiliki nomor referensi dan waktu pencatatan."
+    },
+    "2": {
+      "id": "2",
+      "kb": "KB01",
+      "dataset_id": "ds_e22164a8a031",
+      "document_id": "doc_f1bf8aa93be5",
+      "section_path": "2. Pencatatan Tiket",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 50,
+      "char_count": 199,
+      "page_span": "[1,1]",
+      "gt_section": "KB01#2",
+      "text": "Catat identitas pelanggan, kanal laporan, ringkasan masalah, waktu kejadian, dampak layanan, dan bukti pendukung. Apabila informasi belum lengkap, tiket tetap dibuat dengan status Menunggu Informasi."
+    },
+    "3": {
+      "id": "3",
+      "kb": "KB01",
+      "dataset_id": "ds_e22164a8a031",
+      "document_id": "doc_f1bf8aa93be5",
+      "section_path": "3. Tingkat Prioritas",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 65,
+      "char_count": 257,
+      "page_span": "[1,1]",
+      "gt_section": "KB01#3",
+      "text": "P1 Kritis: layanan utama tidak dapat digunakan oleh banyak pelanggan. P2 Tinggi: fungsi penting terganggu dengan solusi sementara terbatas. P3 Sedang: gangguan parsial yang masih memiliki alternatif. P4 Rendah: pertanyaan umum atau permintaan administratif."
+    },
+    "4": {
+      "id": "4",
+      "kb": "KB01",
+      "dataset_id": "ds_e22164a8a031",
+      "document_id": "doc_f1bf8aa93be5",
+      "section_path": "4. Target Respons Awal",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 46,
+      "char_count": 183,
+      "page_span": "[1,1]",
+      "gt_section": "KB01#4",
+      "text": "P1: 15 menit; P2: 1 jam; P3: 4 jam kerja; P4: 1 hari kerja. Respons awal berarti petugas telah mengakui laporan dan menyampaikan langkah berikutnya, bukan bahwa masalah sudah selesai."
+    },
+    "5": {
+      "id": "5",
+      "kb": "KB01",
+      "dataset_id": "ds_e22164a8a031",
+      "document_id": "doc_f1bf8aa93be5",
+      "section_path": "5. Penugasan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 45,
+      "char_count": 179,
+      "page_span": "[1,1]",
+      "gt_section": "KB01#5",
+      "text": "Petugas layanan melakukan triase dan menetapkan penanggung jawab. Tim teknis menangani gangguan sistem, sedangkan tim administrasi menangani perubahan data dan permintaan dokumen."
+    },
+    "6": {
+      "id": "6",
+      "kb": "KB01",
+      "dataset_id": "ds_e22164a8a031",
+      "document_id": "doc_f1bf8aa93be5",
+      "section_path": "6. Status Tiket",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 40,
+      "char_count": 160,
+      "page_span": "[1,1]",
+      "gt_section": "KB01#6",
+      "text": "Status yang digunakan adalah Baru, Diproses, Menunggu Pelanggan, Menunggu Pihak Ketiga, Selesai, dan Ditutup. Perubahan status harus disertai catatan aktivitas."
+    },
+    "7": {
+      "id": "7",
+      "kb": "KB01",
+      "dataset_id": "ds_e22164a8a031",
+      "document_id": "doc_f1bf8aa93be5",
+      "section_path": "7. Penutupan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 47,
+      "char_count": 188,
+      "page_span": "[1,1]",
+      "gt_section": "KB01#7",
+      "text": "Tiket dapat ditutup setelah penyelesaian dikonfirmasi pelanggan atau setelah dua hari kerja tanpa tanggapan sejak notifikasi selesai, kecuali tiket P1 yang memerlukan konfirmasi eksplisit."
+    },
+    "8": {
+      "id": "8",
+      "kb": "KB01",
+      "dataset_id": "ds_e22164a8a031",
+      "document_id": "doc_f1bf8aa93be5",
+      "section_path": "8. Catatan Khusus",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 40,
+      "char_count": 157,
+      "page_span": "[1,1]",
+      "gt_section": "KB01#8",
+      "text": "Apabila ada indikasi kebocoran data, jangan mencantumkan informasi rahasia dalam catatan tiket. Ikuti kebijakan insiden dan informasikan koordinator layanan."
+    },
+    "9": {
+      "id": "9",
+      "kb": "KB02",
+      "dataset_id": "ds_fda13db6800c",
+      "document_id": "doc_7ce189a34654",
+      "section_path": "KB_02_Pengelolaan_Keluhan_Pelanggan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 8,
+      "char_count": 29,
+      "page_span": "[1,1]",
+      "gt_section": null,
+      "text": "Pengelolaan Keluhan Pelanggan"
+    },
+    "10": {
+      "id": "10",
+      "kb": "KB02",
+      "dataset_id": "ds_fda13db6800c",
+      "document_id": "doc_7ce189a34654",
+      "section_path": "1. Ruang Lingkup",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 49,
+      "char_count": 195,
+      "page_span": "[1,1]",
+      "gt_section": "KB02#1",
+      "text": "Keluhan adalah pernyataan ketidakpuasan pelanggan atas layanan, komunikasi, hasil penanganan, atau perilaku petugas. Keluhan dapat diterima melalui email, telepon, formulir, dan percakapan resmi."
+    },
+    "11": {
+      "id": "11",
+      "kb": "KB02",
+      "dataset_id": "ds_fda13db6800c",
+      "document_id": "doc_7ce189a34654",
+      "section_path": "2. Verifikasi",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 48,
+      "char_count": 190,
+      "page_span": "[1,1]",
+      "gt_section": "KB02#2",
+      "text": "Petugas mencocokkan identitas pelapor dengan informasi akun yang tersedia. Jangan meminta kata sandi, PIN, atau kode OTP. Bukti percakapan boleh dilampirkan setelah data sensitif disamarkan."
+    },
+    "12": {
+      "id": "12",
+      "kb": "KB02",
+      "dataset_id": "ds_fda13db6800c",
+      "document_id": "doc_7ce189a34654",
+      "section_path": "3. Kategori Keluhan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 46,
+      "char_count": 184,
+      "page_span": "[1,1]",
+      "gt_section": "KB02#3",
+      "text": "Kategori layanan mencakup kualitas respons, keterlambatan, kesalahan informasi, kendala pembayaran, dan sikap petugas. Satu keluhan dapat memiliki kategori utama dan kategori tambahan."
+    },
+    "13": {
+      "id": "13",
+      "kb": "KB02",
+      "dataset_id": "ds_fda13db6800c",
+      "document_id": "doc_7ce189a34654",
+      "section_path": "4. Konfirmasi Penerimaan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 36,
+      "char_count": 142,
+      "page_span": "[1,1]",
+      "gt_section": "KB02#4",
+      "text": "Keluhan harus diakui paling lambat satu hari kerja sejak diterima. Nomor referensi dan perkiraan waktu pembaruan disampaikan kepada pelanggan."
+    },
+    "14": {
+      "id": "14",
+      "kb": "KB02",
+      "dataset_id": "ds_fda13db6800c",
+      "document_id": "doc_7ce189a34654",
+      "section_path": "5. Penanganan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 50,
+      "char_count": 198,
+      "page_span": "[1,1]",
+      "gt_section": "KB02#5",
+      "text": "Petugas menelusuri kronologi, memeriksa bukti, menghubungi unit terkait, dan mendokumentasikan tindakan. Jika penyelesaian membutuhkan keputusan lintas tim, koordinator layanan menetapkan PIC utama."
+    },
+    "15": {
+      "id": "15",
+      "kb": "KB02",
+      "dataset_id": "ds_fda13db6800c",
+      "document_id": "doc_7ce189a34654",
+      "section_path": "6. Keluhan Berulang",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 48,
+      "char_count": 191,
+      "page_span": "[1,1]",
+      "gt_section": "KB02#6",
+      "text": "Keluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator. Keluhan berulang tidak otomatis menjadi insiden P1; penentuan prioritas mengikuti dampak aktual."
+    },
+    "16": {
+      "id": "16",
+      "kb": "KB02",
+      "dataset_id": "ds_fda13db6800c",
+      "document_id": "doc_7ce189a34654",
+      "section_path": "7. Kompensasi",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 44,
+      "char_count": 173,
+      "page_span": "[1,1]",
+      "gt_section": "KB02#7",
+      "text": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat berwenang. Semua keputusan kompensasi dicatat bersama dasar persetujuannya."
+    },
+    "17": {
+      "id": "17",
+      "kb": "KB02",
+      "dataset_id": "ds_fda13db6800c",
+      "document_id": "doc_7ce189a34654",
+      "section_path": "8. Penyelesaian dan Umpan Balik",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 65,
+      "char_count": 257,
+      "page_span": "[1,1]",
+      "gt_section": "KB02#8",
+      "text": "Hasil penanganan disampaikan dengan bahasa yang mudah dipahami. Keluhan dianggap selesai setelah tindakan telah dilaksanakan dan pelanggan diberi penjelasan. Umpan balik negatif setelah penutupan dicatat sebagai tindak lanjut baru bila ada informasi baru. 1"
+    },
+    "18": {
+      "id": "18",
+      "kb": "KB03",
+      "dataset_id": "ds_6315377cd687",
+      "document_id": "doc_93dbdeeec44c",
+      "section_path": "KB_03_Panduan_Operasional_Layanan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 7,
+      "char_count": 27,
+      "page_span": "[1,1]",
+      "gt_section": null,
+      "text": "Panduan Operasional Layanan"
+    },
+    "19": {
+      "id": "19",
+      "kb": "KB03",
+      "dataset_id": "ds_6315377cd687",
+      "document_id": "doc_93dbdeeec44c",
+      "section_path": "1. Jam Layanan 7. Pelaporan Mingguan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 88,
+      "char_count": 349,
+      "page_span": "[1,1]",
+      "gt_section": null,
+      "text": "Layanan reguler beroperasi Senin sampai Jumat Koordinator menyusun ringkasan jumlah tiket, pukul 09.00-17.00 WIB, tidak termasuk hari libur kategori masalah, ketepatan respons, backlog, dan nasional. Gangguan kritis diteruskan melalui jalur kendala operasional. Angka dihitung dari catatan piket di luar jam tersebut. sistem, bukan perkiraan manual."
+    },
+    "20": {
+      "id": "20",
+      "kb": "KB03",
+      "dataset_id": "ds_6315377cd687",
+      "document_id": "doc_93dbdeeec44c",
+      "section_path": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 98,
+      "char_count": 390,
+      "page_span": "[1,1]",
+      "gt_section": null,
+      "text": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara."
+    },
+    "21": {
+      "id": "21",
+      "kb": "KB03",
+      "dataset_id": "ds_6315377cd687",
+      "document_id": "doc_93dbdeeec44c",
+      "section_path": "3. Pemeriksaan Harian",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 40,
+      "char_count": 158,
+      "page_span": "[1,1]",
+      "gt_section": "KB03#3",
+      "text": "Pada awal hari kerja, petugas memeriksa antrean tiket baru, tiket mendekati batas respons, tiket menunggu pelanggan, dan pengumuman gangguan yang masih aktif."
+    },
+    "22": {
+      "id": "22",
+      "kb": "KB03",
+      "dataset_id": "ds_6315377cd687",
+      "document_id": "doc_93dbdeeec44c",
+      "section_path": "4. Pembaruan Berkala",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 60,
+      "char_count": 239,
+      "page_span": "[1,1]",
+      "gt_section": "KB03#4",
+      "text": "Tiket P1 diperbarui kepada pelanggan setidaknya setiap 30 menit selama gangguan aktif. Tiket P2 diperbarui setiap 4 jam kerja jika belum selesai. Untuk P3 dan P4, pembaruan diberikan saat ada perkembangan penting atau sesuai janji petugas."
+    },
+    "23": {
+      "id": "23",
+      "kb": "KB03",
+      "dataset_id": "ds_6315377cd687",
+      "document_id": "doc_93dbdeeec44c",
+      "section_path": "5. Kanal Komunikasi",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 39,
+      "char_count": 156,
+      "page_span": "[1,1]",
+      "gt_section": "KB03#5",
+      "text": "Informasi resmi diberikan melalui kanal layanan yang tercatat. Permintaan perubahan data akun tidak diproses melalui pesan pribadi petugas tanpa verifikasi."
+    },
+    "24": {
+      "id": "24",
+      "kb": "KB03",
+      "dataset_id": "ds_6315377cd687",
+      "document_id": "doc_93dbdeeec44c",
+      "section_path": "6. Pengelolaan Dokumen",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 49,
+      "char_count": 193,
+      "page_span": "[1,1]",
+      "gt_section": "KB03#6",
+      "text": "Simpan bukti dan catatan kerja di lokasi yang disetujui. Berkas pelanggan tidak boleh dibagikan melalui tautan publik. Hapus salinan lokal yang tidak lagi dibutuhkan sesuai kebijakan retensi. 1"
+    },
+    "25": {
+      "id": "25",
+      "kb": "KB04",
+      "dataset_id": "ds_c0ed996deefe",
+      "document_id": "doc_f5694551f7f6",
+      "section_path": "1. Definisi",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 44,
+      "char_count": 175,
+      "page_span": "[1,1]",
+      "gt_section": "KB04#1",
+      "text": "Insiden adalah gangguan yang mengurangi ketersediaan, keamanan, atau fungsi layanan. Tidak setiap keluhan merupakan insiden; penilaian didasarkan pada dampak nyata dan risiko."
+    },
+    "26": {
+      "id": "26",
+      "kb": "KB04",
+      "dataset_id": "ds_c0ed996deefe",
+      "document_id": "doc_f5694551f7f6",
+      "section_path": "2. Tingkat Insiden",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 54,
+      "char_count": 216,
+      "page_span": "[1,1]",
+      "gt_section": "KB04#2",
+      "text": "SEV1: gangguan menyeluruh atau dugaan paparan data sensitif. SEV2: layanan utama terdegradasi bagi banyak pengguna. SEV3: gangguan terbatas dengan alternatif operasional. SEV4: gangguan minor tanpa dampak signifikan."
+    },
+    "27": {
+      "id": "27",
+      "kb": "KB04",
+      "dataset_id": "ds_c0ed996deefe",
+      "document_id": "doc_f5694551f7f6",
+      "section_path": "3. Aktivasi Eskalasi",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 50,
+      "char_count": 199,
+      "page_span": "[1,1]",
+      "gt_section": "KB04#3",
+      "text": "SEV1 harus segera dilaporkan kepada koordinator insiden dan tim teknis piket, termasuk di luar jam layanan. SEV2 dieskalasikan kepada penanggung jawab teknis paling lambat 30 menit sejak klasifikasi."
+    },
+    "28": {
+      "id": "28",
+      "kb": "KB04",
+      "dataset_id": "ds_c0ed996deefe",
+      "document_id": "doc_f5694551f7f6",
+      "section_path": "4. Pembagian Peran",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 53,
+      "char_count": 209,
+      "page_span": "[1,1]",
+      "gt_section": "KB04#4",
+      "text": "Koordinator insiden memimpin keputusan dan komunikasi lintas tim. PIC teknis melakukan diagnosis serta pemulihan. Petugas layanan menyampaikan pembaruan pelanggan berdasarkan informasi yang sudah diverifikasi."
+    },
+    "29": {
+      "id": "29",
+      "kb": "KB04",
+      "dataset_id": "ds_c0ed996deefe",
+      "document_id": "doc_f5694551f7f6",
+      "section_path": "5. Komunikasi Insiden",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 51,
+      "char_count": 204,
+      "page_span": "[1,1]",
+      "gt_section": "KB04#5",
+      "text": "Untuk SEV1, pembaruan status internal dibuat setiap 20 menit. Komunikasi pelanggan menggunakan ringkasan dampak, langkah mitigasi, dan waktu pembaruan berikutnya tanpa mengungkap detail keamanan sensitif."
+    },
+    "30": {
+      "id": "30",
+      "kb": "KB04",
+      "dataset_id": "ds_c0ed996deefe",
+      "document_id": "doc_f5694551f7f6",
+      "section_path": "6. Penanganan Keamanan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 50,
+      "char_count": 197,
+      "page_span": "[1,1]",
+      "gt_section": "KB04#6",
+      "text": "Indikasi kebocoran data harus segera dibatasi aksesnya dan dicatat melalui kanal keamanan. Jangan mengunggah contoh data pribadi ke tiket umum. Penilaian dampak dilakukan oleh pihak yang berwenang."
+    },
+    "31": {
+      "id": "31",
+      "kb": "KB04",
+      "dataset_id": "ds_c0ed996deefe",
+      "document_id": "doc_f5694551f7f6",
+      "section_path": "7. Pemulihan",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 48,
+      "char_count": 189,
+      "page_span": "[1,1]",
+      "gt_section": "KB04#7",
+      "text": "Status pulih ditetapkan setelah fungsi utama diverifikasi. Penyelesaian insiden tidak otomatis menutup semua tiket pelanggan yang terkait; tiap tiket tetap mengikuti aturan penutupan tiket."
+    },
+    "32": {
+      "id": "32",
+      "kb": "KB04",
+      "dataset_id": "ds_c0ed996deefe",
+      "document_id": "doc_f5694551f7f6",
+      "section_path": "8. Evaluasi Pascainsiden",
+      "page": 1,
+      "level": "child",
+      "parent_id": null,
+      "token_count": 47,
+      "char_count": 187,
+      "page_span": "[1,1]",
+      "gt_section": "KB04#8",
+      "text": "Untuk SEV1 dan SEV2, tim menyusun tinjauan pascainsiden paling lambat lima hari kerja setelah pemulihan, meliputi kronologi, akar masalah yang diketahui, tindakan, dan langkah pencegahan."
+    }
+  },
+  "indexing": {
+    "self_retrieval": [
+      {
+        "section_id": "KB01#1",
+        "kb": "KB01",
+        "title": "Tujuan",
+        "ingestMode": "gt_text_fallback",
+        "query": "Panduan ini digunakan oleh petugas layanan untuk menerima, mengelompokkan, menangani, dan menutup tiket pelanggan secara",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB01#2",
+        "kb": "KB01",
+        "title": "Pencatatan Tiket",
+        "ingestMode": "gt_text_fallback",
+        "query": "Catat identitas pelanggan, kanal laporan, ringkasan masalah, waktu kejadian, dampak layanan, dan bukti pendukung. Apabil",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#2"
+      },
+      {
+        "section_id": "KB01#3",
+        "kb": "KB01",
+        "title": "Tingkat Prioritas",
+        "ingestMode": "gt_text_fallback",
+        "query": "P1 Kritis: layanan utama tidak dapat digunakan oleh banyak pelanggan. P2 Tinggi: fungsi penting terganggu dengan solusi ",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#3"
+      },
+      {
+        "section_id": "KB01#4",
+        "kb": "KB01",
+        "title": "Target Respons Awal",
+        "ingestMode": "gt_text_fallback",
+        "query": "P1: 15 menit; P2: 1 jam; P3: 4 jam kerja; P4: 1 hari kerja. Respons awal berarti petugas telah mengakui laporan dan meny",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#4"
+      },
+      {
+        "section_id": "KB01#5",
+        "kb": "KB01",
+        "title": "Penugasan",
+        "ingestMode": "gt_text_fallback",
+        "query": "Petugas layanan melakukan triase dan menetapkan penanggung jawab. Tim teknis menangani gangguan sistem, sedangkan tim ad",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#5"
+      },
+      {
+        "section_id": "KB01#6",
+        "kb": "KB01",
+        "title": "Status Tiket",
+        "ingestMode": "gt_text_fallback",
+        "query": "Status yang digunakan adalah Baru, Diproses, Menunggu Pelanggan, Menunggu Pihak Ketiga, Selesai, dan Ditutup. Perubahan ",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#6"
+      },
+      {
+        "section_id": "KB01#7",
+        "kb": "KB01",
+        "title": "Penutupan",
+        "ingestMode": "gt_text_fallback",
+        "query": "Tiket dapat ditutup setelah penyelesaian dikonfirmasi pelanggan atau setelah dua hari kerja tanpa tanggapan sejak notifi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#7"
+      },
+      {
+        "section_id": "KB01#8",
+        "kb": "KB01",
+        "title": "Catatan Khusus",
+        "ingestMode": "gt_text_fallback",
+        "query": "Apabila ada indikasi kebocoran data, jangan mencantumkan informasi rahasia dalam catatan tiket. Ikuti kebijakan insiden ",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB02#1",
+        "kb": "KB02",
+        "title": "Ruang Lingkup",
+        "ingestMode": "pdf",
+        "query": "Keluhan adalah pernyataan ketidakpuasan pelanggan atas layanan, komunikasi, hasil penanganan, atau perilaku petugas. Kel",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#1"
+      },
+      {
+        "section_id": "KB02#2",
+        "kb": "KB02",
+        "title": "Verifikasi",
+        "ingestMode": "pdf",
+        "query": "Petugas mencocokkan identitas pelapor dengan informasi akun yang tersedia. Jangan meminta kata sandi, PIN, atau kode OTP",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#2"
+      },
+      {
+        "section_id": "KB02#3",
+        "kb": "KB02",
+        "title": "Kategori Keluhan",
+        "ingestMode": "pdf",
+        "query": "Kategori layanan mencakup kualitas respons, keterlambatan, kesalahan informasi, kendala pembayaran, dan sikap petugas. S",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#3"
+      },
+      {
+        "section_id": "KB02#4",
+        "kb": "KB02",
+        "title": "Konfirmasi Penerimaan",
+        "ingestMode": "pdf",
+        "query": "Keluhan harus diakui paling lambat satu hari kerja sejak diterima. Nomor referensi dan perkiraan waktu pembaruan disampa",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#4"
+      },
+      {
+        "section_id": "KB02#5",
+        "kb": "KB02",
+        "title": "Penanganan",
+        "ingestMode": "pdf",
+        "query": "Petugas menelusuri kronologi, memeriksa bukti, menghubungi unit terkait, dan mendokumentasikan tindakan. Jika penyelesai",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#5"
+      },
+      {
+        "section_id": "KB02#6",
+        "kb": "KB02",
+        "title": "Keluhan Berulang",
+        "ingestMode": "pdf",
+        "query": "Keluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator. Keluhan berulang tidak ot",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#6"
+      },
+      {
+        "section_id": "KB02#7",
+        "kb": "KB02",
+        "title": "Kompensasi",
+        "ingestMode": "pdf",
+        "query": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat berwenang. Semua keput",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#7"
+      },
+      {
+        "section_id": "KB02#8",
+        "kb": "KB02",
+        "title": "Penyelesaian dan Umpan Balik",
+        "ingestMode": "pdf",
+        "query": "Hasil penanganan disampaikan dengan bahasa yang mudah dipahami. Keluhan dianggap selesai setelah tindakan telah dilaksan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#8"
+      },
+      {
+        "section_id": "KB03#1",
+        "kb": "KB03",
+        "title": "Jam Layanan",
+        "ingestMode": "pdf",
+        "query": "Layanan reguler beroperasi Senin sampai Jumat pukul 09.00-17.00 WIB, tidak termasuk hari libur nasional. Gangguan kritis",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#2",
+        "kb": "KB03",
+        "title": "Serah Terima Shift",
+        "ingestMode": "pdf",
+        "query": "Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan. Serah terima dilakukan sebelum p",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#3",
+        "kb": "KB03",
+        "title": "Pemeriksaan Harian",
+        "ingestMode": "pdf",
+        "query": "Pada awal hari kerja, petugas memeriksa antrean tiket baru, tiket mendekati batas respons, tiket menunggu pelanggan, dan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#3"
+      },
+      {
+        "section_id": "KB03#4",
+        "kb": "KB03",
+        "title": "Pembaruan Berkala",
+        "ingestMode": "pdf",
+        "query": "Tiket P1 diperbarui kepada pelanggan setidaknya setiap 30 menit selama gangguan aktif. Tiket P2 diperbarui setiap 4 jam ",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#4"
+      },
+      {
+        "section_id": "KB03#5",
+        "kb": "KB03",
+        "title": "Kanal Komunikasi",
+        "ingestMode": "pdf",
+        "query": "Informasi resmi diberikan melalui kanal layanan yang tercatat. Permintaan perubahan data akun tidak diproses melalui pes",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#5"
+      },
+      {
+        "section_id": "KB03#6",
+        "kb": "KB03",
+        "title": "Pengelolaan Dokumen",
+        "ingestMode": "pdf",
+        "query": "Simpan bukti dan catatan kerja di lokasi yang disetujui. Berkas pelanggan tidak boleh dibagikan melalui tautan publik. H",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#6"
+      },
+      {
+        "section_id": "KB03#7",
+        "kb": "KB03",
+        "title": "Pelaporan Mingguan",
+        "ingestMode": "pdf",
+        "query": "Koordinator menyusun ringkasan jumlah tiket, kategori masalah, ketepatan respons, backlog, dan kendala operasional. Angk",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#8",
+        "kb": "KB03",
+        "title": "Situasi Tidak Biasa",
+        "ingestMode": "pdf",
+        "query": "Jika sistem tiket tidak tersedia, catat laporan dalam formulir sementara dengan waktu asli penerimaan. Setelah sistem pu",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB04#1",
+        "kb": "KB04",
+        "title": "Definisi",
+        "ingestMode": "gt_text_fallback",
+        "query": "Insiden adalah gangguan yang mengurangi ketersediaan, keamanan, atau fungsi layanan. Tidak setiap keluhan merupakan insi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#1"
+      },
+      {
+        "section_id": "KB04#2",
+        "kb": "KB04",
+        "title": "Tingkat Insiden",
+        "ingestMode": "gt_text_fallback",
+        "query": "SEV1: gangguan menyeluruh atau dugaan paparan data sensitif. SEV2: layanan utama terdegradasi bagi banyak pengguna. SEV3",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#2"
+      },
+      {
+        "section_id": "KB04#3",
+        "kb": "KB04",
+        "title": "Aktivasi Eskalasi",
+        "ingestMode": "gt_text_fallback",
+        "query": "SEV1 harus segera dilaporkan kepada koordinator insiden dan tim teknis piket, termasuk di luar jam layanan. SEV2 dieskal",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#3"
+      },
+      {
+        "section_id": "KB04#4",
+        "kb": "KB04",
+        "title": "Pembagian Peran",
+        "ingestMode": "gt_text_fallback",
+        "query": "Koordinator insiden memimpin keputusan dan komunikasi lintas tim. PIC teknis melakukan diagnosis serta pemulihan. Petuga",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#4"
+      },
+      {
+        "section_id": "KB04#5",
+        "kb": "KB04",
+        "title": "Komunikasi Insiden",
+        "ingestMode": "gt_text_fallback",
+        "query": "Untuk SEV1, pembaruan status internal dibuat setiap 20 menit. Komunikasi pelanggan menggunakan ringkasan dampak, langkah",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#5"
+      },
+      {
+        "section_id": "KB04#6",
+        "kb": "KB04",
+        "title": "Penanganan Keamanan",
+        "ingestMode": "gt_text_fallback",
+        "query": "Indikasi kebocoran data harus segera dibatasi aksesnya dan dicatat melalui kanal keamanan. Jangan mengunggah contoh data",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#6"
+      },
+      {
+        "section_id": "KB04#7",
+        "kb": "KB04",
+        "title": "Pemulihan",
+        "ingestMode": "gt_text_fallback",
+        "query": "Status pulih ditetapkan setelah fungsi utama diverifikasi. Penyelesaian insiden tidak otomatis menutup semua tiket pelan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#7"
+      },
+      {
+        "section_id": "KB04#8",
+        "kb": "KB04",
+        "title": "Evaluasi Pascainsiden",
+        "ingestMode": "gt_text_fallback",
+        "query": "Untuk SEV1 dan SEV2, tim menyusun tinjauan pascainsiden paling lambat lima hari kerja setelah pemulihan, meliputi kronol",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#8"
+      }
+    ],
+    "alias_retrieval": [
+      {
+        "section_id": "KB01#1",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "tujuan panduan tiket",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB01#1",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "nomor referensi tiket",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB01#1",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "waktu pencatatan",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#2"
+      },
+      {
+        "section_id": "KB01#2",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "pencatatan tiket",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#2"
+      },
+      {
+        "section_id": "KB01#2",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "membuat tiket",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#2"
+      },
+      {
+        "section_id": "KB01#2",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "data yang dicatat",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB01#2",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "informasi belum lengkap",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#2"
+      },
+      {
+        "section_id": "KB01#2",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "Menunggu Informasi",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB01#3",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "prioritas",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#6"
+      },
+      {
+        "section_id": "KB01#3",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "P1 P2 P3 P4",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB01#3",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "kritis tinggi sedang rendah",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#3"
+      },
+      {
+        "section_id": "KB01#3",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "definisi prioritas",
+        "ranks": [
+          3
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#1"
+      },
+      {
+        "section_id": "KB01#4",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "target respons",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#4"
+      },
+      {
+        "section_id": "KB01#4",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "respons awal",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#4"
+      },
+      {
+        "section_id": "KB01#4",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "SLA respons",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#4"
+      },
+      {
+        "section_id": "KB01#4",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "waktu respons tiket",
+        "ranks": [
+          4
+        ],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#3"
+      },
+      {
+        "section_id": "KB01#4",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "batas respons",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#3"
+      },
+      {
+        "section_id": "KB01#5",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "penugasan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#5"
+      },
+      {
+        "section_id": "KB01#5",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "triase",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#5"
+      },
+      {
+        "section_id": "KB01#5",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "penanggung jawab tiket",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#5"
+      },
+      {
+        "section_id": "KB01#5",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "tim teknis",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#5"
+      },
+      {
+        "section_id": "KB01#5",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "tim administrasi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#5"
+      },
+      {
+        "section_id": "KB01#5",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "perubahan data",
+        "ranks": [
+          3
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#6"
+      },
+      {
+        "section_id": "KB01#5",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "permintaan dokumen",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#5"
+      },
+      {
+        "section_id": "KB01#6",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "status tiket",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#6"
+      },
+      {
+        "section_id": "KB01#6",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "daftar status",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#6"
+      },
+      {
+        "section_id": "KB01#6",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "catatan aktivitas",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#6"
+      },
+      {
+        "section_id": "KB01#6",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "Menunggu Pelanggan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#6"
+      },
+      {
+        "section_id": "KB01#6",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "Menunggu Pihak Ketiga",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#6"
+      },
+      {
+        "section_id": "KB01#7",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "penutupan tiket",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#7"
+      },
+      {
+        "section_id": "KB01#7",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "tutup tiket",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#7"
+      },
+      {
+        "section_id": "KB01#7",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "auto close",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB01#7",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "konfirmasi eksplisit P1",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#7"
+      },
+      {
+        "section_id": "KB01#7",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "dua hari kerja",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#3"
+      },
+      {
+        "section_id": "KB01#8",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "kebocoran data di tiket",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB01#8",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "catatan khusus",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB01#8",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "informasi rahasia",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB01#8",
+        "kb": "KB01",
+        "ingestMode": "gt_text_fallback",
+        "alias": "informasikan koordinator layanan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB02#1",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "definisi keluhan",
+        "ranks": [
+          5
+        ],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#1"
+      },
+      {
+        "section_id": "KB02#1",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "ruang lingkup keluhan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#1"
+      },
+      {
+        "section_id": "KB02#1",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "kanal keluhan",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB03#5"
+      },
+      {
+        "section_id": "KB02#1",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "email telepon formulir",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#1"
+      },
+      {
+        "section_id": "KB02#2",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "verifikasi pelapor",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#2"
+      },
+      {
+        "section_id": "KB02#2",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "verifikasi identitas",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#2"
+      },
+      {
+        "section_id": "KB02#2",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "OTP PIN kata sandi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#2"
+      },
+      {
+        "section_id": "KB02#2",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "bukti percakapan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#2"
+      },
+      {
+        "section_id": "KB02#2",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "screenshot disamarkan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#2"
+      },
+      {
+        "section_id": "KB02#3",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "kategori keluhan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#3"
+      },
+      {
+        "section_id": "KB02#3",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "kualitas respons",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#3"
+      },
+      {
+        "section_id": "KB02#3",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "keterlambatan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#3"
+      },
+      {
+        "section_id": "KB02#3",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "kesalahan informasi",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB02#3",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "kendala pembayaran",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#3"
+      },
+      {
+        "section_id": "KB02#3",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "sikap petugas",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#3"
+      },
+      {
+        "section_id": "KB02#4",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "konfirmasi penerimaan keluhan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#4"
+      },
+      {
+        "section_id": "KB02#4",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "acknowledge keluhan",
+        "ranks": [
+          5
+        ],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": true,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB02#4",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "satu hari kerja",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#3"
+      },
+      {
+        "section_id": "KB02#4",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "nomor referensi keluhan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#4"
+      },
+      {
+        "section_id": "KB02#5",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "penanganan keluhan",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB02#1"
+      },
+      {
+        "section_id": "KB02#5",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "telusuri kronologi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#5"
+      },
+      {
+        "section_id": "KB02#5",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "PIC utama",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#5"
+      },
+      {
+        "section_id": "KB02#5",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "keputusan lintas tim",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#5"
+      },
+      {
+        "section_id": "KB02#6",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "keluhan berulang",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#6"
+      },
+      {
+        "section_id": "KB02#6",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "isu sama 30 hari",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#6"
+      },
+      {
+        "section_id": "KB02#6",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "tidak otomatis P1",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#7"
+      },
+      {
+        "section_id": "KB02#7",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "kompensasi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#7"
+      },
+      {
+        "section_id": "KB02#7",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "pengembalian dana",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#7"
+      },
+      {
+        "section_id": "KB02#7",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "refund",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB02#7",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "pejabat berwenang",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#7"
+      },
+      {
+        "section_id": "KB02#7",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "persetujuan kompensasi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#7"
+      },
+      {
+        "section_id": "KB02#8",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "penyelesaian keluhan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#8"
+      },
+      {
+        "section_id": "KB02#8",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "umpan balik negatif",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#8"
+      },
+      {
+        "section_id": "KB02#8",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "feedback setelah penutupan",
+        "ranks": [
+          3
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#7"
+      },
+      {
+        "section_id": "KB02#8",
+        "kb": "KB02",
+        "ingestMode": "pdf",
+        "alias": "tindak lanjut baru",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#8"
+      },
+      {
+        "section_id": "KB03#1",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "jam layanan",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB01#4"
+      },
+      {
+        "section_id": "KB03#1",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "jam operasional",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#1",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "hari libur nasional",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#1",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "jalur piket",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#1",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "gangguan kritis di luar jam",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#2",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "serah terima shift",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#2",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "handover",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB03#2",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "pergantian shift",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#2",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "prosedur serah terima",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#2",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "pergantian petugas",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#3",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "pemeriksaan harian",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#3"
+      },
+      {
+        "section_id": "KB03#3",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "daily check",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB03#3",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "awal hari kerja",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#3"
+      },
+      {
+        "section_id": "KB03#3",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "antrean tiket baru",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#3"
+      },
+      {
+        "section_id": "KB03#3",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "tiket mendekati batas respons",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#3"
+      },
+      {
+        "section_id": "KB03#4",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "pembaruan berkala",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#4"
+      },
+      {
+        "section_id": "KB03#4",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "update ke pelanggan",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#4",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "interval update",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB03#4",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "P1 30 menit",
+        "ranks": [
+          4
+        ],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#5"
+      },
+      {
+        "section_id": "KB03#4",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "P2 4 jam kerja",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#4"
+      },
+      {
+        "section_id": "KB03#5",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "kanal komunikasi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#5"
+      },
+      {
+        "section_id": "KB03#5",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "kanal resmi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#5"
+      },
+      {
+        "section_id": "KB03#5",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "perubahan data akun",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#5"
+      },
+      {
+        "section_id": "KB03#5",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "pesan pribadi petugas",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#5"
+      },
+      {
+        "section_id": "KB03#6",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "pengelolaan dokumen",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#6"
+      },
+      {
+        "section_id": "KB03#6",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "berkas pelanggan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#6"
+      },
+      {
+        "section_id": "KB03#6",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "tautan publik",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#6"
+      },
+      {
+        "section_id": "KB03#6",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "salinan lokal",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#6"
+      },
+      {
+        "section_id": "KB03#6",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "kebijakan retensi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#6"
+      },
+      {
+        "section_id": "KB03#7",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "laporan mingguan",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#7",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "pelaporan mingguan",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#7",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "backlog",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#7",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "ketepatan respons",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#7",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "catatan sistem",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#8",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "sistem tiket tidak tersedia",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#8",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "formulir sementara",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#8",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "pencatatan sementara",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB03#8",
+        "kb": "KB03",
+        "ingestMode": "pdf",
+        "alias": "situasi tidak biasa",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": null
+      },
+      {
+        "section_id": "KB04#1",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "definisi insiden",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#1"
+      },
+      {
+        "section_id": "KB04#1",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "keluhan vs insiden",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB02#6"
+      },
+      {
+        "section_id": "KB04#2",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "tingkat insiden",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#2"
+      },
+      {
+        "section_id": "KB04#2",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "SEV1 SEV2 SEV3 SEV4",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#2"
+      },
+      {
+        "section_id": "KB04#2",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "severity",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB04#2",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "dugaan paparan data sensitif",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#2"
+      },
+      {
+        "section_id": "KB04#3",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "aktivasi eskalasi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#3"
+      },
+      {
+        "section_id": "KB04#3",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "eskalasi SEV1",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#3"
+      },
+      {
+        "section_id": "KB04#3",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "eskalasi SEV2",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#3"
+      },
+      {
+        "section_id": "KB04#3",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "koordinator insiden",
+        "ranks": [
+          4
+        ],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB04#3",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "tim teknis piket",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#3"
+      },
+      {
+        "section_id": "KB04#3",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "30 menit sejak klasifikasi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#3"
+      },
+      {
+        "section_id": "KB04#4",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "pembagian peran insiden",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#4"
+      },
+      {
+        "section_id": "KB04#4",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "koordinator insiden",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB04#4",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "PIC teknis",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#4"
+      },
+      {
+        "section_id": "KB04#4",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "peran petugas layanan saat insiden",
+        "ranks": [
+          3
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#4"
+      },
+      {
+        "section_id": "KB04#5",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "komunikasi insiden",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#5"
+      },
+      {
+        "section_id": "KB04#5",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "update internal SEV1 20 menit",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#5"
+      },
+      {
+        "section_id": "KB04#5",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "komunikasi pelanggan saat insiden",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#5"
+      },
+      {
+        "section_id": "KB04#5",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "ringkasan dampak mitigasi",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#5"
+      },
+      {
+        "section_id": "KB04#6",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "penanganan keamanan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#6"
+      },
+      {
+        "section_id": "KB04#6",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "kebocoran data",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB01#8"
+      },
+      {
+        "section_id": "KB04#6",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "kanal keamanan",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#6"
+      },
+      {
+        "section_id": "KB04#6",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "batasi akses",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#6"
+      },
+      {
+        "section_id": "KB04#6",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "data pribadi tiket umum",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#6"
+      },
+      {
+        "section_id": "KB04#7",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "pemulihan insiden",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#7"
+      },
+      {
+        "section_id": "KB04#7",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "status pulih",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#7"
+      },
+      {
+        "section_id": "KB04#7",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "penutupan tiket terkait insiden",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#7"
+      },
+      {
+        "section_id": "KB04#8",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "evaluasi pascainsiden",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#8"
+      },
+      {
+        "section_id": "KB04#8",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "tinjauan pascainsiden",
+        "ranks": [
+          1
+        ],
+        "hit_at_1": true,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB04#8"
+      },
+      {
+        "section_id": "KB04#8",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "post-mortem",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB04#8",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "RCA",
+        "ranks": [],
+        "hit_at_1": false,
+        "hit_at_3": false,
+        "hit_at_5": false,
+        "top1_gt_section": "KB01#1"
+      },
+      {
+        "section_id": "KB04#8",
+        "kb": "KB04",
+        "ingestMode": "gt_text_fallback",
+        "alias": "lima hari kerja",
+        "ranks": [
+          2
+        ],
+        "hit_at_1": false,
+        "hit_at_3": true,
+        "hit_at_5": true,
+        "top1_gt_section": "KB03#3"
+      }
+    ]
+  },
+  "cases": [
+    {
+      "caseKey": "KB03:PARA-01",
+      "id": "PARA-01",
+      "kb": "KB03",
+      "split": "custom",
+      "scope": "single_doc",
+      "question": "Bagaimana prosedur dalam pergantian shift?",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "key_facts": [
+        "tiket aktif",
+        "pekerjaan tertunda",
+        "hambatan",
+        "PIC",
+        "tenggat pembaruan",
+        "sebelum pergantian petugas"
+      ],
+      "forbidden_claims": [],
+      "source_sections": [
+        "KB03#2"
+      ],
+      "evidence_spans": [
+        "Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan.",
+        "Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab."
+      ],
+      "evidence_text": [
+        "Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan. Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab."
+      ],
+      "ingestMode": "pdf",
+      "answer": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. [1] Serah formulir sementara dengan waktu asli penerimaan. [1] terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. [1] tandai bahwa tiket berasal dari pencatatan sementara. [1]",
+      "citations": [
+        {
+          "chunk_id": 20,
+          "document_id": "doc_93dbdeeec44c",
+          "section_path": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+          "page": 1,
+          "score": 3.9736,
+          "quote": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara.",
+          "gt_section": null
+        },
+        {
+          "chunk_id": 8,
+          "document_id": "doc_f1bf8aa93be5",
+          "section_path": "8. Catatan Khusus",
+          "page": 1,
+          "score": 2.3456,
+          "quote": "Apabila ada indikasi kebocoran data, jangan mencantumkan informasi rahasia dalam catatan tiket. Ikuti kebijakan insiden dan informasikan koordinator layanan.",
+          "gt_section": "KB01#8"
+        },
+        {
+          "chunk_id": 15,
+          "document_id": "doc_7ce189a34654",
+          "section_path": "6. Keluhan Berulang",
+          "page": 1,
+          "score": 2.1107,
+          "quote": "Keluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator. Keluhan berulang tidak otomatis menjadi insiden P1; penentuan prioritas mengikuti dampak aktual.",
+          "gt_section": "KB02#6"
+        },
+        {
+          "chunk_id": 16,
+          "document_id": "doc_7ce189a34654",
+          "section_path": "7. Kompensasi",
+          "page": 1,
+          "score": 0.4046,
+          "quote": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat berwenang. Semua keputusan kompensasi dicatat bersama dasar persetujuannya.",
+          "gt_section": "KB02#7"
+        }
+      ],
+      "guardrail": null,
+      "meta": {
+        "aiActive": true,
+        "confidenceLevel": "strong",
+        "structuredAnswer": {
+          "segments": [
+            {
+              "text": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan.",
+              "kind": "claim",
+              "cite": [
+                "c1"
+              ]
+            },
+            {
+              "text": "Serah formulir sementara dengan waktu asli penerimaan.",
+              "kind": "claim",
+              "cite": [
+                "c1"
+              ]
+            },
+            {
+              "text": "terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab.",
+              "kind": "claim",
+              "cite": [
+                "c1"
+              ]
+            },
+            {
+              "text": "tandai bahwa tiket berasal dari pencatatan sementara.",
+              "kind": "claim",
+              "cite": [
+                "c1"
+              ]
+            },
+            {
+              "text": "Apabila ada indikasi kebocoran data, jangan mencantumkan informasi rahasia dalam catatan tiket.",
+              "kind": "claim",
+              "cite": [
+                "c2"
+              ]
+            },
+            {
+              "text": "Ikuti kebijakan insiden dan informasikan koordinator layanan.",
+              "kind": "claim",
+              "cite": [
+                "c2"
+              ]
+            },
+            {
+              "text": "Keluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator.",
+              "kind": "claim",
+              "cite": [
+                "c3"
+              ]
+            },
+            {
+              "text": "Keluhan berulang tidak otomatis menjadi insiden P1; penentuan prioritas mengikuti dampak aktual.",
+              "kind": "claim",
+              "cite": [
+                "c3"
+              ]
+            },
+            {
+              "text": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat berwenang.",
+              "kind": "claim",
+              "cite": [
+                "c4"
+              ]
+            },
+            {
+              "text": "Semua keputusan kompensasi dicatat bersama dasar persetujuannya.",
+              "kind": "claim",
+              "cite": [
+                "c4"
+              ]
+            }
+          ],
+          "citations": {
+            "c1": {
+              "doc": "doc_93dbdeeec44c",
+              "page": 1,
+              "section_id": "2-serah-terima-shift-8-situasi-tidak-bia",
+              "section_title": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+              "unit_ids": [
+                "2-serah-terima-shift-8-situasi-tidak-bia.s1",
+                "2-serah-terima-shift-8-situasi-tidak-bia.s2",
+                "2-serah-terima-shift-8-situasi-tidak-bia.s3",
+                "2-serah-terima-shift-8-situasi-tidak-bia.s4"
+              ],
+              "char_start": 0,
+              "char_end": 390,
+              "quote": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara."
+            },
+            "c2": {
+              "doc": "doc_f1bf8aa93be5",
+              "page": 1,
+              "section_id": "8-catatan-khusus",
+              "section_title": "8. Catatan Khusus",
+              "unit_ids": [
+                "8-catatan-khusus.s1",
+                "8-catatan-khusus.s2"
+              ],
+              "char_start": 0,
+              "char_end": 157,
+              "quote": "Apabila ada indikasi kebocoran data, jangan mencantumkan informasi rahasia dalam catatan tiket. Ikuti kebijakan insiden dan informasikan koordinator layanan."
+            },
+            "c3": {
+              "doc": "doc_7ce189a34654",
+              "page": 1,
+              "section_id": "6-keluhan-berulang",
+              "section_title": "6. Keluhan Berulang",
+              "unit_ids": [
+                "6-keluhan-berulang.s1",
+                "6-keluhan-berulang.s2"
+              ],
+              "char_start": 0,
+              "char_end": 191,
+              "quote": "Keluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator. Keluhan berulang tidak otomatis menjadi insiden P1; penentuan prioritas mengikuti dampak aktual."
+            },
+            "c4": {
+              "doc": "doc_7ce189a34654",
+              "page": 1,
+              "section_id": "7-kompensasi",
+              "section_title": "7. Kompensasi",
+              "unit_ids": [
+                "7-kompensasi.s1",
+                "7-kompensasi.s2"
+              ],
+              "char_start": 0,
+              "char_end": 173,
+              "quote": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat berwenang. Semua keputusan kompensasi dicatat bersama dasar persetujuannya."
+            }
+          },
+          "retrieval_trace": {
+            "checked_sections": [
+              "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+              "8. Catatan Khusus",
+              "6. Keluhan Berulang",
+              "7. Kompensasi"
+            ],
+            "unit_ids": [
+              "2-serah-terima-shift-8-situasi-tidak-bia.s1",
+              "2-serah-terima-shift-8-situasi-tidak-bia.s2",
+              "2-serah-terima-shift-8-situasi-tidak-bia.s3",
+              "2-serah-terima-shift-8-situasi-tidak-bia.s4",
+              "8-catatan-khusus.s1",
+              "8-catatan-khusus.s2",
+              "6-keluhan-berulang.s1",
+              "6-keluhan-berulang.s2",
+              "7-kompensasi.s1",
+              "7-kompensasi.s2"
+            ],
+            "diversified": false
+          }
+        },
+        "citationVerification": {
+          "ok": true,
+          "failures": [],
+          "degraded": false
+        },
+        "queryUnderstanding": {
+          "source": "deterministic",
+          "intent": "prosedur pergantian shift",
+          "paraphraseCount": 4,
+          "entityCount": 4,
+          "retrievalVariants": 5
+        }
+      },
+      "mode": "document",
+      "evaluation": {
+        "passed": true,
+        "failed_checks": [],
+        "metrics": {
+          "numeric_grounding": 1,
+          "citation_valid": 1,
+          "output_type_ok": true,
+          "row_count": 0,
+          "latency_ms": 34
+        }
+      },
+      "latencyMs": 34,
+      "abstain": false,
+      "retrieval": {
+        "raw": [
+          {
+            "rank": 1,
+            "chunk_id": 20,
+            "gt_section": null,
+            "section_path": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+            "document_id": "doc_93dbdeeec44c",
+            "page": 1,
+            "score": 5.6953,
+            "quote": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara."
+          },
+          {
+            "rank": 2,
+            "chunk_id": 8,
+            "gt_section": "KB01#8",
+            "section_path": "8. Catatan Khusus",
+            "document_id": "doc_f1bf8aa93be5",
+            "page": 1,
+            "score": 2.3456,
+            "quote": "Apabila ada indikasi kebocoran data, jangan mencantumkan informasi rahasia dalam catatan tiket. Ikuti kebijakan insiden dan informasikan koordinator layanan."
+          },
+          {
+            "rank": 3,
+            "chunk_id": 15,
+            "gt_section": "KB02#6",
+            "section_path": "6. Keluhan Berulang",
+            "document_id": "doc_7ce189a34654",
+            "page": 1,
+            "score": 2.1107,
+            "quote": "Keluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator. Keluhan berulang tidak otomatis menjadi insiden P1; penentuan prioritas mengikuti dampak aktual."
+          }
+        ],
+        "rewritten": [
+          {
+            "rank": 1,
+            "chunk_id": 20,
+            "gt_section": null,
+            "section_path": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+            "document_id": "doc_93dbdeeec44c",
+            "page": 1,
+            "score": 5.6953,
+            "quote": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara."
+          },
+          {
+            "rank": 2,
+            "chunk_id": 8,
+            "gt_section": "KB01#8",
+            "section_path": "8. Catatan Khusus",
+            "document_id": "doc_f1bf8aa93be5",
+            "page": 1,
+            "score": 2.3456,
+            "quote": "Apabila ada indikasi kebocoran data, jangan mencantumkan informasi rahasia dalam catatan tiket. Ikuti kebijakan insiden dan informasikan koordinator layanan."
+          },
+          {
+            "rank": 3,
+            "chunk_id": 15,
+            "gt_section": "KB02#6",
+            "section_path": "6. Keluhan Berulang",
+            "document_id": "doc_7ce189a34654",
+            "page": 1,
+            "score": 2.1107,
+            "quote": "Keluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator. Keluhan berulang tidak otomatis menjadi insiden P1; penentuan prioritas mengikuti dampak aktual."
+          }
+        ],
+        "production": [
+          {
+            "rank": 1,
+            "chunk_id": 20,
+            "gt_section": null,
+            "section_path": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+            "document_id": "doc_93dbdeeec44c",
+            "page": 1,
+            "score": 5.6953,
+            "quote": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara."
+          }
+        ]
+      },
+      "corrected_question": null
+    },
+    {
+      "caseKey": "KB03:PARA-02",
+      "id": "PARA-02",
+      "kb": "KB03",
+      "split": "custom",
+      "scope": "single_doc",
+      "question": "pergantian shift",
+      "answerability": "full",
+      "expected_behavior": "answer",
+      "key_facts": [
+        "tiket aktif",
+        "pekerjaan tertunda",
+        "hambatan",
+        "PIC",
+        "tenggat pembaruan",
+        "sebelum pergantian petugas"
+      ],
+      "forbidden_claims": [],
+      "source_sections": [
+        "KB03#2"
+      ],
+      "evidence_spans": [
+        "Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan.",
+        "Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab."
+      ],
+      "evidence_text": [
+        "Petugas mencatat tiket aktif, pekerjaan tertunda, hambatan, PIC, dan tenggat pembaruan. Serah terima dilakukan sebelum pergantian petugas untuk menghindari tiket tanpa penanggung jawab."
+      ],
+      "ingestMode": "pdf",
+      "answer": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. [1] Serah formulir sementara dengan waktu asli penerimaan. [1] terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. [1] tandai bahwa tiket berasal dari pencatatan sementara. [1]",
+      "citations": [
+        {
+          "chunk_id": 20,
+          "document_id": "doc_93dbdeeec44c",
+          "section_path": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+          "page": 1,
+          "score": 2.4968,
+          "quote": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara.",
+          "gt_section": null
+        },
+        {
+          "chunk_id": 16,
+          "document_id": "doc_7ce189a34654",
+          "section_path": "7. Kompensasi",
+          "page": 1,
+          "score": 0.4046,
+          "quote": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat berwenang. Semua keputusan kompensasi dicatat bersama dasar persetujuannya.",
+          "gt_section": "KB02#7"
+        },
+        {
+          "chunk_id": 23,
+          "document_id": "doc_93dbdeeec44c",
+          "section_path": "5. Kanal Komunikasi",
+          "page": 1,
+          "score": 0.3983,
+          "quote": "Informasi resmi diberikan melalui kanal layanan yang tercatat. Permintaan perubahan data akun tidak diproses melalui pesan pribadi petugas tanpa verifikasi.",
+          "gt_section": "KB03#5"
+        }
+      ],
+      "guardrail": null,
+      "meta": {
+        "aiActive": true,
+        "confidenceLevel": "strong",
+        "structuredAnswer": {
+          "segments": [
+            {
+              "text": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan.",
+              "kind": "claim",
+              "cite": [
+                "c1"
+              ]
+            },
+            {
+              "text": "Serah formulir sementara dengan waktu asli penerimaan.",
+              "kind": "claim",
+              "cite": [
+                "c1"
+              ]
+            },
+            {
+              "text": "terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab.",
+              "kind": "claim",
+              "cite": [
+                "c1"
+              ]
+            },
+            {
+              "text": "tandai bahwa tiket berasal dari pencatatan sementara.",
+              "kind": "claim",
+              "cite": [
+                "c1"
+              ]
+            },
+            {
+              "text": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat berwenang.",
+              "kind": "claim",
+              "cite": [
+                "c2"
+              ]
+            },
+            {
+              "text": "Semua keputusan kompensasi dicatat bersama dasar persetujuannya.",
+              "kind": "claim",
+              "cite": [
+                "c2"
+              ]
+            },
+            {
+              "text": "Informasi resmi diberikan melalui kanal layanan yang tercatat.",
+              "kind": "claim",
+              "cite": [
+                "c3"
+              ]
+            },
+            {
+              "text": "Permintaan perubahan data akun tidak diproses melalui pesan pribadi petugas tanpa verifikasi.",
+              "kind": "claim",
+              "cite": [
+                "c3"
+              ]
+            }
+          ],
+          "citations": {
+            "c1": {
+              "doc": "doc_93dbdeeec44c",
+              "page": 1,
+              "section_id": "2-serah-terima-shift-8-situasi-tidak-bia",
+              "section_title": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+              "unit_ids": [
+                "2-serah-terima-shift-8-situasi-tidak-bia.s1",
+                "2-serah-terima-shift-8-situasi-tidak-bia.s2",
+                "2-serah-terima-shift-8-situasi-tidak-bia.s3",
+                "2-serah-terima-shift-8-situasi-tidak-bia.s4"
+              ],
+              "char_start": 0,
+              "char_end": 390,
+              "quote": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara."
+            },
+            "c2": {
+              "doc": "doc_7ce189a34654",
+              "page": 1,
+              "section_id": "7-kompensasi",
+              "section_title": "7. Kompensasi",
+              "unit_ids": [
+                "7-kompensasi.s1",
+                "7-kompensasi.s2"
+              ],
+              "char_start": 0,
+              "char_end": 173,
+              "quote": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat berwenang. Semua keputusan kompensasi dicatat bersama dasar persetujuannya."
+            },
+            "c3": {
+              "doc": "doc_93dbdeeec44c",
+              "page": 1,
+              "section_id": "5-kanal-komunikasi",
+              "section_title": "5. Kanal Komunikasi",
+              "unit_ids": [
+                "5-kanal-komunikasi.s1",
+                "5-kanal-komunikasi.s2"
+              ],
+              "char_start": 0,
+              "char_end": 156,
+              "quote": "Informasi resmi diberikan melalui kanal layanan yang tercatat. Permintaan perubahan data akun tidak diproses melalui pesan pribadi petugas tanpa verifikasi."
+            }
+          },
+          "retrieval_trace": {
+            "checked_sections": [
+              "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+              "7. Kompensasi",
+              "5. Kanal Komunikasi"
+            ],
+            "unit_ids": [
+              "2-serah-terima-shift-8-situasi-tidak-bia.s1",
+              "2-serah-terima-shift-8-situasi-tidak-bia.s2",
+              "2-serah-terima-shift-8-situasi-tidak-bia.s3",
+              "2-serah-terima-shift-8-situasi-tidak-bia.s4",
+              "7-kompensasi.s1",
+              "7-kompensasi.s2",
+              "5-kanal-komunikasi.s1",
+              "5-kanal-komunikasi.s2"
+            ],
+            "diversified": false
+          }
+        },
+        "citationVerification": {
+          "ok": true,
+          "failures": [],
+          "degraded": false
+        },
+        "queryUnderstanding": {
+          "source": "deterministic",
+          "intent": "pergantian shift",
+          "paraphraseCount": 4,
+          "entityCount": 2,
+          "retrievalVariants": 4
+        }
+      },
+      "mode": "document",
+      "evaluation": {
+        "passed": false,
+        "failed_checks": [
+          "numeric_grounding"
+        ],
+        "metrics": {
+          "numeric_grounding": 0,
+          "citation_valid": 1,
+          "output_type_ok": true,
+          "row_count": 0,
+          "latency_ms": 14
+        }
+      },
+      "latencyMs": 14,
+      "abstain": false,
+      "retrieval": {
+        "raw": [
+          {
+            "rank": 1,
+            "chunk_id": 20,
+            "gt_section": null,
+            "section_path": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+            "document_id": "doc_93dbdeeec44c",
+            "page": 1,
+            "score": 4.2185,
+            "quote": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara."
+          }
+        ],
+        "rewritten": [
+          {
+            "rank": 1,
+            "chunk_id": 20,
+            "gt_section": null,
+            "section_path": "2. Serah Terima Shift 8. Situasi Tidak Biasa",
+            "document_id": "doc_93dbdeeec44c",
+            "page": 1,
+            "score": 4.2185,
+            "quote": "Petugas mencatat tiket aktif, pekerjaan tertunda, Jika sistem tiket tidak tersedia, catat laporan dalam hambatan, PIC, dan tenggat pembaruan. Serah formulir sementara dengan waktu asli penerimaan. terima dilakukan sebelum pergantian petugas Setelah sistem pulih, masukkan data kembali dan untuk menghindari tiket tanpa penanggung jawab. tandai bahwa tiket berasal dari pencatatan sementara."
+          }
+        ],
+        "production": []
+      },
+      "corrected_question": null
+    }
+  ]
+}

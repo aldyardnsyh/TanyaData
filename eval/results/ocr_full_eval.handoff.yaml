@@ -1,0 +1,14 @@
+from: backend
+to: agentic
+phase: P2
+type: deliverable
+refs:
+  - tanyadata/deploy/ocr/requirements.txt
+  - tanyadata/eval/results/ocr_full_off.json
+  - tanyadata/eval/results/ocr_full_llm.json
+  - tanyadata/eval/results/phase2_full.json
+  - tanyadata/eval/results/bridge_raw.json
+summary: "Pin numpy diperbaiki ke >=2.4.6,<3 (PyPI: 2.4.6 requires_python >=3.11; 2.5.5 butuh >=3.12) setelah diverifikasi venv Python 3.11. OCR PP-OCRv6 tiny diaktifkan dari venv di port 6334 (healthz 200), eval penuh 139 soal dijalankan mode off + llm dengan 0 SKIPPED dan ke-4 KB terindeks sebagai pdf, lalu service dimatikan dan port 6334 terverifikasi tertutup. Presisi masih 0.4811 / abstention 0.8201 (target 0.99 belum tercapai); mode llm identik karena 69 fallback LLM gagal (http_429=35, llm_invalid=18, http_400=12, verification_failed=4)."
+evidence: "PyPI JSON API 2026-11-24 (numpy 2.4.6 requires_python '>=3.11', 2.5.5 '>=3.12', venv numpy 2.4.6) + healthz 200 {\"status\":\"ok\",\"model\":\"PP-OCRv6 tiny\"} + 3 log safe_exec EXIT 0 (off 8.2s, llm 532.7s, harness 11.1s). KB_GT off=llm: dev prec 0.4512 abst 0.8469 KF 0.4849 Cit-P 0.4148; holdout prec 0.5833 abst 0.7561 KF 0.3537 Cit-P 0.3333; overall prec 0.4811 abst 0.8201 KF 0.4462 Cit-P 0.3973 Cit-R 0.5059; false_abstain=15 false_answer=10; ocrAvailable=true, skipped=0, ingestMode=pdf untuk KB01-04. Fase 1A phase2_full.json: false_abstain 0.1351 (n=111), false_answer 0.3571 (n=28), key_fact_coverage 0.5647, citation_source_accuracy 0.4195, citation_grounding 0.4341, quote_validity 1.0, attribution_precision 0.9942, evidence_span_F1 0.4853, uncited_claim_rate 0.0, inline_ratio 1.0, section_recovery 0.875, retrieval hit@1 production 0.6486/raw 0.7027. gt_text_fallback & ocr_unavailable TIDAK muncul sebagai flag aktual (hanya di string deskripsi pipeline statis; bridge violations=0). Cleanup: PID 20516+23372 dihentikan, port 6334 CLOSED, healthz unreachable."
+blocking: false
+needs: "QA verifikasi end-user lewat UI bahwa KB01/KB04 dijawab dari bukti OCR; owner retrieval/answer (lib/ai/*, lib/core/answer.ts — TIDAK disentuh backend) perbaiki CITATION_MISMATCH=108, KEY_FACT_MISS=60, FALSE_ABSTAIN=15, FALSE_ANSWER=10; aiml/owner LLM perbaiki kuota http_429 dan validasi output agar mode llm memberi gain nyata; security audit jalur OCR_API_KEY dan paparan port 6334."

@@ -246,49 +246,177 @@ async function barChartPng(bars: Bar[]): Promise<Uint8Array> {
 
 /* --------------------------------------------------------------- renderers */
 
-/** Excel dari ReportDetail legacy — tabel + chart raster (ASSUMPTION-V2-006). */
 export async function renderReportDetailXlsx(report: ReportDetail): Promise<Uint8Array> {
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('Hasil');
-  const table = report.supportingTable;
-  const columns = table?.columns.length
-    ? table.columns.map((c) => c.label)
-    : report.metrics.length
-      ? ['Metrik', 'Nilai']
-      : ['Field', 'Nilai'];
-  sheet.addRow(columns);
-  if (table?.columns.length) {
-    for (const row of table.rows.slice(0, REPORT_ROW_CAP)) {
-      sheet.addRow(table.columns.map((c) => (row[c.key] === null || row[c.key] === undefined ? '' : row[c.key])));
-    }
-  } else if (report.metrics.length) {
-    for (const metric of report.metrics) sheet.addRow([metric.label, metric.value ?? '']);
-  } else {
-    sheet.addRow(['Judul', report.title]);
-    sheet.addRow(['Ringkasan', report.summary]);
-  }
-  sheet.getRow(1).font = { bold: true };
 
-  const bars: Bar[] = (table?.rows ?? [])
-    .slice(0, 12)
-    .map((row) => {
-      const labelKey = table?.columns.find((c) => c.format === 'text' || c.align === 'left')?.key ?? table?.columns[0]?.key;
-      const valueKey = table?.columns.find((c) => c.format === 'number' || c.format === 'currency' || c.format === 'percent')?.key;
-      const value = valueKey ? row[valueKey] : null;
-      return { label: String(labelKey ? row[labelKey] ?? '' : ''), value: typeof value === 'number' ? value : NaN };
-    })
-    .filter((b) => Number.isFinite(b.value));
-  if (bars.length) {
-    const png = await barChartPng(bars);
-    const imageId = workbook.addImage({ buffer: Buffer.from(png) as never, extension: 'png' });
-    sheet.addImage(imageId, { tl: { col: 0, row: columns.length + 2 }, ext: { width: 480, height: 240 } });
+  const parseNumber = (value: unknown): number | null => {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+    if (typeof value !== 'string') return null;
+    let text = value.trim().replace(/Rp\.?\s*/gi, '').replace(/%/g, '').replace(/\s/g, '');
+    if (!/\d/.test(text)) return null;
+    const hasDot = text.includes('.');
+    const hasComma = text.includes(',');
+    if (hasDot && hasComma) {
+      const decimal = text.lastIndexOf('.') > text.lastIndexOf(',') ? '.' : ',';
+      const group = decimal === '.' ? ',' : '.';
+      text = text.split(group).join('').split(decimal).join('.');
+    } else if (hasDot || hasComma) {
+      const separator = hasDot ? '.' : ',';
+      const parts = text.split(separator);
+      text = parts.length > 2 || parts[parts.length - 1].length === 3 ? parts.join('') : parts.join('.');
+    }
+    const parsed = Number(text);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const numberFormat = (format: string | undefined): string | undefined => {
+    if (format === 'number') return '#,##0';
+    if (format === 'percent') return '0,00%';
+    if (format === 'currency') return '"Rp "#,##0';
+    return undefined;
+  };
+
+  const unitFor = (format: string): string => (format === 'percent' ? '%' : format === 'currency' ? 'Rp' : '');
+
+  const columnLetter = (index: number): string => {
+    let letters = '';
+    let current = index;
+    while (current > 0) {
+      letters = String.fromCharCode(65 + ((current - 1) % 26)) + letters;
+      current = Math.floor((current - 1) / 26);
+    }
+    return letters;
+  };
+
+  const addHeader = (sheet: ReturnType<typeof workbook.addWorksheet>, labels: string[], widths: number[]) => {
+    const header = sheet.addRow(labels);
+    header.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } };
+    header.alignment = { vertical: 'middle' };
+    header.height = 22;
+    widths.forEach((width, index) => {
+      sheet.getColumn(index + 1).width = width;
+    });
+    sheet.views = [{ state: 'frozen', ySplit: 1 }];
+  };
+
+  const ringkasan = workbook.addWorksheet('Ringkasan');
+  addHeader(ringkasan, ['Keterangan', 'Nilai'], [24, 110]);
+  const periodLabel = report.period?.label ?? (report.period ? `${report.period.start} sampai ${report.period.end}` : '');
+  const overview: [string, string][] = [
+    ['Judul', report.title],
+    ['Pertanyaan', report.question],
+    ['Periode', periodLabel],
+    ['Dibuat', report.createdAt],
+    ['Ringkasan', report.summary],
+  ];
+  for (const [label, value] of overview) {
+    const row = ringkasan.addRow([label, value]);
+    row.getCell(1).font = { bold: true };
+    row.getCell(1).alignment = { vertical: 'top' };
+    row.getCell(2).alignment = { wrapText: true, vertical: 'top' };
+    if (value.length > 90) row.height = Math.ceil(value.length / 90) * 15;
   }
-  const info = workbook.addWorksheet('Info');
-  info.addRow(['Field', 'Nilai']);
-  info.addRow(['Pertanyaan', report.question]);
-  info.addRow(['Ringkasan', report.summary]);
-  info.addRow(['Dibuat', report.createdAt]);
-  info.getRow(1).font = { bold: true };
+  report.keyFindings.forEach((finding, index) => {
+    const row = ringkasan.addRow([`Temuan ${index + 1}`, finding.text]);
+    row.getCell(1).font = { bold: true };
+    row.getCell(1).alignment = { vertical: 'top' };
+    row.getCell(2).alignment = { wrapText: true, vertical: 'top' };
+    if (finding.text.length > 90) row.height = Math.ceil(finding.text.length / 90) * 15;
+  });
+
+  const metrik = workbook.addWorksheet('Metrik');
+  addHeader(metrik, ['Metrik', 'Nilai', 'Satuan'], [36, 22, 12]);
+  for (const metric of report.metrics) {
+    const numeric = parseNumber(metric.value);
+    const asNumber = numeric !== null && metric.format !== 'text';
+    const row = metrik.addRow([metric.label, asNumber ? numeric : (metric.value ?? ''), unitFor(metric.format)]);
+    const valueCell = row.getCell(2);
+    const format = numberFormat(metric.format);
+    if (asNumber && format) {
+      valueCell.numFmt = format;
+      valueCell.alignment = { horizontal: 'right' };
+    }
+    row.getCell(3).alignment = { horizontal: 'center' };
+  }
+  if (report.metrics.length) {
+    metrik.autoFilter = { from: { row: 1, column: 1 }, to: { row: report.metrics.length + 1, column: 3 } };
+  }
+
+  const data = workbook.addWorksheet('Data');
+  const table = report.supportingTable;
+  const columns = table?.columns ?? [];
+  if (!columns.length) {
+    addHeader(data, ['Keterangan'], [80]);
+    data.addRow(['Tidak ada tabel pendukung.']);
+  } else {
+    addHeader(data, ['Keterangan', ...columns.map((column) => column.label)], [18, ...columns.map((column) => Math.max(14, Math.min(32, column.label.length + 6)))]);
+    const rows = (table?.rows ?? []).slice(0, REPORT_ROW_CAP);
+    const numericColumns = columns.filter((column) => {
+      if (column.format === 'number' || column.format === 'percent' || column.format === 'currency') return true;
+      if (column.format && column.format !== 'text') return true;
+      return rows.length > 0 && rows.every((row) => {
+        const raw = row[column.key];
+        return raw === '' || raw === null || raw === undefined || parseNumber(raw) !== null;
+      });
+    });
+    const numericKeys = new Set(numericColumns.map((column) => column.key));
+    rows.forEach((sourceRow, rowIndex) => {
+      const values = [`Baris ${rowIndex + 1}`, ...columns.map((column) => {
+        const raw = sourceRow[column.key] ?? '';
+        if (!numericKeys.has(column.key)) return raw;
+        const parsed = parseNumber(raw);
+        return parsed === null ? raw : parsed;
+      })];
+      const row = data.addRow(values);
+      columns.forEach((column, index) => {
+        if (!numericKeys.has(column.key)) return;
+        const cell = row.getCell(index + 2);
+        if (typeof cell.value !== 'number') return;
+        const format = numberFormat(column.format) ?? '#,##0';
+        if (format) cell.numFmt = format;
+        cell.alignment = { horizontal: column.align === 'left' ? 'left' : 'right' };
+      });
+    });
+    if (rows.length) {
+      const lastDataRow = rows.length + 1;
+      const totalRow = data.addRow([]);
+      totalRow.getCell(1).value = 'TOTAL';
+      totalRow.getCell(1).font = { bold: true };
+      const averageRow = data.addRow([]);
+      averageRow.getCell(1).value = 'RATA-RATA';
+      averageRow.getCell(1).font = { bold: true };
+      numericColumns.forEach((column) => {
+        const index = columns.findIndex((item) => item.key === column.key) + 2;
+        const letter = columnLetter(index);
+        const format = numberFormat(column.format) ?? '#,##0';
+        const totalCell = totalRow.getCell(index);
+        totalCell.value = { formula: `SUM(${letter}2:${letter}${lastDataRow})` };
+        totalCell.font = { bold: true };
+        if (format) totalCell.numFmt = format;
+        const averageCell = averageRow.getCell(index);
+        averageCell.value = { formula: `AVERAGE(${letter}2:${letter}${lastDataRow})` };
+        averageCell.font = { bold: true };
+        if (format) averageCell.numFmt = format;
+      });
+      data.autoFilter = { from: { row: 1, column: 1 }, to: { row: lastDataRow, column: columns.length + 1 } };
+    }
+  }
+
+  const bukti = workbook.addWorksheet('Bukti');
+  addHeader(bukti, ['Judul Dokumen', 'Bagian', 'Halaman', 'Kutipan'], [36, 28, 12, 90]);
+  for (const source of report.sources) {
+    const title = source.docTitle ?? source.table ?? source.sourceId;
+    const section = source.section ?? (source.sectionNo === null || source.sectionNo === undefined ? '' : String(source.sectionNo));
+    const quote = source.quote ?? '';
+    const row = bukti.addRow([title, section, source.page ?? '', quote]);
+    row.getCell(4).alignment = { wrapText: true, vertical: 'top' };
+    if (quote.length > 90) row.height = Math.ceil(quote.length / 90) * 15;
+  }
+  if (report.sources.length) {
+    bukti.autoFilter = { from: { row: 1, column: 1 }, to: { row: report.sources.length + 1, column: 4 } };
+  }
+
   const buffer = await workbook.xlsx.writeBuffer();
   return new Uint8Array(buffer as ArrayBuffer);
 }

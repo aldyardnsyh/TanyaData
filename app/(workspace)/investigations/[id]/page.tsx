@@ -77,6 +77,29 @@ export default function InvestigationDetailPage({ params }: { params: Promise<{ 
         }
       />
 
+      <section aria-label="Rantai investigasi" className="surface mb-s5 p-s4">
+        <span className="mono-meta">RANTAI INVESTIGASI</span>
+        <SectionRule className="mb-s3 mt-s2" />
+        <div className="grid-dashboard">
+          <div className="col-span-4 xl:col-span-3">
+            <span className="font-body text-caption font-semibold text-ink">1 · Hipotesis</span>
+            <p className="mt-s2 font-body text-caption leading-relaxed text-ink-72">{question}</p>
+          </div>
+          <div className="col-span-4 xl:col-span-3">
+            <span className="font-body text-caption font-semibold text-ink">2 · Bukti</span>
+            <p className="mt-s2 font-body text-caption leading-relaxed text-ink-72">{channels[0] ? `${channels[0].channelName} menyumbang ${channelShare(channels, 0).toFixed(1)}% dari kelebihan kegagalan.` : 'Belum ada bukti terukur.'} {documents.length ? `${documents.length} kutipan dokumen terlampir.` : ''}</p>
+          </div>
+          <div className="col-span-4 xl:col-span-3">
+            <span className="font-body text-caption font-semibold text-ink">3 · Sebab</span>
+            <p className="mt-s2 font-body text-caption leading-relaxed text-ink-72">{failureCodes[0] ? `${failureCodes[0].failureName} (${failureCodes[0].failureCode}) menjadi kode dominan.` : 'Sebab belum teridentifikasi dari data.'}</p>
+          </div>
+          <div className="col-span-4 xl:col-span-3">
+            <span className="font-body text-caption font-semibold text-ink">4 · Tindakan</span>
+            <p className="mt-s2 font-body text-caption leading-relaxed text-ink-72">Tindak lanjut belum dicatat pada dossier ini. Gunakan cetak dossier untuk mendiskusikan langkah perbaikan.</p>
+          </div>
+        </div>
+      </section>
+
       <section aria-label="Kesimpulan" className="surface mb-s5 p-s4 transition-[border-color,box-shadow,transform] duration-[var(--motion-expand)] hover:-translate-y-0.5 hover:border-forest hover:shadow-lift motion-reduce:transform-none">
         <div className="flex flex-wrap items-start justify-between gap-s2">
           <div className="min-w-0">

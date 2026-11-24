@@ -14,6 +14,13 @@ export type SettingsState = {
   lang: Lang;
   dateRange: { start: string; end: string; preset: string };
   activeDatasetId: string;
+  /**
+   * @deprecated DECISION-036 (P6-UI-HONESTY): tersimpan tetapi TIDAK dikonsumsi
+   * perilaku apa pun — tidak ada pembaca di `lib/core`, `lib/ai`, dashboard,
+   * chart, maupun tabel (lihat `docs/SYSTEM_OVERVIEW.md` §7). Field dipertahankan
+   * agar payload/settings lama tetap valid; UI berhenti mengirimnya. Pembersihan
+   * menyeluruh (skema + seed) dilacak di tiket SET-03.
+   */
   preferences: { chartDefault: string; denseTables: boolean };
   updatedAt: string;
 };
@@ -51,6 +58,11 @@ export type SettingsPatch = {
   dateRange?: { start: string; end: string; preset?: string };
   activeDatasetId?: string;
   profile?: { name?: string; role?: string };
+  /**
+   * @deprecated DECISION-036 (P6-UI-HONESTY): dipertahankan hanya untuk
+   * kompatibilitas payload lama. Tidak ada konsumen perilaku; UI tidak lagi
+   * mengirim field ini. Jangan tambah pembaca baru — lihat tiket SET-03.
+   */
   preferences?: { chartDefault?: string; denseTables?: boolean };
 };
 

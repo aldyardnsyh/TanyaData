@@ -1,0 +1,64 @@
+{
+  "generatedAt": "2026-11-24T04:59:51Z",
+  "scope": "incremental migration — Fase 2A evidence-unit columns",
+  "rootCause": "applySchema() mengeksekusi CORE_SCHEMA_SQL yang memuat CREATE INDEX ix_core_chunks_section ON core_chunks(document_id, section_id), sementara ALTER TABLE penambah section_id baru dijalankan oleh ensureCoreV2Columns() dari ensureWorkspaceReady() — yaitu SETELAH getWorkspaceDb(). DB workspace lama sehingga gagal dengan SqliteError: no such column: section_id.",
+  "fix": {
+    "files": [
+      "lib/db/migrate-v2.ts",
+      "lib/db/client.ts"
+    ],
+    "changes": [
+      "Ekspor ensureCoreChunkColumns(db): cek sqlite_master untuk core_chunks; jika ada, jalankan addColumns() untuk char_start, char_end, unit_id, section_id, section_hash, units_json, reading_order, layout_json, embed_text lalu CREATE INDEX IF NOT EXISTS ix_core_chunks_section. Jika tabel belum ada → no-op (DB segar dibuat oleh core-schema.sql dengan kolom lengkap).",
+      "applySchema() memanggil ensureCoreChunkColumns(db) SEBELUM db.exec(CORE_SCHEMA_SQL), mengikuti pola expires_at / outbox Qdrant yang sudah ada.",
+      "ensureCoreV2Columns() kini mendelegasikan ke ensureCoreChunkColumns() agar satu sumber kebenaran; tidak ada penghapusan data, kolom lama tetap NULL/'[]'/default."
+    ],
+    "idempotent": true,
+    "reversible": "DROP COLUMN per kolom / DROP INDEX ix_core_chunks_section",
+    "dataLoss": false
+  },
+  "directEvidence": {
+    "workspaceDb": "data/workspace/tanyadata.db",
+    "columnsPresent": [
+      "char_start",
+      "char_end",
+      "unit_id",
+      "section_id",
+      "section_hash",
+      "units_json",
+      "reading_order",
+      "layout_json",
+      "embed_text"
+    ],
+    "columnsMissing": [],
+    "indexPresent": "ix_core_chunks_section"
+  },
+  "verification": [
+    {
+      "command": "npm run eval:extraction-gt",
+      "exit": 1,
+      "status": "DB ERROR RESOLVED — eval berjalan sampai metrik; gagal pada exact_text_units 58/94, token_coverage 0.9736, butir_count 33/34, mojibake_residual 4. Ini metrik kualitas ekstraksi OCR/cleaning, bukan skema DB."
+    },
+    {
+      "command": "npm run eval:ground-truth",
+      "exit": 0,
+      "status": "PASS — 12 legacy + 2 realSeed + 11 capability + 6 perpres"
+    },
+    {
+      "command": "npm run eval:holdout",
+      "exit": 0,
+      "status": "PASS — overall accuracy 1.0000 (11/11)"
+    },
+    {
+      "command": "npm run eval:real-docs",
+      "exit": 1,
+      "status": "23/24 kasus lulus; RD-SOP-02 phrase 6/8 (miss: cto, head of operations). Eval memakai workspace sementara, jadi bukan efek data lama — murni kualitas pipeline jawaban."
+    },
+    {
+      "command": "npm run typecheck",
+      "exit": 0,
+      "status": "PASS — tsc --noEmit"
+    }
+  ],
+  "conclusion": "Perbaikan migrasi inkremental berhasil: SqliteError 'no such column: section_id' hilang dan seluruh kolom unit bukti + index terpasang pada DB workspace lama. 3 dari 5 perintah verifikasi EXIT 0. Dua eval tersisa EXIT 1 karena ambang kualitas ekstraksi/jawaban yang berada di luar ruang lingkup backend (dilarang menyentuh lib/ai/*, GT, dan file tuning), sehingga syarat 'Semua EXIT 0' belum terpenuhi dan perlu ditindaklanjuti oleh qa/aiml.",
+  "setupFromScratch": "npm install && npm run db:init && npm run eval:ground-truth"
+}

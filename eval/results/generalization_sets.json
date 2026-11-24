@@ -1,0 +1,40 @@
+{
+  "generatedAt": "2026-11-24T09:40:00Z",
+  "role": "analyst",
+  "phase": "P1",
+  "type": "generalization_sets",
+  "summary": {
+    "general_questions": {
+      "file": "tanyadata/eval/general_questions.json",
+      "count": 35,
+      "flags": ["dev-extra"],
+      "needs_manual_review": true,
+      "note": "Pertanyaan umum/luas lintas 4 dokumen KB; tidak menyalin GT-xxx maupun contoh tuning."
+    },
+    "transfer_set": {
+      "documents": 3,
+      "qa_total": 66,
+      "per_document": [
+        {"pdf": "kebijakan_cuti.pdf", "qa": "kebijakan_cuti_qa.json", "count": 22, "layout": "dua kolom", "domain": "SDM / cuti"},
+        {"pdf": "keamanan_ti.pdf", "qa": "keamanan_ti_qa.json", "count": 22, "layout": "tabel", "domain": "keamanan informasi"},
+        {"pdf": "pengadaan_barang.pdf", "qa": "pengadaan_barang_qa.json", "count": 22, "layout": "penomoran berjenjang tak konsisten + header/footer berulang, 2 halaman", "domain": "pengadaan"}
+      ],
+      "answerability_mix": "answerable / partial / not_answerable / general per dokumen",
+      "evidence_rule": "Semua evidence_spans diverifikasi sebagai substring persis dari teks di PDF yang dibuat."
+    },
+    "hard_rule": "Dokumen transfer_set DILARANG dipakai tuning parameter; hanya untuk mengukur generalisasi. Lihat transfer_set/README.md."
+  },
+  "verification": {
+    "evidence_spans_checked_against_pdf": true,
+    "method": "grep langsung pada stream teks PDF (uncompressed) untuk evidence_spans kunci; cocok persis",
+    "gt_original_untouched": true,
+    "tuning_file_untouched": true,
+    "app_code_untouched": true,
+    "dev_server_started": false
+  },
+  "constraints_and_deviations": [
+    "Role analyst tidak memiliki tool shell/Bash, sehingga safe_exec.py tidak dapat dieksekusi dari role ini. PDF dibuat langsung sebagai file PDF 1.4 valid dengan text layer; generator deterministik disertakan di transfer_set/generate.py untuk dijalankan ulang lewat safe_exec.py --timeout 300 bila tersedia.",
+    "Varian 'satu halaman hasil scan' tidak diproduksi karena tidak ada runtime OCR/image-gen di role ini; ketiga PDF memakai text layer dan menguji generalisasi layout/struktur, bukan jalur OCR."
+  ],
+  "handoff": "```yaml\nfrom: analyst\nto: agentic\nphase: P1\ntype: deliverable\nrefs: [tanyadata/eval/general_questions.json, tanyadata/eval/transfer_set/kebijakan_cuti.pdf, tanyadata/eval/transfer_set/kebijakan_cuti_qa.json, tanyadata/eval/transfer_set/keamanan_ti.pdf, tanyadata/eval/transfer_set/keamanan_ti_qa.json, tanyadata/eval/transfer_set/pengadaan_barang.pdf, tanyadata/eval/transfer_set/pengadaan_barang_qa.json, tanyadata/eval/transfer_set/README.md, tanyadata/eval/transfer_set/generate.py]\nsummary: 'Set uji generalisasi FASE 1C selesai: 35 pertanyaan umum dev-extra pada 4 KB, plus 3 PDF sintetis lintas domain (dua kolom, tabel, penomoran tak konsisten + header/footer) dengan 22 QA each. Semua evidence_spans diverifikasi persis dari teks PDF; GT, file tuning, dan kode aplikasi tidak diubah.'\nevidence: 'tanyadata/eval/results/generalization_sets.json + general_questions.json + transfer_set/*_qa.json; grep pada stream PDF mengonfirmasi evidence_spans kunci hadir persis.'\nblocking: false\nneeds: 'Verifikasi akhir oleh qa/agentic: jalankan generate.py lewat safe_exec.py --timeout 300 bila tool shell tersedia, lalu konfirmasi ekstraksi teks PDF dan tinjau manual flag needs_manual_review pada general_questions.json sebelum set dipakai mengukur.'\n```"
+}

@@ -1,0 +1,9 @@
+from: aiml
+to: agentic
+phase: P2
+type: deliverable
+refs: [tanyadata/lib/ai/adapter.ts, tanyadata/lib/ai/guardrails.ts, tanyadata/lib/ai/retrieval.ts, tanyadata/eval/results/guardrail_regression_fix.json, tanyadata/docs/HOLDOUT_RESULT.json, tanyadata/eval/results/paraphrase_guardrail_fix.json]
+summary: Perbaikan kritis guardrail — keputusan out_of_scope kini memakai input.question asli, bukan effectiveQuestion/parafrasa/keyEntities, sehingga SOP-09/11 ditolak dengan refused=true dan sitasi=0. npm run eval:holdout EXIT 0: refusal 0.3333→1.0000, answerable 0.8750, overall 0.9091 (10/11), hallucination 0.0000; eval:ground-truth EXIT 0 (hallucination 0.0000) dan typecheck EXIT 0. Bridge parafrasa PARA-01/02 tetap tidak abstain dengan jawaban bersitasi.
+evidence: docs/HOLDOUT_RESULT.json + docs/EVAL_GROUND_TRUTH_RESULT.json + eval/results/paraphrase_guardrail_fix.json + tiga file lib/ai yang diubah; semua lewat safe_exec.py --timeout 300 dengan EXIT=0.
+blocking: false
+needs: Pengujian QA pada input normal/aneh/kosong/panjang serta verifikasi UI state penolakan (pesan jujur, sitasi 0, tidak ada jawaban dokumen); pastikan tidak ada regresi pada LLM_MODE=full.

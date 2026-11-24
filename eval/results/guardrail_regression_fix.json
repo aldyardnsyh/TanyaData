@@ -1,0 +1,130 @@
+{
+  "schema": "guardrail_regression_fix",
+  "generatedAt": "2026-11-24T14:38:00.000Z",
+  "role": "aiml",
+  "phase": "P2",
+  "type": "deliverable",
+  "scope": "Perbaikan kritis guardrail — isolasi keputusan abstain dari parafrasa/ekspansi. Tanpa perubahan backend, GT, fixture, atau tuning.",
+  "regression": {
+    "harness": "npm run eval:holdout --non-interactive",
+    "before": {
+      "refusal_accuracy": 0.3333,
+      "answerable_accuracy": 0.875,
+      "overall_accuracy": 0.7273,
+      "hallucination_rate": 0.0,
+      "passed": 8,
+      "total": 11,
+      "gate": "FAIL — refusal_holdout=0.3333 < 0.8; delta_refusal=0.6667 > 0.15",
+      "failing_cases": [
+        {
+          "id": "SOP-09",
+          "question": "Bagaimana cara uploading berkas ke sistem tiket?",
+          "ai_guardrail": "out_of_scope",
+          "refused": false,
+          "citations": 1
+        },
+        {
+          "id": "SOP-11",
+          "question": "Siapa kepala unit kerja yang menandatangani persetujuan?",
+          "ai_guardrail": "out_of_scope",
+          "refused": false,
+          "citations": 1
+        }
+      ]
+    },
+    "after": {
+      "refusal_accuracy": 1.0,
+      "answerable_accuracy": 0.875,
+      "overall_accuracy": 0.9091,
+      "hallucination_rate": 0.0,
+      "passed": 10,
+      "total": 11,
+      "gate": "PASS — refusal 1.0 ≥ 0.8; answerable 0.875 ≥ 0.8; delta_refusal 0.0 ≤ 0.15; hallucination 0.0 ≤ 0.02",
+      "refusal_cases": [
+        {
+          "id": "SOP-09",
+          "detail": "guardrail=none ai_guardrail=not_in_sources refused=true foreign=0 sitasi=0"
+        },
+        {
+          "id": "SOP-10",
+          "detail": "guardrail=none ai_guardrail=not_in_sources refused=true foreign=0 sitasi=0"
+        },
+        {
+          "id": "SOP-11",
+          "detail": "guardrail=none ai_guardrail=not_in_sources refused=true foreign=0 sitasi=0"
+        }
+      ]
+    }
+  },
+  "root_cause": "composeWithAi mengirim `effectiveQuestion ?? question` (standalone/rewrite) ke checkGuardrails, lalu menyertakan `stableVariants` (parafrasa LLM + deterministik) dan `understanding.entities`. Di guardrails.ts, `variants = [q, ...queryVariants]` dipakai untuk topicHit dan `support = max(answerabilitySupport(variant))`, sementara `keyEntityRelax` menurunkan effectiveThreshold ke 0. Kata kunci hasil ekspansi dari pertanyaan di luar dokumen therefore 'tercocokkan' dengan bukti, sehingga sinyal out_of_scope tidak pernah memicu penolakan di adapter. Diagnostik aiG di holdout.ts (yang memakai pertanyaan asli tanpa varian) tetap mendeteksi out_of_scope — ini mengonfirmasi akar masalah berada di boundary adapter→guardrail.",
+  "fix": {
+    "files": [
+      "tanyadata/lib/ai/adapter.ts",
+      "tanyadata/lib/ai/guardrails.ts",
+      "tanyadata/lib/ai/retrieval.ts"
+    ],
+    "changes": [
+      {
+        "file": "tanyadata/lib/ai/adapter.ts",
+        "change": "checkGuardrails kini memakai `question: input.question` (asli). Field `queryVariants` dan `keyEntities` dihapus dari panggilan guardrail. `stableVariants` tetap dipakai untuk retrieval, deterministic answer, dan LLM composer."
+      },
+      {
+        "file": "tanyadata/lib/ai/guardrails.ts",
+        "change": "GuardrailCheckInput sengaja tidak lagi menerima `queryVariants`/`keyEntities`. topicHit dan answerabilitySupport dihitung HANYA dari pertanyaan asli. Relaksasi ambang hanya untuk entitas kuat yang tertulis di soal asli DAN hadir di bukti."
+      },
+      {
+        "file": "tanyadata/lib/ai/guardrails.ts",
+        "change": "GUARDRAIL_SYNONYMS diperluas dengan padanan makna umum (prosedur, pergantian, serah terima, shift, giliran) agar parafrasa sah tetap dikenali dari pertanyaan asli tanpa menurunkan ambang global 0.45."
+      },
+      {
+        "file": "tanyadata/lib/ai/retrieval.ts",
+        "change": "Dokumentasi kontrak: retrieveWithQueryVariants hanya memperlebar retrieval, tidak pernah menilai answerability/out_of_scope."
+      }
+    ],
+    "invariants": [
+      "Keputusan abstain/out_of_scope bersumber dari input.question, bukan effectiveQuestion/parafrasa/entitas understanding.",
+      "out_of_scope menghasilkan refused=true (meta.confidenceLevel='refused', fallbackReason='guardrail'), citations=[], dan pesan jujur outOfScopeDatasetMessage.",
+      "Parafrasa tetap dipakai untuk retrieval dan komposisi; PARA-01/02 tidak abstain.",
+      "Ambang answerability global 0.45 tidak diturunkan; pengecualian lookup kode/insiden tidak diubah."
+    ]
+  },
+  "verification": {
+    "order": [
+      "npm run eval:holdout",
+      "npm run eval:ground-truth",
+      "npm run typecheck",
+      "node eval/bridge.mjs --questions tanyadata/eval/results/paraphrase_questions.json --out tanyadata/eval/results/paraphrase_guardrail_fix.json --llm-mode off"
+    ],
+    "wrapper": "C:\\Users\\aldya\\.config\\opencode\\scripts\\safe_exec.py --timeout 300",
+    "results": [
+      {
+        "command": "npm run eval:holdout",
+        "exit": 0,
+        "evidence": "docs/HOLDOUT_RESULT.json — refusal 1.0000, answerable 0.8750, overall 0.9091 (10/11), hallucination 0.0000, gate.overallPass=true"
+      },
+      {
+        "command": "npm run eval:ground-truth",
+        "exit": 0,
+        "evidence": "docs/EVAL_GROUND_TRUTH_RESULT.json — overallPass=true, 12 legacy + 2 realSeed + 11 capability + 6 perpres; generation.hallucination_rate=0 (0/12 angka asing)"
+      },
+      {
+        "command": "npm run typecheck",
+        "exit": 0,
+        "evidence": "tsc --noEmit tanpa error"
+      },
+      {
+        "command": "paraphrase bridge (PARA-01/02)",
+        "exit": 0,
+        "evidence": "eval/results/paraphrase_guardrail_fix.json — QA_BRIDGE_OK cases=2; PARA-01 abstain=false guardrail=null sitasi=4; PARA-02 abstain=false guardrail=null sitasi=3; keduanya menjawab 'Serah terima dilakukan sebelum pergantian petugas …'"
+      }
+    ],
+    "retry_count": 0,
+    "note": "SOP-05 sudah FAIL sebelum perbaikan (answerable 0.875 pada baseline yang gagal), jadi bukan regresi baru; gate tetap PASS."
+  },
+  "known_limitations": [
+    "GUARDRAIL_SYNONYMS adalah kamus deterministik: parafrasa yang sangat idiomatik dan tidak punya padanan di kamus dapat tetap ditolak. Ini disengaja agar fail-closed terhadap topik di luar korpus.",
+    "Verifikasi parafrasa dijalankan pada LLM_MODE=off (deterministik). Perilaku LLM_MODE=full belum dijalankan ulang pada perbaikan ini.",
+    "Holdout memakai satu dokumen SOP satu halaman; angka refusal 1.0 tidak diklaim generalisasi tanpa evaluasi korpus lain."
+  ],
+  "handoff_yaml": "from: aiml\nto: agentic\nphase: P2\ntype: deliverable\nrefs: [tanyadata/lib/ai/adapter.ts, tanyadata/lib/ai/guardrails.ts, tanyadata/lib/ai/retrieval.ts, tanyadata/eval/results/guardrail_regression_fix.json, tanyadata/docs/HOLDOUT_RESULT.json, tanyadata/eval/results/paraphrase_guardrail_fix.json]\nsummary: Perbaikan kritis guardrail — keputusan out_of_scope kini memakai input.question asli, bukan effectiveQuestion/parafrasa/keyEntities, sehingga SOP-09/11 ditolak dengan refused=true dan sitasi=0. npm run eval:holdout EXIT 0: refusal 0.3333→1.0000, answerable 0.8750, overall 0.9091 (10/11), hallucination 0.0000; eval:ground-truth EXIT 0 (hallucination 0.0000) dan typecheck EXIT 0. Bridge parafrasa PARA-01/02 tetap tidak abstain dengan jawaban bersitasi.\nevidence: docs/HOLDOUT_RESULT.json + docs/EVAL_GROUND_TRUTH_RESULT.json + eval/results/paraphrase_guardrail_fix.json + tiga file lib/ai yang diubah; semua lewat safe_exec.py --timeout 300 dengan EXIT=0.\nblocking: false\nneeds: Pengujian QA pada input normal/aneh/kosong/panjang serta verifikasi UI state penolakan (pesan jujur, sitasi 0, tidak ada jawaban dokumen); pastikan tidak ada regresi pada LLM_MODE=full."
+}

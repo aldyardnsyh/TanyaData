@@ -1,0 +1,14 @@
+from: backend
+to: agentic
+phase: P2
+type: deliverable
+refs:
+  - tanyadata/eval/results/ocr_activation.json
+  - tanyadata/eval/results/ocr_kb_gt_result.json
+  - tanyadata/eval/results/ocr_kb_gt_report.md
+  - tanyadata/deploy/ocr/app.py
+  - tanyadata/lib/ingest/ocr.ts
+summary: "OCR sungguhan aktif: PP-OCRv6 tiny melayani 2 request /ocr (HTTP 200); KB01/KB04 kini terindeks dari PDF (7+9 chunk, 0 SKIPPED, 0 gt_text_fallback). Eval dev mode=off limit=20 EXIT 0; latensi 994-1075 ms/halaman, RSS puncak 877 MB; semua proses OCR dimatikan."
+evidence: "tanyadata/eval/results/ocr_activation.json + ocr_kb_gt_result.json + log safe_exec (install EXIT 0, eval EXIT 0, probe EXIT 0) + access log 2x POST /ocr 200 + verifikasi cleanup 0 proses / port 6334 tertutup"
+blocking: false
+needs: "QA verifikasi end-user lewat UI bahwa KB01/KB04 kini dapat dijawab dari bukti OCR; owner deploy perbaiki pin numpy di requirements.txt untuk Python 3.11; target presisi 0.99 belum tercapai (0.4706) — jangan klaim >99%; security audit jalur OCR_API_KEY dan paparan port 6334."

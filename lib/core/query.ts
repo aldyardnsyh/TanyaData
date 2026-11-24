@@ -22,7 +22,9 @@ import { getDataset } from '@/lib/core/registry';
 import { buildDocumentProfile, isDocumentMetaQuestion } from '@/lib/core/doc-profile';
 import { buildRuleBasedCandidate, runCandidate } from '@/lib/core/sql';
 import { searchChunks } from '@/lib/core/store';
+import { correctQueryWithVocabulary, rrfFuse, standaloneQuestion } from '@/lib/core/query-rewrite';
 import { rerankCitations, retrieveWithEntityBoost } from '@/lib/ai/retrieval';
+import { understandQuery, retrievalQueries } from '@/lib/ai/query-understanding';
 import {
   ambiguousGuardrail,
   buildVizSpec,
@@ -131,20 +133,44 @@ export async function answerQuestion(
   }
 
   // Pertanyaan meta-dokumen ("ini dokumen terkait apa?", "apa isi dokumen ini?")
-  // dijawab dari STRUKTUR dokumen (judul + daftar bagian + kalimat pembuka),
-  // bukan retrieval — tidak mungkin halusinasi dan tidak kena guardrail.
+  // dijawab dari STRUKTUR dokumen (judul + daftar bagian + kalimat pembuka).
+  // Bila port ringkasan tersedia, LLM menarasikan profil itu (grounded ke
+  // bukti struktur); tanpa port / gagal → fallback deterministik.
   if (dataset.kind === 'document' && isDocumentMetaQuestion(input.question)) {
     const profile = buildDocumentProfile(db, dataset);
     if (profile.sections.length) {
-      const intro = input.lang === 'id'
-        ? `Berkas "${profile.title}" (${profile.pages} halaman, ${profile.sections.length} bagian) berisi:`
-        : `"${profile.title}" (${profile.pages} pages, ${profile.sections.length} sections) contains:`;
-      const listing = profile.sections
-        .slice(0, 8)
-        .map((s) => `• ${s.title}${s.page != null ? ` (hlm ${s.page})` : ''}: ${s.excerpt}`)
-        .join('\n');
-      query.mode = 'document';
-      query.answer = `${intro}\n${listing}`;
+      const overview = ports.documentOverview
+        ? await ports.documentOverview
+            .overview({
+              question: input.question,
+              lang: input.lang,
+              title: profile.title,
+              pages: profile.pages,
+              docType: dataset.doc_type,
+              sections: profile.sections.map((s) => ({
+                title: s.title,
+                page: s.page,
+                excerpt: s.excerpt,
+              })),
+            })
+            .catch(() => null)
+        : null;
+
+      if (overview) {
+        query.mode = 'document';
+        query.answer = overview;
+        query.meta = { aiActive: true };
+      } else {
+        const titles = profile.sections.slice(0, 3).map((s) => s.title);
+        const joined = titles.join('; ');
+        query.mode = 'document';
+        query.answer =
+          input.lang === 'id'
+            ? `Dokumen "${profile.title}" (${profile.pages} halaman) terdiri dari ${profile.sections.length} bagian, di antaranya: ${joined}.`
+            : `"${profile.title}" (${profile.pages} pages) has ${profile.sections.length} sections, including: ${joined}.`;
+        query.meta = { aiActive: false, fallbackReason: 'document_overview_unavailable' };
+      }
+
       query.citations = profile.sections.slice(0, 5).map((s) => ({
         chunk_id: s.chunkId,
         document_id: s.documentId,
@@ -255,6 +281,7 @@ export async function answerQuestion(
 
   let citations: Citation[] = [];
   let docCitations: Citation[] = [];
+  let effectiveQuestion = input.question;
   try {
     // Kandidat LEBAR (20) + entity boost, lalu rerank deterministik → top 5.
     // searchChunks mentah (limit 5) membuat BM25 OR mengisi top-k dengan chunk
@@ -272,8 +299,28 @@ export async function answerQuestion(
       .flatMap((c) => (c.sample_values ?? []).map(String))
       .filter((v) => v.length >= 3 && v.length <= 40)
       .slice(0, 24);
+    const scopeIds = Array.isArray(retrievalDatasetId)
+      ? retrievalDatasetId
+      : retrievalDatasetId === '*'
+        ? []
+        : [retrievalDatasetId];
+    const corrected = correctQueryWithVocabulary(db, scopeIds, input.question);
+    effectiveQuestion = standaloneQuestion(corrected, input.context?.history, dataset.name);
+    // SEMANTIC QUERY V1 — pahami maksud (intent/parafrasa/entitas) SEBELUM
+    // retrieval. Fallback deterministik aktif bila LLM gagal/429 — tidak
+    // pernah mengembalikan error ke user. Hasil di-cache per query ternormalisasi.
+    const understanding = await understandQuery(input.question, input.lang);
+    const semanticVariants = retrievalQueries(input.question, understanding)
+      .filter((v) => v !== input.question && v !== effectiveQuestion)
+      .slice(0, 3);
     const candidates = retrieveWithEntityBoost(db, retrievalDatasetId, input.question, 20, knownChannels);
-    citations = narrowCitations(rerankCitations(input.question, candidates).slice(0, 5), input.question);
+    const rewritten = effectiveQuestion === input.question
+      ? []
+      : retrieveWithEntityBoost(db, retrievalDatasetId, effectiveQuestion, 20, knownChannels);
+    const semanticLists = semanticVariants.map((v) =>
+      retrieveWithEntityBoost(db, retrievalDatasetId, v, 20, knownChannels));
+    const fused = rrfFuse([candidates, rewritten, ...semanticLists].filter((list) => list.length));
+    citations = narrowCitations(rerankCitations(input.question, fused).slice(0, 8), input.question);
   } catch {
     citations = [];
   }
@@ -312,7 +359,7 @@ export async function answerQuestion(
           answer: 'SQL tidak dapat dibuat atau divalidasi dari sumber yang tersedia.',
           explanation: `SQL ditolak: ${rejection}`,
         }
-      : ambiguousGuardrail(input.question) ?? notInSourcesGuardrail(dataset);
+      : (dataset.kind === 'document' ? null : ambiguousGuardrail(effectiveQuestion)) ?? notInSourcesGuardrail(dataset);
     query.guardrail = g;
     query.answer = g.answer ?? g.explanation;
     query.duration_ms = Math.round(performance.now() - started);
@@ -336,6 +383,7 @@ export async function answerQuestion(
     try {
       const composed = await ports.answerComposer.compose({
         question: input.question,
+        effectiveQuestion,
         lang: input.lang,
         docType: dataset.doc_type,
         schema: dataset.schema_json,
@@ -343,6 +391,7 @@ export async function answerQuestion(
         citations: citations.length ? citations : docCitations,
         sqlExplanation: query.sql_explanation,
         mode: query.mode === 'guardrail' ? 'document' : query.mode,
+        dataKind: dataset.kind === 'document' ? 'document' : 'tabular',
         citationRegistry: input.citationRegistry ?? null,
         scope: input.scope ?? null,
         context: input.context ?? null,

@@ -362,6 +362,37 @@ function mentioned(column: SchemaColumn, lower: string): boolean {
   return lower.includes(column.name.toLowerCase()) || lower.includes(column.sourceName.toLowerCase());
 }
 
+/**
+ * BUG-001 defensif: kolom TIMESTAMP ("2026-11-18 23:55:37") tidak boleh
+ * dibatasi dengan `<= '2026-11-18'` — perbandingan string memotong seluruh
+ * hari terakhir. Kolom DATE cukup `<= tanggal`; TIMESTAMP memakai
+ * `< tanggal+1` (eksklusif).
+ */
+function isTimestampColumn(column: SchemaColumn): boolean {
+  return (column.sample_values ?? []).some((v) => /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(String(v)));
+}
+
+function nextDay(isoDate: string): string {
+  const d = new Date(`${String(isoDate).slice(0, 10)}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function appendPeriodEnd(
+  whereParts: string[],
+  params: Record<string, string | number | null>,
+  time: SchemaColumn,
+  end: string,
+): void {
+  if (isTimestampColumn(time)) {
+    whereParts.push(`${time.name} < ?`);
+    params.periodEndExclusive = nextDay(end);
+  } else {
+    whereParts.push(`${time.name} <= ?`);
+    params.periodEnd = end;
+  }
+}
+
 /** Ambil nilai teks pertama yang cocok; null berarti tidak ada (boolean dilewati). */
 function firstMatchingValue(
   values: Array<string | number | boolean | null>,
@@ -435,8 +466,7 @@ function buildRateCandidate(
     params.periodStart = context.period.start;
   }
   if (context?.period?.end && time) {
-    whereParts.push(`${time.name} <= ?`);
-    params.periodEnd = context.period.end;
+    appendPeriodEnd(whereParts, params, time, context.period.end);
   }
 
   // BUG-SQL-03-DEF — rate SELALU count-based: JUMLAH TRANSAKSI pada kategori
@@ -572,8 +602,7 @@ export function buildRuleBasedCandidate(
     params.periodStart = context.period.start;
   }
   if (context?.period?.end && time) {
-    whereParts.push(`${time.name} <= ?`);
-    params.periodEnd = context.period.end;
+    appendPeriodEnd(whereParts, params, time, context.period.end);
   }
 
   const selects: string[] = [];

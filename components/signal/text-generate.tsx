@@ -73,7 +73,7 @@ function PhraseWithCitations({
     const citation = citations[n - 1];
     if (citation) {
       nodes.push(
-        <InlineCitationMark key={`${start}-${n}`} index={n - 1} citation={citation} onOpen={onOpenCitation} />,
+        <InlineCitationMark key={`${start}-${n}`} index={n - 1} citation={citation} onOpen={onOpenCitation} context={phrase} />,
       );
     } else {
       nodes.push(match[0]);

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-19T02:06:07.656Z",
+  "generatedAt": "2026-11-24T06:49:46.458Z",
   "documents": [
     {
       "id": "catatan-insiden-okt-nov-2026",
@@ -401,7 +401,356 @@
           "text": "Tim Kontak Jam layanan\nPayment Operations ops-payment@neuraltech.example 24/7\nIntegration Team integration@neuraltech.example 24/7 (on-call)\nPlatform Engineering platform-oncall@neuraltech.example 24/7 (on-call)\nRisk and Fraud Team risk@neuraltech.example Senin - Jumat 08:00 - 20:00 WIB"
         }
       ]
+    },
+    {
+      "id": "kb-01-penanganan-tiket-layanan",
+      "title": "KB-01 Penanganan Tiket Layanan",
+      "file": "KB_01_Penanganan_Tiket_Layanan.pdf",
+      "format": "pdf",
+      "kind": "sop",
+      "sizeBytes": 176168,
+      "pages": [
+        {
+          "page": 1,
+          "text": ""
+        }
+      ],
+      "sections": [],
+      "dataset": "kb-sop",
+      "ingestMode": "ocr_unavailable",
+      "needsReview": true
+    },
+    {
+      "id": "kb-02-pengelolaan-keluhan-pelanggan",
+      "title": "KB-02 Pengelolaan Keluhan Pelanggan",
+      "file": "KB_02_Pengelolaan_Keluhan_Pelanggan.pdf",
+      "format": "pdf",
+      "kind": "sop",
+      "sizeBytes": 44630,
+      "pages": [
+        {
+          "page": 1,
+          "text": "Pengelolaan Keluhan Pelanggan\n1\n1. Ruang Lingkup\nKeluhan adalah pernyataan ketidakpuasan pelanggan atas layanan, komunikasi, hasil penanganan, atau\nperilaku petugas. Keluhan dapat diterima melalui email, telepon, formulir, dan percakapan resmi.\n2. Verifikasi\nPetugas mencocokkan identitas pelapor dengan informasi akun yang tersedia. Jangan meminta kata\nsandi, PIN, atau kode OTP. Bukti percakapan boleh dilampirkan setelah data sensitif disamarkan.\n3. Kategori Keluhan\nKategori layanan mencakup kualitas respons, keterlambatan, kesalahan informasi, kendala pembayaran,\ndan sikap petugas. Satu keluhan dapat memiliki kategori utama dan kategori tambahan.\n4. Konfirmasi Penerimaan\nKeluhan harus diakui paling lambat satu hari kerja sejak diterima. Nomor referensi dan perkiraan waktu\npembaruan disampaikan kepada pelanggan.\n5. Penanganan\nPetugas menelusuri kronologi, memeriksa bukti, menghubungi unit terkait, dan mendokumentasikan\ntindakan. Jika penyelesaian membutuhkan keputusan lintas tim, koordinator layanan menetapkan PIC\nutama.\n6. Keluhan Berulang\nKeluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator. Keluhan\nberulang tidak otomatis menjadi insiden P1; penentuan prioritas mengikuti dampak aktual.\n7. Kompensasi\nPetugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat\nberwenang. Semua keputusan kompensasi dicatat bersama dasar persetujuannya.\n8. Penyelesaian dan Umpan Balik\nHasil penanganan disampaikan dengan bahasa yang mudah dipahami. Keluhan dianggap selesai setelah\ntindakan telah dilaksanakan dan pelanggan diberi penjelasan. Umpan balik negatif setelah penutupan\ndicatat sebagai tindak lanjut baru bila ada informasi baru."
+        }
+      ],
+      "sections": [
+        {
+          "no": null,
+          "title": "KB-02 Pengelolaan Keluhan Pelanggan",
+          "page": 1,
+          "text": "Pengelolaan Keluhan Pelanggan\n1"
+        },
+        {
+          "no": 1,
+          "title": "Ruang Lingkup",
+          "page": 1,
+          "text": "Keluhan adalah pernyataan ketidakpuasan pelanggan atas layanan, komunikasi, hasil penanganan, atau\nperilaku petugas. Keluhan dapat diterima melalui email, telepon, formulir, dan percakapan resmi."
+        },
+        {
+          "no": 2,
+          "title": "Verifikasi",
+          "page": 1,
+          "text": "Petugas mencocokkan identitas pelapor dengan informasi akun yang tersedia. Jangan meminta kata\nsandi, PIN, atau kode OTP. Bukti percakapan boleh dilampirkan setelah data sensitif disamarkan."
+        },
+        {
+          "no": 3,
+          "title": "Kategori Keluhan",
+          "page": 1,
+          "text": "Kategori layanan mencakup kualitas respons, keterlambatan, kesalahan informasi, kendala pembayaran,\ndan sikap petugas. Satu keluhan dapat memiliki kategori utama dan kategori tambahan."
+        },
+        {
+          "no": 4,
+          "title": "Konfirmasi Penerimaan",
+          "page": 1,
+          "text": "Keluhan harus diakui paling lambat satu hari kerja sejak diterima. Nomor referensi dan perkiraan waktu\npembaruan disampaikan kepada pelanggan."
+        },
+        {
+          "no": 5,
+          "title": "Penanganan",
+          "page": 1,
+          "text": "Petugas menelusuri kronologi, memeriksa bukti, menghubungi unit terkait, dan mendokumentasikan\ntindakan. Jika penyelesaian membutuhkan keputusan lintas tim, koordinator layanan menetapkan PIC\nutama."
+        },
+        {
+          "no": 6,
+          "title": "Keluhan Berulang",
+          "page": 1,
+          "text": "Keluhan dengan isu yang sama dalam 30 hari ditandai sebagai berulang dan ditinjau koordinator. Keluhan\nberulang tidak otomatis menjadi insiden P1; penentuan prioritas mengikuti dampak aktual."
+        },
+        {
+          "no": 7,
+          "title": "Kompensasi",
+          "page": 1,
+          "text": "Petugas tidak boleh menjanjikan pengembalian dana atau kompensasi sebelum ada persetujuan pejabat\nberwenang. Semua keputusan kompensasi dicatat bersama dasar persetujuannya."
+        },
+        {
+          "no": 8,
+          "title": "Penyelesaian dan Umpan Balik",
+          "page": 1,
+          "text": "Hasil penanganan disampaikan dengan bahasa yang mudah dipahami. Keluhan dianggap selesai setelah\ntindakan telah dilaksanakan dan pelanggan diberi penjelasan. Umpan balik negatif setelah penutupan\ndicatat sebagai tindak lanjut baru bila ada informasi baru."
+        }
+      ],
+      "dataset": "kb-sop",
+      "ingestMode": "pdf_text"
+    },
+    {
+      "id": "kb-03-panduan-operasional-layanan",
+      "title": "KB-03 Panduan Operasional Layanan",
+      "file": "KB_03_Panduan_Operasional_Layanan.pdf",
+      "format": "pdf",
+      "kind": "sop",
+      "sizeBytes": 44764,
+      "pages": [
+        {
+          "page": 1,
+          "text": "Panduan Operasional Layanan\n1\n1. Jam Layanan\nLayanan reguler beroperasi Senin sampai Jumat\npukul 09.00-17.00 WIB, tidak termasuk hari libur\nnasional. Gangguan kritis diteruskan melalui jalur\npiket di luar jam tersebut.\n2. Serah Terima Shift\nPetugas mencatat tiket aktif, pekerjaan tertunda,\nhambatan, PIC, dan tenggat pembaruan. Serah\nterima dilakukan sebelum pergantian petugas\nuntuk menghindari tiket tanpa penanggung jawab.\n3. Pemeriksaan Harian\nPada awal hari kerja, petugas memeriksa antrean\ntiket baru, tiket mendekati batas respons, tiket\nmenunggu pelanggan, dan pengumuman\ngangguan yang masih aktif.\n4. Pembaruan Berkala\nTiket P1 diperbarui kepada pelanggan setidaknya\nsetiap 30 menit selama gangguan aktif. Tiket P2\ndiperbarui setiap 4 jam kerja jika belum selesai.\nUntuk P3 dan P4, pembaruan diberikan saat ada\nperkembangan penting atau sesuai janji petugas.\n5. Kanal Komunikasi\nInformasi resmi diberikan melalui kanal layanan\nyang tercatat. Permintaan perubahan data akun\ntidak diproses melalui pesan pribadi petugas tanpa\nverifikasi.\n6. Pengelolaan Dokumen\nSimpan bukti dan catatan kerja di lokasi yang\ndisetujui. Berkas pelanggan tidak boleh dibagikan\nmelalui tautan publik. Hapus salinan lokal yang\ntidak lagi dibutuhkan sesuai kebijakan retensi.\n7. Pelaporan Mingguan\nKoordinator menyusun ringkasan jumlah tiket,\nkategori masalah, ketepatan respons, backlog, dan\nkendala operasional. Angka dihitung dari catatan\nsistem, bukan perkiraan manual.\n8. Situasi Tidak Biasa\nJika sistem tiket tidak tersedia, catat laporan dalam\nformulir sementara dengan waktu asli penerimaan.\nSetelah sistem pulih, masukkan data kembali dan\ntandai bahwa tiket berasal dari pencatatan\nsementara."
+        }
+      ],
+      "sections": [
+        {
+          "no": null,
+          "title": "KB-03 Panduan Operasional Layanan",
+          "page": 1,
+          "text": "Panduan Operasional Layanan\n1"
+        },
+        {
+          "no": 1,
+          "title": "Jam Layanan",
+          "page": 1,
+          "text": "Layanan reguler beroperasi Senin sampai Jumat\npukul 09.00-17.00 WIB, tidak termasuk hari libur\nnasional. Gangguan kritis diteruskan melalui jalur\npiket di luar jam tersebut."
+        },
+        {
+          "no": 2,
+          "title": "Serah Terima Shift",
+          "page": 1,
+          "text": "Petugas mencatat tiket aktif, pekerjaan tertunda,\nhambatan, PIC, dan tenggat pembaruan. Serah\nterima dilakukan sebelum pergantian petugas\nuntuk menghindari tiket tanpa penanggung jawab."
+        },
+        {
+          "no": 3,
+          "title": "Pemeriksaan Harian",
+          "page": 1,
+          "text": "Pada awal hari kerja, petugas memeriksa antrean\ntiket baru, tiket mendekati batas respons, tiket\nmenunggu pelanggan, dan pengumuman\ngangguan yang masih aktif."
+        },
+        {
+          "no": 4,
+          "title": "Pembaruan Berkala",
+          "page": 1,
+          "text": "Tiket P1 diperbarui kepada pelanggan setidaknya\nsetiap 30 menit selama gangguan aktif. Tiket P2\ndiperbarui setiap 4 jam kerja jika belum selesai.\nUntuk P3 dan P4, pembaruan diberikan saat ada\nperkembangan penting atau sesuai janji petugas."
+        },
+        {
+          "no": 5,
+          "title": "Kanal Komunikasi",
+          "page": 1,
+          "text": "Informasi resmi diberikan melalui kanal layanan\nyang tercatat. Permintaan perubahan data akun\ntidak diproses melalui pesan pribadi petugas tanpa\nverifikasi."
+        },
+        {
+          "no": 6,
+          "title": "Pengelolaan Dokumen",
+          "page": 1,
+          "text": "Simpan bukti dan catatan kerja di lokasi yang\ndisetujui. Berkas pelanggan tidak boleh dibagikan\nmelalui tautan publik. Hapus salinan lokal yang\ntidak lagi dibutuhkan sesuai kebijakan retensi."
+        },
+        {
+          "no": 7,
+          "title": "Pelaporan Mingguan",
+          "page": 1,
+          "text": "Koordinator menyusun ringkasan jumlah tiket,\nkategori masalah, ketepatan respons, backlog, dan\nkendala operasional. Angka dihitung dari catatan\nsistem, bukan perkiraan manual."
+        },
+        {
+          "no": 8,
+          "title": "Situasi Tidak Biasa",
+          "page": 1,
+          "text": "Jika sistem tiket tidak tersedia, catat laporan dalam\nformulir sementara dengan waktu asli penerimaan.\nSetelah sistem pulih, masukkan data kembali dan\ntandai bahwa tiket berasal dari pencatatan\nsementara."
+        }
+      ],
+      "dataset": "kb-sop",
+      "ingestMode": "pdf_text"
+    },
+    {
+      "id": "kb-04-eskalasi-dan-insiden",
+      "title": "KB-04 Eskalasi dan Insiden",
+      "file": "KB_04_Eskalasi_dan_Insiden.pdf",
+      "format": "pdf",
+      "kind": "sop",
+      "sizeBytes": 162065,
+      "pages": [
+        {
+          "page": 1,
+          "text": ""
+        }
+      ],
+      "sections": [],
+      "dataset": "kb-sop",
+      "ingestMode": "ocr_unavailable",
+      "needsReview": true
+    },
+    {
+      "id": "6a30b004",
+      "title": "Perpres No. 76 Tahun 2013 tentang Pengelolaan Pengaduan Pelayanan Publik",
+      "file": "Perpres_76_2013.pdf",
+      "format": "pdf",
+      "kind": "legal_fixture",
+      "sizeBytes": 1698077,
+      "pages": [
+        {
+          "page": 1,
+          "text": "tclah ...\n2. Undang-Undang Nomor 32 Tahun 2004 tentang\nPemerintahan Daerah (Lembaran Negara Rcpublik\nIndonesia Tahun 2004 Nomor 125, Tambahan Lembaran\nNegara Republik Indonesia Nomor 4437) sebagaimana\nL\n1. Pasal 4 ayat (1) Undang-Undang Dasar Negara Republik\nIndonesia Tahun 1945;\na. bahwa sesuai dengan ketentuan Pasal 36 dan Pasal 37\nUndang-Undang Nomor 25 Tahun 2009 tentang Pelayanan\nPublik diwajibkan bagi penyelenggara pelayanan publik\nuntuk menyediakan sarana pengaduan dan menugaskan\nPelaksana yang kompeten dalam pengelolaan pengaduan;\nb. bahwa pembentukan sarana pengaduan dan penugasan\nkepada pengelola pengaduan pelayanan publik bertujuan\nuntuk memenuhi kebutuhan masyarakat dalam\nmemperoleh pelayanan publik yang berkualitas, wajar,\ndan adil;\nc. bahwa berdasarkan pertimbangan sebagaimana dimaksud\ndalam huruf a dan b, perlu menetapkan Peraturan\nPresiden tentang Pengelolaan Pengaduan Pelayanan\nPublik;\nPRESIDEN REPUBLIK INDONESIA,\nDENGAN RAHMAT TUHAN YANG MAHA ESA\nPERATURAN PRESIDEN REPUBLIK INDONESIA\nNOMOR 76 TAHUN 2013\nTENTANG\nPENGELOLAAN PENGADUAN PELAYANAN PUBLIK\nPRESIDEN\nREPUBLIK INDONESIA\nMengingat\nMenimbang"
+        },
+        {
+          "page": 2,
+          "text": "Pasal 1\nDalam Peraturan Presiden ini yang dimaksud dengan:\nl. Pelayanan publik adalah kegiatan atau rangkaian kegiatan\nf dalam ...\nBABI\nKETENTUAN UMUM\nPENGADUAN PELAYANAN PUBLIK.\nPENGELOLAANTENTANGPRES IDENMenetapkan : PERATURAN\nMEMUTUSKAN :\ntelah dua kali diubah, terakhir dengan Undang-Undang\nNomor 12 Tahun 2008 tentang Pemerintah Daerah\n(Lembaran Negara Republik Indonesia Tahun 2008 Nomor\n59, Tambahan Lembaran Negara Republik Indonesia\nNomor 4844);\n3. Undang-Undang Nomor 37 Tahun 2008 tentang\nOmbudsman Republik Indonesia (Lembaran Negara\nRepublik Indonesia Tahun 2008 Nomor 139, Tambahan\nLembaran Negara Republik Indonesia Nomor 4899);\n4. Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan\nPublik [Lembaran Negara Republik Indonesia Tahun 2009\nNomor 112, Tambahan Lembaran Negara Republik\nIndonesia Nomor 5038);\n5. Peraturan Pemerintah Nomor 96 Tahun 2012 tentang\nPelaksanaan Undang-Undang Nomor 25 tahun 2009\ntentang Pelayanan Publik (Lembaran Negara Republik\nIndonesia Tahun 2012 Nomor 215, Tambahan Lembaran\nNegara Republik Indonesia Nomor 5357);\n\\ 2 -\nPRESIDEN\nREPUBLIK INDONESIA"
+        },
+        {
+          "page": 3,
+          "text": "5. Pengelolaan pengaduan adalah kegiatan penanganan\npengaduan sesuai dengan mekanisme dan tata cara\npengelolaan pengaduan.1 6. Pengelola ...\n3. Organisasi penyelenggara pelayanan publik yang selanjutnya\nclisebut Organisasi Penyelenggara adalah satuan kerja\npenyelenggara pelayanan publik yang berada di lingkungan\ninstitusi penyelenggara negara, korporasi, lembaga\nindependen yang clibentuk berdasarkan undang-undang\nuntuk kegiatan pelayanan publik, dan badan hukum lain\nyang clibentuk semata-mata untuk kegiatan pelayanan\npublik. \\\n4. Pelaksana pelayanan publik · yang selanjutnya disebut\nPelaksana adalah pejabat, pegawai, petugas, dan setiap\norang yang bekerja di dalam organisasi penyelenggara yang\nbertugas melaksanakan tindakan atau serangkaian tindakan\npelayanan publik.\n2. Penyelenggara pelayanan publik yang selanjutnya clisebut\nPenyelenggara adalah setiap institusi penyelenggara negara,\nkorporasi, lembaga independen yang clibentuk berdasarkan\nundang-undang untuk kegiatan pelayanan publik, dan\nbadan hukum lain yang dibentuk semata-mata untuk\nkegiatan pelayanan publik.\ndalam rangka pemenuhan kebutuhan pelayanan sesuai\ndengan peraturan perundang-undangan bagi setiap warga\nNegara dan penduduk atas barang, jasa, dan/ atau\npelayanan administratif yang clisediakan oleh penyelenggara\npelayanan publik.\n3\nPRESIDEN\nREPUBLIK INDONESIA"
+        },
+        {
+          "page": 4,
+          "text": "pendayagunaan aparatur negLrmasi birokrasi,\nBAB II ...\n11. Menteri adalah menteri yang bertanggung jawab di bidang\n10. Sarana pengaduan adalah tempat atau ruangan dan segala\nkelengkapannya yang disediakan secara khusus untuk\nmenerima pengaduan dari pengadu atau penerima\npelayanan.\n9. Standar pelayanan adalah tolok ukur yang dipergunakan\nsebagai pedoman penyelenggaraan pelayanan dan acuan\npenilaian kualitas pelayanan sebagai kewajiban dan janji\npenyelengara kepada masyarakat dalam rangka pelayanan\nyang berkualitas, cepat, mudah, terjangkau, dan terukur.\n8. Pengaduan adalah penyampaian keluhan yang disampaikan\npengadu kepada pengelola pengaduan pelayanan publik atas\npelayanan pelaksana yang tidak sesuai dengan standar\npelayanan, atau pengabaian kewajiban dan/ atau\npelanggaran larangan oleh penyelenggara.\n7. Pengadu adalah seluruh pihak baik warga negara maupun\npenduduk baik orang perseorangan, kelompok maupun\nbadan hukum yang menyampaikan pengaduan kepada\npengelola pengaduan pelayanan publik.\n6. Pengelola pengaduan pelayanan publik yang selanjutnya\ndisebut Pengelola adalah pejabat, pegawai, atau orang yang\nditugaskan oleh penyelenggara untuk mengelola pengaduan\nmasyarakat pada setiap penyelenggara pelayanan publik.\n4\nPRESIDEN\nREPUBLlf:< INDONESIA"
+        },
+        {
+          "page": 5,
+          "text": "Pasal 3\n(1) Setiap penyelenggara wajib menyediakan sarana pengaduan\nuntuk mengelola pengaduan pelayanan publik.\n. L (2) Penyediaan ...\nBagian Kedua\nSarana Pengaduan\n(2) Dalam pengelolaan pengaduan, penyelenggara wajib:\na. mengumumkan nama dan alamat kantor pcnanggung\njawab pengelola pengaduan;\nb. mensosialisasikan mekanisme dan prosedur pengelolaan\npengaduan;\nc. menerima, menanggapi, memproses, dan menyelesaikan\nsetiap pengaduan;\nd. menyalurkan pengaduan yang bukan kewenangannya\nkepada penyelenggara la n yang berwenang;\ne. melakukan pencatatan dan pelaporan pengelolaan\npengaduan;dan\nf. melakukan pemantauan dan evaluasi atas pengelolaan\npengaduan.\nPasal 2\n(1) Pengadu mempunyai hak untuk menyampaikan pengaduan\natas pelayanan pelaksana yang tidak sesuai dengan standar\npelayanan atau pengabaian kewajiban dan/ atau pelanggaran\nlarangan oleh penyelenggara,\nBagian Kesatu\nHak Pengadu dan Kewajiban Penyelenggara\nBAB II\nPENGELOLAANPENGADUAN\n5\nPRESIOEN\nREPUBLIK INOONESIA"
+        },
+        {
+          "page": 6,
+          "text": "Pasal 6\n(1) Formulir sebagaimana dimaksud dalam Pasal 5 ayat (1) wajib\ndiisi oleh pengadu. / .\ni-,- (2) Dalam ...\nPasal 5\n(1) Penyelenggara wajib menyediakan formulir pengaduan yang\nmemuat sekurang-kurangnya:\na. identitas pengadu yang terdiri atas nama dan alamat\nlengkap;\nb. uraian keluhan atas pelayanan; dan\nc. tempat, waktu penyampaian, dan tanda tangan.\n(2) Formulir sebagaimana dimaksud pada ayat (1) digunakan\nuntuk pengaduan yang disampaikan secara langsung.\n(3) Penyelenggara wajib rnenyediakan kotak pengaduan untuk\npengaduan yang disampaikan secara tidak langsung.\n(4) Penyelenggara dapat menyediakan media untuk pengaduan\nyang disampaikan secara elektronik antara lain surat\nelektronik, pesan layanan singkat, dan telepon.\nPasal 4\nPada setiap sarana pengaduan harus tersedia informasi tentang\nmekanisme atau tata cara pengaduan secara langsung, tidak\nlangsung, dan/ atau elektronik yang mudah diperoleh dan\ndipahami oleh penerima pelayanan.\n(2) Penyediaan sarana pengaduan sebagaimana dimaksud pada\nayat (1) memperhatikan kepentingan kelompok rentan atau\nberkebutuhan khusus.\n6\nPRE SI OEN\nREPUBLIK INOONESIA"
+        },
+        {
+          "page": 7,
+          "text": "(2) Mekanisme ...\ndan tata cara( 1) Penyelenggara wajib menyusun mekanisme\npengelolaan pengaduan. L\nPasal 8\nBagian Keempat\nMekanisme Pengelolaan Pengaduan\nPasal 7\n(1) Setiap penyelenggara wajib memberi tugas kepada pengelola\nyang kompeten untuk melaksanakan fungsi pengelolaan\npengaduan.\n(2) Pengelola sebagaimana d.imaksud pada ayat (1) berasal dari\nlingkungan penyelenggara yang diangkat sesuai dengan\nketentuan peraturan perundang-undangan.\n(3) Pengelola sebagaimana dimaksud pada ayat (2) merupakan\npejabat struktural atau fungsional yang memiliki kompetensi\nsesuai dengan ketentuan peraturan perundang-undangan.\n(4) Dalam hal penyelenggara merupakan korporasi atau badan\nhukum lain, jabatan pengelola sebagaimana d.imaksud pada\nayat (2) dilaksanakan sesuai dengan ketentuan peraturan\nperundang-undangan.\n(5) Penyelenggara wajib melakukan pembinaan terhadap\npengelola.\nBagi.an Ketiga\nPengelola\n(2) Dalam ha! pengadu tidak mampu menulis dan/ atau\nmembaca, .Pengelola wajib membantu mengisi formulir.\n7\nPRESIOEN\nREPUBLIK INOONESIA"
+        },
+        {
+          "page": 8,
+          "text": "Pasal 9\n(1) Pengelola wajib menyusun dan melaporkan pengelolaan\npengaduan kepada penyelenggara secara berkala. :\nf___ (2) Lapo~an ...\nBagian Kelima\nPelaporan, Pemantauan, dan Evaluasi\n..\n(2) Mekanisme dan tata cara pengelolaan pengaduan\nsebagaimana dimaksud pada ayat (1) meliputi:\na. pcnerimaan, terdiri dari pemcriksaan kelengkapan\ndokumen pengaduan dan pencatatan serta pcmberian\ntanggapan kepada pengadu.\nb. pcnelaaahan dan pengklasifikasian, terdiri dari\nidentifikasi rnasalah, pemeriksaan substansi pengaduan,\nklarifikasi, evaluasi bukti, dan seleksi.\nc. penyaluran pengaduan yaitu meneruskan pengaduan\nkepada penyelenggara lain yang berwenang, dalam hal\nsubstansi pengaduan tidak mcnjadi kewenangannya.\nd. penyelesaian pengaduan, tcrdiri dari penyampaian saran\npcnyelesaian kepada pejabat terkait di lingkungan\npenyelenggara, pemantauan, pemberian informasi kepada\npengadu, pelaporan tindak lanjut, dan pengarsipan.\n(3) Mekanisme dan tata cara pengelolaan pengaduan\nsebagaimana dimaksud pa~a ayat (2) disusun dengan\nmemperhatikan kelompok -rentan atau berkebutuhan\nkhusus.\n(4) Penyelesaian pengaduan dan tindakan korektif harus\nterbuka bagi publik dan diinformasikan melalui Sistem\nInformasi Pelayanan Publik pada setiap penyelenggara.\n8,\nPRE SI OEN\nREPUBLIK INOONESIA"
+        },
+        {
+          "page": 9,
+          "text": "Pasal 12\n( 1) Pengaduan dapat dilakukan oleh setiap orang yang dirugikan\natau pihak lain yang menerima kuasa untuk mewakilinya.\nl (2) Pengaduan ...\n..\nPasal 11\n(1) Penyelesaian pengaduan harus dilaksanakan secara cepat,\ntepat, tertib, tuntas, dan dapat dipertanggungjawabkan.\n(2) Penyelenggara wajib menunjuk pelaksana yang bertanggung\njawab atas pelaksanaan tindak lanjut pengaduan yang\nditerima di lingkungan kerjanya.\nBagian Keenam\nPenyelesaian Pengaduan\nPasal 10\n(1) Penyelenggara wajib melakukan pemantauan dan evaluasi\nterhadap pengelolaan pengaduan secara berkala sekurang-\nkurangnya jumlah dan jenis pengaduan yang diterima,\npenyebab pengaduan, serta penyelesaian terhadap\npengaduan.\n(2) Hasil pemantauan dan evaluasi wajib ditindaklanjuti oleh\npenyelenggara untuk peningkatan penyelenggaraan\npelayanan publik.\n(2) Laporan pengelolaan pengaduan sebagaimana dimaksud\npada ayat { 1) meliputi materi dan kategori pengaduan, waktu\npenerimaan, status penyelesaian, hasil penanganan, serta\ntanggapan pengadu.\n9\nPRE SI DEN\nREPUBLIK INDONESIA"
+        },
+        {
+          "page": 10,
+          "text": "Pengelola dilarang:\na. menggunakan fasilitas sarana prasarana pengaduan untuk\nkepentingan pribadi atau kelo7ok; dan\nL.-- b. menerima ...\nPasal 14\nPasal 13\nPengelola wajib memberikan pelayanan dengan:\na. empati, hormat dan santun, tanpa pamrih, dan tanpa unsur\npemaksaan;\nb. cepat, tepat, terbuka, adil, tidak diskriminatif, dan tidak\nmemungut biaya;\nc. menjamin kerahasiaan identitas pelapor sesuai dengan\nketentuan peraturan perundang-undangan;\nd. memberikan penjelasan secara transparan tentang\nperkembangan proses pengaduan yang ditangani;\ne. mengedepankan prinsip profesionalitas dan independensi\ndalam mengelola pengaduan; 'dan\nf. memperhatikan kelompok rentan dan berkebutuhan khusus.\nBagian Ketujuh\nKewajiban dan Larangan Bagi Pengelola\n(2) Pengaduan sebagaimana dimaksud pada ayat (1) dilakukan\npaling lambat 30 (tiga puluh) hari sejak pengadu menerima\nlayanan.\n(3) Penyelenggara wajib menyelesaikan setiap pengaduan paling\nlambat 60 (enam puluh) hari sejak berkas pengaduan\ndinyatakan lengkap.\n10\nPRE SI OEN\nREPUBLIK INOONESIA"
+        },
+        {
+          "page": 11,
+          "text": "Pasal 17\n(1) Penyelenggara wajib melakukan penilaian kinerja atas\npengelolaan pcngaduan pclayanan publik.\n(2) Penilaian kinerja sebagaimana dimaksud pada ayat (1)\ndilaku.kan dengan menggunakan indikator kinerja\nberdasarkan mekanisme dan tata cara pengelolaan\npengaduan sebagaimana dim/sud dalam Pasal 8. . .\nl--- (3) Penilaian ...\n\\_!!~gi~ Kesembilan\nPenilaian Kinerja\nPasal 16\nPenyelenggara atau atasan dari pihak yang diadukan wajib\nmemperlakukan pihak yang diadukan sebagai pihak yang tidak\nbersalah sampai proses pembuktian selesai.\nPasal 15\n(1) Dalam hal diperlukan atau pengadu mem.inta pcrlindungan,\npimpinan penyelenggara wajib memberikan pcrlindungan\nkepada pengadu selama proses pengelolaan pengaduan.\n(2) Perlindungan sebagaimana dimaksud pada ayat (1) dapat\nberupa jaminan kerahasiaan identitas pengadu.\nBagi.anKedelapan\nPerlindungan Pengaduan\nb. menerima imbalan dalam bentuk apapun untuk kegiatan\nyang berkaitan dengan pengelolaan pengaduan.\n11\nPRESIOEN\nREPUBLIK INOONESIA"
+        },
+        {
+          "page": 12,
+          "text": "(2) Pembinaan ...\nPasal 19\n(1) Pimpinan kementcrian/lcmbaga atau pemerintah daerah\nmelakukan pembinaan dan pengawasan pelaksanaan\npengelolaan pengaduan pelayanan publik dalam lingkup\ntanggung jawab masing-masing.\nl\nBagi.an Kcsebelas\nPembinaan dan Pengawasan\nPasal 18\n(1) Menteri melakukan koordinasi pengelolaan pengaduan\nsecara nasional.\n(2) Pengelolaan pengaduan secara nasional merupakan integrasi\npengelolaan pengaduan secara berjenjang pada setiap\npenyelenggara dalam kerangka sistcm infonnasi pelayanan\npublik.\n(3) Ketentuan mengenai penyelenggaraan pengelolaan penga-\nduan secara nasional dan integrasi pengelolaan pengaduan\nsecara berjenjang sebagaimana dimaksud pada ayat (1) dan\nayat (2) diatur dcngan Peraturan Mentcri.\nBagian Kesepuluh\nSistem Pengelolaan Pengaduan Pelayanan Publik Nasional\n(3) Penilaian kinerja pengelolaan pengaduan dilaksanakan\ndalam rangka penilaian kinerja pelayanan publik secara\nmenyeluruh.\n12\nPRES I DEN\nREPUBLIK INDONESIA"
+        },
+        {
+          "page": 13,
+          "text": "Peraturan Presiden ini mulai bcrz pada tanggai diund:g~·-\nPasal 21\nPasal 20\nPada saat mulai berlakunya Peraturan Presiden ini, dalam\njangka waktu paling lama 1 (satu) tahun:\na. penyelenggara wajib menyediakan sarana pengaduan,\nmekanisme dan tata cara pengelolaan pengaduan, serta\nmenetapkan pengelola pengaduan pelayanan publi.k;dan\nb. Menteri menyusun road map penerapan sistem pengelolaan\npengaduan nasional.\nBAB III\nKETENTUANPENUTUP\n(4) Menteri menyusun road map pengembangan sistem\npengelolaan pengaduan.\n(5) Ketentuan lebih lanjut mengenai pembinaan, pengawasan,\ndan penyusunan road map pengembangan sistem\npengelolaan pengaduan sebagaimana dimaksud pada ayat (2)\ndan ayat (3) diatur dengan Peraturan Menteri.\n(2) Pembinaan dan pengawasan pelaksanaan pengelolaan\npengaduan pelayanan publik sebagaimana dimaksud pada\nayat ( 1) dikoordinasikan oleh penanggung jawab\npenyelenggaraan pelayanan publilc pada masing-masing\nkementerian/lembaga atau pemerintah daerah.\n(3) Menteri melakukan pembinaan dan pengawasan terhadap\npelaksanaan pengelolaan pengaduan pelayanan publi.k dalam\nrangka penyelenggaraan sistem informasi pelayanan publik\nsecara nasionak\n13\nPRESIDEN\nREPUBLIK INDONESIA"
+        },
+        {
+          "page": 14,
+          "text": ",/./ ,:r1\nBistok-Suil bolon\n/\nSalinan sesuai dengan aslinya\nSEKRETARIAT KABINET RI\nDeputi Bidang Politik, Hukum,\n-/~am~an,\n' rl )!\nLEMBARANNEGARA REPUBLIK INDONESIA TAHUN 2013 NOMOR 191\nAMIR SYAMSUDIN\nttd.\nDiundangkan di Jakarta\npada tanggal 6 Desember 2013\nMENTER! HUKUM DAN HAK ASASI MANUSIA\nREPUBLIK INDONESIA,\nDR. H. SUSILO BAMBANG YUDHOYONO\nttd.\nDitetapkan di Jakarta\npada tanggal 6 Desember 2013\nPRESIDEN REPUBLIK INDONESIA,\nAgar setiap orang mengetahuinya, memerintahkan\npengundangan Peraturan Presiden ini dengan penempatannya\ndalam Lembaran Negara Republik Indonesia.\n14 -\nF>RESIDEN\nREF>UBLIK INDONESIA\n..: ....\n'\n•"
+        }
+      ],
+      "sections": [
+        {
+          "no": null,
+          "title": "Perpres No. 76 Tahun 2013 tentang Pengelolaan Pengaduan Pelayanan Publik",
+          "page": 1,
+          "text": "tclah ..."
+        },
+        {
+          "no": 2,
+          "title": "Undang-Undang Nomor 32 Tahun 2004 tentang",
+          "page": 1,
+          "text": "Pemerintahan Daerah (Lembaran Negara Rcpublik\nIndonesia Tahun 2004 Nomor 125, Tambahan Lembaran\nNegara Republik Indonesia Nomor 4437) sebagaimana\nL"
+        },
+        {
+          "no": 1,
+          "title": "Pasal 4 ayat (1) Undang-Undang Dasar Negara Republik",
+          "page": 1,
+          "text": "Indonesia Tahun 1945;\na. bahwa sesuai dengan ketentuan Pasal 36 dan Pasal 37\nUndang-Undang Nomor 25 Tahun 2009 tentang Pelayanan\nPublik diwajibkan bagi penyelenggara pelayanan publik\nuntuk menyediakan sarana pengaduan dan menugaskan\nPelaksana yang kompeten dalam pengelolaan pengaduan;\nb. bahwa pembentukan sarana pengaduan dan penugasan\nkepada pengelola pengaduan pelayanan publik bertujuan\nuntuk memenuhi kebutuhan masyarakat dalam\nmemperoleh pelayanan publik yang berkualitas, wajar,\ndan adil;\nc. bahwa berdasarkan pertimbangan sebagaimana dimaksud\ndalam huruf a dan b, perlu menetapkan Peraturan\nPresiden tentang Pengelolaan Pengaduan Pelayanan\nPublik;\nPRESIDEN REPUBLIK INDONESIA,\nDENGAN RAHMAT TUHAN YANG MAHA ESA\nPERATURAN PRESIDEN REPUBLIK INDONESIA\nNOMOR 76 TAHUN 2013\nTENTANG\nPENGELOLAAN PENGADUAN PELAYANAN PUBLIK\nPRESIDEN\nREPUBLIK INDONESIA\nMengingat\nMenimbang\nPasal 1\nDalam Peraturan Presiden ini yang dimaksud dengan:\nl. Pelayanan publik adalah kegiatan atau rangkaian kegiatan\nf dalam ...\nBABI\nKETENTUAN UMUM\nPENGADUAN PELAYANAN PUBLIK.\nPENGELOLAANTENTANGPRES IDENMenetapkan : PERATURAN\nMEMUTUSKAN :\ntelah dua kali diubah, terakhir dengan Undang-Undang\nNomor 12 Tahun 2008 tentang Pemerintah Daerah\n(Lembaran Negara Republik Indonesia Tahun 2008 Nomor\n59, Tambahan Lembaran Negara Republik Indonesia\nNomor 4844);"
+        },
+        {
+          "no": 3,
+          "title": "Undang-Undang Nomor 37 Tahun 2008 tentang",
+          "page": 2,
+          "text": "Ombudsman Republik Indonesia (Lembaran Negara\nRepublik Indonesia Tahun 2008 Nomor 139, Tambahan\nLembaran Negara Republik Indonesia Nomor 4899);"
+        },
+        {
+          "no": 4,
+          "title": "Undang-Undang Nomor 25 Tahun 2009 tentang Pelayanan",
+          "page": 2,
+          "text": "Publik [Lembaran Negara Republik Indonesia Tahun 2009\nNomor 112, Tambahan Lembaran Negara Republik\nIndonesia Nomor 5038);"
+        },
+        {
+          "no": 5,
+          "title": "Peraturan Pemerintah Nomor 96 Tahun 2012 tentang",
+          "page": 2,
+          "text": "Pelaksanaan Undang-Undang Nomor 25 tahun 2009\ntentang Pelayanan Publik (Lembaran Negara Republik\nIndonesia Tahun 2012 Nomor 215, Tambahan Lembaran\nNegara Republik Indonesia Nomor 5357);\n\\ 2 -\nPRESIDEN\nREPUBLIK INDONESIA"
+        },
+        {
+          "no": 5,
+          "title": "Pengelolaan pengaduan adalah kegiatan penanganan",
+          "page": 3,
+          "text": "pengaduan sesuai dengan mekanisme dan tata cara\npengelolaan pengaduan.1 6. Pengelola ..."
+        },
+        {
+          "no": 3,
+          "title": "Organisasi penyelenggara pelayanan publik yang selanjutnya",
+          "page": 3,
+          "text": "clisebut Organisasi Penyelenggara adalah satuan kerja\npenyelenggara pelayanan publik yang berada di lingkungan\ninstitusi penyelenggara negara, korporasi, lembaga\nindependen yang clibentuk berdasarkan undang-undang\nuntuk kegiatan pelayanan publik, dan badan hukum lain\nyang clibentuk semata-mata untuk kegiatan pelayanan\npublik. \\"
+        },
+        {
+          "no": 4,
+          "title": "Pelaksana pelayanan publik · yang selanjutnya disebut",
+          "page": 3,
+          "text": "Pelaksana adalah pejabat, pegawai, petugas, dan setiap\norang yang bekerja di dalam organisasi penyelenggara yang\nbertugas melaksanakan tindakan atau serangkaian tindakan\npelayanan publik."
+        },
+        {
+          "no": 2,
+          "title": "Penyelenggara pelayanan publik yang selanjutnya clisebut",
+          "page": 3,
+          "text": "Penyelenggara adalah setiap institusi penyelenggara negara,\nkorporasi, lembaga independen yang clibentuk berdasarkan\nundang-undang untuk kegiatan pelayanan publik, dan\nbadan hukum lain yang dibentuk semata-mata untuk\nkegiatan pelayanan publik.\ndalam rangka pemenuhan kebutuhan pelayanan sesuai\ndengan peraturan perundang-undangan bagi setiap warga\nNegara dan penduduk atas barang, jasa, dan/ atau\npelayanan administratif yang clisediakan oleh penyelenggara\npelayanan publik.\n3\nPRESIDEN\nREPUBLIK INDONESIA\npendayagunaan aparatur negLrmasi birokrasi,\nBAB II ..."
+        },
+        {
+          "no": 11,
+          "title": "Menteri adalah menteri yang bertanggung jawab di bidang",
+          "page": 4,
+          "text": ""
+        },
+        {
+          "no": 10,
+          "title": "Sarana pengaduan adalah tempat atau ruangan dan segala",
+          "page": 4,
+          "text": "kelengkapannya yang disediakan secara khusus untuk\nmenerima pengaduan dari pengadu atau penerima\npelayanan."
+        },
+        {
+          "no": 9,
+          "title": "Standar pelayanan adalah tolok ukur yang dipergunakan",
+          "page": 4,
+          "text": "sebagai pedoman penyelenggaraan pelayanan dan acuan\npenilaian kualitas pelayanan sebagai kewajiban dan janji\npenyelengara kepada masyarakat dalam rangka pelayanan\nyang berkualitas, cepat, mudah, terjangkau, dan terukur."
+        },
+        {
+          "no": 8,
+          "title": "Pengaduan adalah penyampaian keluhan yang disampaikan",
+          "page": 4,
+          "text": "pengadu kepada pengelola pengaduan pelayanan publik atas\npelayanan pelaksana yang tidak sesuai dengan standar\npelayanan, atau pengabaian kewajiban dan/ atau\npelanggaran larangan oleh penyelenggara."
+        },
+        {
+          "no": 7,
+          "title": "Pengadu adalah seluruh pihak baik warga negara maupun",
+          "page": 4,
+          "text": "penduduk baik orang perseorangan, kelompok maupun\nbadan hukum yang menyampaikan pengaduan kepada\npengelola pengaduan pelayanan publik."
+        },
+        {
+          "no": 6,
+          "title": "Pengelola pengaduan pelayanan publik yang selanjutnya",
+          "page": 4,
+          "text": "disebut Pengelola adalah pejabat, pegawai, atau orang yang\nditugaskan oleh penyelenggara untuk mengelola pengaduan\nmasyarakat pada setiap penyelenggara pelayanan publik.\n4\nPRESIDEN\nREPUBLlf:< INDONESIA\nPasal 3\n(1) Setiap penyelenggara wajib menyediakan sarana pengaduan\nuntuk mengelola pengaduan pelayanan publik.\n. L (2) Penyediaan ...\nBagian Kedua\nSarana Pengaduan\n(2) Dalam pengelolaan pengaduan, penyelenggara wajib:\na. mengumumkan nama dan alamat kantor pcnanggung\njawab pengelola pengaduan;\nb. mensosialisasikan mekanisme dan prosedur pengelolaan\npengaduan;\nc. menerima, menanggapi, memproses, dan menyelesaikan\nsetiap pengaduan;\nd. menyalurkan pengaduan yang bukan kewenangannya\nkepada penyelenggara la n yang berwenang;\ne. melakukan pencatatan dan pelaporan pengelolaan\npengaduan;dan\nf. melakukan pemantauan dan evaluasi atas pengelolaan\npengaduan.\nPasal 2\n(1) Pengadu mempunyai hak untuk menyampaikan pengaduan\natas pelayanan pelaksana yang tidak sesuai dengan standar\npelayanan atau pengabaian kewajiban dan/ atau pelanggaran\nlarangan oleh penyelenggara,\nBagian Kesatu\nHak Pengadu dan Kewajiban Penyelenggara\nBAB II\nPENGELOLAANPENGADUAN\n5\nPRESIOEN\nREPUBLIK INOONESIA\nPasal 6\n(1) Formulir sebagaimana dimaksud dalam Pasal 5 ayat (1) wajib\ndiisi oleh pengadu. / .\ni-,- (2) Dalam ...\nPasal 5\n(1) Penyelenggara wajib menyediakan formulir pengaduan yang\nmemuat sekurang-kurangnya:\na. identitas pengadu yang terdiri atas nama dan alamat\nlengkap;\nb. uraian keluhan atas pelayanan; dan\nc. tempat, waktu penyampaian, dan tanda tangan.\n(2) Formulir sebagaimana dimaksud pada ayat (1) digunakan\nuntuk pengaduan yang disampaikan secara langsung.\n(3) Penyelenggara wajib rnenyediakan kotak pengaduan untuk\npengaduan yang disampaikan secara tidak langsung.\n(4) Penyelenggara dapat menyediakan media untuk pengaduan\nyang disampaikan secara elektronik antara lain surat\nelektronik, pesan layanan singkat, dan telepon.\nPasal 4\nPada setiap sarana pengaduan harus tersedia informasi tentang\nmekanisme atau tata cara pengaduan secara langsung, tidak\nlangsung, dan/ atau elektronik yang mudah diperoleh dan\ndipahami oleh penerima pelayanan.\n(2) Penyediaan sarana pengaduan sebagaimana dimaksud pada\nayat (1) memperhatikan kepentingan kelompok rentan atau\nberkebutuhan khusus.\n6\nPRE SI OEN\nREPUBLIK INOONESIA\n(2) Mekanisme ...\ndan tata cara( 1) Penyelenggara wajib menyusun mekanisme\npengelolaan pengaduan. L\nPasal 8\nBagian Keempat\nMekanisme Pengelolaan Pengaduan\nPasal 7\n(1) Setiap penyelenggara wajib memberi tugas kepada pengelola\nyang kompeten untuk melaksanakan fungsi pengelolaan\npengaduan.\n(2) Pengelola sebagaimana d.imaksud pada ayat (1) berasal dari\nlingkungan penyelenggara yang diangkat sesuai dengan\nketentuan peraturan perundang-undangan.\n(3) Pengelola sebagaimana dimaksud pada ayat (2) merupakan\npejabat struktural atau fungsional yang memiliki kompetensi\nsesuai dengan ketentuan peraturan perundang-undangan.\n(4) Dalam hal penyelenggara merupakan korporasi atau badan\nhukum lain, jabatan pengelola sebagaimana d.imaksud pada\nayat (2) dilaksanakan sesuai dengan ketentuan peraturan\nperundang-undangan.\n(5) Penyelenggara wajib melakukan pembinaan terhadap\npengelola.\nBagi.an Ketiga\nPengelola\n(2) Dalam ha! pengadu tidak mampu menulis dan/ atau\nmembaca, .Pengelola wajib membantu mengisi formulir.\n7\nPRESIOEN\nREPUBLIK INOONESIA\nPasal 9\n(1) Pengelola wajib menyusun dan melaporkan pengelolaan\npengaduan kepada penyelenggara secara berkala. :\nf___ (2) Lapo~an ...\nBagian Kelima\nPelaporan, Pemantauan, dan Evaluasi\n..\n(2) Mekanisme dan tata cara pengelolaan pengaduan\nsebagaimana dimaksud pada ayat (1) meliputi:\na. pcnerimaan, terdiri dari pemcriksaan kelengkapan\ndokumen pengaduan dan pencatatan serta pcmberian\ntanggapan kepada pengadu.\nb. pcnelaaahan dan pengklasifikasian, terdiri dari\nidentifikasi rnasalah, pemeriksaan substansi pengaduan,\nklarifikasi, evaluasi bukti, dan seleksi.\nc. penyaluran pengaduan yaitu meneruskan pengaduan\nkepada penyelenggara lain yang berwenang, dalam hal\nsubstansi pengaduan tidak mcnjadi kewenangannya.\nd. penyelesaian pengaduan, tcrdiri dari penyampaian saran\npcnyelesaian kepada pejabat terkait di lingkungan\npenyelenggara, pemantauan, pemberian informasi kepada\npengadu, pelaporan tindak lanjut, dan pengarsipan.\n(3) Mekanisme dan tata cara pengelolaan pengaduan\nsebagaimana dimaksud pa~a ayat (2) disusun dengan\nmemperhatikan kelompok -rentan atau berkebutuhan\nkhusus.\n(4) Penyelesaian pengaduan dan tindakan korektif harus\nterbuka bagi publik dan diinformasikan melalui Sistem\nInformasi Pelayanan Publik pada setiap penyelenggara.\n8,\nPRE SI OEN\nREPUBLIK INOONESIA\nPasal 12\n( 1) Pengaduan dapat dilakukan oleh setiap orang yang dirugikan\natau pihak lain yang menerima kuasa untuk mewakilinya.\nl (2) Pengaduan ...\n..\nPasal 11\n(1) Penyelesaian pengaduan harus dilaksanakan secara cepat,\ntepat, tertib, tuntas, dan dapat dipertanggungjawabkan.\n(2) Penyelenggara wajib menunjuk pelaksana yang bertanggung\njawab atas pelaksanaan tindak lanjut pengaduan yang\nditerima di lingkungan kerjanya.\nBagian Keenam\nPenyelesaian Pengaduan\nPasal 10\n(1) Penyelenggara wajib melakukan pemantauan dan evaluasi\nterhadap pengelolaan pengaduan secara berkala sekurang-\nkurangnya jumlah dan jenis pengaduan yang diterima,\npenyebab pengaduan, serta penyelesaian terhadap\npengaduan.\n(2) Hasil pemantauan dan evaluasi wajib ditindaklanjuti oleh\npenyelenggara untuk peningkatan penyelenggaraan\npelayanan publik.\n(2) Laporan pengelolaan pengaduan sebagaimana dimaksud\npada ayat { 1) meliputi materi dan kategori pengaduan, waktu\npenerimaan, status penyelesaian, hasil penanganan, serta\ntanggapan pengadu.\n9\nPRE SI DEN\nREPUBLIK INDONESIA\nPengelola dilarang:\na. menggunakan fasilitas sarana prasarana pengaduan untuk\nkepentingan pribadi atau kelo7ok; dan\nL.-- b. menerima ...\nPasal 14\nPasal 13\nPengelola wajib memberikan pelayanan dengan:\na. empati, hormat dan santun, tanpa pamrih, dan tanpa unsur\npemaksaan;\nb. cepat, tepat, terbuka, adil, tidak diskriminatif, dan tidak\nmemungut biaya;\nc. menjamin kerahasiaan identitas pelapor sesuai dengan\nketentuan peraturan perundang-undangan;\nd. memberikan penjelasan secara transparan tentang\nperkembangan proses pengaduan yang ditangani;\ne. mengedepankan prinsip profesionalitas dan independensi\ndalam mengelola pengaduan; 'dan\nf. memperhatikan kelompok rentan dan berkebutuhan khusus.\nBagian Ketujuh\nKewajiban dan Larangan Bagi Pengelola\n(2) Pengaduan sebagaimana dimaksud pada ayat (1) dilakukan\npaling lambat 30 (tiga puluh) hari sejak pengadu menerima\nlayanan.\n(3) Penyelenggara wajib menyelesaikan setiap pengaduan paling\nlambat 60 (enam puluh) hari sejak berkas pengaduan\ndinyatakan lengkap.\n10\nPRE SI OEN\nREPUBLIK INOONESIA\nPasal 17\n(1) Penyelenggara wajib melakukan penilaian kinerja atas\npengelolaan pcngaduan pclayanan publik.\n(2) Penilaian kinerja sebagaimana dimaksud pada ayat (1)\ndilaku.kan dengan menggunakan indikator kinerja\nberdasarkan mekanisme dan tata cara pengelolaan\npengaduan sebagaimana dim/sud dalam Pasal 8. . .\nl--- (3) Penilaian ...\n\\_!!~gi~ Kesembilan\nPenilaian Kinerja\nPasal 16\nPenyelenggara atau atasan dari pihak yang diadukan wajib\nmemperlakukan pihak yang diadukan sebagai pihak yang tidak\nbersalah sampai proses pembuktian selesai.\nPasal 15\n(1) Dalam hal diperlukan atau pengadu mem.inta pcrlindungan,\npimpinan penyelenggara wajib memberikan pcrlindungan\nkepada pengadu selama proses pengelolaan pengaduan.\n(2) Perlindungan sebagaimana dimaksud pada ayat (1) dapat\nberupa jaminan kerahasiaan identitas pengadu.\nBagi.anKedelapan\nPerlindungan Pengaduan\nb. menerima imbalan dalam bentuk apapun untuk kegiatan\nyang berkaitan dengan pengelolaan pengaduan.\n11\nPRESIOEN\nREPUBLIK INOONESIA\n(2) Pembinaan ...\nPasal 19\n(1) Pimpinan kementcrian/lcmbaga atau pemerintah daerah\nmelakukan pembinaan dan pengawasan pelaksanaan\npengelolaan pengaduan pelayanan publik dalam lingkup\ntanggung jawab masing-masing.\nl\nBagi.an Kcsebelas\nPembinaan dan Pengawasan\nPasal 18\n(1) Menteri melakukan koordinasi pengelolaan pengaduan\nsecara nasional.\n(2) Pengelolaan pengaduan secara nasional merupakan integrasi\npengelolaan pengaduan secara berjenjang pada setiap\npenyelenggara dalam kerangka sistcm infonnasi pelayanan\npublik.\n(3) Ketentuan mengenai penyelenggaraan pengelolaan penga-\nduan secara nasional dan integrasi pengelolaan pengaduan\nsecara berjenjang sebagaimana dimaksud pada ayat (1) dan\nayat (2) diatur dcngan Peraturan Mentcri.\nBagian Kesepuluh\nSistem Pengelolaan Pengaduan Pelayanan Publik Nasional\n(3) Penilaian kinerja pengelolaan pengaduan dilaksanakan\ndalam rangka penilaian kinerja pelayanan publik secara\nmenyeluruh.\n12\nPRES I DEN\nREPUBLIK INDONESIA\nPeraturan Presiden ini mulai bcrz pada tanggai diund:g~·-\nPasal 21\nPasal 20\nPada saat mulai berlakunya Peraturan Presiden ini, dalam\njangka waktu paling lama 1 (satu) tahun:\na. penyelenggara wajib menyediakan sarana pengaduan,\nmekanisme dan tata cara pengelolaan pengaduan, serta\nmenetapkan pengelola pengaduan pelayanan publi.k;dan\nb. Menteri menyusun road map penerapan sistem pengelolaan\npengaduan nasional.\nBAB III\nKETENTUANPENUTUP\n(4) Menteri menyusun road map pengembangan sistem\npengelolaan pengaduan.\n(5) Ketentuan lebih lanjut mengenai pembinaan, pengawasan,\ndan penyusunan road map pengembangan sistem\npengelolaan pengaduan sebagaimana dimaksud pada ayat (2)\ndan ayat (3) diatur dengan Peraturan Menteri.\n(2) Pembinaan dan pengawasan pelaksanaan pengelolaan\npengaduan pelayanan publik sebagaimana dimaksud pada\nayat ( 1) dikoordinasikan oleh penanggung jawab\npenyelenggaraan pelayanan publilc pada masing-masing\nkementerian/lembaga atau pemerintah daerah.\n(3) Menteri melakukan pembinaan dan pengawasan terhadap\npelaksanaan pengelolaan pengaduan pelayanan publi.k dalam\nrangka penyelenggaraan sistem informasi pelayanan publik\nsecara nasionak\n13\nPRESIDEN\nREPUBLIK INDONESIA\n,/./ ,:r1\nBistok-Suil bolon\n/\nSalinan sesuai dengan aslinya\nSEKRETARIAT KABINET RI\nDeputi Bidang Politik, Hukum,\n-/~am~an,\n' rl )!\nLEMBARANNEGARA REPUBLIK INDONESIA TAHUN 2013 NOMOR 191\nAMIR SYAMSUDIN\nttd.\nDiundangkan di Jakarta\npada tanggal 6 Desember 2013\nMENTER! HUKUM DAN HAK ASASI MANUSIA\nREPUBLIK INDONESIA,\nDR. H. SUSILO BAMBANG YUDHOYONO\nttd.\nDitetapkan di Jakarta\npada tanggal 6 Desember 2013\nPRESIDEN REPUBLIK INDONESIA,\nAgar setiap orang mengetahuinya, memerintahkan\npengundangan Peraturan Presiden ini dengan penempatannya\ndalam Lembaran Negara Republik Indonesia.\n14 -\nF>RESIDEN\nREF>UBLIK INDONESIA\n..: ....\n'\n•"
+        }
+      ],
+      "dataset": "eval-fixture",
+      "ingestMode": "pdf_text"
     }
   ],
-  "warnings": []
+  "warnings": [
+    "KB_01_Penanganan_Tiket_Layanan.pdf: hanya 0 karakter terdeteksi",
+    "KB_04_Eskalasi_dan_Insiden.pdf: hanya 0 karakter terdeteksi"
+  ]
 }

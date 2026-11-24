@@ -1,0 +1,169 @@
+{
+  "date": "2026-11-24",
+  "timezone": "Asia/Jakarta (UTC+7)",
+  "role": "backend",
+  "phase": "P2",
+  "task": "Aktivasi OCR sungguhan untuk KB01/KB04",
+  "status": "SUCCESS",
+  "root": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot",
+  "app": "tanyadata",
+
+  "environment": {
+    "python_system": "3.11.0 (python), 3.11.9 (python3), 3.11.0 (py -3)",
+    "python_requirement": ">=3.11 — TERENUH",
+    "venv_path": "C:\\Users\\aldya\\AppData\\Local\\Temp\\opencode\\ocr-venv",
+    "venv_isolated": true,
+    "system_python_untouched": true
+  },
+
+  "dependency_install": {
+    "attempt_1": {
+      "command": "python -m venv <TEMP>\\opencode\\ocr-venv && <venv>\\python.exe -m pip install -r tanyadata\\deploy\\ocr\\requirements.txt",
+      "wrapper": "safe_exec.py --timeout 600",
+      "exit": 1,
+      "reason_exact": "ERROR: Could not find a version that satisfies the requirement numpy==2.5.5 (from versions: ... 2.4.6). ERROR: Ignored the following versions that require a different python version: 2.5.0 ... 2.5.5 Requires-Python >=3.12. Mesin ini Python 3.11, jadi pin numpy==2.5.5 di requirements.txt tidak dapat dipasang. Bukan network/EPERM.",
+      "log": "C:\\Users\\aldya\\AppData\\Local\\Temp\\opencode-safe-exec\\20261124-105622-c-users-aldya-appdata-local-temp-opencode-ocr-venv-scripts-p.log"
+    },
+    "workaround": {
+      "description": "File requirements sementara di TEMP (REPO TIDAK DIUBAH): semua pin identik kecuali numpy diturunkan ke 2.4.6, rilis terakhir dengan wheel cp311.",
+      "file": "C:\\Users\\aldya\\AppData\\Local\\Temp\\opencode\\ocr-requirements-py311.txt",
+      "exit": 0,
+      "installed": [
+        "onnxocr==4.0.0",
+        "fastapi==0.165.0",
+        "uvicorn==0.54.0",
+        "pillow==13.0.0",
+        "numpy==2.4.6",
+        "onnxruntime==1.32.0",
+        "opencv-python-headless==5.1.0.95",
+        "pydantic==2.14.4"
+      ],
+      "log": "C:\\Users\\aldya\\AppData\\Local\\Temp\\opencode-safe-exec\\20261124-105728-c-users-aldya-appdata-local-temp-opencode-ocr-venv-scripts-p.log"
+    },
+    "followup_for_owner": "Perbaiki pin numpy di tanyadata/deploy/ocr/requirements.txt ke numpy>=2.4,<2.5 untuk dukungan Python 3.11, atau dokumentasikan Python >=3.12 sebagai prasyarat. Tidak diubah di sesi ini (di luar scope penugasan)."
+  },
+
+  "service": {
+    "endpoint": "http://127.0.0.1:6334/ocr",
+    "healthz": "http://127.0.0.1:6334/healthz",
+    "model": "PP-OCRv6 tiny (onnxocr, ONNX Runtime CPUExecutionProvider)",
+    "startup_mode": "background dengan PID tercatat",
+    "startup_rationale": "safe_exec.py membunuh process tree saat timeout sehingga tidak cocok untuk service long-running; percobaan qa_app.py --app-cmd gagal pada attempt 1 karena Windows memecah argumen --cmd yang memuat path berspasi (lihat deviations).",
+    "pid_file": "C:\\Users\\aldya\\AppData\\Local\\Temp\\opencode\\ocr-service.pid",
+    "pid_launcher": 21112,
+    "pid_server": 20248,
+    "healthz_response": "HTTP 200 {\"status\":\"ok\",\"model\":\"PP-OCRv6 tiny\",\"concurrency\":1}",
+    "model_loaded_from": "onnxocr/models/ppocrv6/tiny/{det,rec}.onnx (bundled di wheel)",
+    "ocr_requests_during_eval": 2,
+    "ocr_request_status": "dua-duanya HTTP 200 (access log: POST /ocr HTTP/1.1 200 OK)",
+    "logs": {
+      "stdout": "C:\\Users\\aldya\\AppData\\Local\\Temp\\opencode\\ocr-service.out.log",
+      "stderr": "C:\\Users\\aldya\\AppData\\Local\\Temp\\opencode\\ocr-service.err.log"
+    },
+    "observability_note": "Baris LOG.info('ocr ok ... latency_ms=...') dari app.py tidak muncul di log karena konfigurasi logging uvicorn menekan level INFO untuk logger aplikasi. Latensi per halaman dari eval tidak dapat dibaca dari log; diukur terpisah lewat probe langsung (lihat measurements)."
+  },
+
+  "env_inline_only": {
+    "OCR_ENABLED": "true",
+    "OCR_ENDPOINT": "http://127.0.0.1:6334/ocr",
+    "OCR_API_KEY": "ocr-test-key-2026 (nilai uji; bukan secret produksi)",
+    "scope": "hanya proses ingestion/eval + service OCR",
+    "tanyadata_.env_modified": false,
+    "verification": "tidak ada kunci OCR_* di tanyadata/.env sebelum maupun sesudah"
+  },
+
+  "reingest_and_eval": {
+    "command": "node scripts/eval-kb-ground-truth.mjs --split dev --mode off --limit 20 --out tanyadata/eval/results/ocr_kb_gt_result.json --md tanyadata/eval/results/ocr_kb_gt_report.md",
+    "workdir": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\tanyadata",
+    "wrapper": "safe_exec.py --timeout 900",
+    "exit": 0,
+    "elapsed_s": 5.6,
+    "ocr_available": true,
+    "ingest": [
+      { "kb": "KB01", "ingestMode": "pdf", "chunks": 7, "needsReview": false, "note": "sebelumnya ocr_unavailable / 0 chunk" },
+      { "kb": "KB02", "ingestMode": "pdf", "chunks": 9, "needsReview": false },
+      { "kb": "KB03", "ingestMode": "pdf", "chunks": 7, "needsReview": false },
+      { "kb": "KB04", "ingestMode": "pdf", "chunks": 9, "needsReview": false, "note": "sebelumnya ocr_unavailable / 0 chunk" }
+    ],
+    "ingest_mode_label_note": "Script eval versi ini tidak memiliki label literal 'pdf_ocr'. Label keberhasilan adalah 'pdf' dengan chunks > 0 dan needsReview=false — itulah padanan 'pdf_ocr' di kontrak script ini. Tidak ada ingestMode ocr_unavailable/ocr_failed pada run ini.",
+    "skipped_questions": 0,
+    "executed_questions": 20,
+    "metrics": {
+      "precision": 0.4706,
+      "recall": 0.7273,
+      "f1": 0.5714,
+      "strictAccuracy": 0.0,
+      "abstentionAccuracy": 0.85,
+      "keyFactCoverage": 0.4667,
+      "evidenceGrounding": 0.55,
+      "citationPrecision": 0.375,
+      "citationRecall": 0.4531,
+      "forbiddenViolations": 0,
+      "confusion": { "tp": 8, "fp": 9, "fn": 3, "tn": 0 }
+    },
+    "failure_counts": {
+      "CITATION_MISMATCH": 19,
+      "KEY_FACT_MISS": 12,
+      "EVIDENCE_GROUNDING": 10,
+      "FALSE_ABSTAIN_on_answerable_case": 3
+    },
+    "gates": { "anti_slop_mojibake": "2/2 PASS", "citation_format": "4/4 PASS" },
+    "target_met": false,
+    "target_note": "TARGET_MET=NO (precision 0.4706 < 0.99, abstention 0.85 < 0.99). Ini bukan regresi OCR — OCR berhasil mengindeks KB01/KB04; angka presisi adalah hasil pipeline retrieval/answer yang tidak diubah dalam penugasan ini. Jangan klaim >99%.",
+    "artifacts": [
+      "tanyadata/eval/results/ocr_kb_gt_result.json",
+      "tanyadata/eval/results/ocr_kb_gt_report.md"
+    ]
+  },
+
+  "anti_leak_checks": {
+    "gt_text_fallback_occurrences_in_new_output": 0,
+    "ocr_unavailable_as_actual_ingest_mode": 0,
+    "ocr_failed_as_actual_ingest_mode": 0,
+    "note": "3 kecocokan literal gt_text_fallback/ocr_unavailable/ocr_failed di file hasil baru berasal dari string dokumentasi statis di field pipeline[] dan notes[] milik script eval (deskripsi perilaku fallback), BUKAN mode ingest aktual. corpus.ingest[] seluruhnya = pdf dengan chunk > 0.",
+    "gt_files_modified": false,
+    "tuning_files_modified": false,
+    "lib_ai_modified": false,
+    "lib_core_answer_ts_modified": false
+  },
+
+  "measurements": {
+    "latency_per_page": {
+      "method": "3x POST langsung ke /ocr dengan PNG sintetis 1240x1754, 28 baris teks, 68276 byte; diukur dengan time.perf_counter di sisi klien",
+      "probe_script": "C:\\Users\\aldya\\AppData\\Local\\Temp\\opencode\\ocr_latency_probe.py",
+      "samples_ms": [1028.6, 994.0, 1075.0],
+      "min_ms": 994.0,
+      "avg_ms": 1032.5,
+      "max_ms": 1075.0,
+      "http_status": 200,
+      "confidence": 0.9807,
+      "caveat": "PNG sintetis, bukan halaman KB01/KB04 asli. Dua request OCR saat eval tidak memiliki catatan latency_ms karena logger aplikasi ditekan uvicorn."
+    },
+    "rss": {
+      "method": "Windows OS PeakWorkingSet64 pada PID server 20248",
+      "before_eval_mb": 168,
+      "after_eval_mb": 657,
+      "peak_during_eval_mb": 688,
+      "after_probe_mb": 789,
+      "peak_overall_mb": 877,
+      "note": "Lebih rendah dari estimasi README (1,3-1,4 GB pada benchmark 4 vCPU); kemungkinan bobot ONNX di-memory-map dan beban berbeda. Angka di atas yang terukur di mesin ini."
+    }
+  },
+
+  "cleanup": {
+    "killed_pids": [21112, 20248, 22768],
+    "method": "taskkill /PID <launcher> /T /F + verifikasi owner port 6334",
+    "remaining_ocr_processes": 0,
+    "port_6334_listeners": 0,
+    "healthz_after_cleanup": "DOWN (koneksi ditolak)",
+    "verified": true
+  },
+
+  "deviations": [
+    "Attempt 1 qa_app.py --app-cmd gagal: safe_exec.py + Windows cmd.exe memecah argumen --cmd yang memuat path berspasi menjadi beberapa argumen (unrecognized arguments). Tidak di-retry dengan pola sama; pendekatan diganti ke background + PID sesuai izin penugasan.",
+    "Pin numpy==2.5.5 di requirements.txt tidak kompatibel dengan Python 3.11; workaround lokal di TEMP dipakai agar OCR tetap bisa diaktifkan. Repo requirements.txt sengaja tidak diubah.",
+    "Output eval diarahkan ke eval/results/ via --out/--md agar tidak menimpa docs/KB_GT_RESULT.json dan docs/KB_GT_REPORT.md yang sudah ada."
+  ],
+
+  "handoff_yaml": "from: backend\nto: agentic\nphase: P2\ntype: deliverable\nrefs: [tanyadata/eval/results/ocr_activation.json, tanyadata/eval/results/ocr_kb_gt_result.json, tanyadata/eval/results/ocr_kb_gt_report.md, tanyadata/deploy/ocr/app.py, tanyadata/lib/ingest/ocr.ts]\nsummary: \"OCR sungguhan aktif: PP-OCRv6 tiny melayani 2 request /ocr (HTTP 200); KB01/KB04 kini terindeks dari PDF (7+9 chunk, 0 SKIPPED, 0 gt_text_fallback). Eval dev mode=off limit=20 EXIT 0; latensi 994-1075 ms/halaman, RSS puncak 877 MB; semua proses OCR dimatikan.\"\nevidence: tanyadata/eval/results/ocr_activation.json + ocr_kb_gt_result.json + log safe_exec (install EXIT 0, eval EXIT 0, probe EXIT 0) + access log 2x POST /ocr 200 + verifikasi cleanup 0 proses / port tertutup\nblocking: false\nneeds: QA verifikasi end-user lewat UI bahwa KB01/KB04 kini dapat dijawab dari bukti OCR; owner deploy perbaiki pin numpy di requirements.txt untuk Python 3.11; target presisi 0.99 belum tercapai (0.4706) — jangan klaim >99%; security audit jalur OCR_API_KEY dan paparan port 6334."
+}

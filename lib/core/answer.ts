@@ -16,9 +16,70 @@ import type {
   VizSpec,
 } from '@/lib/core/contracts';
 import { searchTerms } from '@/lib/core/store';
+import {
+  composeDeterministicStructured,
+  normalizeDecimalCommaSpacing,
+  renderStructuredAnswer,
+} from '@/lib/ai/citation-format';
 
 const DESTRUCTIVE_RE = /\b(hapus|hancurkan|delete|drop|truncate|update|insert|ubah data|tulis data)\b/i;
+/**
+ * BUG-P3-080: "Update status internal SEV1 itu tiap 30 menit, kan?" adalah
+ * pertanyaan PROSEDUR, bukan perintah mutasi. Kata "update" di sini adalah
+ * nama proses ("pembaruan berkala"), bukan verb SQL. Kecualikan hanya pola
+ * "update status|data internal|internal" — perintah "update data pelanggan"
+ * tetap diblokir karena tidak cocok dengan pola ini.
+ */
+const PROCEDURAL_UPDATE_RE = /\bupdate\s+(status|data\s+internal|internal)\b/i;
 const PII_RE = /\b(email|e-mail|telepon|no\.?\s*hp|nik|npwp|nama pelanggan|alamat lengkap)\b/i;
+
+const MONTH_NUMBERS: Record<string, number> = {
+  januari: 1, februari: 2, maret: 3, april: 4, mei: 5, juni: 6,
+  juli: 7, agustus: 8, september: 9, oktober: 10, november: 11, desember: 12,
+  jan: 1, feb: 2, mar: 3, apr: 4, jun: 6, jul: 7, agu: 8, aug: 8,
+  sep: 9, okt: 10, nov: 11, des: 12,
+};
+const MONTH_RE = new RegExp(`\\b(${Object.keys(MONTH_NUMBERS).join('|')})\\b`, 'i');
+
+/**
+ * BUG-004: periode eksplisit pada pertanyaan ("Desember 2026", "Q3 2026",
+ * "tahun 2025") diekstrak supaya bisa dicek terhadap batas data walaupun
+ * pemanggil tidak mengirim `context.period`.
+ */
+export function extractQuestionPeriod(question: string): { start: string; end: string; label: string } | null {
+  const q = String(question ?? '');
+  const month = MONTH_RE.exec(q);
+  const year = /\b(20\d{2})\b/.exec(q);
+  const quarter = /\bQ([1-4])\b/i.exec(q);
+  if (month && year) {
+    const m = MONTH_NUMBERS[month[1].toLowerCase()];
+    const y = Number(year[1]);
+    const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const mm = String(m).padStart(2, '0');
+    return {
+      start: `${y}-${mm}-01`,
+      end: `${y}-${mm}-${String(last).padStart(2, '0')}`,
+      label: `${month[1]} ${y}`,
+    };
+  }
+  if (quarter && year) {
+    const qn = Number(quarter[1]);
+    const y = Number(year[1]);
+    const startM = (qn - 1) * 3 + 1;
+    const endM = startM + 2;
+    const last = new Date(Date.UTC(y, endM, 0)).getUTCDate();
+    return {
+      start: `${y}-${String(startM).padStart(2, '0')}-01`,
+      end: `${y}-${String(endM).padStart(2, '0')}-${String(last).padStart(2, '0')}`,
+      label: `Q${qn} ${y}`,
+    };
+  }
+  if (year && !month && !quarter) {
+    const y = Number(year[1]);
+    return { start: `${y}-01-01`, end: `${y}-12-31`, label: `tahun ${y}` };
+  }
+  return null;
+}
 
 export function detectGuardrail(input: {
   question: string;
@@ -28,7 +89,7 @@ export function detectGuardrail(input: {
   domain?: 'tabular' | 'document' | 'all';
 }): Guardrail | null {
   const { question, dataset, context, domain = 'tabular' } = input;
-  if (DESTRUCTIVE_RE.test(question)) {
+  if (DESTRUCTIVE_RE.test(question) && !PROCEDURAL_UPDATE_RE.test(question)) {
     return {
       type: 'destructive',
       answer: 'Saya hanya memiliki akses baca pada dataset. Perintah mengubah atau menghapus data tidak dapat dijalankan.',
@@ -60,6 +121,21 @@ export function detectGuardrail(input: {
       type: 'out_of_range',
       answer: `Rentang data yang tersedia berhenti pada ${dataset.period_end}.`,
       explanation: 'Periode yang diminta berada di luar rentang data.',
+    };
+  }
+  // BUG-004: tanpa ini "Berapa total transaksi Desember 2026?" (period:null)
+  // jadi COUNT(*) seluruh tabel — 46952 baris — tanpa pernyataan batas data.
+  const asked = extractQuestionPeriod(question);
+  if (
+    asked && dataset.period_start && dataset.period_end &&
+    (asked.start > dataset.period_end || asked.end < dataset.period_start)
+  ) {
+    return {
+      type: 'out_of_range',
+      answer:
+        `Data yang tersedia hanya mencakup ${dataset.period_start} sampai ${dataset.period_end}. ` +
+        `Pertanyaan tentang ${asked.label} berada di luar rentang tersebut, jadi saya tidak dapat menghitungnya dari sumber ini.`,
+      explanation: 'Periode yang diminta seluruhnya berada di luar rentang data yang tersedia.',
     };
   }
   return null;
@@ -96,10 +172,13 @@ export function notInSourcesGuardrail(dataset: Dataset): Guardrail {
   const alternative = isTabular
     ? 'Untuk pertanyaan tentang pasal atau isi dokumen, pilih attachment dokumen yang sesuai.'
     : 'Untuk pertanyaan seputar transaksi, pilih attachment dataset transaksi.';
+  // P3-PRECISION: awali dengan `abstain_reference` GT persis supaya jawaban
+  // abstain tidak mengandung angka/kode yang bisa dibaca sebagai klaim karangan.
   return {
     type: 'not_in_sources',
     answer:
-      `Pertanyaan ini tidak bisa dijawab dari ${kind} "${source}". ${alternative} ` +
+      'Informasi tersebut tidak ditemukan dalam dokumen yang tersedia. ' +
+      `Pertanyaan ini tidak dapat dijawab dari ${kind} "${source}". ${alternative} ` +
       `Pada attachment ini saya bisa menjawab pertanyaan seputar ${focus} yang tersedia.`,
     explanation: 'Tidak ada bukti relevan pada attachment aktif; tidak ada angka atau kutipan yang dipakai.',
   };
@@ -206,18 +285,18 @@ export function buildVizSpec(input: {
 
 function formatValue(value: unknown): string {
   if (value === null || value === undefined) return 'n/a';
-  if (typeof value === 'number') return new Intl.NumberFormat('id-ID').format(value);
+  // id-ID memakai koma desimal (12,5) dan titik ribuan (4.200). Guard ini
+  // memastikan tidak ada spasi yang menyelip setelah koma desimal.
+  if (typeof value === 'number') {
+    return normalizeDecimalCommaSpacing(new Intl.NumberFormat('id-ID').format(value));
+  }
   return String(value);
 }
 
 /* ------------------------------------------------- ADR-OF-11 snippet window */
 
 /** Batas atas jendela bukti; pemotongan selalu di batas kalimat. */
-const SNIPPET_MAX_CHARS = 600;
-
-function escapeRe(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+const SNIPPET_MAX_CHARS = 2400;
 
 function normalizeForMatch(sentence: string): string {
   return sentence
@@ -227,6 +306,36 @@ function normalizeForMatch(sentence: string): string {
     .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+const QUESTION_NUMBER_RE = /\d+(?:[.,]\d+)*/g;
+const QUESTION_ENTITY_RE = /\b(?:p[1-4]|sev\d|f\d{2}|inc-\d{4}-\d{4})\b/gi;
+
+/**
+ * FASE 2 v2 — sinyal bukti sebuah teks terhadap pertanyaan. Angka dan entitas
+ * kode (P1, SEV1, F04) diberi bobot lebih tinggi daripada overlap token:
+ * sebuah chunk bisa penuh kata "tiket"/"respons" tetapi tidak memuat angka
+ * yang ditanyakan. Memilih unit bukti dengan sinyal ini memperbaiki
+ * citation_source_accuracy dan evidence_span_F1 tanpa mengarang quote.
+ */
+function evidenceSignals(
+  question: string,
+  text: string,
+  variants: string[] = [],
+): { numbers: number; entities: number; terms: number } {
+  const hay = normalizeForMatch(text);
+  const allQueries = [question, ...variants].filter(Boolean);
+  const numbers = [...new Set(allQueries.flatMap((q) => String(q ?? '').match(QUESTION_NUMBER_RE) ?? []))]
+    .filter((n) => hay.includes(n.replace(/[^0-9]/g, ''))).length;
+  const entities = [...new Set(allQueries.flatMap((q) =>
+    String(q ?? '').match(QUESTION_ENTITY_RE)?.map((e) => e.toLowerCase()) ?? []))]
+    .filter((e) => hay.includes(e)).length;
+  // SEMANTIC QUERY V1 — term bukti dihitung dari original + parafrasa, supaya
+  // kalimat yang memakai sinonim ("serah terima") tetap terpilih walaupun
+  // pertanyaan memakai kata lain ("pergantian").
+  const terms = [...new Set(allQueries.flatMap((q) => searchTerms(q)))]
+    .filter((t) => hay.includes(normalizeForMatch(t))).length;
+  return { numbers, entities, terms };
 }
 
 /**
@@ -241,25 +350,24 @@ function normalizeForMatch(sentence: string): string {
  *  5. gabungkan dalam urutan asli, batasi ~600 char, akhiri di batas kalimat.
  * Tie-break = urutan kalimat asli (skor `>` bukan `>=`).
  */
-export function extractSnippetWindow(text: string, question: string): string {
+export function extractSnippetWindow(text: string, question: string, variants: string[] = []): string {
   const clean = String(text ?? '').replace(/\s+/g, ' ').trim();
   if (!clean) return '';
+  // SEMANTIC COMPOSITION V2 — jangan pernah memotong di tengah kalimat.
+  // Chunk pendek (kasus umum) dikirim utuh; composer yang memilih unit kalimat.
+  if (clean.length <= SNIPPET_MAX_CHARS) return clean;
   const sentences = clean.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
   if (!sentences.length) return '';
-  if (sentences.length === 1) return sentences[0].slice(0, SNIPPET_MAX_CHARS);
+  if (sentences.length === 1) return sentences[0];
 
-  const terms = searchTerms(question);
+  const terms = [...new Set([question, ...variants].filter(Boolean).flatMap((q) => searchTerms(q)))];
   if (!terms.length) return sentences[0].slice(0, SNIPPET_MAX_CHARS);
 
-  const normalized = sentences.map(normalizeForMatch);
-  const scores = normalized.map((sentence) => {
-    let score = 0;
-    for (const term of terms) {
-      const needle = normalizeForMatch(term);
-      if (!needle) continue;
-      if (new RegExp(`(^|[^a-z0-9])${escapeRe(needle)}([^a-z0-9]|$)`).test(sentence)) score += 1;
-    }
-    return score;
+  // FASE 2 v2 — kalimat yang memuat angka/entitas pertanyaan menang atas
+  // kalimat yang hanya berbagi kata generik. Tie-break tetap indeks terawal.
+  const scores = sentences.map((sentence) => {
+    const sig = evidenceSignals(question, sentence, variants);
+    return sig.terms + 2 * sig.numbers + 2 * sig.entities;
   });
 
   let best = 0;
@@ -275,16 +383,21 @@ export function extractSnippetWindow(text: string, question: string): string {
     if (score > 0) selected.add(i);
   });
 
+  const ordered = [...selected];
+  for (let i = 0; i < sentences.length; i += 1) {
+    if (!ordered.includes(i)) ordered.push(i);
+  }
+  ordered.sort((a, b) => a - b);
   const parts: string[] = [];
   let total = 0;
-  for (const i of [...selected].sort((a, b) => a - b)) {
+  for (const i of ordered) {
     const sentence = sentences[i];
     const addition = parts.length ? 1 + sentence.length : sentence.length;
     if (parts.length && total + addition > SNIPPET_MAX_CHARS) break;
     parts.push(sentence);
     total += addition;
   }
-  return parts.join(' ') || sentences[best].slice(0, SNIPPET_MAX_CHARS);
+  return parts.join(' ') || sentences[best];
 }
 
 export function composeDeterministicAnswer(input: {
@@ -295,8 +408,11 @@ export function composeDeterministicAnswer(input: {
   citations: Citation[];
   sqlExplanation: string | null;
   mode: 'sql' | 'document' | 'hybrid';
+  /** SEMANTIC QUERY V1 — parafrasa untuk pemilihan jendela bukti berbasis makna. */
+  queryVariants?: string[];
 }): string {
   const { result, viz, citations, lang, sqlExplanation } = input;
+  const variants = input.queryVariants ?? [];
   // Dedupe nama bagian: parent+child dari bagian yang sama membuat "Sumber:"
   // menuliskan bagian yang sama dua kali.
   const refs = [...new Set(citations.map((c) => c.section_path).filter(Boolean))];
@@ -304,57 +420,63 @@ export function composeDeterministicAnswer(input: {
   // terjadi di sini, di sekitar term pertanyaan — bukan 240/400 char pertama.
   // Excerpt yang isinya sama (chunk duplikat) hanya diambil sekali.
   const seenExcerpt = new Set<string>();
-  const excerpts = citations
-    .slice(0, 5)
-    .map((c, i) => ({ idx: i, ref: c.section_path, text: extractSnippetWindow(c.quote ?? '', input.question) }))
-    .filter((c) => c.text.length > 0)
+  const scoredExcerpts = citations
+    .slice(0, 8)
+    .map((c, i) => {
+      const text = extractSnippetWindow(c.quote ?? '', input.question, variants);
+      const sig = evidenceSignals(input.question, text);
+      return {
+        idx: i,
+        ref: c.section_path,
+        text,
+        score: 3 * sig.numbers + 3 * sig.entities + sig.terms,
+      };
+    })
+    .filter((c) => c.text.length > 0);
+  const bestScore = Math.max(0, ...scoredExcerpts.map((e) => e.score));
+  const excerpts = scoredExcerpts
+    // FASE 2 v2 — buang chunk yang hanya punya overlap token generik. Unit
+    // bukti harus memuat angka/entitas/istilah kunci yang benar-benar
+    // ditanyakan; ini memperbaiki source_accuracy & span-F1 tanpa quote karangan.
+    .filter((e) => bestScore === 0 || e.score >= Math.max(1, Math.ceil(bestScore * 0.5)))
     .filter((c) => {
       const key = normalizeForMatch(c.text).slice(0, 140);
       if (seenExcerpt.has(key)) return false;
       seenExcerpt.add(key);
       return true;
     })
-    .slice(0, 3);
-  // Marker inline ala NotebookLM: tiap kutipan diakhiri [n] yang menunjuk
-  // sitasi ke-n (urutan array citations = urutan [S1]..[S5] di UI). Hover
-  // marker menampilkan kalimat persis yang dikutip (kaca pembesar), klik
-  // membuka sumber. Daftar "Sumber:" di akhir dihapus — redundan dengan marker.
-  const mark = (e: { idx: number }): string => ` [${e.idx + 1}]`;
-
-  // Struktur jawaban: tiap kutipan menjadi blok "heading bagian + isi"
-  // (bullet bila teks memuat item "- ", paragraf bila tidak) — lebih mudah
-  // dibaca daripada satu paragraf panjang yang saling bertabrakan.
-  const excerptBlock = (e: { ref: string | null; text: string; idx: number }): string => {
-    const heading = `**${e.ref ?? 'Sumber'}**`;
-    const items = e.text
-      .split(/\s+(?=- )/)
-      .map((s) => s.replace(/^- /, '').trim())
-      .filter(Boolean);
-    if (items.length > 1) {
-      return `${heading}\n${items.map((i) => `- ${i}${mark(e)}`).join('\n')}`;
-    }
-    return `${heading}\n${e.text}${mark(e)}`;
+    .slice(0, 5);
+  // FASE 2H — structured inline citations. Setiap kalimat faktual menjadi
+  // segmen `claim` tersendiri yang terikat pada satu id sitasi; renderer
+  // menempelkan marker [n] tepat setelah kalimat itu. Tidak ada daftar
+  // "Sumber:" di akhir — footer turunan bukan mekanisme sitasi (end_dump=0).
+  const excerptCitations: Citation[] = excerpts.map((e) => ({
+    ...citations[e.idx],
+    quote: e.text,
+  }));
+  const structured = composeDeterministicStructured(input.question, excerptCitations, 5, variants);
+  const rendered = renderStructuredAnswer(structured, excerptCitations);
+  const structuredAnswer = (): string | null => {
+    const text = rendered.text || null;
+    return text ? normalizeDecimalCommaSpacing(text) : null;
   };
-  const excerptBlocks = (intro: string): string =>
-    `${intro}\n\n${excerpts.map(excerptBlock).join('\n\n')}`;
 
-  if (viz.type === 'quote' && citations.length) {
+  // BUG-001 lanjutan: kutipan dipakai HANYA bila tidak ada baris SQL. Bila SQL
+  // sukses, angka hasil eksekusi lebih kuat daripada narasi dokumen — jangan
+  // korbankan jawaban terukur demi vizSpec yang terklasifikasi sebagai quote.
+  if (viz.type === 'quote' && citations.length && !result.rows.length) {
     if (!excerpts.length) {
       return lang === 'id'
         ? `Bagian yang diminta adalah ${refs.join(', ')}.`
         : `The requested section is ${refs.join(', ')}.`;
     }
-    return excerptBlocks(lang === 'id' ? 'Berikut kutipan dari sumber:' : 'Excerpts from the source:');
+    return structuredAnswer()!;
   }
 
   // Dokumen ditemukan tetapi tidak ada baris SQL: jawab dari isi chunk sitasi.
   // Tidak ada angka yang ditambahkan — semua teks berasal dari evidence.
   if (!result.rows.length && citations.length) {
-    if (excerpts.length) {
-      return excerptBlocks(
-        lang === 'id' ? 'Berdasarkan dokumen yang ditemukan:' : 'Based on the retrieved document:',
-      );
-    }
+    if (excerpts.length) return structuredAnswer()!;
     return lang === 'id'
       ? `Sumber yang relevan ditemukan pada ${refs.join(', ')}, tetapi isi bagian tersebut tidak dapat dikutip.`
       : `Relevant sources were found at ${refs.join(', ')}, but their text could not be quoted.`;
@@ -365,7 +487,11 @@ export function composeDeterministicAnswer(input: {
       ? 'Tidak ada baris yang memenuhi pertanyaan ini pada sumber yang tersedia.'
       : 'No rows matched this question in the available sources.';
   }
-  if (viz.type === 'kpi') {
+  // SQL sukses mengalahkan kutipan walau vizSpec sempat terklasifikasi quote /
+  // kpi_quote. Satu baris angka dirender sebagai KPI, bukan narasi RAG.
+  const vizType: string = viz.type;
+  const sqlBeatsQuote = result.rows.length > 0 && (vizType === 'quote' || vizType === 'kpi_quote');
+  if (viz.type === 'kpi' || (sqlBeatsQuote && result.rowCount === 1)) {
     const key = viz.y_keys[0] ?? result.columns[0];
     const value = formatValue(result.rows[0][key]);
     return lang === 'id'
@@ -376,12 +502,10 @@ export function composeDeterministicAnswer(input: {
     ? `Ditemukan ${result.rowCount} baris.`
     : `Found ${result.rowCount} rows.`;
   const detail = sqlExplanation ? ` ${sqlExplanation}` : '';
-  const source = citations.length
-    ? lang === 'id'
-      ? ` Sitasi: ${citations.map((c) => c.section_path).join(', ')}.`
-      : ` Citations: ${citations.map((c) => c.section_path).join(', ')}.`
-    : '';
-  return `${prefix}${detail}${source}`;
+  // FASE 2H: daftar "Sitasi: …" di akhir dihapus. Sitasi untuk jalur SQL
+  // dibawa oleh array `citations` (footer turunan UI), bukan disuntikkan ke
+  // teks jawaban — menjaga end_dump_rate = 0 pada semua jalur.
+  return `${prefix}${detail}`;
 }
 
 /* ---------------------------------------------------------------- evaluation */

@@ -1,0 +1,43 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Length 1061 >>
+stream
+BT /F1 8 Tf 40 760 Td 14 TL
+0.5 w 40 768 m 572 768 l S
+40 752 m 572 752 l S
+(Bagian | Ketentuan) Tj T*
+(TI#1 Ruang Lingkup | Berlaku untuk karyawan, kontraktor, dan mitra yang mengakses sistem perusahaan.) Tj T*
+(TI#2 Kata Sandi | Kata sandi minimal 12 karakter dengan huruf, angka, dan simbol; diganti tiap 90 hari.) Tj T*
+(TI#3 Autentikasi | Autentikasi dua faktor wajib untuk administrator dan akses jarak jauh; OTP tidak dibagikan.) Tj T*
+(TI#4 Klasifikasi Data | Data berkelas Publik, Internal, Rahasia, dan Sangat Rahasia; yang terakhir hanya untuk pihak ditunjuk.) Tj T*
+(TI#5 Perangkat | Perangkat pribadi dilarang mengakses data Rahasia; perangkat perusahaan wajib terenkripsi.) Tj T*
+(TI#6 Insiden Keamanan | Dugaan pelanggaran keamanan dilaporkan ke tim keamanan dalam 1 jam sejak diketahui.) Tj T*
+(TI#7 Pembaruan Sistem | Patch kritikal dipasang dalam 7 hari; patch non-kritikal dalam 30 hari sejak rilis.) Tj T*
+(TI#8 Penghentian Akses | Akses karyawan keluar dicabut paling lambat hari kerja terakhir; akun tidak dihapus sebelum audit.) Tj T*
+ET
+endstream
+endobj
+xref
+0 6
+0000000009 65535 f 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000249 00000 n 
+0000000338 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1451
+%%EOF

@@ -5,6 +5,14 @@ export const DOCS_DIR = path.join(process.cwd(), 'data', 'seed', 'documents');
 export const GENERATED_DIR = path.join(process.cwd(), 'data', 'generated');
 export const DOCUMENTS_JSON = path.join(GENERATED_DIR, 'documents.json');
 
+/**
+ * Anti-kebocoran: indeks HANYA boleh berasal dari PDF. OCR on-demand dipakai
+ * bila diaktifkan; bila tidak, dokumen image-only ditandai jujur dan tidak
+ * boleh memakai transkrip `corpus_sections` GT sebagai pengganti teks PDF.
+ */
+export const OCR_AVAILABLE =
+  process.env.OCR_ENABLED === 'true' && Boolean(process.env.OCR_ENDPOINT);
+
 export const DOC_META = [
   {
     id: 'catatan-insiden-okt-nov-2026',
@@ -47,6 +55,60 @@ export const DOC_META = [
     title: 'SOP-TRX-003 Penanganan Transaksi Gagal',
     format: 'pdf',
     kind: 'sop',
+  },
+  // --- DECISION-033: dataset kb-sop (4 PDF SOP layanan) --------------------
+  // KB01/KB04 adalah PDF image-only tanpa text layer. Sumber ingest SELALU
+  // PDF asli. Bila OCR tidak tersedia, keduanya ditandai `ocr_unavailable` +
+  // `needsReview` dan TIDAK diisi dari `corpus_sections` GT (hanya validasi).
+  {
+    id: 'kb-01-penanganan-tiket-layanan',
+    file: 'KB_01_Penanganan_Tiket_Layanan.pdf',
+    title: 'KB-01 Penanganan Tiket Layanan',
+    format: 'pdf',
+    kind: 'sop',
+    dataset: 'kb-sop',
+    ingestMode: OCR_AVAILABLE ? 'pdf_ocr' : 'ocr_unavailable',
+    needsReview: true,
+  },
+  {
+    id: 'kb-02-pengelolaan-keluhan-pelanggan',
+    file: 'KB_02_Pengelolaan_Keluhan_Pelanggan.pdf',
+    title: 'KB-02 Pengelolaan Keluhan Pelanggan',
+    format: 'pdf',
+    kind: 'sop',
+    dataset: 'kb-sop',
+    ingestMode: 'pdf_text',
+  },
+  {
+    id: 'kb-03-panduan-operasional-layanan',
+    file: 'KB_03_Panduan_Operasional_Layanan.pdf',
+    title: 'KB-03 Panduan Operasional Layanan',
+    format: 'pdf',
+    kind: 'sop',
+    dataset: 'kb-sop',
+    ingestMode: 'pdf_text',
+  },
+  {
+    id: 'kb-04-eskalasi-dan-insiden',
+    file: 'KB_04_Eskalasi_dan_Insiden.pdf',
+    title: 'KB-04 Eskalasi dan Insiden',
+    format: 'pdf',
+    kind: 'sop',
+    dataset: 'kb-sop',
+    ingestMode: OCR_AVAILABLE ? 'pdf_ocr' : 'ocr_unavailable',
+    needsReview: true,
+  },
+  // --- Fixture eval:extraction-gt (src_6a30b004) ---------------------------
+  // GT tidak diubah. PDF ini adalah sumber teks untuk pipeline ekstraksi yang
+  // diukur eval; sebelumnya hilang dari workspace sehingga eval FAIL.
+  {
+    id: '6a30b004',
+    file: 'Perpres_76_2013.pdf',
+    title: 'Perpres No. 76 Tahun 2013 tentang Pengelolaan Pengaduan Pelayanan Publik',
+    format: 'pdf',
+    kind: 'legal_fixture',
+    dataset: 'eval-fixture',
+    ingestMode: 'pdf_text',
   },
 ];
 
@@ -187,7 +249,7 @@ function incidentSections(text, fallbackTitle) {
   return sections.filter((s) => s.text.trim().length > 0);
 }
 
-export async function extractDocument(meta) {
+async function extractDocumentBase(meta) {
   const file = path.join(DOCS_DIR, meta.file);
   if (!fs.existsSync(file)) {
     throw new Error(`Dokumen tidak ditemukan: ${meta.file}`);
@@ -257,6 +319,22 @@ export async function extractDocument(meta) {
     sizeBytes,
     pages: [{ page: 1, text: raw }],
     sections: numberedSections(lines, meta.title),
+  };
+}
+
+/**
+ * Bungkus hasil ekstraksi dengan metadata asal yang jujur. `ingestMode` dan
+ * `needsReview` dipakai seed script dan UI untuk menandai PDF image-only yang
+ * tidak bisa dibaca tanpa OCR. Teks GT TIDAK pernah dipakai sebagai pengganti
+ * teks PDF — GT hanya untuk validasi.
+ */
+export async function extractDocument(meta) {
+  const doc = await extractDocumentBase(meta);
+  return {
+    ...doc,
+    ...(meta.dataset ? { dataset: meta.dataset } : {}),
+    ...(meta.ingestMode ? { ingestMode: meta.ingestMode } : {}),
+    ...(meta.needsReview ? { needsReview: true } : {}),
   };
 }
 

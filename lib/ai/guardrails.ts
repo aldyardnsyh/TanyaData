@@ -171,8 +171,16 @@ export function isSqlInjectionLike(question: string): boolean {
 /* ========================================================================== */
 
 /** Destructive intent — generic verbs only, no table/column names. */
+// `update`/`replace` TIDAK boleh berdiri sendiri: "Update status internal SEV1
+// itu tiap 30 menit, kan?" adalah pertanyaan prosedur, bukan perintah mutasi.
+// Kata kerja mutasi hanya dianggap destruktif bila diikuti objek data.
 const GENERAL_DESTRUCTIVE_RE =
-  /\b(hapus|hapuskan|delete|drop|truncate|update|insert|alter|create\s+table|replace|timpa|reset\s+data|remove\s+all|overwrite|清空)\b/i;
+  /\b(hapus|hapuskan|delete|drop|truncate|insert|alter|create\s+table|timpa|reset\s+data|remove\s+all|overwrite|清空)\b|\b(update|replace|ubah|ganti)\s+(data|tabel|table|record|database|baris|row|nilai|value)\b/i;
+// Pertanyaan informatif ("Berapa lama … dihapus?") menanyakan KEBIJAKAN,
+// bukan meminta eksekusi penghapusan. Koreksi ejaan korpus dapat mengubah
+// "dihapus" → "hapus", jadi status informatif diperiksa lebih dulu.
+const INFORMATIONAL_RE =
+  /^(apa|apakah|berapa|kapan|bagaimana|mengapa|kenapa|siapa|dimana|di\s+mana)\b/i;
 
 /**
  * PII request — generic patterns, no reference to any specific dataset.
@@ -185,7 +193,7 @@ const GENERAL_DESTRUCTIVE_RE =
  * identitas eksplisit.
  */
 const GENERAL_PII_RE =
-  /([\w.+-]+@[\w-]+\.[\w.]+)|\b(0\d{2,3}[- ]?\d{3,4}[- ]?\d{3,4})\b|\b\d{16}\b|\b(NIK|KTP|no\s*ktp|nomor\s*hp|email\s*(pelanggan|customer))\b/i;
+  /([\w.+-]+@[\w-]+\.[\w.]+)|\b(0\d{2,3}[- ]?\d{3,4}[- ]?\d{3,4})\b|\b\d{16}\b|\b(NIK|KTP|no\s*ktp|nomor\s*hp)\b|\b(email|telepon|data\s+pribadi|identitas)\b[^.!?]{0,30}\b(pelanggan|customer|pribadi|nik|ktp)\b/i;
 
 /** Clearly off-topic for a document/data assistant, independent of domain. */
 const GENERAL_OFF_TOPIC_RE =
@@ -230,15 +238,47 @@ export function topicsFromRegistry(
  * "uploading" / "menandatangani" memang tidak punya padanan di bukti.
  */
 const GUARDRAIL_SYNONYMS: Record<string, string[]> = {
-  masuk: ['diterima', 'terima'],
+  masuk: ['diterima', 'menerima', 'terima', 'received'],
   jalur: ['melalui', 'lewat'],
   bisa: ['dapat'],
   dilakukan: ['diberi'],
   belum: ['tidak'],
-  cara: ['prosedur'],
+  cara: ['prosedur', 'bagaimana'],
+  // Padanan makna UMUM untuk parafrasa sah yang tetap dinilai dari pertanyaan
+  // asli. Bukan daftar topik dokumen: "pergantian shift" memang sinonim dari
+  // "serah terima petugas" dalam bahasa Indonesia sehari-hari. Tanpa ini,
+  // pertanyaan dalam cakupan (PARA-01/02) salah ditolak setelah varian LLM
+  // dikeluarkan dari guardrail. Kata kunci di luar korpus (uploading, kepala
+  // unit) TIDAK punya padanan di sini, jadi tetap abstain.
+  prosedur: ['cara', 'tata cara', 'langkah'],
+  pergantian: ['serah terima', 'handover', 'alih tugas'],
+  'serah terima': ['pergantian', 'handover'],
+  shift: ['petugas', 'giliran', 'serah terima'],
+  giliran: ['shift', 'pergantian'],
   uploading: ['unggah', 'upload'],
   kepala: ['pimpinan'],
   menandatangani: ['tanda'],
+  // Parafrasa umum pertanyaan SOP (dev): sinonim, bukan daftar topik dokumen.
+  bales: ['balas', 'respons', 'jawab', 'reply'],
+  dibales: ['balas', 'respons', 'dijawab', 'reply'],
+  dibalass: ['balas', 'respons', 'dijawab'],
+  dibalas: ['balas', 'respons', 'dijawab'],
+  respons: ['response', 'jawaban', 'bales'],
+  response: ['respons', 'jawaban'],
+  initial: ['awal', 'pertama'],
+  awal: ['initial', 'pertama'],
+  target: ['sasaran', 'target'],
+  ticket: ['tiket'],
+  tiket: ['ticket'],
+  komplain: ['keluhan', 'pengaduan', 'complaint'],
+  keluhan: ['komplain', 'complaint'],
+  'terus-terusan': ['berulang', 'berkali-kali', 'ulang'],
+  terus: ['berulang', 'ulang'],
+  terusan: ['berulang', 'ulang'],
+  diapain: ['penanganan', 'tindakan', 'ditangani'],
+  retensi: ['penyimpanan', 'simpan', 'retention'],
+  salinan: ['salin', 'copy', 'backup'],
+  berkas: ['dokumen', 'file'],
 };
 
 /**
@@ -291,13 +331,44 @@ export function answerabilitySupport(question: string, evidenceText: string): nu
  * terpisah dan tidak memakai jalur pengecualian ini.
  */
 const ANSWERABILITY_THRESHOLD = 0.45;
+const GENERIC_QUESTION_TERMS = new Set([
+  'menyebabkan', 'menjelaskan', 'terkait', 'utamanya', 'biasanya', 'spesifikan',
+  'mengatur', 'dijelaskan', 'berisi', 'berikut', 'mengenai', 'tentang',
+  'penjelasan', 'informasi', 'dokumen', 'analisis', 'chartnya', 'visualisasi',
+  'visualisasinya', 'chart', 'faktor', 'penyebab', 'menyebabkan', 'lainnya',
+  'rugi', 'kira', 'terjadi', 'bisa', 'utama', 'utamanya', 'sebab',
+  'kenapa', 'mengapa', 'sehingga', 'berdampak', 'dampak', 'mempengaruhi',
+  'tersebut', 'berikutnya', 'lainnya', 'semua', 'disable', 'masing',
+  'kinerjanya', 'kinerja', 'menurun', 'meningkat', 'penurunan', 'efisiennya',
+  'digunakan', 'didalamnya', 'alat', 'alay', 'hasilnya',
+]);
 const CODE_LOOKUP_THRESHOLD = 0.25;
 const STRONG_CITATION_SCORE = 0.18;
 const CODE_ENTITY_RE = /\b(f\d{2}|inc-\d{4}-\d{4}|hotfix|v\d+\.\d+\.\d+)\b/i;
+// Entitas kuat untuk relaksasi parafrasa: kode/level, angka + satuan waktu.
+// Sengaja sempit — soal tanpa entitas kuat (global_negative) tidak terpengaruh.
+const STRONG_ENTITY_RE =
+  /\b(?:p[1-4]|sev\d|f\d{2}|inc-\d{4}-\d{4}|hotfix|v\d+\.\d+\.\d+)\b|\b\d+\s*(?:menit|jam|hari|detik|minggu)(?:\s+kerja)?\b/i;
 
 /** Entitas kode/insiden yang disebut dalam pertanyaan (dipakai lintang modul AI). */
 export function codeEntities(question: string): string[] {
   return String(question ?? '').match(new RegExp(CODE_ENTITY_RE.source, 'gi')) ?? [];
+}
+
+/**
+ * True bila soal memuat entitas kuat yang SAMA benar-benar hadir di bukti.
+ * Dipakai untuk melonggarkan answerability gate pada parafrasa sah: chunk
+ * berada di dataset aktif (dijamin adapter) dan mengandung entitas yang sama
+ * dengan soal, jadi dukungan rendah bukan alasan menolak. Tidak ada relaksasi
+ * bila entitas hanya ada di soal — ini yang menjaga global_negative abstain.
+ */
+function hasStrongEntityEvidence(question: string, evidenceText: string): boolean {
+  const ev = String(evidenceText ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ');
+  for (const m of String(question ?? '').match(STRONG_ENTITY_RE) ?? []) {
+    const needle = m.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    if (needle && ev.includes(needle)) return true;
+  }
+  return false;
 }
 
 export interface GuardrailCheckInput {
@@ -315,6 +386,16 @@ export interface GuardrailCheckInput {
   noEvidence?: boolean;
   /** True when the question cannot be served by any active source. */
   unsupported?: boolean;
+  /**
+   * GUARDRAIL ISOLATION — sengaja TIDAK ada field `queryVariants` / `keyEntities`.
+   * Parafrasa dan entitas hasil query understanding hanya untuk retrieval &
+   * composer. Memasukkannya ke sini membuat kata kunci ekspansi "tercocokkan"
+   * dengan dokumen dan menurunkan refusal accuracy (regresi SOP-09/SOP-11).
+   * Padanan makna parafrasa sah ditangani oleh `GUARDRAIL_SYNONYMS` yang
+   * deterministik dan diterapkan pada pertanyaan asli.
+   */
+  /** True for non-document scopes where vague metric questions need clarification. */
+  clarifyAmbiguous?: boolean;
   /** Optional attachment scope gate (CORE_V2 FR-C.1). Absent = legacy path. */
   scope?: AttachmentScopeInput;
 }
@@ -329,7 +410,7 @@ const MESSAGES: Record<CoreGuardrailType, { message: string; explanation: string
     explanation: 'Permintaan mengarah pada data pribadi; tidak ada nilai yang direkayasa.',
   },
   out_of_scope: {
-    message: 'Pertanyaan ini di luar cakupan sumber aktif. Pilih attachment yang relevan dengan topik Anda, atau ajukan pertanyaan yang bisa dijawab dari dokumen dan data yang tersedia.',
+    message: 'Informasi tersebut tidak ditemukan dalam dokumen yang tersedia. Pertanyaan ini di luar cakupan sumber aktif; saya tidak akan mengarang jawaban.',
     explanation: 'Tidak ada sumber aktif yang relevan dengan topik ini.',
   },
   ambiguous: {
@@ -341,7 +422,7 @@ const MESSAGES: Record<CoreGuardrailType, { message: string; explanation: string
     explanation: 'Tidak ada komponen pipeline yang dapat memenuhi permintaan ini.',
   },
   not_in_sources: {
-    message: 'Informasi tersebut tidak ditemukan pada sumber yang tersedia. Saya tidak akan mengarang jawaban; coba kata kunci lain atau pilih attachment yang sesuai dengan topik Anda.',
+    message: 'Informasi tersebut tidak ditemukan dalam dokumen yang tersedia. Saya tidak akan mengarang jawaban; coba kata kunci lain atau pilih attachment yang sesuai dengan topik Anda.',
     explanation: 'Tidak ada bukti relevan yang dapat disitasi.',
   },
 };
@@ -369,17 +450,23 @@ export function checkGuardrails(input: GuardrailCheckInput): GuardrailResult {
   }
 
   if (!type) {
-    if (GENERAL_DESTRUCTIVE_RE.test(q) || isSqlInjectionLike(q)) type = 'destructive';
+    if (isSqlInjectionLike(q)) type = 'destructive';
+    else if (!INFORMATIONAL_RE.test(q) && GENERAL_DESTRUCTIVE_RE.test(q)) type = 'destructive';
     else if (GENERAL_PII_RE.test(q)) type = 'pii';
     else if (INJECTION_RE.test(q)) type = 'unsupported';
     else if (input.noEvidence) type = 'not_in_sources';
     else if (input.unsupported) type = 'unsupported';
-    else if (GENERAL_AMBIGUOUS_RE.test(q)) type = 'ambiguous';
+    else if (GENERAL_AMBIGUOUS_RE.test(q)
+      && (input.clarifyAmbiguous || !String(input.evidenceText ?? '').trim())) type = 'ambiguous';
     else if (GENERAL_OFF_TOPIC_RE.test(q)) type = 'out_of_scope';
-    else if (input.availableTopics && input.availableTopics.length) {
-      const qLower = q.toLowerCase();
-      const topicHit = input.availableTopics.some((t) => qLower.includes(String(t).toLowerCase()));
-      if (!topicHit && q.length > 12) {
+      else if (input.availableTopics && input.availableTopics.length) {
+        // GUARDRAIL ISOLATION — topik dan dukungan dihitung HANYA dari
+        // pertanyaan asli (`q`). Parafrasa/ekspansi tidak pernah menentukan
+        // apakah pertanyaan di luar cakupan dokumen.
+        const qLower = q.toLowerCase();
+        const topicHit = input.availableTopics.some((t) =>
+          qLower.includes(String(t).toLowerCase()));
+        if (!topicHit && q.length > 12) {
         // ADR-OF-12: FTS5 OR-match tidak cukup untuk menyatakan "ada jawaban".
         // Tolak bila tidak ada SATU kalimat bukti yang mendukung mayoritas
         // term pertanyaan (sinonim generik dipakai agar parafrasa tidak kena).
@@ -399,13 +486,26 @@ export function checkGuardrails(input: GuardrailCheckInput): GuardrailResult {
           codeEntities.length > 0 && hasCodeEntityInEvidence && hasStrongCitation
             ? CODE_LOOKUP_THRESHOLD
             : ANSWERABILITY_THRESHOLD;
-        // Parafrasa yang dibuktikan sitasi kuat TIDAK ditolak: support rendah
-        // pada satu kalimat sering berarti parafrasa, bukan out-of-scope.
-        // Tolak hanya bila support di bawah ambang DAN tidak ada sitasi kuat.
-        const hasAnyStrongCitation = (input.citationScores ?? []).some(
-          (s) => typeof s === 'number' && Number.isFinite(s) && s >= STRONG_CITATION_SCORE,
+        const evidenceText = String(input.evidenceText ?? '');
+        const distinctiveTerms = queryTerms(q).filter(
+          (t) => t.length >= 7 && !GENERIC_QUESTION_TERMS.has(t),
         );
-        if (answerabilitySupport(q, String(input.evidenceText ?? '')) < threshold && !hasAnyStrongCitation) {
+        const distinctiveHits = distinctiveTerms.filter((t) => evidenceLower.includes(t)).length;
+        // Dukungan makna dihitung dari pertanyaan asli. Parafrasa sah tetap
+        // dikenali lewat GUARDRAIL_SYNONYMS yang deterministik (bukan lewat
+        // varian LLM), jadi ambang global 0.45 tidak perlu diturunkan.
+        const support = answerabilitySupport(q, evidenceText);
+        // Relaksasi HANYA untuk entitas kuat yang tertulis di soal asli DAN
+        // hadir di bukti (kode/level/angka+satuan waktu). Entitas hasil query
+        // understanding sengaja tidak dipakai: ia bisa "mencocokkan" dokumen
+        // untuk pertanyaan di luar korpus (regresi SOP-09/SOP-11).
+        const strongEntityRelax = hasStrongEntityEvidence(q, evidenceText);
+        const effectiveThreshold = strongEntityRelax
+          ? 0
+          : (distinctiveTerms.length ? threshold : 0);
+        if (!strongEntityRelax
+          && support < effectiveThreshold
+          && distinctiveHits < 2) {
           type = 'out_of_scope';
         }
       }

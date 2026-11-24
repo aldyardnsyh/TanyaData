@@ -68,10 +68,21 @@ CREATE TABLE IF NOT EXISTS core_chunks(
   clean_version INTEGER NOT NULL DEFAULT 0,
   clean_flags TEXT NOT NULL DEFAULT '[]',
   ocr_status TEXT NOT NULL DEFAULT 'ok',
-  confidence REAL NOT NULL DEFAULT 1
+  confidence REAL NOT NULL DEFAULT 1,
+  -- Fase 2A: unit bukti + offset + idempotensi per bagian + urutan baca.
+  char_start INTEGER,
+  char_end INTEGER,
+  unit_id TEXT,
+  section_id TEXT,
+  section_hash TEXT,
+  units_json TEXT NOT NULL DEFAULT '[]',
+  reading_order TEXT,
+  layout_json TEXT,
+  embed_text TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_core_chunks_dataset ON core_chunks(dataset_id, level);
 CREATE INDEX IF NOT EXISTS ix_core_chunks_doc ON core_chunks(document_id);
+CREATE INDEX IF NOT EXISTS ix_core_chunks_section ON core_chunks(document_id, section_id);
 
 CREATE VIRTUAL TABLE IF NOT EXISTS core_chunks_fts USING fts5(
   text,
@@ -207,9 +218,14 @@ CREATE TABLE IF NOT EXISTS core_share_snapshots(
   payload_json TEXT NOT NULL,
   options TEXT NOT NULL DEFAULT '{}',
   byte_size INTEGER NOT NULL,
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  -- P6-FIX / SEC-002: expiry + revoke (nullable → aman untuk DB lama).
+  expires_at TEXT,
+  revoked_at TEXT,
+  revoked_reason TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_core_share_created ON core_share_snapshots(created_at);
+CREATE INDEX IF NOT EXISTS ix_core_share_expiry ON core_share_snapshots(expires_at);
 
 CREATE TABLE IF NOT EXISTS core_citation_deeplinks(
   id TEXT PRIMARY KEY,
@@ -227,3 +243,35 @@ CREATE TABLE IF NOT EXISTS core_citation_deeplinks(
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_core_deeplinks_query ON core_citation_deeplinks(query_id);
+
+-- Qdrant sync outbox (DECISION-032 / ADR-QD-04). SQLite tetap source of truth;
+-- Qdrant adalah derived index. Baris ditulis dalam transaksi yang sama dengan
+-- core_chunks, lalu dikuras worker dengan wait=true. Reversible: DROP TABLE.
+CREATE TABLE IF NOT EXISTS qdrant_outbox(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  chunk_id INTEGER NOT NULL,
+  dataset_id TEXT NOT NULL,
+  source_id TEXT,
+  op TEXT NOT NULL CHECK(op IN ('upsert','delete_source')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','synced','failed')),
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  next_attempt_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(chunk_id, op)
+);
+CREATE INDEX IF NOT EXISTS ix_qdrant_outbox_pending ON qdrant_outbox(status, next_attempt_at, id);
+CREATE INDEX IF NOT EXISTS ix_qdrant_outbox_source ON qdrant_outbox(source_id);
+
+-- Tombstone penghapusan sumber bila Qdrant sedang mati. removeSource TIDAK
+-- boleh diblokir oleh Qdrant; penghapusan point menyusul saat Qdrant kembali.
+CREATE TABLE IF NOT EXISTS qdrant_pending_deletes(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_id TEXT NOT NULL UNIQUE,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT,
+  next_attempt_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);

@@ -66,7 +66,7 @@ function markdown(report) {
   lines.push('# EVAL_RESULTS — Ground Truth AI Core');
   lines.push('');
   lines.push(`- Dijalankan: ${report.generatedAt}`);
-  lines.push(`- Kasus: ${report.caseCount} legacy (3 per fixture) + ${report.capability?.total ?? 0} capability CORE V2 + ${report.perpres?.total ?? 0} Perpres 76`);
+  lines.push(`- Kasus: ${report.caseCount} legacy (3 per fixture) + ${report.realSeed?.total ?? 0} realSeed + ${report.capability?.total ?? 0} capability CORE V2 + ${report.perpres?.total ?? 0} Perpres 76`);
   lines.push(`- Workspace: \`${report.workspaceDb}\` (sementara, dibuat ulang tiap run)`);
   lines.push(`- Hasil keseluruhan: **${report.overallPass ? 'PASS' : 'FAIL'}**`);
   lines.push('');
@@ -118,6 +118,19 @@ function markdown(report) {
     }
   }
   lines.push('');
+
+  lines.push('## Regresi skema seed asli (realSeed)');
+  lines.push('');
+  lines.push(`- dateColumn: \`${report.realSeed?.dateColumn ?? '—'}\` · periode: ${report.realSeed?.periodStart ?? '—'} .. ${report.realSeed?.periodEnd ?? '—'}`);
+  lines.push(`- Hasil: **${report.realSeed?.passed ?? 0}/${report.realSeed?.total ?? 0} lulus** — ${report.realSeed?.overallPass ? 'PASS' : 'FAIL'}`);
+  lines.push('');
+  lines.push('| ID | Pertanyaan | Hasil | Bukti |');
+  lines.push('|---|---|---|---|');
+  for (const c of report.realSeed?.cases ?? []) {
+    lines.push(`| ${c.id} | ${c.question.replace(/\|/g, '\\|')} | ${c.pass ? 'PASS' : 'FAIL'} | ${c.detail.replace(/\|/g, '\\|')} |`);
+  }
+  lines.push('');
+
   if (report.capability) {
     const cap = report.capability;
     lines.push('## Eval_case CORE V2 (FR-A..FR-E)');
@@ -201,13 +214,14 @@ const timer = setTimeout(() => {
 }, timeoutMs);
 
 try {
-  const { runEval } = await import('../lib/eval/harness.ts');
+  const { runEval, runRealSeedEval } = await import('../lib/eval/harness.ts');
   const { runCapabilityEval } = await import('../lib/eval/capability.ts');
   const { runPerpresEval } = await import('../lib/eval/perpres.ts');
   const report = await runEval({ fixturesDir, casesFile });
+  const realSeed = await runRealSeedEval();
   const capability = runCapabilityEval(casesFile);
   const perpres = runPerpresEval({ casesFile, fixturesDir });
-  const combined = { ...report, capability, perpres };
+  const combined = { ...report, realSeed, capability, perpres };
 
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, `${JSON.stringify(combined, null, 2)}\n`, 'utf8');
@@ -232,6 +246,12 @@ try {
   console.log('─'.repeat(72));
   console.log(`Per-case gate (extraction recall ≥ ${report.perCaseGate.threshold.toFixed(2)}): ${report.perCaseGate.evaluated} dievaluasi, ${report.perCaseGate.failed} gagal — ${report.perCaseGate.pass ? 'PASS' : 'FAIL'}`);
   console.log('─'.repeat(72));
+  console.log(`Real-seed regression (skema seed asli): ${realSeed.passed}/${realSeed.total} lulus — ${realSeed.overallPass ? 'PASS' : 'FAIL'}`);
+  console.log(`  dateColumn=${realSeed.dateColumn} · period=${realSeed.periodStart}..${realSeed.periodEnd}`);
+  for (const c of realSeed.cases) {
+    console.log(`  ${c.id.padEnd(7)} ${c.pass ? 'PASS' : 'FAIL'}  ${c.detail}`);
+  }
+  console.log('─'.repeat(72));
   console.log(`CORE V2 capability: ${capability.passed}/${capability.total} lulus (target ≥ 8/11) — ${capability.overallPass ? 'PASS' : 'FAIL'}`);
   for (const c of capability.cases) {
     console.log(`  ${c.id.padEnd(7)} FR-${c.fr} ${c.capability.padEnd(12)} ${c.pass ? 'PASS' : 'FAIL'}  ${c.detail}`);
@@ -252,8 +272,8 @@ try {
     console.log(`  ${c.id.padEnd(7)} ${c.check.padEnd(11)} ${c.pass ? 'PASS' : 'FAIL'}  ${c.detail}`);
   }
   console.log('─'.repeat(72));
-  const overall = report.overallPass && capability.overallPass && perpres.overallPass;
-  console.log(`KESELURUHAN: ${overall ? 'PASS' : 'FAIL'}  |  ${report.caseCount} legacy + ${capability.total} capability + ${perpres.total} perpres  |  detail: ${path.relative(root, outFile)}`);
+  const overall = report.overallPass && realSeed.overallPass && capability.overallPass && perpres.overallPass;
+  console.log(`KESELURUHAN: ${overall ? 'PASS' : 'FAIL'}  |  ${report.caseCount} legacy + ${realSeed.total} realSeed + ${capability.total} capability + ${perpres.total} perpres  |  detail: ${path.relative(root, outFile)}`);
   console.log(`Laporan: ${path.relative(root, mdFile)}`);
 
   clearTimeout(timer);

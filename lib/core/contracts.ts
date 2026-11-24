@@ -153,6 +153,16 @@ export type Chunk = {
   clean_flags?: string[];
   ocr_status?: string;
   confidence?: number;
+  /** Fase 2A — unit bukti, offset, idempotensi per bagian, urutan baca. */
+  char_start?: number | null;
+  char_end?: number | null;
+  unit_id?: string | null;
+  section_id?: string | null;
+  section_hash?: string | null;
+  units_json?: string;
+  reading_order?: string | null;
+  layout_json?: string | null;
+  embed_text?: string | null;
 };
 
 export type Citation = {
@@ -258,6 +268,43 @@ export type QueryMeta = {
   confidenceLevel?: EvidenceConfidenceLevel;
   alternativeKeywords?: string[];
   fallbackReason?: string;
+  guardrailType?: string;
+  /** FASE 2H — structured, ID-bound citation payload (additive; UI footer is
+   * derived from this, inline markers are the primary mechanism). */
+  structuredAnswer?: StructuredAnswerView | null;
+  /** FASE 2H — verifier outcome for the generated claims. */
+  citationVerification?: { ok: boolean; failures: string[]; degraded: boolean } | null;
+};
+
+/** Structural mirrors of the FASE 2H AI-lane contract (no lib/ai import). */
+export type StructuredSegmentKind =
+  | 'framing' | 'claim' | 'inference' | 'caveat' | 'absence' | 'clarification';
+
+export type StructuredSegmentView = {
+  text: string;
+  kind: StructuredSegmentKind;
+  cite: string[];
+};
+
+export type StructuredCitationView = {
+  doc: string;
+  page: number | null;
+  section_id: string;
+  section_title: string;
+  unit_ids: string[];
+  char_start: number;
+  char_end: number;
+  quote: string;
+};
+
+export type StructuredAnswerView = {
+  segments: StructuredSegmentView[];
+  citations: Record<string, StructuredCitationView>;
+  retrieval_trace?: {
+    checked_sections: string[];
+    unit_ids: string[];
+    diversified: boolean;
+  };
 };
 
 export type Query = {

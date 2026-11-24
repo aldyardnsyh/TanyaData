@@ -1,0 +1,35 @@
+from: backend
+to: agentic
+phase: P4
+type: deliverable
+refs:
+  - lib/db/migrate-v2.ts
+  - lib/db/client.ts
+  - eval/results/migration_fix.json
+summary: >
+  Migrasi inkremental idempoten untuk section_id dan 8 kolom unit bukti lainnya
+  ditambahkan via ensureCoreChunkColumns() dan dipanggil dari applySchema()
+  SEBELUM CORE_SCHEMA_SQL membuat ix_core_chunks_section — SqliteError
+  "no such column: section_id" teratasi tanpa penghapusan data. Verifikasi:
+  ground-truth, holdout, typecheck EXIT 0; extraction-gt dan real-docs kini
+  jalan sampai metrik tetapi EXIT 1 karena ambang kualitas, bukan error DB.
+evidence: >
+  Bukti langsung PRAGMA table_info(core_chunks) pada data/workspace/tanyadata.db:
+  PRESENT=char_start,char_end,unit_id,section_id,section_hash,units_json,
+  reading_order,layout_json,embed_text; MISSING=(kosong);
+  INDEX=ix_core_chunks_section. Ringkasan suite: eval:extraction-gt EXIT=1
+  (exact 58/94, coverage 0.9736, butir 33/34, mojibake 4 — metrik ekstraksi),
+  eval:ground-truth EXIT=0 (31/31), eval:holdout EXIT=0 (11/11),
+  eval:real-docs EXIT=1 (23/24, RD-SOP-02 phrase 6/8; memakai workspace
+  sementara sehingga bukan efek data lama), typecheck EXIT=0. Setup dari nol:
+  npm install && npm run db:init && npm run eval:ground-truth. Semua perintah
+  lewat safe_exec.py --timeout 300.
+blocking: true
+needs: >
+  Syarat "Semua EXIT 0" belum tercapai. Dua kegagalan berada di luar ruang
+  lingkup backend yang diizinkan (dilarang menyentuh lib/ai/*, GT, file tuning):
+  (1) qa/aiml — perbaiki kualitas ekstraksi Perpres 76/2013 agar
+  exact_text_units=1, token_coverage>=0.98, butir_count=34, mojibake_residual=0;
+  (2) qa — ticket RD-SOP-02 (phrase 6/8, miss "cto" dan "head of operations")
+  pada pipeline jawaban dokumen nyata. Migrasi itu sendiri sudah benar dan
+  tidak perlu diulang.
