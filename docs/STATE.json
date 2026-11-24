@@ -1,0 +1,99 @@
+﻿{
+  "project": "TanyaData — AI-Powered Business Analytics Platform",
+  "orchestrator": "agentic",
+  "phase": "P4-PRODUCTION-READY",
+  "phase_status": "completed_with_known_limitations",
+  "tuning_report": "tanyadata/eval/TUNING_REPORT.md",
+  "iteration": 3,
+  "updated_at": "2026-11-23",
+  "constraints": {
+    "automated_testing": true,
+    "manual_testing_by": "user",
+    "llm_required": false,
+    "deploy_target": "frontend Vercel + backend/VPS (DECISION-029)",
+    "vps_spec": "2 vCPU / 2GB RAM / 40GB SSD",
+    "vector_database": "Qdrant (WAJIB, DECISION-031/033)",
+    "no_vps_for_frontend": true
+  },
+  "roles": {
+    "analyst": { "status": "done", "artifact": "docs/SPEC.md", "dod_met": true },
+    "architect": { "status": "done", "artifact": "docs/ARCHITECTURE.md + docs/ADR_QDRANT.md + docs/ARCHITECTURE_SPLIT_DEPLOY.md", "verdict": "FEASIBLE_WITH_CHANGES", "dod_met": true },
+    "designer": { "status": "done", "artifact": "docs/DESIGN_FIDELITY_REPORT.md", "dod_met": true },
+    "frontend": { "status": "done", "artifact": "tanyadata", "dod_met": true },
+    "backend": { "status": "done", "artifact": "tanyadata/lib/qdrant + docs/QDRANT_BACKEND_IMPL.md", "dod_met": true },
+    "aiml": { "status": "done", "artifact": "tanyadata/lib/ai/embedding.ts + hybrid.ts + answer-gate.ts + docs/QDRANT_AIML_IMPL.md", "dod_met": true },
+    "qa": { "status": "paused", "artifact": "docs/TEST_REPORT.md", "dod_met": false, "note": "Ditunda user saat migrasi Qdrant (DECISION-031); re-test belum dijalankan" },
+    "security": { "status": "paused", "artifact": "docs/SECURITY_REPORT.md", "dod_met": false, "note": "Re-test P6 selesai sebelum migrasi (6 CLOSED, 4 STILL_OPEN, 0 Critical/High); perlu re-test ulang setelah Qdrant" },
+    "illustrator": { "status": "idle", "artifact": "design", "dod_met": false }
+  },
+  "artifacts": {
+    "brief": "docs/BRIEF.md",
+    "prd": "docs/PRD.md",
+    "backlog": "docs/BACKLOG.md",
+    "qdrant_adr": "docs/ADR_QDRANT.md",
+    "qdrant_backend": "docs/QDRANT_BACKEND_IMPL.md",
+    "qdrant_aiml": "docs/QDRANT_AIML_IMPL.md",
+    "kb_gt_report": "docs/KB_GT_REPORT.md",
+    "kb_gt_result": "docs/KB_GT_RESULT.json",
+    "qa_baseline": "docs/TEST_REPORT.md",
+    "security_baseline": "docs/SECURITY_REPORT.md",
+    "data": "tanyadata/data/analytics.db",
+    "seed_documents": "tanyadata/data/seed/documents (11 dokumen: 6 lama + 4 kb-sop + 1 fixture Perpres)"
+  },
+  "qdrant_migration": {
+    "vector_db": "Qdrant — secondary index WAJIB, bukan opsional",
+    "defaults": { "QDRANT_MODE": "on", "RETRIEVAL_MODE": "hybrid", "EMBEDDING_PROVIDER": "local" },
+    "fallback": "FTS5 deterministik bila Qdrant/embedding gagal, meta.fallbackReason diisi",
+    "client": "@qdrant/js-client-rest@1.20.0",
+    "embedding": "@huggingface/transformers@4.3.2 + Xenova/multilingual-e5-small (384d, q8) — terukur: load 1227ms, RSS puncak 454,5MB, query 29ms, batch-32 230ms; watchdog RSS 700MB",
+    "deploy": "tanyadata/deploy/qdrant/docker-compose.yml (node tunggal, loopback, API key wajib)",
+    "status": "implemented; Qdrant server belum dijalankan di mesin ini (circuit breaker terverifikasi)"
+  },
+  "kb_ground_truth": {
+    "questions": 139,
+    "dev": 98,
+    "holdout": 41,
+    "mode": "llm (Groq fallback penutup)",
+    "dev_precision": 0.5915,
+    "holdout_precision": 0.8571,
+    "holdout_abstention": 0.7317,
+    "target": 0.99,
+    "target_met": false,
+    "anti_slop_mojibake_gate": "2/2 PASS",
+    "known_limitations": [
+      "KB01/KB04 adalah PDF image-only; korpus memakai transkrip GT (gt_transcript), bukan OCR asli",
+      "OCR PP-OCRv6 tiny sudah diimplementasikan sebagai microservice (deploy/ocr) tetapi belum dijalankan di VPS; KB01/KB04 masih memakai gt_transcript di eval",
+      "cross_doc precision rendah; FALSE_ABSTAIN pada parafrasa masih 11 di holdout",
+      "LLM fallback ditolak bila marker [n] hilang (postcheck_missing_marker)"
+    ]
+  },
+  "tickets": [
+    { "id": "UI-LANDING-01", "severity": "High", "owner": "designer+frontend", "status": "open", "detail": "DECISION-035: diagram 'Cara kerja' (components/signal/landing-steps.tsx) memakai lg:gap-0 + track w-14/16/28 di atas konten yang lebarnya bervariasi, sehingga jarak antar aset tidak terukur dan titik penghubung tidak menyentuh node. Rekonstruksi di grid terukur, token spacing s1-s6." },
+    { "id": "SET-01", "severity": "High", "owner": "designer+backend+frontend", "status": "open", "detail": "DECISION-035: preferences.chartDefault + denseTables tersimpan tetapi tidak dikonsumsi siapa pun; Zona waktu adalah kotak read-only bergaya input; dateRange tidak dipakai dashboard (lib/api/dashboard.ts:40 paku 'this_month'). Hapus kontrol yang tidak mengubah perilaku atau sambungkan." },
+    { "id": "SET-02", "severity": "Medium", "owner": "architect+backend+illustrator+frontend", "status": "open", "detail": "DECISION-035: tab Tentang hanya InfoRow statis + klaim 'tidak ada data ke layanan eksternal' yang bertentangan dengan .env.example. Ganti dengan dokumentasi pipeline + tabel teknologi + visualisasi, diisi server." },
+    { "id": "META-01", "severity": "High", "owner": "backend", "status": "open", "detail": "DECISION-035: lib/meta.ts:31 memaku capabilities.rag='fts5' padahal default RETRIEVAL_MODE=hybrid + QDRANT_MODE=on. Turunkan dari env + status circuit breaker; tambah payload `system` untuk tab Tentang." },
+    { "id": "QDRANT-01", "severity": "Medium", "owner": "backend", "status": "in_progress", "detail": "onnxruntime-node@1.30.0 sudah lengkap; embedding terukur di Windows (RSS 454,5MB). Perlu ukur ulang di VPS 2GB Linux" },
+    { "id": "OCR-01", "severity": "High", "owner": "backend", "status": "open", "detail": "Jalankan OCR PP-OCRv6 tiny di VPS, ukur RSS/latensi per halaman, lalu re- ingest KB01/KB04 agar tidak bergantung gt_transcript" },
+    { "id": "QDRANT-02", "severity": "High", "owner": "qa+security", "status": "open", "detail": "Uji Qdrant hidup/mati, circuit breaker, auth/readyz, outbox, dan re-test security setelah migrasi" },
+    { "id": "KB-GT-01", "severity": "High", "owner": "aiml", "status": "open", "detail": "Tingkatkan presisi holdout ke >0.99: multi-doc synthesis, kurangi FALSE_ABSTAIN, perbaiki citation grounding" },
+    { "id": "KB-GT-02", "severity": "Medium", "owner": "backend", "status": "open", "detail": "OCR untuk KB01/KB04 agar tidak bergantung pada transkrip GT" },
+    { "id": "SEC-011", "severity": "Low", "owner": "backend", "status": "open", "detail": "Kuirk refill token bucket rate limiter" }
+  ],
+  "escalations": [
+    { "detail": "GitHub credential expired; remote 893e669, local ad6a8e7", "type": "git_push_blocked", "decision": "DECISION-017" },
+    { "detail": "Target presisi >99% belum tercapai (holdout 85.71%)", "type": "accuracy_target_unmet", "decision": "DECISION-033" }
+  ],
+  "release_gate": {
+    "acceptance_criteria_pass": false,
+    "zero_critical_high_bugs": false,
+    "zero_critical_high_vulns": true,
+    "architect_feasible": true,
+    "design_fidelity_pass": true,
+    "runs_from_scratch": true,
+    "env_and_migrations_ready": true,
+    "qdrant_primary_vector_db": true,
+    "kb_gt_precision_target_met": false,
+    "release_ready": false,
+    "notes": "Produksi default SEED_PROFILE=none — image benar-benar kosong (0 dokumen, 0 transaksi, 0 GT/tuning, Qdrant 0 point). Semantic query understanding + RRF aktif: parafrasa 'Bagaimana prosedur dalam pergantian shift?' kini dijawab sama dengan kata kunci 'pergantian shift', dengan sitasi inline utuh. Deteksi struktur generik (CUTI#n, TI#n |, 2.1.1.) naikkan section_recovery transfer 0.125→1.0. Guardrail memakai pertanyaan asli (refusal holdout 1.0). Build + typecheck + 4 eval hijau (94/94, 31/31, 10/11, 24/24). Target presisi 0.99 pada 139 soal KB GT BELUM tercapai (0.4811); QA/security re-test UI dan pengukuran VPS 2GB masih terbuka."
+  }
+}

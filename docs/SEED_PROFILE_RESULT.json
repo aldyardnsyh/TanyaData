@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "modes": {
+    "none": {
+      "status": "PASS",
+      "seedProfile": "none",
+      "documents": 0,
+      "noDocuments": true,
+      "qdrant": {
+        "status": "ok",
+        "points": 0,
+        "noDocuments": true,
+        "note": "Tidak ada dokumen yang di-seed (SEED_PROFILE=none). Qdrant 0 point adalah keadaan awal yang benar, bukan kegagalan drain outbox."
+      },
+      "fts5": {
+        "chunks": 0,
+        "ftsRows": 0
+      },
+      "steps": [
+        {
+          "name": "db:init",
+          "ok": true,
+          "exitCode": 0,
+          "durationMs": 825
+        },
+        {
+          "name": "reindex:docs",
+          "ok": true,
+          "exitCode": 0,
+          "durationMs": 2252
+        },
+        {
+          "name": "check:seed",
+          "ok": true,
+          "exitCode": 0,
+          "durationMs": 617
+        }
+      ],
+      "notes": [
+        "Point Qdrant lama dihapus — tidak ada dokumen pada SEED_PROFILE=none.",
+        "Tidak ada dokumen yang di-seed (SEED_PROFILE=none). Qdrant 0 point adalah keadaan awal yang benar, bukan kegagalan drain outbox.",
+        "FTS5: FTS5 adalah sumber jawaban aktif.",
+        "SEED_PROFILE=none - produksi dimulai tanpa PDF KB-SOP, Perpres, dan transaksi dummy."
+      ],
+      "finishedAt": "2026-11-24T06:23:50.167Z"
+    },
+    "demo": {
+      "status": "PASS",
+      "seedProfile": "demo",
+      "documents": 11,
+      "noDocuments": false,
+      "qdrant": {
+        "status": "ok",
+        "points": 183,
+        "noDocuments": false,
+        "note": "Qdrant tersinkron (point count > 0)."
+      },
+      "fts5": {
+        "chunks": 165,
+        "ftsRows": 183
+      },
+      "steps": [
+        {
+          "name": "db:init",
+          "ok": true,
+          "exitCode": 0,
+          "durationMs": 831
+        },
+        {
+          "name": "db:seed:kb-sop",
+          "ok": true,
+          "exitCode": 0,
+          "durationMs": 13919
+        },
+        {
+          "name": "reindex:docs",
+          "ok": true,
+          "exitCode": 0,
+          "durationMs": 21753
+        },
+        {
+          "name": "check:seed",
+          "ok": true,
+          "exitCode": 0,
+          "durationMs": 725
+        }
+      ],
+      "notes": [
+        "Qdrant tersinkron (point count > 0).",
+        "FTS5: FTS5 adalah sumber jawaban aktif."
+      ],
+      "finishedAt": "2026-11-24T06:22:35.146Z"
+    }
+  },
+  "updatedAt": "2026-11-24T06:23:50.167Z"
+}

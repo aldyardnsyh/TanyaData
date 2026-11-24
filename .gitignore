@@ -14,6 +14,11 @@ data/generated/*
 !data/generated/documents.json
 !.gitkeep
 
+# Backup lokal database (dibuat runbook backup/restore, bukan artefak rilis)
+data/*.rnd-backup
+data/*.backup
+data/backups/
+
 .DS_Store
 Thumbs.db
 *.log

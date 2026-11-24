@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T14:59:16.122Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-6520-1795186754803\\tanyadata.db",
+  "generatedAt": "2026-11-24T08:14:26.116Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-eval-19472-1795508064863\\tanyadata.db",
   "fixtures": [
     "transaksi",
     "uud-1945",
@@ -276,7 +276,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=16"
+          "detail": "foreign=[] tokens=0"
         },
         "guardrail": {
           "pass": true,
@@ -286,14 +286,14 @@
       "observed": {
         "doc_type": "legal",
         "citations": [
-          "Pasal 33/Ayat (5)",
           "Pasal 33/Ayat (1)",
+          "Pasal 33/Ayat (5)",
           "Pasal 33/Ayat (2)",
           "Pasal 33/Ayat (4)",
           "Pasal 33/Ayat (3)"
         ],
         "sql": null,
-        "answer": "Berikut kutipan dari sumber: Pasal 33/Ayat (5): \"Ketentuan lebih lanjut mengenai pelaksanaan pasal ini diatur dalam undang-undang.\" Pasal 34/Ayat (4): \"Ketentuan lebih lanjut mengenai pelaksanaan pasal ini diatur dalam undang-undang.\" Pasal 31/Ayat (1): \"Setiap warga negara berhak mendapat pendidikan.\" Sumber: Pasal 33/Ayat (5), Pasal 34/Ayat (4), Pasal 31/Ayat (1), Pasal 33/Ayat (1), Pasal 32/Ayat (2).",
+        "answer": "Ketentuan lebih lanjut mengenai pelaksanaan pasal ini diatur dalam undang-undang. [1]",
         "guardrail": null,
         "numeric_grounding": 0,
         "sql_rows": [],
@@ -329,7 +329,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=16"
+          "detail": "foreign=[] tokens=0"
         },
         "guardrail": {
           "pass": true,
@@ -340,13 +340,13 @@
         "doc_type": "legal",
         "citations": [
           "Pasal 31/Ayat (1)",
-          "Pasal 31/Ayat (3)",
-          "Pasal 31/Ayat (4)",
+          "Pasal 31/Ayat (2)",
           "Pasal 31/Ayat (5)",
-          "Pasal 31/Ayat (2)"
+          "Pasal 31/Ayat (4)",
+          "Pasal 31/Ayat (3)"
         ],
         "sql": null,
-        "answer": "Berikut kutipan dari sumber: Pasal 31/Ayat (1): \"Setiap warga negara berhak mendapat pendidikan.\" Pasal 33/Ayat (1): \"Perekonomian disusun sebagai usaha bersama berdasar atas asas kekeluargaan.\" Pasal 32/Ayat (2): \"Negara menghormati dan memelihara bahasa daerah sebagai kekayaan budaya nasional.\" Sumber: Pasal 31/Ayat (1), Pasal 33/Ayat (1), Pasal 32/Ayat (2), Pasal 34/Ayat (1), Pasal 33/Ayat (5).",
+        "answer": "Setiap warga negara berhak mendapat pendidikan. [1]",
         "guardrail": null,
         "numeric_grounding": 0,
         "sql_rows": [],
@@ -382,7 +382,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=16"
+          "detail": "foreign=[] tokens=0"
         },
         "guardrail": {
           "pass": true,
@@ -396,10 +396,13 @@
           "Pasal 31/Ayat (2)",
           "Pasal 31/Ayat (4)",
           "Pasal 31/Ayat (3)",
-          "Pasal 33/Ayat (5)"
+          "Pasal 33/Ayat (5)",
+          "Pasal 34/Ayat (4)",
+          "Pasal 33/Ayat (1)",
+          "Pasal 32/Ayat (2)"
         ],
         "sql": null,
-        "answer": "Berikut kutipan dari sumber: Pasal 31/Ayat (1): \"Setiap warga negara berhak mendapat pendidikan.\" Pasal 31/Ayat (2): \"Setiap warga negara wajib mengikuti pendidikan dasar dan pemerintah wajib membiayainya.\" Pasal 31/Ayat (4): \"Negara memprioritaskan anggaran pendidikan sekurang-kurangnya dua puluh persen dari anggaran pendapatan dan belanja negara serta dari anggaran pendapatan dan belanja daerah.\" Sumber: Pasal 31/Ayat (1), Pasal 31/Ayat (2), Pasal 31/Ayat (4), Pasal 31/Ayat (3), Pasal 33/Ayat (5).",
+        "answer": "Pemerintah mengusahakan dan menyelenggarakan satu sistem pendidikan nasional, yang meningkatkan keimanan dan ketakwaan serta akhlak mulia dalam rangka mencerdaskan kehidupan bangsa, yang diatur dengan undang-undang. [1] Setiap warga negara berhak mendapat pendidikan. [2] Setiap warga negara wajib mengikuti pendidikan dasar dan pemerintah wajib membiayainya. [3]",
         "guardrail": null,
         "numeric_grounding": 0,
         "sql_rows": [],
@@ -435,7 +438,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=23"
+          "detail": "foreign=[] tokens=13"
         },
         "guardrail": {
           "pass": true,
@@ -445,12 +448,13 @@
       "observed": {
         "doc_type": "technical_report",
         "citations": [
+          "Parameter/Volume lumpur",
           "Parameter/Kedalaman total",
           "Tabel 2. Hasil Harian Pemboran",
           "Narasi Operasional"
         ],
         "sql": null,
-        "answer": "Berdasarkan dokumen yang ditemukan: Parameter/Kedalaman total: Kedalaman total: 2.850 m Tabel 2. Hasil Harian Pemboran: Hasil Harian Pemboran. 2026-07-01 kedalaman 1200 m Formasi A. 2026-07-02 kedalaman 1980 m Formasi B. 2026-07-03 kedalaman 2850 m Formasi C. Narasi Operasional: Pemboran berjalan sesuai spesifikasi teknis. Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. Tekanan formasi tetap dalam batas aman. Sumber: Parameter/Kedalaman total, Tabel 2. Hasil Harian Pemboran, Narasi Operasional.",
+        "answer": "Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. [1] Kedalaman total: 2.850 m. [2] 2026-07-01 kedalaman 1200 m Formasi A. [3]",
         "guardrail": null,
         "numeric_grounding": 1,
         "sql_rows": [],
@@ -486,7 +490,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=11"
+          "detail": "foreign=[] tokens=2"
         },
         "guardrail": {
           "pass": true,
@@ -502,7 +506,7 @@
           "Tabel 2. Hasil Harian Pemboran"
         ],
         "sql": null,
-        "answer": "Berdasarkan dokumen yang ditemukan: Parameter/Laju pemboran: Laju pemboran: 12,5 m/jam Parameter/Tekanan formasi: Tekanan formasi: 4.200 psi Narasi Operasional: Pemboran berjalan sesuai spesifikasi teknis. Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. Tekanan formasi tetap dalam batas aman. Sumber: Parameter/Laju pemboran, Parameter/Tekanan formasi, Narasi Operasional, Tabel 2. Hasil Harian Pemboran.",
+        "answer": "Laju pemboran: 12,5 m/jam. [1] Tekanan formasi: 4.200 psi. [2] Tekanan formasi tetap dalam batas aman. [3]",
         "guardrail": null,
         "numeric_grounding": 1,
         "sql_rows": [],
@@ -538,7 +542,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=16"
+          "detail": "foreign=[] tokens=5"
         },
         "guardrail": {
           "pass": true,
@@ -553,7 +557,7 @@
           "Narasi Operasional"
         ],
         "sql": null,
-        "answer": "Berdasarkan dokumen yang ditemukan: Tabel 2. Hasil Harian Pemboran: Tabel 2. Hasil Harian Pemboran. 2026-07-01 kedalaman 1200 m Formasi A. Parameter/Laju pemboran: Laju pemboran: 12,5 m/jam Narasi Operasional: Pemboran berjalan sesuai spesifikasi teknis. Kedalaman bertambah dari 1.200 m pada 2026-07-01 menjadi 2.850 m pada 2026-07-03. Sumber: Tabel 2. Hasil Harian Pemboran, Parameter/Laju pemboran, Narasi Operasional.",
+        "answer": "Hasil Harian Pemboran. [1] Tabel 2. [1] 2026-07-01 kedalaman 1200 m Formasi A. [1]",
         "guardrail": null,
         "numeric_grounding": 1,
         "sql_rows": [],
@@ -589,7 +593,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=25"
+          "detail": "foreign=[] tokens=9"
         },
         "guardrail": {
           "pass": true,
@@ -603,12 +607,13 @@
           "Pendapatan/Q2 2026",
           "Laba bersih/Q3 2026",
           "Laba bersih/Q2 2026",
-          "Arus kas operasi/Q3 2026"
+          "Arus kas operasi/Q3 2026",
+          "Saldo kas akhir/Q3 2026"
         ],
         "sql": null,
-        "answer": "Berdasarkan dokumen yang ditemukan: Pendapatan/Q3 2026: Pendapatan: 125000000000 IDR Q3 2026 Pendapatan/Q2 2026: Pendapatan: 112000000000 IDR Q2 2026 Laba bersih/Q3 2026: Laba bersih: 18750000000 IDR Q3 2026 Sumber: Pendapatan/Q3 2026, Pendapatan/Q2 2026, Laba bersih/Q3 2026, Laba bersih/Q2 2026, Arus kas operasi/Q3 2026.",
+        "answer": "Pendapatan: 125000000000 IDR Q3 2026. [1] Pendapatan: 112000000000 IDR Q2 2026. [2] Laba bersih: 18750000000 IDR Q3 2026. [3]",
         "guardrail": null,
-        "numeric_grounding": 0.84,
+        "numeric_grounding": 1,
         "sql_rows": [],
         "output_type": "kpi",
         "foreign_numbers": []
@@ -642,7 +647,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=25"
+          "detail": "foreign=[] tokens=9"
         },
         "guardrail": {
           "pass": true,
@@ -656,12 +661,13 @@
           "Laba bersih/Q2 2026",
           "Pendapatan/Q3 2026",
           "Pendapatan/Q2 2026",
-          "Arus kas operasi/Q3 2026"
+          "Arus kas operasi/Q3 2026",
+          "Saldo kas akhir/Q3 2026"
         ],
         "sql": null,
-        "answer": "Berdasarkan dokumen yang ditemukan: Laba bersih/Q3 2026: Laba bersih: 18750000000 IDR Q3 2026 Laba bersih/Q2 2026: Laba bersih: 15000000000 IDR Q2 2026 Pendapatan/Q3 2026: Pendapatan: 125000000000 IDR Q3 2026 Sumber: Laba bersih/Q3 2026, Laba bersih/Q2 2026, Pendapatan/Q3 2026, Pendapatan/Q2 2026, Arus kas operasi/Q3 2026.",
+        "answer": "Laba bersih: 18750000000 IDR Q3 2026. [1] Laba bersih: 15000000000 IDR Q2 2026. [2] Pendapatan: 125000000000 IDR Q3 2026. [3]",
         "guardrail": null,
-        "numeric_grounding": 0.84,
+        "numeric_grounding": 1,
         "sql_rows": [],
         "output_type": "bar",
         "foreign_numbers": []
@@ -695,7 +701,7 @@
         },
         "generation": {
           "pass": true,
-          "detail": "foreign=[] tokens=25"
+          "detail": "foreign=[] tokens=9"
         },
         "guardrail": {
           "pass": true,
@@ -709,12 +715,13 @@
           "Saldo kas akhir/Q3 2026",
           "Pendapatan/Q3 2026",
           "Pendapatan/Q2 2026",
-          "Laba bersih/Q3 2026"
+          "Laba bersih/Q3 2026",
+          "Laba bersih/Q2 2026"
         ],
         "sql": null,
-        "answer": "Berdasarkan dokumen yang ditemukan: Arus kas operasi/Q3 2026: Arus kas operasi: 22300000000 IDR Q3 2026 Saldo kas akhir/Q3 2026: Saldo kas akhir: 41000000000 IDR Q3 2026 Pendapatan/Q3 2026: Pendapatan: 125000000000 IDR Q3 2026 Sumber: Arus kas operasi/Q3 2026, Saldo kas akhir/Q3 2026, Pendapatan/Q3 2026, Pendapatan/Q2 2026, Laba bersih/Q3 2026.",
+        "answer": "Arus kas operasi: 22300000000 IDR Q3 2026. [1] Saldo kas akhir: 41000000000 IDR Q3 2026. [2] Pendapatan: 125000000000 IDR Q3 2026. [3]",
         "guardrail": null,
-        "numeric_grounding": 0.84,
+        "numeric_grounding": 1,
         "sql_rows": [],
         "output_type": "kpi",
         "foreign_numbers": []
@@ -760,8 +767,56 @@
     "Per-case gate: extraction recall ≥ 0,80 diwajibkan per kasus; kasus di bawah ambang tetap FAIL walau semua metrik agregat PASS.",
     "Koreksi ground truth P3-TUNING: LEG-01/02 expected.extracted_fields.ayat diubah dari subset (1,2,3 / 1) menjadi 1,2,3,4,5 sesuai isi fixture legal/uud.json — Pasal 33 dan Pasal 31 masing-masing memuat 5 ayat. Untuk \"Pasal 33 UUD 1945 berbunyi apa?\" jawaban hukum yang benar adalah seluruh pasal. Ini koreksi label, BUKAN pelonggaran ambang: threshold recall agregat & per-case tetap 0,80 dan pipeline ekstraksi tidak diubah."
   ],
+  "realSeed": {
+    "generatedAt": "2026-11-24T08:14:26.163Z",
+    "datasetId": "demo-qris-v1",
+    "dateColumn": "transaction_date",
+    "periodStart": "2021-01-15",
+    "periodEnd": "2026-11-18",
+    "cases": [
+      {
+        "id": "RS-01",
+        "question": "Berapa total transaksi pada bulan ini?",
+        "pass": true,
+        "detail": "expected=8125 via transaction_date | got=8125 | sql=SELECT COUNT(*) AS value FROM seed.transactions WHERE transaction_date >= ? AND transaction_date <= ? LIMIT 500 | answer=Hasil: 8.125 (value). Angka ini berasal dari eksekusi SQL pada sumber data.",
+        "observed": {
+          "mode": "sql",
+          "sql": "SELECT COUNT(*) AS value FROM seed.transactions WHERE transaction_date >= ? AND transaction_date <= ? LIMIT 500",
+          "rows": [
+            [
+              8125
+            ]
+          ],
+          "answer": "Hasil: 8.125 (value). Angka ini berasal dari eksekusi SQL pada sumber data.",
+          "guardrail": null
+        }
+      },
+      {
+        "id": "RS-02",
+        "question": "Berapa total transaksi Desember 2026?",
+        "pass": true,
+        "detail": "expected=out_of_range + batas data 2021-01-15..2026-11-18, 0 baris | got=out_of_range rows=0 answer=Data yang tersedia hanya mencakup 2021-01-15 sampai 2026-11-18. Pertanyaan tentang Desember 2026 berada di luar rentang tersebut, jadi saya tidak dapat menghitungnya dari sumber in",
+        "observed": {
+          "mode": "guardrail",
+          "sql": null,
+          "rows": [],
+          "answer": "Data yang tersedia hanya mencakup 2021-01-15 sampai 2026-11-18. Pertanyaan tentang Desember 2026 berada di luar rentang tersebut, jadi saya tidak dapat menghitungnya dari sumber ini.",
+          "guardrail": "out_of_range"
+        }
+      }
+    ],
+    "passed": 2,
+    "total": 2,
+    "overallPass": true,
+    "notes": [
+      "Skema seed asli didaftarkan via registerSeedDataset — bukan fixture tx_daily.period.",
+      "Pipeline produksi dipakai penuh: answerQuestion + createCorePorts + buildAiPortContext, LLM_MODE=off.",
+      "RS-01 mengunci A1 = 8125 lewat transaction_date (bukan created_at yang memotong Nov 18).",
+      "RS-02 mengunci F3-1: periode di luar rentang ditolak guardrail dengan penyataan batas data, bukan COUNT(*) 46952."
+    ]
+  },
   "capability": {
-    "generatedAt": "2026-11-20T14:59:16.137Z",
+    "generatedAt": "2026-11-24T08:14:26.169Z",
     "cases": [
       {
         "id": "EV-A01",
@@ -1040,7 +1095,7 @@
     ]
   },
   "perpres": {
-    "generatedAt": "2026-11-20T14:59:16.172Z",
+    "generatedAt": "2026-11-24T08:14:26.206Z",
     "groundTruthFile": "data\\fixtures\\perpres76\\chunks.jsonl",
     "groundTruthSha256": "bfbc5c822331bac3c4fe4e659f321a85f3b7f48b6106b4675ba74033c6d1a2f0",
     "groundTruthChunks": 42,
@@ -1077,12 +1132,12 @@
         },
         {
           "name": "parent_id_linkage_children",
-          "value": 1,
+          "value": 0,
           "hit": 0,
-          "total": 0,
+          "total": 3,
           "threshold": 0.8,
-          "pass": true,
-          "detail": "0/0 child terhubung ke induk benar"
+          "pass": false,
+          "detail": "0/3 child terhubung ke induk benar"
         },
         {
           "name": "dedup",
@@ -1103,7 +1158,7 @@
           "detail": "0/32 chunk mengandung karakter asing/flag"
         }
       ],
-      "average": 0.6587,
+      "average": 0.4921,
       "misses": [
         "pembukaan: chunk_type (tanpa chunk_type) != pembukaan",
         "pembukaan: page_span 1-1 != 1-2",
@@ -1112,13 +1167,19 @@
         "pasal-1-b-pengantar: tidak ada chunk keluaran yang cocok berdasarkan teks",
         "pasal-1-b-1: tidak ada chunk keluaran yang cocok berdasarkan teks",
         "pasal-1-b-2: tidak ada chunk keluaran yang cocok berdasarkan teks",
-        "pasal-1-b-3: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-3: chunk_type (tanpa chunk_type) != butir",
+        "pasal-1-b-3: page_span 2-2 != 3-3",
+        "pasal-1-b-3: parent_id null != pasal-1",
         "pasal-1-b-4: tidak ada chunk keluaran yang cocok berdasarkan teks",
         "pasal-1-b-5: tidak ada chunk keluaran yang cocok berdasarkan teks",
-        "pasal-1-b-6: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-6: chunk_type (tanpa chunk_type) != butir",
+        "pasal-1-b-6: page_span 2-2 != 4-4",
+        "pasal-1-b-6: parent_id null != pasal-1",
         "pasal-1-b-7: tidak ada chunk keluaran yang cocok berdasarkan teks",
         "pasal-1-b-8: tidak ada chunk keluaran yang cocok berdasarkan teks",
-        "pasal-1-b-9: tidak ada chunk keluaran yang cocok berdasarkan teks",
+        "pasal-1-b-9: chunk_type (tanpa chunk_type) != butir",
+        "pasal-1-b-9: page_span 2-2 != 4-4",
+        "pasal-1-b-9: parent_id null != pasal-1",
         "pasal-1-b-10: tidak ada chunk keluaran yang cocok berdasarkan teks",
         "pasal-1-b-11: tidak ada chunk keluaran yang cocok berdasarkan teks",
         "pasal-2: chunk_type (tanpa chunk_type) != pasal",
@@ -1397,7 +1458,7 @@
         "observed": {
           "triggered": true,
           "type": "out_of_scope",
-          "message": "Pertanyaan ini di luar cakupan sumber aktif. Pilih attachment yang relevan dengan topik Anda, atau ajukan pertanyaan yang bisa dijawab dari dokumen dan data yang tersedia.",
+          "message": "Informasi tersebut tidak ditemukan dalam dokumen yang tersedia. Pertanyaan ini di luar cakupan sumber aktif; saya tidak akan mengarang jawaban.",
           "foreign_numbers": []
         }
       }

@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-11-24T08:14:24.097Z",
+  "sourceId": "src_6a30b004",
+  "chunks": 101,
+  "metrics": {
+    "exact_text_units": {
+      "value": 1,
+      "threshold": 1,
+      "pass": true,
+      "detail": "94/94"
+    },
+    "token_coverage": {
+      "value": 1,
+      "threshold": 0.98,
+      "pass": true
+    },
+    "doc_type": {
+      "value": "legal",
+      "expected": "legal",
+      "pass": true
+    },
+    "page_count": {
+      "value": 14,
+      "expected": 14,
+      "pass": true
+    },
+    "pasal_count": {
+      "value": 21,
+      "expected": 21,
+      "pass": true
+    },
+    "ayat_count": {
+      "value": 41,
+      "expected": 41,
+      "pass": true
+    },
+    "butir_count": {
+      "value": 34,
+      "expected": 34,
+      "pass": true
+    },
+    "hierarchy": {
+      "value": {
+        "parent": 18,
+        "child": 83
+      },
+      "pass": true
+    },
+    "mojibake_residual": {
+      "value": 0,
+      "threshold": 0,
+      "pass": true
+    }
+  },
+  "verdict": "PASS",
+  "failed": []
+}

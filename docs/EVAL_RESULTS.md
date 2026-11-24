@@ -1,8 +1,8 @@
 # EVAL_RESULTS — Ground Truth AI Core
 
-- Dijalankan: 2026-11-20T14:59:16.122Z
-- Kasus: 12 legacy (3 per fixture) + 11 capability CORE V2 + 6 Perpres 76
-- Workspace: `C:\Users\aldya\AppData\Local\Temp\tanyadata-eval-6520-1795186754803\tanyadata.db` (sementara, dibuat ulang tiap run)
+- Dijalankan: 2026-11-24T08:14:26.116Z
+- Kasus: 12 legacy (3 per fixture) + 2 realSeed + 11 capability CORE V2 + 6 Perpres 76
+- Workspace: `C:\Users\aldya\AppData\Local\Temp\tanyadata-eval-19472-1795508064863\tanyadata.db` (sementara, dibuat ulang tiap run)
 - Hasil keseluruhan: **PASS**
 
 ## Hasil per tahap
@@ -35,6 +35,16 @@ _Tidak ada kasus yang gagal._
 
 - Ambang: recall ≥ 0.80 per kasus (hanya kasus dengan expected extraction fields).
 - Dievaluasi: 7 kasus · Gagal: 0 · Hasil: **PASS**
+
+## Regresi skema seed asli (realSeed)
+
+- dateColumn: `transaction_date` · periode: 2021-01-15 .. 2026-11-18
+- Hasil: **2/2 lulus** — PASS
+
+| ID | Pertanyaan | Hasil | Bukti |
+|---|---|---|---|
+| RS-01 | Berapa total transaksi pada bulan ini? | PASS | expected=8125 via transaction_date \| got=8125 \| sql=SELECT COUNT(*) AS value FROM seed.transactions WHERE transaction_date >= ? AND transaction_date <= ? LIMIT 500 \| answer=Hasil: 8.125 (value). Angka ini berasal dari eksekusi SQL pada sumber data. |
+| RS-02 | Berapa total transaksi Desember 2026? | PASS | expected=out_of_range + batas data 2021-01-15..2026-11-18, 0 baris \| got=out_of_range rows=0 answer=Data yang tersedia hanya mencakup 2021-01-15 sampai 2026-11-18. Pertanyaan tentang Desember 2026 berada di luar rentang tersebut, jadi saya tidak dapat menghitungnya dari sumber in |
 
 ## Eval_case CORE V2 (FR-A..FR-E)
 
@@ -74,10 +84,10 @@ _Tidak ada kasus yang gagal._
 | chunk_type_detection | 0.0000 | 1.0000 | ≥ 0.8000 | PASS |
 | page_span | 0.3333 | 0.9762 | ≥ 0.8000 | PASS |
 | parent_id_linkage | 0.6190 | 1.0000 | ≥ 0.8000 | PASS |
-| parent_id_linkage_children | 1.0000 | 1.0000 | ≥ 0.8000 | PASS |
+| parent_id_linkage_children | 0.0000 | 1.0000 | ≥ 0.8000 | PASS |
 | dedup | 1.0000 | 1.0000 | ≥ 0.8000 | PASS |
 | mojibake_clean | 1.0000 | 1.0000 | ≥ 0.8000 | PASS |
-| **Rata-rata** | 0.6587 | **0.9960** | ≥ 0.8000 | PASS |
+| **Rata-rata** | 0.4921 | **0.9960** | ≥ 0.8000 | PASS |
 
 - Jumlah chunk keluaran: baseline 32 · tuning 42 (ground truth 42).
 

@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-11-24T06:23:46.346Z",
+  "finishedAt": "2026-11-24T06:23:50.167Z",
+  "status": "PASS",
+  "seedProfile": "none",
+  "noDocuments": true,
+  "steps": [
+    {
+      "name": "db:init",
+      "command": "npm run db:init",
+      "durationMs": 825,
+      "ok": true,
+      "exitCode": 0
+    },
+    {
+      "name": "reindex:docs",
+      "command": "npm run reindex:docs",
+      "durationMs": 2252,
+      "ok": true,
+      "exitCode": 0
+    },
+    {
+      "name": "check:seed",
+      "command": "npm run check:seed",
+      "durationMs": 617,
+      "ok": true,
+      "exitCode": 0
+    }
+  ],
+  "qdrant": {
+    "mode": "on",
+    "collection": "td_chunks",
+    "configured": true,
+    "points": 0,
+    "status": "ok",
+    "noDocuments": true,
+    "note": "Tidak ada dokumen yang di-seed (SEED_PROFILE=none). Qdrant 0 point adalah keadaan awal yang benar, bukan kegagalan drain outbox."
+  },
+  "fts5": {
+    "available": true,
+    "chunks": 0,
+    "ftsRows": 0,
+    "note": "FTS5 adalah sumber jawaban aktif."
+  },
+  "env": {
+    "seedProfile": "none",
+    "qdrantMode": "on",
+    "retrievalMode": "hybrid",
+    "embeddingProvider": "local"
+  },
+  "notes": [
+    "Point Qdrant lama dihapus — tidak ada dokumen pada SEED_PROFILE=none.",
+    "Tidak ada dokumen yang di-seed (SEED_PROFILE=none). Qdrant 0 point adalah keadaan awal yang benar, bukan kegagalan drain outbox.",
+    "FTS5: FTS5 adalah sumber jawaban aktif.",
+    "SEED_PROFILE=none - produksi dimulai tanpa PDF KB-SOP, Perpres, dan transaksi dummy."
+  ]
+}

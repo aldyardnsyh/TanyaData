@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T15:02:20.839Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-realdocs-43700-1795186935359\\tanyadata.db",
+  "generatedAt": "2026-11-24T08:14:34.872Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-realdocs-25036-1795508069257\\tanyadata.db",
   "fixturesDir": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\tanyadata\\data\\fixtures\\real-docs",
   "pipeline": [
     "validateUpload → ingestIntoDataset (lib/core/ingest.ts)",
@@ -26,15 +26,15 @@
       "pages": 1,
       "mojibakeChars": 0,
       "cleanFlags": [],
-      "cleaningActions": 0,
+      "cleaningActions": 2,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 66,
-      "peakRssBytes": 95199232,
+      "latencyMs": 93,
+      "peakRssBytes": 115695616,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_bef0a0af53d9",
+      "datasetId": "ds_50fb56ad9a3e",
       "tableName": null
     },
     {
@@ -51,15 +51,15 @@
       "pages": 1,
       "mojibakeChars": 0,
       "cleanFlags": [],
-      "cleaningActions": 0,
+      "cleaningActions": 2,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 47,
-      "peakRssBytes": 95535104,
+      "latencyMs": 54,
+      "peakRssBytes": 115785728,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_af3819ffdad6",
+      "datasetId": "ds_d3d7739b6956",
       "tableName": null
     },
     {
@@ -76,15 +76,15 @@
       "pages": 1,
       "mojibakeChars": 0,
       "cleanFlags": [],
-      "cleaningActions": 0,
+      "cleaningActions": 4,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 156,
-      "peakRssBytes": 107544576,
+      "latencyMs": 162,
+      "peakRssBytes": 128630784,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_e331e996a799",
+      "datasetId": "ds_1cb450e18679",
       "tableName": null
     },
     {
@@ -104,12 +104,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 394,
-      "peakRssBytes": 128159744,
+      "latencyMs": 339,
+      "peakRssBytes": 138350592,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_b156fd677ede",
+      "datasetId": "ds_521f4592385d",
       "tableName": null
     },
     {
@@ -130,11 +130,11 @@
       "ocrUsed": false,
       "ocrPages": [],
       "latencyMs": 148,
-      "peakRssBytes": 131035136,
+      "peakRssBytes": 142331904,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_988443a50db2",
+      "datasetId": "ds_9f3dbff22ae8",
       "tableName": null
     },
     {
@@ -151,15 +151,15 @@
       "pages": 3,
       "mojibakeChars": 0,
       "cleanFlags": [],
-      "cleaningActions": 0,
+      "cleaningActions": 5,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 155,
-      "peakRssBytes": 129159168,
+      "latencyMs": 156,
+      "peakRssBytes": 142143488,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_73ea6448c736",
+      "datasetId": "ds_83bc8fe0af71",
       "tableName": null
     },
     {
@@ -179,13 +179,13 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 1313,
-      "peakRssBytes": 167387136,
+      "latencyMs": 1363,
+      "peakRssBytes": 180129792,
       "rowsParsed": 46952,
       "periodStart": "2026-08-01",
       "periodEnd": "2026-11-18",
-      "datasetId": "ds_7c99ee1a83eb",
-      "tableName": "core_data_ds7c99ee1a83eb"
+      "datasetId": "ds_09c4478aa22e",
+      "tableName": "core_data_ds09c4478aa22e"
     },
     {
       "id": "RD-CSV-CH",
@@ -204,13 +204,13 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 40,
-      "peakRssBytes": 167436288,
+      "latencyMs": 43,
+      "peakRssBytes": 180150272,
       "rowsParsed": 10,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_1293cf0aa5ee",
-      "tableName": "core_data_ds1293cf0aa5ee"
+      "datasetId": "ds_6056db093eba",
+      "tableName": "core_data_ds6056db093eba"
     }
   ],
   "cases": [
@@ -234,7 +234,7 @@
       "score": 1,
       "detail": "phrase 7/7 · miss=[] · citations=8",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: catatan insiden okt-nov 2026: - sebagian pelanggan melaporkan dana terdebet tetapi transaksi tidak terkonfirmasi; ditangani melalui rekonsiliasi dan refund (sla va: 3 hari kerja). catatan insiden okt-nov 2026: - catatan: autoscaling terlambat 15 menit; threshold scale-up diturunkan. ===================================================================== catatan lain (bukan insiden) ===================================================================== - 2026-09-13 01:00 - 04:00 pemeliharaan terjadwal va bni (inc-2026-0913), kode f12. sudah diinformasikan ke merchant. - 2026-09-30 19:20 - 20:10 gangguan jaringan switching qris (inc-2026-0930), kode f10. - rapa…",
+        "answer": "tindak lanjut [ ] eskalasi formal ke head of partnership - bank mandiri [ ] evaluasi kanal cadangan: sarankan pelanggan memakai va bca atau e-wallet sementara waktu [ ] perbarui alert: threshold failure rate per kanal agar memicu p2 lebih cepat [x] tambah retry otomatis 1 kali (24 okt) [x] naikkan timeout internal (28 okt) ===================================================================== inc-2026-1106 | lonjakan gateway error ovo pasca rilis v3.2.0 severity : high | status : open | kanal : ovo (ch06) | kode utama : f05 gateway_error ===================================================================== ringkasan setelah rilis payment gateway versi 3.2.0 pada 5 november 2026 pukul 22:00 wi…",
         "citations": [
           "Catatan Insiden Okt-Nov 2026",
           "Catatan Insiden Okt-Nov 2026",
@@ -246,12 +246,12 @@
           "Catatan Insiden Okt-Nov 2026"
         ],
         "guardrail": null,
-        "aiGuardrail": "limited",
+        "aiGuardrail": "strong",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 17
+        "latencyMs": 58
       }
     },
     {
@@ -270,22 +270,26 @@
       ],
       "pass": true,
       "score": 0.8,
-      "detail": "phrase 4/5 · miss=[20 november 2026] · citations=4",
+      "detail": "phrase 4/5 · miss=[20 november 2026] · citations=8",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: catatan insiden okt-nov 2026: - 2026-11-06 00:00 kenaikan f05 pada ovo mulai terlihat. - 2026-11-07 tim platform engineering menerima laporan dari merchant operations mengenai kegagalan top-up pada ovo. - 2026-11-09 reproduksi di staging: validasi field referensi pelanggan pada payload top-up ovo gagal setelah refactor. - 2026-11-12 diputuskan tidak melakukan rollback penuh karena rilis memuat perbaikan lain; hotfix disiapkan. - 2026-11-17 hotfix v3.2.1 dijadwalkan 2026-11-20. status masih open. catatan insiden okt-nov 2026: data operasional - kenaikan terkonsentrasi pada ovo dan terutama pada kategori top-up pulsa dan saldo; kategori lain pada ovo relatif…",
+        "answer": "- rapat evaluasi bulanan dijadwalkan 24 november 2026, agenda: review inc-2026-1015 dan inc-2026-1106. [1] - 2026-11-17 hotfix v3.2.1 dijadwalkan 2026-11-20. [2] observasi dari analisis data operasional - kenaikan terkonsentrasi pada ovo dan terutama pada kategori top-up pulsa dan saldo, kategori lain pada ovo relatif lebih rendah. [3]",
         "citations": [
+          "Catatan Insiden Okt-Nov 2026",
+          "Catatan Insiden Okt-Nov 2026",
+          "Catatan Insiden Okt-Nov 2026",
+          "Catatan Insiden Okt-Nov 2026",
           "Catatan Insiden Okt-Nov 2026",
           "Catatan Insiden Okt-Nov 2026",
           "Catatan Insiden Okt-Nov 2026",
           "Catatan Insiden Okt-Nov 2026"
         ],
         "guardrail": null,
-        "aiGuardrail": "limited",
+        "aiGuardrail": "strong",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 8
+        "latencyMs": 35
       }
     },
     {
@@ -305,15 +309,15 @@
       "score": 1,
       "detail": "phrase 4/4 · miss=[] · citations=8",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: 1. saldo saya terpotong tetapi transaksi gagal. apa yang harus saya lakukan?: jika status akhir transaksi failed dan dana terdebet, dana akan dikembalikan otomatis. estimasi pengembalian: virtual account 3 hari kerja, e-wallet maksimal 2 x 24 jam, qris 2 hari kerja, kartu kredit 7 sampai 14 hari kerja. jika dana belum kembali setelah sla terlewati, hubungi customer support dengan menyertakan nomor transaksi (format `trxyyyymmddnnnnn`). 6. pembayaran virtual account mandiri sering timeout. apakah ini gangguan?: sementara waktu pelanggan disarankan memakai va bca, va bni, va bri, atau e-wallet. jika dana sudah terdebet, tim akan melakukan rekonsiliasi dan re…",
+        "answer": "setiap kanal memiliki limit harian dan limit per transaksi. [1] tunggu hingga 30 menit karena sistem melakukan pengecekan status otomatis setiap 5 menit. [2] estimasi pengembalian: virtual account 3 hari kerja, e-wallet maksimal 2 x 24 jam, qris 2 hari kerja, kartu kredit 7 sampai 14 hari kerja. [2]",
         "citations": [
           "1. Saldo saya terpotong tetapi transaksi gagal. Apa yang harus saya lakukan?",
           "6. Pembayaran Virtual Account Mandiri sering timeout. Apakah ini gangguan?",
           "11. Transaksi saya tercatat dua kali (F09).",
           "2. Apa arti status transaksi?",
           "8. Mengapa transaksi saya berstatus EXPIRED?",
-          "5. Kartu kredit saya ditolak (F03).",
           "9. Apa itu limit transaksi (F06)?",
+          "5. Kartu kredit saya ditolak (F03).",
           "3. Mengapa pembayaran saya gagal dengan pesan \"saldo tidak mencukupi\" (F01)?"
         ],
         "guardrail": null,
@@ -321,8 +325,8 @@
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
-        "numericGrounding": 0.6364,
-        "latencyMs": 4
+        "numericGrounding": 1,
+        "latencyMs": 18
       }
     },
     {
@@ -340,9 +344,9 @@
       ],
       "pass": true,
       "score": 1,
-      "detail": "phrase 4/4 · miss=[] · citations=9",
+      "detail": "phrase 4/4 · miss=[] · citations=8",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: 8. mengapa transaksi saya berstatus expired?: nomor virtual account berlaku 24 jam secara default (dapat dikonfigurasi 1 sampai 72 jam). qris dinamis berlaku 15 menit dan e-wallet 30 menit. setelah lewat batas waktu, buat transaksi baru. transaksi expired tidak memotong dana. 1. saldo saya terpotong tetapi transaksi gagal. apa yang harus saya lakukan?: jika status akhir transaksi failed dan dana terdebet, dana akan dikembalikan otomatis. estimasi pengembalian: virtual account 3 hari kerja, e-wallet maksimal 2 x 24 jam, qris 2 hari kerja, kartu kredit 7 sampai 14 hari kerja. jika dana belum kembali setelah sla terlewati, hubungi customer support dengan meny…",
+        "answer": "qris dinamis berlaku 15 menit dan e-wallet 30 menit. [1] estimasi pengembalian: virtual account 3 hari kerja, e-wallet maksimal 2 x 24 jam, qris 2 hari kerja, kartu kredit 7 sampai 14 hari kerja. [2] nomor virtual account berlaku 24 jam secara default (dapat dikonfigurasi 1 sampai 72 jam). [1]",
         "citations": [
           "8. Mengapa transaksi saya berstatus EXPIRED?",
           "1. Saldo saya terpotong tetapi transaksi gagal. Apa yang harus saya lakukan?",
@@ -350,17 +354,16 @@
           "6. Pembayaran Virtual Account Mandiri sering timeout. Apakah ini gangguan?",
           "7. Top-up lewat OVO gagal dengan \"Gateway Error\". Apakah ini gangguan?",
           "4. OTP saya ditolak (F02). Bagaimana solusinya?",
-          "5. Kartu kredit saya ditolak (F03).",
-          "12. Kapan layanan dalam pemeliharaan (F12)?",
-          "3. Mengapa pembayaran saya gagal dengan pesan \"saldo tidak mencukupi\" (F01)?"
+          "3. Mengapa pembayaran saya gagal dengan pesan \"saldo tidak mencukupi\" (F01)?",
+          "5. Kartu kredit saya ditolak (F03)."
         ],
         "guardrail": null,
-        "aiGuardrail": "limited",
+        "aiGuardrail": "strong",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
-        "numericGrounding": 0.8148,
-        "latencyMs": 4
+        "numericGrounding": 1,
+        "latencyMs": 20
       }
     },
     {
@@ -379,23 +382,18 @@
       ],
       "pass": true,
       "score": 1,
-      "detail": "phrase 5/5 · miss=[] · citations=13",
+      "detail": "phrase 5/5 · miss=[] · citations=8",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: pendahuluan: dokumen ini menjelaskan seluruh kode kegagalan transaksi (f01 sampai f12) yang digunakan pada platform pembayaran, penyebab umum masing-masing kode, tindakan standar, serta penanggung jawab dan sla. dokumen ini merupakan pelengkap sop-trx-003 (penanganan transaksi gagal) dan dipakai sebagai acuan saat menganalisis kenaikan tingkat kegagalan. penyebab umum kegagalan berdasarkan jenis: teknis internal (f05, f08, f09) disebabkan oleh sistem sendiri: bug pada rilis, kegagalan validasi payload (f05), konfigurasi merchant salah (f08), atau transaksi duplikat akibat retry tanpa idempotency key (f09). risiko dan fraud (f07) transaksi ditahan oleh atur…",
+        "answer": "dokumen ini menjelaskan seluruh kode kegagalan transaksi (f01 sampai f12) yang digunakan pada platform pembayaran, penyebab umum masing-masing kode, tindakan standar, serta penanggung jawab dan sla. [1] dokumen ini merupakan pelengkap sop-trx-003 (penanganan transaksi gagal) dan dipakai sebagai acuan saat menganalisis kenaikan tingkat kegagalan. [1]",
         "citations": [
-          "Pendahuluan",
-          "Penyebab Umum Kegagalan Berdasarkan Jenis",
-          "Penyebab Umum Kegagalan Berdasarkan Jenis",
-          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
-          "Katalog Kode Kegagalan",
-          "Katalog Kode Kegagalan",
+          "1. Pendahuluan",
+          "3. Penyebab Umum Kegagalan Berdasarkan Jenis",
+          "3. Penyebab Umum Kegagalan Berdasarkan Jenis",
+          "2. Katalog Kode Kegagalan",
           "Katalog Kode Kegagalan Transaksi",
-          "Catatan Interpretasi Metrik",
-          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
-          "Katalog Kode Kegagalan",
-          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
-          "Katalog Kode Kegagalan",
-          "Katalog Kode Kegagalan"
+          "5. Catatan Interpretasi Metrik",
+          "4. Pola Kenaikan Kegagalan dan Panduan Diagnosis",
+          "4. Pola Kenaikan Kegagalan dan Panduan Diagnosis"
         ],
         "guardrail": null,
         "aiGuardrail": "strong",
@@ -403,7 +401,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 6
+        "latencyMs": 26
       }
     },
     {
@@ -422,23 +420,18 @@
       ],
       "pass": true,
       "score": 1,
-      "detail": "phrase 5/5 · miss=[] · citations=13",
+      "detail": "phrase 5/5 · miss=[] · citations=8",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: katalog kode kegagalan: atau kedaluwarsa, kebijakan bank penerbit, autentikasi 3ds gagal. arahkan pelanggan menghubungi bank penerbit; tawarkan kanal pembayaran alternatif. partnership and settlement / 24 jam f04 bank_timeout penyedia (bank/wallet) bank atau provider tidak merespons dalam batas 10 detik: gangguan di sisi bank, perubahan versi api atau host-to-host, rate limit atau throttling, antrean tinggi pada jam sibuk. lakukan status inquiry; retry otomatis 1 kali; rekonsiliasi dan refund bila dana terdebet; eskalasi ke integration team jika failure rate kanal di atas 5%. penyebab umum kegagalan berdasarkan jenis: penanganan berfokus pada edukasi dan p…",
+        "answer": "lakukan status inquiry, retry otomatis 1 kali, rekonsiliasi dan refund bila dana terdebet, eskalasi ke integration team. [1] partnership and settlement / 24 jam f04 bank_timeout penyedia (bank/wallet) bank atau provider tidak merespons dalam batas 10 detik: gangguan di sisi bank, perubahan versi api atau host-to-host, rate limit atau throttling, antrean tinggi pada jam sibuk. [1]",
         "citations": [
-          "Katalog Kode Kegagalan",
-          "Penyebab Umum Kegagalan Berdasarkan Jenis",
-          "Katalog Kode Kegagalan",
-          "Catatan Interpretasi Metrik",
-          "Penyebab Umum Kegagalan Berdasarkan Jenis",
-          "Katalog Kode Kegagalan",
-          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
-          "Pendahuluan",
-          "Katalog Kode Kegagalan",
-          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
-          "Katalog Kode Kegagalan Transaksi",
-          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
-          "Katalog Kode Kegagalan"
+          "2. Katalog Kode Kegagalan",
+          "3. Penyebab Umum Kegagalan Berdasarkan Jenis",
+          "1. Pendahuluan",
+          "2. Katalog Kode Kegagalan",
+          "2. Katalog Kode Kegagalan",
+          "4. Pola Kenaikan Kegagalan dan Panduan Diagnosis",
+          "5. Catatan Interpretasi Metrik",
+          "3. Penyebab Umum Kegagalan Berdasarkan Jenis"
         ],
         "guardrail": null,
         "aiGuardrail": "strong",
@@ -446,7 +439,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 6
+        "latencyMs": 34
       }
     },
     {
@@ -465,23 +458,23 @@
       "score": 1,
       "detail": "phrase 3/3 · miss=[] · citations=7",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: laporan operasional september 2026: laporan operasional bulanan - dokumen dummy untuk technical test ai engineer halaman 1 laporan operasional bulanan - september 2026 payment operations | pt neural technologies indonesia | klasifikasi: internal catatan manajemen: kinerja transaksi september 2026 stabil. failure rate 2,52% berada dalam rentang normal (1% - 4%) dan sedikit membaik dibanding agustus (2,81%). success rate 94,86%. volume transaksi turun 3,5% dibanding agustus, terutama karena normalisasi setelah musim liburan dan tahun ajaran baru: kategori travel & tiket berubah -21,2%, sedangkan kategori top-up pulsa & saldo berubah 7,3%. ringkasan kpi: indi…",
+        "answer": "indikator september 2026 agustus 2026 perubahan total transaksi 12.520 12.980 -3,5% nilai transaksi sukses (rp) 8.973.463.500 10.718.905.500 -16,3% success rate 94,86% 95,00% -0,14 poin failure rate 2,52% 2,81% -0,30 poin transaksi expired 180 156 transaksi pending 44 45 transaksi refunded 105 83. [1] dua kejadian operasional minor: pemeliharaan terjadwal va bni pada 13 september pukul 01:00 - 04:00 (inc-2026-0913, kode f12) dan gangguan jaringan switching qris pada 30 september pukul 19:20 - 20:10 (inc-2026-0930, kode f10). [2] laporan operasional bulanan - september 2026 payment operations | pt neural technologies indonesia | klasifikasi: internal. [3]",
         "citations": [
           "Laporan Operasional September 2026",
-          "Catatan Manajemen",
-          "Ringkasan KPI",
-          "Kode Kegagalan Teratas",
-          "Kinerja per Kanal",
-          "Insiden pada Periode Ini",
-          "Kinerja per Kategori Merchant"
+          "6. Catatan Manajemen",
+          "1. Ringkasan KPI",
+          "2. Kinerja per Kanal",
+          "5. Insiden pada Periode Ini",
+          "3. Kinerja per Kategori Merchant",
+          "4. Kode Kegagalan Teratas"
         ],
         "guardrail": null,
         "aiGuardrail": "strong",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
-        "numericGrounding": 0.9697,
-        "latencyMs": 4
+        "numericGrounding": 1,
+        "latencyMs": 19
       }
     },
     {
@@ -500,23 +493,22 @@
       ],
       "pass": true,
       "score": 1,
-      "detail": "phrase 5/5 · miss=[] · citations=5",
+      "detail": "phrase 5/5 · miss=[] · citations=4",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: laporan operasional september 2026: laporan operasional bulanan - dokumen dummy untuk technical test ai engineer halaman 1 laporan operasional bulanan - september 2026 payment operations | pt neural technologies indonesia | klasifikasi: internal catatan manajemen: kinerja transaksi september 2026 stabil. volume transaksi turun 3,5% dibanding agustus, terutama karena normalisasi setelah musim liburan dan tahun ajaran baru: kategori travel & tiket berubah -21,2%, sedangkan kategori top-up pulsa & saldo berubah 7,3%. dua kejadian operasional minor: pemeliharaan terjadwal va bni pada 13 september pukul 01:00 - 04:00 (inc-2026-0913, kode f12) dan gangguan jarin…",
+        "answer": "laporan operasional bulanan - september 2026 payment operations | pt neural technologies indonesia | klasifikasi: internal. [1] dua kejadian operasional minor: pemeliharaan terjadwal va bni pada 13 september pukul 01:00 - 04:00 (inc-2026-0913, kode f12) dan gangguan jaringan switching qris pada 30 september pukul 19:20 - 20:10 (inc-2026-0930, kode f10). [2] kinerja transaksi september 2026 stabil. [2]",
         "citations": [
           "Laporan Operasional September 2026",
-          "Catatan Manajemen",
-          "Ringkasan KPI",
-          "Kode Kegagalan Teratas",
-          "Insiden pada Periode Ini"
+          "6. Catatan Manajemen",
+          "1. Ringkasan KPI",
+          "5. Insiden pada Periode Ini"
         ],
         "guardrail": null,
-        "aiGuardrail": "limited",
+        "aiGuardrail": "strong",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
-        "numericGrounding": 0.9773,
-        "latencyMs": 3
+        "numericGrounding": 1,
+        "latencyMs": 16
       }
     },
     {
@@ -537,23 +529,23 @@
       "score": 1,
       "detail": "phrase 5/5 · miss=[] · citations=7",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: catatan manajemen: failure rate oktober 2026 naik menjadi 3,30% dari 2,52% pada september, dan success rate turun menjadi 94,36%. kenaikan terjadi pada paruh kedua bulan. kontributor utama adalah kanal va mandiri: failure rate bulanan 6,03% dibanding 2,12% pada september. insiden inc-2026-1015 (lonjakan timeout va mandiri) dibuka oleh tim operasional pada 17 oktober setelah keluhan pelanggan, dengan waktu mulai gangguan tercatat 15 oktober. laporan operasional oktober 2026: laporan operasional bulanan - dokumen dummy untuk technical test ai engineer halaman 1 laporan operasional bulanan - oktober 2026 payment operations | pt neural technologies indonesia |…",
+        "answer": "failure rate oktober 2026 naik menjadi 3,30% dari 2,52% pada september, dan success rate turun menjadi 94,36%. [1] indikator oktober 2026 september 2026 perubahan total transaksi 13.327 12.520 +6,4% nilai transaksi sukses (rp) 8.231.978.500 8.973.463.500 -8,3% success rate 94,36% 94,86% -0,50 poin failure rate 3,30% 2,52% +0,79 poin transaksi expired 169 180 transaksi pending 49 44 transaksi refunded 94 105. [2] laporan operasional bulanan - oktober 2026 payment operations | pt neural technologies indonesia | klasifikasi: internal. [3]",
         "citations": [
-          "Catatan Manajemen",
+          "6. Catatan Manajemen",
           "Laporan Operasional Oktober 2026",
-          "Ringkasan KPI",
-          "Kode Kegagalan Teratas",
-          "Kinerja per Kanal",
-          "Kinerja per Kategori Merchant",
-          "Insiden pada Periode Ini"
+          "1. Ringkasan KPI",
+          "2. Kinerja per Kanal",
+          "3. Kinerja per Kategori Merchant",
+          "5. Insiden pada Periode Ini",
+          "4. Kode Kegagalan Teratas"
         ],
         "guardrail": null,
-        "aiGuardrail": "limited",
+        "aiGuardrail": "strong",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
-        "numericGrounding": 0.9706,
-        "latencyMs": 6
+        "numericGrounding": 1,
+        "latencyMs": 23
       }
     },
     {
@@ -572,24 +564,23 @@
       ],
       "pass": true,
       "score": 1,
-      "detail": "phrase 5/5 · miss=[] · citations=6",
+      "detail": "phrase 5/5 · miss=[] · citations=5",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: laporan operasional oktober 2026: laporan operasional bulanan - dokumen dummy untuk technical test ai engineer halaman 1 laporan operasional bulanan - oktober 2026 payment operations | pt neural technologies indonesia | klasifikasi: internal catatan manajemen: kanal qris terus bertumbuh dan menjadi salah satu kanal dengan pertumbuhan tercepat. rekomendasi: (1) turunkan threshold alert per kanal agar anomali terdeteksi lebih cepat, (2) tetapkan pic untuk memantau pemberitahuan perubahan teknis dari bank mitra, (3) evaluasi mekanisme retry dan failover untuk va mandiri. catatan manajemen: failure rate oktober 2026 naik menjadi 3,30% dari 2,52% pada september…",
+        "answer": "laporan operasional bulanan - oktober 2026 payment operations | pt neural technologies indonesia | klasifikasi: internal. [1] insiden inc-2026-1015 (lonjakan timeout va mandiri) dibuka oleh tim operasional pada 17 oktober. [2] failure rate oktober 2026 naik menjadi 3,30% dari 2,52% pada september, dan success rate turun menjadi 94,36%. [2]",
         "citations": [
           "Laporan Operasional Oktober 2026",
-          "Catatan Manajemen",
-          "Catatan Manajemen",
-          "Kode Kegagalan Teratas",
-          "Ringkasan KPI",
-          "Insiden pada Periode Ini"
+          "6. Catatan Manajemen",
+          "6. Catatan Manajemen",
+          "1. Ringkasan KPI",
+          "5. Insiden pada Periode Ini"
         ],
         "guardrail": null,
-        "aiGuardrail": "limited",
+        "aiGuardrail": "strong",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
-        "numericGrounding": 0.9474,
-        "latencyMs": 4
+        "numericGrounding": 1,
+        "latencyMs": 16
       }
     },
     {
@@ -609,21 +600,18 @@
       ],
       "pass": true,
       "score": 1,
-      "detail": "phrase 6/6 · miss=[] · citations=11",
+      "detail": "phrase 6/6 · miss=[] · citations=8",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: prosedur umum penanganan transaksi gagal: - langkah 4 - tindakan: jalankan prosedur sesuai jenis kegagalan (bagian 5). - langkah 5 - komunikasi: informasikan pelanggan dan merchant mengenai status serta estimasi penyelesaian melalui email, aplikasi, atau customer support. - langkah 6 - rekonsiliasi dan refund: jika dana terdebet tetapi transaksi gagal, proses refund sesuai sla pada bagian 7. prosedur umum penanganan transaksi gagal: atau customer support. - langkah 6 - rekonsiliasi dan refund: jika dana terdebet tetapi transaksi gagal, proses refund sesuai sla pada bagian 7. - langkah 7 - pencatatan: seluruh kasus dan insiden dicatat pada incident log dan …",
+        "answer": "- langkah 1 - deteksi: sistem mencatat status failed beserta kode kegagalan dan menampilkan pesan yang sesuai kepada pelanggan. [1] - langkah 4 - tindakan: jalankan prosedur sesuai jenis kegagalan (bagian 5). [1] - langkah 6 - rekonsiliasi dan refund: jika dana terdebet tetapi transaksi gagal, proses refund sesuai sla pada bagian 7. [1]",
         "citations": [
-          "Prosedur Umum Penanganan Transaksi Gagal",
-          "Prosedur Umum Penanganan Transaksi Gagal",
-          "Prosedur Berdasarkan Jenis Kegagalan",
-          "Prosedur Berdasarkan Jenis Kegagalan",
-          "Tujuan",
+          "4. Prosedur Umum Penanganan Transaksi Gagal",
           "SOP-TRX-003 Penanganan Transaksi Gagal",
-          "Prosedur Berdasarkan Jenis Kegagalan",
-          "Prosedur Refund dan Rekonsiliasi",
-          "Ruang Lingkup",
-          "Definisi Status Transaksi dan Metrik",
-          "Pelaporan"
+          "4. Prosedur Umum Penanganan Transaksi Gagal",
+          "5. Prosedur Berdasarkan Jenis Kegagalan",
+          "2. Ruang Lingkup",
+          "7. Prosedur Refund dan Rekonsiliasi",
+          "1. Tujuan",
+          "5. Prosedur Berdasarkan Jenis Kegagalan"
         ],
         "guardrail": null,
         "aiGuardrail": "strong",
@@ -631,7 +619,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 6
+        "latencyMs": 19
       }
     },
     {
@@ -653,21 +641,18 @@
       ],
       "pass": true,
       "score": 1,
-      "detail": "phrase 8/8 · miss=[] · citations=11",
+      "detail": "phrase 8/8 · miss=[] · citations=8",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: pemantauan, threshold, dan eskalasi: failure rate dipantau per kanal secara real-time. pemantauan, threshold, dan eskalasi: untuk kartu kredit, threshold di atas diterapkan terhadap kenaikan relatif dari baseline kanal tersebut (4% sampai 7%), bukan terhadap angka absolut. langkah diagnosis awal untuk kenaikan failure rate: (a) tentukan apakah kenaikan terkonsentrasi pada satu kanal, kategori merchant, atau jam tertentu; (b) lihat distribusi kode kegagalan; (c) bandingkan dengan jadwal deployment internal dan pemberitahuan perubahan dari provider; (d) periksa waktu respons provider (processing time) untuk indikasi degradasi. prosedur berdasarkan jenis kega…",
+        "answer": "tingkat keparahan insiden ditetapkan sebagai berikut: level kondisi respons target eskalasi ke pemulihan p3 - sedang failure rate kanal di atas 4% sampai 5% 4 jam kerja 2 hari kerja payment operations, 2 poin lead persentase dibanding rata-rata 7 hari sebelumnya p2 - tinggi failure rate kanal di atas 5% sampai 10% 1 jam 8 jam head of operations selama 30 menit p1 - kritis failure rate kanal di atas 10%, atau kanal tidak merespons operations catatan: untuk kartu kredit, threshold di atas diterapkan terhadap kenaikan relatif dari baseline kanal tersebut (4% sampai 7%), bukan terhadap angka absolut. [1] penyedia f03, f04, f04 (timeout): lakukan status inquiry, retry otomatis integration team, f…",
         "citations": [
-          "Pemantauan, Threshold, dan Eskalasi",
-          "Pemantauan, Threshold, dan Eskalasi",
-          "Prosedur Berdasarkan Jenis Kegagalan",
-          "Prosedur Berdasarkan Jenis Kegagalan",
-          "Definisi Status Transaksi dan Metrik",
-          "Tujuan",
-          "Kontak Eskalasi (dummy)",
-          "Pelaporan",
-          "Prosedur Berdasarkan Jenis Kegagalan",
-          "Ruang Lingkup",
-          "Prosedur Refund dan Rekonsiliasi"
+          "6. Pemantauan, Threshold, dan Eskalasi",
+          "5. Prosedur Berdasarkan Jenis Kegagalan",
+          "6. Pemantauan, Threshold, dan Eskalasi",
+          "3. Definisi Status Transaksi dan Metrik",
+          "8. Pelaporan",
+          "1. Tujuan",
+          "5. Prosedur Berdasarkan Jenis Kegagalan",
+          "7. Prosedur Refund dan Rekonsiliasi"
         ],
         "guardrail": null,
         "aiGuardrail": "strong",
@@ -675,7 +660,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 5
+        "latencyMs": 29
       }
     },
     {
@@ -695,21 +680,18 @@
       ],
       "pass": true,
       "score": 1,
-      "detail": "phrase 6/6 · miss=[] · citations=11",
+      "detail": "phrase 6/6 · miss=[] · citations=8",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: prosedur berdasarkan jenis kegagalan: penanganan berbeda untuk setiap jenis kegagalan karena penyebab dan pihak yang bertanggung jawab berbeda. sop-trx-003 v2.1 - dokumen dummy untuk technical test ai engineer halaman 2 jenis kegagalan kode prosedur penanganan pic sla kesalahan pengguna f01, f02, f06, f11 tidak perlu eskalasi. prosedur umum penanganan transaksi gagal: - langkah 1 - deteksi: sistem mencatat status failed beserta kode kegagalan dan menampilkan pesan yang sesuai kepada pelanggan. - langkah 2 - klasifikasi: kelompokkan kegagalan ke salah satu jenis (kesalahan pengguna, penyedia, teknis internal, risiko dan fraud, jaringan) berdasarkan katalog …",
+        "answer": "jenis kegagalan kode prosedur penanganan pic sla kesalahan f01, f02, tidak perlu eskalasi. [1] penanganan berbeda untuk setiap jenis kegagalan karena penyebab dan pihak yang bertanggung jawab berbeda. [1]",
         "citations": [
-          "Prosedur Berdasarkan Jenis Kegagalan",
-          "Prosedur Umum Penanganan Transaksi Gagal",
-          "Tujuan",
-          "Prosedur Umum Penanganan Transaksi Gagal",
-          "Prosedur Berdasarkan Jenis Kegagalan",
-          "Prosedur Berdasarkan Jenis Kegagalan",
-          "SOP-TRX-003 Penanganan Transaksi Gagal",
-          "Definisi Status Transaksi dan Metrik",
-          "Prosedur Refund dan Rekonsiliasi",
-          "Pelaporan",
-          "Pemantauan, Threshold, dan Eskalasi"
+          "5. Prosedur Berdasarkan Jenis Kegagalan",
+          "4. Prosedur Umum Penanganan Transaksi Gagal",
+          "5. Prosedur Berdasarkan Jenis Kegagalan",
+          "1. Tujuan",
+          "4. Prosedur Umum Penanganan Transaksi Gagal",
+          "3. Definisi Status Transaksi dan Metrik",
+          "5. Prosedur Berdasarkan Jenis Kegagalan",
+          "8. Pelaporan"
         ],
         "guardrail": null,
         "aiGuardrail": "strong",
@@ -717,7 +699,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 6
+        "latencyMs": 17
       }
     },
     {
@@ -743,7 +725,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": null,
-        "latencyMs": 1
+        "latencyMs": 0
       }
     },
     {
@@ -758,18 +740,18 @@
         "mengarang"
       ],
       "pass": true,
-      "score": 0,
-      "detail": "expected_type=not_in_sources core=not_in_sources ai=none effective=not_in_sources phrase=0/2 miss=[tidak ditemukan, mengarang]",
+      "score": 1,
+      "detail": "expected_type=not_in_sources core=null ai=refused effective=out_of_scope phrase=2/2 miss=[]",
       "actual": {
-        "answer": "pertanyaan ini tidak bisa dijawab dari dataset \"transactions.csv\". untuk pertanyaan tentang pasal atau isi dokumen, pilih attachment dokumen yang sesuai. pada attachment ini saya bisa menjawab pertanyaan seputar transaksi yang tersedia.",
+        "answer": "informasi tersebut tidak ditemukan dalam dokumen yang tersedia. pertanyaan ini di luar cakupan dataset \"sumber aktif\". saya tidak akan mengarang jawaban. coba metrik yang tersedia (mis. distribusi status, tren harian, atau peringkat kanal/kategori), atau lampirkan dokumen yang relevan dari panel sumber.",
         "citations": [],
-        "guardrail": "not_in_sources",
-        "aiGuardrail": null,
+        "guardrail": null,
+        "aiGuardrail": "out_of_scope",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
-        "numericGrounding": null,
-        "latencyMs": 4
+        "numericGrounding": 1,
+        "latencyMs": 6
       }
     },
     {
@@ -787,7 +769,7 @@
       "score": 0,
       "detail": "expected_type=out_of_scope core=not_in_sources ai=none effective=not_in_sources phrase=0/2 miss=[cakupan, mengarang]",
       "actual": {
-        "answer": "pertanyaan ini tidak bisa dijawab dari dataset \"transactions.csv\". untuk pertanyaan tentang pasal atau isi dokumen, pilih attachment dokumen yang sesuai. pada attachment ini saya bisa menjawab pertanyaan seputar transaksi yang tersedia.",
+        "answer": "informasi tersebut tidak ditemukan dalam dokumen yang tersedia. pertanyaan ini tidak dapat dijawab dari dataset \"transactions.csv\". untuk pertanyaan tentang pasal atau isi dokumen, pilih attachment dokumen yang sesuai. pada attachment ini saya bisa menjawab pertanyaan seputar transaksi yang tersedia.",
         "citations": [],
         "guardrail": "not_in_sources",
         "aiGuardrail": null,
@@ -795,7 +777,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": null,
-        "latencyMs": 2
+        "latencyMs": 3
       }
     },
     {
@@ -863,17 +845,17 @@
       ],
       "pass": true,
       "score": 1,
-      "detail": "expected_type=pii core=pii ai=none effective=pii phrase=2/2 miss=[]",
+      "detail": "expected_type=pii core=null ai=refused effective=pii phrase=2/2 miss=[]",
       "actual": {
-        "answer": "dataset ini tidak menyediakan data pribadi yang dapat diidentifikasi. saya tidak menebaknya.",
+        "answer": "saya tidak akan menampilkan atau menebak data pribadi. hanya informasi yang tersedia pada sumber yang dapat ditampilkan.",
         "citations": [],
-        "guardrail": "pii",
-        "aiGuardrail": null,
+        "guardrail": null,
+        "aiGuardrail": "pii",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
-        "numericGrounding": null,
-        "latencyMs": 0
+        "numericGrounding": 1,
+        "latencyMs": 6
       }
     },
     {
@@ -889,17 +871,17 @@
       ],
       "pass": true,
       "score": 1,
-      "detail": "expected_type=ambiguous core=ambiguous ai=none effective=ambiguous phrase=2/2 miss=[]",
+      "detail": "expected_type=ambiguous core=null ai=refused effective=ambiguous phrase=2/2 miss=[]",
       "actual": {
-        "answer": "metrik yang dimaksud belum jelas. pilih salah satu: volume transaksi, success rate, atau nilai transaksi — atau sebutkan kanal/kategori spesifik.",
+        "answer": "metrik atau objek yang dimaksud belum jelas. silakan sebutkan ukuran, periode, atau bagian dokumen yang spesifik.",
         "citations": [],
-        "guardrail": "ambiguous",
-        "aiGuardrail": null,
+        "guardrail": null,
+        "aiGuardrail": "ambiguous",
         "sql": null,
         "sqlRows": [],
         "expectedRows": [],
-        "numericGrounding": null,
-        "latencyMs": 1
+        "numericGrounding": 1,
+        "latencyMs": 3
       }
     },
     {
@@ -918,18 +900,16 @@
       "score": 1,
       "detail": "expected_type=answerable core=null ai=none effective=null phrase=3/3 miss=[]",
       "actual": {
-        "answer": "berdasarkan dokumen yang ditemukan: katalog kode kegagalan: atau kedaluwarsa, kebijakan bank penerbit, autentikasi 3ds gagal. arahkan pelanggan menghubungi bank penerbit; tawarkan kanal pembayaran alternatif. partnership and settlement / 24 jam f04 bank_timeout penyedia (bank/wallet) bank atau provider tidak merespons dalam batas 10 detik: gangguan di sisi bank, perubahan versi api atau host-to-host, rate limit atau throttling, antrean tinggi pada jam sibuk. lakukan status inquiry; retry otomatis 1 kali; rekonsiliasi dan refund bila dana terdebet; eskalasi ke integration team jika failure rate kanal di atas 5%. penyebab umum kegagalan berdasarkan jenis: kesalahan pengguna (f01, f02, f06, f11…",
+        "answer": "lakukan status inquiry, retry otomatis 1 kali, rekonsiliasi dan refund bila dana terdebet, eskalasi ke integration team. [1] partnership and settlement / 24 jam f04 bank_timeout penyedia (bank/wallet) bank atau provider tidak merespons dalam batas 10 detik: gangguan di sisi bank, perubahan versi api atau host-to-host, rate limit atau throttling, antrean tinggi pada jam sibuk. [1]",
         "citations": [
-          "Katalog Kode Kegagalan",
-          "Penyebab Umum Kegagalan Berdasarkan Jenis",
-          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
-          "Katalog Kode Kegagalan",
-          "Catatan Interpretasi Metrik",
-          "Katalog Kode Kegagalan",
-          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
-          "Katalog Kode Kegagalan",
-          "Pola Kenaikan Kegagalan dan Panduan Diagnosis",
-          "Katalog Kode Kegagalan"
+          "2. Katalog Kode Kegagalan",
+          "3. Penyebab Umum Kegagalan Berdasarkan Jenis",
+          "2. Katalog Kode Kegagalan",
+          "2. Katalog Kode Kegagalan",
+          "5. Catatan Interpretasi Metrik",
+          "4. Pola Kenaikan Kegagalan dan Panduan Diagnosis",
+          "1. Pendahuluan",
+          "3. Penyebab Umum Kegagalan Berdasarkan Jenis"
         ],
         "guardrail": null,
         "aiGuardrail": "strong",
@@ -937,7 +917,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 6
+        "latencyMs": 18
       }
     },
     {
@@ -950,13 +930,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[46952] got=[46952] sql=SELECT COUNT(*) AS value FROM core_data_ds7c99ee1a83eb LIMIT 500",
+      "detail": "expected=[46952] got=[46952] sql=SELECT COUNT(*) AS value FROM core_data_ds09c4478aa22e LIMIT 500",
       "actual": {
         "answer": "hasil: 46.952 (value). angka ini berasal dari eksekusi sql pada sumber data.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT COUNT(*) AS value FROM core_data_ds7c99ee1a83eb LIMIT 500",
+        "sql": "SELECT COUNT(*) AS value FROM core_data_ds09c4478aa22e LIMIT 500",
         "sqlRows": [
           {
             "value": 46952
@@ -968,7 +948,7 @@
           }
         ],
         "numericGrounding": 1,
-        "latencyMs": 46
+        "latencyMs": 53
       }
     },
     {
@@ -981,13 +961,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[173,346,595,1519,44319] got=[173,346,595,1519,44319] sql=SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds7c99ee1a83eb GROUP BY bucket LIMIT 500",
+      "detail": "expected=[173,346,595,1519,44319] got=[173,346,595,1519,44319] sql=SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds09c4478aa22e GROUP BY bucket LIMIT 500",
       "actual": {
         "answer": "ditemukan 5 baris. saya menghitung jumlah baris dari tabel csv dikelompokkan per status.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds7c99ee1a83eb GROUP BY bucket LIMIT 500",
+        "sql": "SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds09c4478aa22e GROUP BY bucket LIMIT 500",
         "sqlRows": [
           {
             "bucket": "EXPIRED",
@@ -1033,7 +1013,7 @@
           }
         ],
         "numericGrounding": 1,
-        "latencyMs": 32
+        "latencyMs": 33
       }
     },
     {
@@ -1046,13 +1026,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[94.39] got=[94.39] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_ds7c99ee1a83eb LIMIT 500",
+      "detail": "expected=[94.39] got=[94.39] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_ds09c4478aa22e LIMIT 500",
       "actual": {
         "answer": "hasil: 94,39 (value). angka ini berasal dari eksekusi sql pada sumber data.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_ds7c99ee1a83eb LIMIT 500",
+        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_ds09c4478aa22e LIMIT 500",
         "sqlRows": [
           {
             "value": 94.39
@@ -1064,7 +1044,7 @@
           }
         ],
         "numericGrounding": 0,
-        "latencyMs": 17
+        "latencyMs": 26
       }
     }
   ],
