@@ -1,0 +1,18 @@
+# Build context = root repo. Dockerfile hanya menyalin .next/standalone dan
+# .next/static, jadi sisanya tidak perlu dikirim ke daemon (menghemat ~1,4 GB
+# transfer dan mempercepat build).
+node_modules
+.next/cache
+.next/trace
+data/workspace
+data/models
+data/backups
+data/fixtures
+data/seed/documents/*.gt.txt
+data/generated
+.git
+.env
+.env.*
+!.env.example
+deploy/ocr/__pycache__
+*.log
