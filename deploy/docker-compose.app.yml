@@ -48,6 +48,14 @@ services:
       PORT: "3000"
       # Batasi heap V8: tanpa ini Node tumbuh sampai OOM killer turun tangan.
       NODE_OPTIONS: "--max-old-space-size=512"
+      # PENTING: .env.local berisi path HOST (/root/TanyaData/data) yang tidak
+      # ada di dalam container. Semua path data harus diarahkan ke /app/data,
+      # tempat volume di bawah dan salinan postbuild berada. Tanpa override ini
+      # /api/meta gagal dengan "Dataset seed tidak tersedia".
+      DATA_DIR: /app/data
+      WORKSPACE_DIR: /app/data/workspace
+      BACKUP_DIR: /app/data/backups
+      EMBEDDING_CACHE_DIR: /app/data/models
       # Nama service/container Qdrant pada network bersama, bukan loopback.
       QDRANT_URL: http://tanyadata-qdrant:6333
       RETRIEVAL_MODE: qdrant
