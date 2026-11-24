@@ -34,7 +34,13 @@ const ALWAYS_PURGE = ['data/fixtures', 'data/eval', 'data/corpus_sections', 'dat
 function removeIfExists(target) {
   if (!fs.existsSync(target)) return;
   fs.rmSync(target, { recursive: true, force: true });
-  console.warn(`copy-standalone: PURGE ${path.relative(ROOT, target)} (SEED_PROFILE=none)`);
+  console.warn(`copy-standalone: PURGE ${path.relative(ROOT, target)} (SEED_PROFILE=${profile})`);
+}
+
+/** Hapus tanpa log: dipakai untuk membuang salinan artefak terlarang di tujuan. */
+function removeQuiet(target) {
+  if (!fs.existsSync(target)) return;
+  fs.rmSync(target, { recursive: true, force: true });
 }
 
 /**
@@ -84,12 +90,17 @@ function assertNoForbiddenArtifacts(checkSeed) {
 function copyDir(src, dst) {
   fs.mkdirSync(dst, { recursive: true });
   for (const e of fs.readdirSync(src, { withFileTypes: true })) {
+    const s = path.join(src, e.name);
+    const d = path.join(dst, e.name);
     if (isExcluded(e.name)) {
+      // Jangan hanya MELEWATI. Output file tracing Next sudah menyalin berkas
+      // ini ke .next/standalone SEBELUM postbuild berjalan, jadi salinannya
+      // harus dibuang di sini. Tanpa ini, build SEED_PROFILE=demo gagal di
+      // assertNoForbiddenArtifacts (mis. data/seed/documents/*.gt.txt).
+      removeQuiet(d);
       console.warn(`copy-standalone: SKIP excluded ${path.join(src, e.name)}`);
       continue;
     }
-    const s = path.join(src, e.name);
-    const d = path.join(dst, e.name);
     if (e.isDirectory()) copyDir(s, d);
     else fs.copyFileSync(s, d);
   }
