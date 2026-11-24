@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { MetaResponse, SettingsResponse } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
+import { apiUrl } from '@/lib/ui/api-base';
 import { useI18n } from '@/lib/ui/i18n-provider';
 import { formatDateId, formatDateRangeId, formatNumber } from '@/lib/ui/format';
 import { AboutPanel } from '@/components/settings/about-panel';
@@ -205,7 +206,7 @@ export default function SettingsPage() {
     if (next === lang) return;
     setLang(next);
     try {
-      const response = await fetch('/api/settings', {
+      const response = await fetch(apiUrl('/api/settings'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lang: next }),
@@ -309,7 +310,7 @@ export default function SettingsPage() {
       if (datasetChanged) body.activeDatasetId = datasetId;
       if (sendRange) body.dateRange = { start, end, preset };
 
-      const response = await fetch('/api/settings', {
+      const response = await fetch(apiUrl('/api/settings'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

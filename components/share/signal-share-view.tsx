@@ -11,6 +11,7 @@ import {
   type ShareMessage,
   type ShareSnapshotView,
 } from '@/lib/ui/share-contract';
+import { apiUrl } from '@/lib/ui/api-base';
 import { PageHeading } from '@/components/signal/page-heading';
 import { SectionRule } from '@/components/signal/section-rule';
 import { StatusBadge } from '@/components/signal/status-badge';
@@ -456,7 +457,7 @@ export function SignalShareView({ id }: { id: string }) {
     const controller = new AbortController();
     setState('loading');
 
-    fetch(`/api/share/${encodeURIComponent(id)}`, { signal: controller.signal })
+    fetch(apiUrl(`/api/share/${encodeURIComponent(id)}`), { signal: controller.signal })
       .then(async (response) => {
         if (response.status === 404) return { kind: 'notfound' as const };
         if (response.status === 410) return { kind: 'expired' as const };

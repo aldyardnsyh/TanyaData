@@ -4,6 +4,7 @@ import { use } from 'react';
 import Link from 'next/link';
 import type { ReportDetailResponse } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
+import { apiUrl } from '@/lib/ui/api-base';
 import { Icon } from '@/components/ui/icons';
 import { PageHeading } from '@/components/signal/page-heading';
 import { StatusBadge } from '@/components/signal/status-badge';
@@ -23,9 +24,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           actions={
             <>
               <Link href="/reports" className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="arrow_back" className="text-[16px]" /> Kembali</Link>
-              <a href={`/api/reports/${id}/export?format=csv`} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="download" className="text-[16px]" /> Ekspor CSV</a>
-              <a href={`/api/reports/${id}/export?format=xlsx`} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="table_chart" className="text-[16px]" /> Ekspor XLSX</a>
-              <a href={`/api/reports/${id}/export?format=pdf`} download className="touch-44 inline-flex items-center gap-s2 rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring"><Icon name="picture_as_pdf" className="text-[16px]" /> Unduh PDF</a>
+              <a href={apiUrl(`/api/reports/${id}/export?format=csv`)} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="download" className="text-[16px]" /> Ekspor CSV</a>
+              <a href={apiUrl(`/api/reports/${id}/export?format=xlsx`)} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="table_chart" className="text-[16px]" /> Ekspor XLSX</a>
+              <a href={apiUrl(`/api/reports/${id}/export?format=pdf`)} download className="touch-44 inline-flex items-center gap-s2 rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring"><Icon name="picture_as_pdf" className="text-[16px]" /> Unduh PDF</a>
             </>
           }
         />

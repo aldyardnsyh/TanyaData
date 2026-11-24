@@ -13,6 +13,7 @@ import type {
   SourcesListResponse,
 } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
+import { apiUrl } from '@/lib/ui/api-base';
 import { formatNumber } from '@/lib/ui/format';
 import { SectionRule } from '@/components/signal/section-rule';
 import { BentoGrid, type BentoItem } from '@/components/signal/bento-grid';
@@ -126,7 +127,7 @@ export default function DataSourcesPage() {
     let cancelled = false;
     const tick = async () => {
       try {
-        const res = await fetch(`/api/sources/${processingSource.id}`);
+        const res = await fetch(apiUrl(`/api/sources/${processingSource.id}`));
         if (!res.ok) return;
         const json: SourceDetailResponse = await res.json();
         if (cancelled) return;
@@ -144,7 +145,7 @@ export default function DataSourcesPage() {
   const loadPreview = useCallback(async (id: string, limit: number) => {
     setPreviewId(id); setPreviewLoading(true); setPreviewError(null); setPreviewLimit(limit);
     try {
-      const [detailRes, previewRes] = await Promise.all([fetch(`/api/sources/${id}`), fetch(`/api/sources/${id}/preview?limit=${limit}`)]);
+      const [detailRes, previewRes] = await Promise.all([fetch(apiUrl(`/api/sources/${id}`)), fetch(apiUrl(`/api/sources/${id}/preview?limit=${limit}`))]);
       if (!detailRes.ok || !previewRes.ok) {
         const body = await (detailRes.ok ? previewRes : detailRes).json().catch(() => null);
         throw new Error(body?.error?.message ?? 'Pratinjau gagal dimuat.');
@@ -203,7 +204,7 @@ export default function DataSourcesPage() {
       const form = new FormData();
       form.append('file', file);
       form.append('kind', DATASET_EXTS.includes(ext) ? 'dataset' : 'document');
-      const res = await fetch('/api/sources', { method: 'POST', body: form });
+      const res = await fetch(apiUrl('/api/sources'), { method: 'POST', body: form });
       const body = await res.json().catch(() => null);
       if (!res.ok) {
         const code = (body?.error?.code ?? 'INTERNAL_ERROR') as ApiErrorCode;
@@ -219,7 +220,7 @@ export default function DataSourcesPage() {
 
   const reindex = async (source: SourceListItem) => {
     try {
-      const res = await fetch(`/api/sources/${source.id}/reindex`, { method: 'POST' });
+      const res = await fetch(apiUrl(`/api/sources/${source.id}/reindex`), { method: 'POST' });
       const body = await res.json().catch(() => null);
       if (!res.ok) {
         const code = (body?.error?.code ?? 'INTERNAL_ERROR') as ApiErrorCode;
@@ -238,7 +239,7 @@ export default function DataSourcesPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/sources/${deleteTarget.id}`, { method: 'DELETE' });
+      const res = await fetch(apiUrl(`/api/sources/${deleteTarget.id}`), { method: 'DELETE' });
       if (!res.ok && res.status !== 204) {
         const body = await res.json().catch(() => null);
         const code = (body?.error?.code ?? 'INTERNAL_ERROR') as ApiErrorCode;

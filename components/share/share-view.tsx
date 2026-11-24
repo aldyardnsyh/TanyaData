@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { normalizeShareSnapshot, type ShareSnapshotView } from '@/lib/ui/share-contract';
+import { apiUrl } from '@/lib/ui/api-base';
 import { ShareSection } from './share-section';
 import { ShareHeader } from './share-header';
 import { ShareSummary } from './share-summary';
@@ -29,7 +30,7 @@ export function ShareView({ id }: { id: string }) {
     const controller = new AbortController();
     setState('loading');
 
-    fetch(`/api/share/${encodeURIComponent(id)}`, { signal: controller.signal })
+    fetch(apiUrl(`/api/share/${encodeURIComponent(id)}`), { signal: controller.signal })
       .then(async (response) => {
         if (response.status === 404) return { kind: 'notfound' as const };
         if (response.status === 410) return { kind: 'expired' as const };

@@ -21,6 +21,7 @@ import type {
   SourcesListResponse,
 } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
+import { apiUrl } from '@/lib/ui/api-base';
 import { useI18n } from '@/lib/ui/i18n-provider';
 import { citationTargetPath } from '@/lib/ui/citation-target';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
@@ -85,7 +86,7 @@ export default function AssistantPage() {
     setDetailLoading(true);
     setDetailError(null);
     try {
-      const res = await fetch(`/api/conversations/${id}`);
+      const res = await fetch(apiUrl(`/api/conversations/${id}`));
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
@@ -121,7 +122,7 @@ export default function AssistantPage() {
     let convId = activeIdRef.current;
     if (!convId) {
       try {
-        const res = await fetch('/api/conversations', {
+        const res = await fetch(apiUrl('/api/conversations'), {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang }),
         });
         if (!res.ok) {
@@ -148,7 +149,7 @@ export default function AssistantPage() {
     const period = settings.data?.dateRange ? { start: settings.data.dateRange.start, end: settings.data.dateRange.end } : undefined;
 
     try {
-      const res = await fetch(`/api/conversations/${convId}/messages`, {
+      const res = await fetch(apiUrl(`/api/conversations/${convId}/messages`), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: text, lang, ...(period ? { period } : {}) }),
       });
@@ -182,7 +183,7 @@ export default function AssistantPage() {
 
   const newConversation = useCallback(async (): Promise<string | null> => {
     try {
-      const res = await fetch('/api/conversations', {
+      const res = await fetch(apiUrl('/api/conversations'), {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lang }),
       });
       if (!res.ok) {
@@ -212,7 +213,7 @@ export default function AssistantPage() {
       if (!convId) return;
     }
     try {
-      const res = await fetch('/api/attachments', {
+      const res = await fetch(apiUrl('/api/attachments'), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         // C2: dataset inti dokumen = id sumbernya sendiri (hasil unifikasi).
         body: JSON.stringify({ datasetId: sourceId, sourceId, name, activeInConversation: convId }),
@@ -250,7 +251,7 @@ export default function AssistantPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/conversations/${deleteTarget.id}`, { method: 'DELETE' });
+      const res = await fetch(apiUrl(`/api/conversations/${deleteTarget.id}`), { method: 'DELETE' });
       if (!res.ok && res.status !== 204) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
@@ -267,7 +268,7 @@ export default function AssistantPage() {
   /** Patch percakapan dari menu ⋯ sidebar: ganti nama / grup / semat. */
   const patchConversation = async (conv: ConversationSummary, patch: { title?: string; group?: string | null; pinned?: boolean }) => {
     try {
-      const res = await fetch(`/api/conversations/${conv.id}`, {
+      const res = await fetch(apiUrl(`/api/conversations/${conv.id}`), {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
@@ -298,7 +299,7 @@ export default function AssistantPage() {
     if (!activeId) return;
     setSavingReportId(msg.id);
     try {
-      const res = await fetch(`/api/conversations/${activeId}/messages/${msg.id}/report`, {
+      const res = await fetch(apiUrl(`/api/conversations/${activeId}/messages/${msg.id}/report`), {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}),
       });
       if (!res.ok) {
@@ -318,7 +319,7 @@ export default function AssistantPage() {
     setShareState('loading');
     setShareError(null);
     try {
-      const res = await fetch('/api/share', {
+      const res = await fetch(apiUrl('/api/share'), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId: activeId,
@@ -348,7 +349,7 @@ export default function AssistantPage() {
     const body = new FormData();
     body.append('file', file); body.append('kind', 'document');
     try {
-      const res = await fetch('/api/sources', { method: 'POST', body });
+      const res = await fetch(apiUrl('/api/sources'), { method: 'POST', body });
       if (!res.ok) {
         const json = await res.json().catch(() => null);
         throw new Error(json?.error?.message ?? `HTTP ${res.status}`);
@@ -370,7 +371,7 @@ export default function AssistantPage() {
     }
     try {
       for (const doc of docs) {
-        const res = await fetch('/api/attachments', {
+        const res = await fetch(apiUrl('/api/attachments'), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ datasetId: doc.id, sourceId: doc.id, name: doc.name, activeInConversation: convId }),
         });
@@ -400,7 +401,7 @@ export default function AssistantPage() {
     }
     try {
       for (const att of atts) {
-        const res = await fetch(`/api/attachments/${att.id}`, {
+        const res = await fetch(apiUrl(`/api/attachments/${att.id}`), {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ activeInConversation: null }),
         });

@@ -93,6 +93,8 @@ Microservice hidup on-demand, konkurensi = 1, lalu dimatikan — tidak resident 
 - **Fakta kode:** grep 34 pemanggilan `fetch('/api/...')` di `app/(workspace)/**`, `components/share/**`, dan `lib/ui/i18n-provider.tsx`. **Tidak ada satu pun** yang memakai `NEXT_PUBLIC_API_BASE_URL`. Ini harus diganti sebelum rilis (SP-4).
 - `NEXT_PUBLIC_*` tertanam saat **`next build`**, bukan saat runtime. Mengubahnya di Vercel wajib diikuti rebuild.
 
+**SP-4 selesai (P6):** helper `apiUrl()` dan konstanta `API_BASE` ada di `lib/ui/api-base.ts`; nilainya dibaca literal dari `NEXT_PUBLIC_API_BASE_URL` (trim, trailing slash dibuang, fallback `''`). Semua pemanggilan `/api` di frontend sekarang melewati `apiUrl()`, termasuk `useApi()` di `lib/ui/fetch-hooks.ts`, `fetch` langsung di halaman workspace, tautan unduh laporan, halaman share, dan `reportDownloadUrl()`. Catatan grep 34 pemanggilan relatif di atas sudah tidak berlaku; perilaku lokal (env kosong) tetap memanggil path relatif.
+
 ### 3.2 CORS (wajib di backend)
 
 `next.config.ts:3-6` saat ini hanya berisi `output` + `serverExternalPackages`; tidak ada header CORS dan tidak ada `middleware.ts`. Backend wajib menambahkan, untuk semua `/api/**` termasuk preflight `OPTIONS`:

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { apiUrl } from '@/lib/ui/api-base';
 import type { Lang } from '@/lib/contracts/http';
 import type { SettingsResponse } from '@/lib/contracts/http';
 import {
@@ -41,7 +42,7 @@ export function I18nProvider({
     const stored = readStoredLang();
     if (stored !== defaultLang) setLangState(stored);
     let cancelled = false;
-    fetch('/api/settings')
+    fetch(apiUrl('/api/settings'))
       .then((r) => (r.ok ? r.json() : null))
       .then((s: SettingsResponse | null) => {
         if (cancelled || !s) return;

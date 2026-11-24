@@ -3,6 +3,8 @@
  * Backend pemilik endpoint; modul ini hanya menormalkan wire shape.
  */
 
+import { apiUrl } from '@/lib/ui/api-base';
+
 export type ReportFormat = 'pdf' | 'xlsx';
 export type ReportJobStatus = 'QUEUED' | 'RUNNING' | 'DONE' | 'FAILED';
 
@@ -67,5 +69,5 @@ export function normalizeReportJob(raw: unknown): ReportJobView {
 
 /** URL unduh: pakai yang dikirim backend, jika tidak ada fallback ke route yang dikontrakkan. */
 export function reportDownloadUrl(job: ReportJobView): string {
-  return job.downloadUrl ?? `/api/reports/${encodeURIComponent(job.id)}/download`;
+  return apiUrl(job.downloadUrl ?? `/api/reports/${encodeURIComponent(job.id)}/download`);
 }

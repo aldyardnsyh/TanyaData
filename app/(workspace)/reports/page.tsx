@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { MetaResponse, ReportDetailResponse, ReportListItem, ReportListResponse } from '@/lib/contracts/http';
 import { useApi } from '@/lib/ui/fetch-hooks';
+import { apiUrl } from '@/lib/ui/api-base';
 import { Icon } from '@/components/ui/icons';
 import { SectionRule } from '@/components/signal/section-rule';
 import { StatusBadge } from '@/components/signal/status-badge';
@@ -62,7 +63,7 @@ export default function ReportsPage() {
     if (!editingId || !editTitle.trim() || saving) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/reports/${editingId}`, {
+      const res = await fetch(apiUrl(`/api/reports/${editingId}`), {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: editTitle.trim() }),
       });
@@ -78,7 +79,7 @@ export default function ReportsPage() {
   const removeReport = async (id: string) => {
     if (armedId !== id) { setArmedId(id); setEditingId(null); return; }
     try {
-      const res = await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+      const res = await fetch(apiUrl(`/api/reports/${id}`), { method: 'DELETE' });
       if (!res.ok) throw new Error((await res.json().catch(() => null))?.error?.message ?? 'Gagal menghapus laporan.');
       toast({ status: 'success', message: 'Laporan dihapus.' });
       if (id === selectedId) setSelectedId('');
@@ -329,9 +330,9 @@ export default function ReportsPage() {
             </div>
             {detailReady && (
               <div className="print-no-print sticky bottom-s3 z-sticky flex flex-wrap items-center justify-center gap-s2 self-center rounded-overlay border border-[var(--border-hairline)] bg-porcelain p-s2 elevated">
-                <a href={`/api/reports/${selectedId}/export?format=pdf`} download className="touch-44 inline-flex items-center gap-s2 rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring"><Icon name="picture_as_pdf" className="text-[16px]" /> Unduh PDF</a>
-                <a href={`/api/reports/${selectedId}/export?format=csv`} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="download" className="text-[16px]" /> Ekspor CSV</a>
-                <a href={`/api/reports/${selectedId}/export?format=xlsx`} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="table_chart" className="text-[16px]" /> Ekspor XLSX</a>
+                <a href={apiUrl(`/api/reports/${selectedId}/export?format=pdf`)} download className="touch-44 inline-flex items-center gap-s2 rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring"><Icon name="picture_as_pdf" className="text-[16px]" /> Unduh PDF</a>
+                <a href={apiUrl(`/api/reports/${selectedId}/export?format=csv`)} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="download" className="text-[16px]" /> Ekspor CSV</a>
+                <a href={apiUrl(`/api/reports/${selectedId}/export?format=xlsx`)} download className="touch-44 inline-flex items-center gap-s2 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring"><Icon name="table_chart" className="text-[16px]" /> Ekspor XLSX</a>
                 <button type="button" onClick={() => void shareLink()} className="touch-44 inline-flex items-center gap-s2 rounded-control px-s3 font-display text-label text-ink-72 focus-ring"><Icon name="link" className="text-[16px]" /> Salin tautan</button>
               </div>
             )}

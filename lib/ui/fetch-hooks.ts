@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { apiUrl } from '@/lib/ui/api-base';
 
 export type FetchState<T> = {
   data: T | null;
@@ -25,7 +26,7 @@ export function useApi<T>(url: string, options?: RequestInit): FetchState<T> {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(url, optionsRef.current);
+      const res = await fetch(apiUrl(url), optionsRef.current);
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error?.message ?? `HTTP ${res.status}`);

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ApiErrorCode, CitationChunkResponse, Investigation, InvestigateResponse, PreviewResponse, SourceAnalyticsResponse, SourceDetailResponse, SourceSummaryResponse } from '@/lib/contracts/http';
 import { parseCiteParam } from '@/lib/ui/citation-target';
+import { apiUrl } from '@/lib/ui/api-base';
 import { formatNumber } from '@/lib/ui/format';
 import { Icon } from '@/components/ui/icons';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
@@ -92,7 +93,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
     if (cite.chunk != null) params.set('chunk', String(cite.chunk));
     if (cite.page != null) params.set('page', String(cite.page));
     if (cite.section) params.set('section', cite.section);
-    fetch(`/api/sources/${id}/chunk?${params.toString()}`)
+    fetch(apiUrl(`/api/sources/${id}/chunk?${params.toString()}`))
       .then(async (r) => {
         if (!r.ok) throw new Error((await r.json().catch(() => null))?.error?.message ?? 'Potongan sitasi tidak ditemukan.');
         return r.json() as Promise<CitationChunkResponse>;
@@ -111,13 +112,13 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
     if (detail?.source.kind !== 'document') { setSummary(null); return; }
     let cancelled = false;
     setSummaryLoading(true);
-    fetch(`/api/sources/${id}/summary`)
+    fetch(apiUrl(`/api/sources/${id}/summary`))
       .then((r) => (r.ok ? r.json() : null))
       .then((json: SourceSummaryResponse | null) => { if (!cancelled) setSummary(json); })
       .catch(() => { if (!cancelled) setSummary(null); })
       .finally(() => { if (!cancelled) setSummaryLoading(false); });
     setAnalyticsLoading(true);
-    fetch(`/api/sources/${id}/analytics`)
+    fetch(apiUrl(`/api/sources/${id}/analytics`))
       .then((r) => (r.ok ? r.json() : null))
       .then((json: SourceAnalyticsResponse | null) => { if (!cancelled) setAnalytics(json); })
       .catch(() => { if (!cancelled) setAnalytics(null); })
@@ -128,7 +129,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
   const load = useCallback(async () => {
     setLoading(true); setError(null); setNotFound(false);
     try {
-      const res = await fetch(`/api/sources/${id}`);
+      const res = await fetch(apiUrl(`/api/sources/${id}`));
       if (res.status === 404) { setNotFound(true); return; }
       if (!res.ok) {
         const body = await res.json().catch(() => null);
@@ -143,7 +144,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
   const loadPreview = useCallback(async (lim: number) => {
     setPreviewLoading(true); setPreviewError(null);
     try {
-      const res = await fetch(`/api/sources/${id}/preview?limit=${lim}`);
+      const res = await fetch(apiUrl(`/api/sources/${id}/preview?limit=${lim}`));
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
@@ -159,7 +160,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
 
   const reindex = async () => {
     try {
-      const res = await fetch(`/api/sources/${id}/reindex`, { method: 'POST' });
+      const res = await fetch(apiUrl(`/api/sources/${id}/reindex`), { method: 'POST' });
       const body = await res.json().catch(() => null);
       if (!res.ok) {
         const code = (body?.error?.code ?? 'INTERNAL_ERROR') as ApiErrorCode;
@@ -186,7 +187,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
       setInvSavedId(null);
     }
     try {
-      const res = await fetch('/api/investigations/analyze', {
+      const res = await fetch(apiUrl('/api/investigations/analyze'), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q, dataset: id, persist, lang: 'id' }),
       });
@@ -213,7 +214,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
   const confirmDelete = async () => {
     setDeleting(true);
     try {
-      const res = await fetch(`/api/sources/${id}`, { method: 'DELETE' });
+      const res = await fetch(apiUrl(`/api/sources/${id}`), { method: 'DELETE' });
       if (!res.ok && res.status !== 204) {
         const body = await res.json().catch(() => null);
         const code = (body?.error?.code ?? 'INTERNAL_ERROR') as ApiErrorCode;
