@@ -462,3 +462,61 @@ Log keputusan, asumsi, dan eskalasi. Append-only. Semua role menulis di sini.
   5. **Kontras:** rail/aksen di permukaan terang wajib `--color-forest`; `--color-lime` di `--color-porcelain` terukur 1,48:1 dan dilarang sebagai garis/teks di zona terang.
 - **Konsekuensi:** Backend mengerjakan `system` payload + derivasi `capabilities` + penyambungan dashboard. Illustrator membuat aset SVG pipeline. Frontend mengimplementasikan §H/§I/§J. QA mengukur assertion A-1..A-15.
 - **Status:** accepted.
+
+## DECISION-037 — KB-GT-01 iterasi 1: naturalness gate + multi-doc synthesis + answerability tuning (P6-FIX-LOOP)
+
+- **Tanggal:** 2026-11-25
+- **Oleh:** orchestrator `agentic` (eksekusi lane `aiml`)
+- **Fase:** P6-FIX-LOOP
+- **Konteks:** User arahkan eksekusi penuh peningkatan akurasi; prioritas mutlak kualitas bahasa/makna jawaban — respons HARUS parafrasa natural Bahasa Indonesia, bukan salinan mentah chunk retrieval, tetap ter-grounding sitasi [n]. Tradeoff CPU di VPS diterima.
+- **Keputusan:**
+  1. **Naturalness gate** (`lib/ai/adapter.ts`, dekat postcheck missing-marker): kalimat jawaban ≥90% trigram identik dengan satu unit bukti DAN >25 token = salinan mentah → SATU revisi LLM ("parafrasakan dengan bahasa sendiri, pertahankan makna DAN marker [n]"). Pola retry-repair existing, fail-open, budget regenerate tetap 1x. Deterministik fallback tidak diubah.
+  2. **Multi-doc synthesis prompt** ditambahkan ke kedua composer; aktif otomatis bila unit bukti berasal dari >1 dokumen; klaim per-sumber ber-marker [n].
+  3. **`answerabilitySupport`** (`lib/ai/guardrails.ts`) diperkaya berbasis analisis dev run — sinonim `peran↔tugas/bertugas`, `harus↔wajib/perlu`, stemmer Indonesia sederhana — TANPA menurunkan ambang global 0.45. Hasil dev (mode off): FALSE_ABSTAIN 7→5, recall 0.667→0.737, Cit-P 0.292→0.338; precision 0.483→0.452 (tradeoff jujur: kasus ex-abstain kini dijawab dengan key-fact kurang → dihitung FP metrik).
+  4. **Fix lintas lane dicatat**: typo regex `lib/ingest/ocr.ts:84` (`/Ã¼/ g` → `/Ã¼/`) memblokir seluruh eval — diperbaiki minimal oleh aiml.
+- **Alasan:** Salinan verbatim chunk menurunkan kualitas yang menjadi nilai jual user; gate n-gram lebih deterministik daripada mengandalkan prompt saja. Tuning threshold dilakukan eval-driven, bukan tebak-tebakan.
+- **Konsekuensi:** Verifikasi orchestrator: typecheck exit 0; 4 eval regresi hijau tanpa degradasi (94/94, 10/11, 24/24, Perpres 6/6). Naturalness gate BELUM tervalidasi mode LLM (Windows lokal 429; perlu VPS/staging dengan OCR+Groq). Baseline holdout 0.8571 tidak punya artefak run tersimpan → angka run baru (mode off, KB01/04 SKIPP) tidak comparable; target >0.99 belum bisa dinyatakan tercapai/gagal. Sisa FALSE_ABSTAIN holdout butuh tiket backend (heading KB03 FQ-01 + jalur hybrid/deep-link). Re-run `--split all --mode llm` di VPS = syarat penutupan tiket.
+- **Status:** accepted; tiket KB-GT-01 tetap OPEN.
+
+## DECISION-038 — Penutupan tiket lokal P6: UI-LANDING-01, SEC-011, KB-GT-03(b)
+
+- **Tanggal:** 2026-11-25
+- **Oleh:** orchestrator `agentic`
+- **Fase:** P6-FIX-LOOP
+- **Konteks:** User menginstruksikan "bereskan semua phase terlebih dahulu, deploy di fase terakhir". Tiket yang tidak bergantung VPS dieksekusi lokal; tiket yang butuh infra (OCR service, Qdrant hidup, eval mode LLM) ditunda ke fase deploy.
+- **Keputusan:**
+  1. **UI-LANDING-01 CLOSED** — diagram "Cara kerja" dibangun di grid terukur (`components/signal/landing-steps.tsx:116-355`), rail = sel grid `inset 0` sehingga garis menyentuh tepi node di semua breakpoint; seluruh spacing token `s1..s6`; `design/cara-kerja-geometry.yaml` dibuat karena DECISION-035 merujuk file yang belum ada.
+  2. **SEC-011 CLOSED** — akar kuirk: `bucket.last` tidak dimajukan pada refill parsial, sehingga refill dihitung dari waktu pembuatan bucket dan kuota pulih penuh setelah paruh window (`lib/api/rate-limit.ts:56-64`). Refill kini berbasis selang sejak update terakhir; `retry-after` dari sisa token. Test `scripts/test-rate-limit.mjs` (node:test, tanpa dep baru) 4/4 PASS.
+  3. **KB-GT-03 bagian (b) heading SELESAI, tiket tetap in_progress** — akar FQ-01 bukan regex heading melainkan **deteksi kolom**: `detectColumnSplit` memakai min/max x mentah sehingga satu item nomor halaman "1" di x=542,2 melebarkan halaman 258→494, jurang kolom (x≈176,8) jatuh di posisi relatif 0,26 (di luar pita 0,3–0,7) → `columns=1` → baca linear → heading kolom kiri dan kanan menempel. Fix generik `robustExtent()` (`lib/ingest/extract.ts:35-72`): cluster x 2pt, buang cluster tepi jarang (≤3% item) yang terpisah >10% span. KB03 kini `cols=2@176.82`, 8 seksi terpisah.
+  4. **Tiket baru KB-GT-05** (aiml): GT-065/GT-067 cross_doc kini `out_of_scope` padahal kontennya ada di KB03#7 — peluang recall, bukan regresi status (keduanya `pass=false` sebelum dan sesudah).
+- **Alasan:** Menutup tiket yang bisa diverifikasi lokal tanpa menunggu infra; mencegah "selesai" palsu pada tiket yang sebenarnya butuh VPS.
+- **Konsekuensi / bukti:** Presisi ablasi KB GT (fts5, mode off) **0.4545 → 0.6667**, F1 0.5333→0.6747, KF-cov 0.3780→0.4702, FP 24→14, FALSE_ABSTAIN 11→13 (dua kasus ex-FP yang dulu "menjawab" dari teks terinterleave). GT-032 kini `passed=true`. Semua PDF seed lain byte-identik (diverifikasi stash-ablation). Verifikasi akhir: typecheck exit 0, build exit 0 (25,5s), test:rate-limit 4/4, eval ground-truth PASS, holdout PASS (10/11, halusinasi 0.0), real-docs 24/24. `release_ready` tetap false sampai fase deploy selesai.
+- **Status:** accepted.
+
+## DECISION-039 - KB-GT-05 ditolak berbasis bukti: relaksasi guardrail menurunkan presisi
+
+- **Tanggal:** 2026-11-25
+- **Oleh:** orchestrator `agentic` (eksekusi lane `aiml`)
+- **Fase:** P6-FIX-LOOP
+- **Konteks:** Setelah `robustExtent()` (DECISION-038), GT-065/GT-067/GT-073 berubah dari "menjawab teks terinterleave" menjadi `out_of_scope`. Hipotesis: evidence gate terlalu ketat (kata tanya `apakah`, filler `kalau/lagi/gimana`, pertanyaan peran/tugas yang dijawab lewat kata kerja).
+- **Keputusan:** Percobaan relaksasi (filter filler + relax peran-tugas) DI-REVERT PENUH. Alasan berbasis angka: presisi turun 0.6667 -> 0.6087, FALSE_ABSTAIN 13->9, recall 0.6829->0.7568, tetapi F1 tetap 0.6747 dan TIDAK ADA satu pun TP baru - empat kasus berubah fn -> fp.
+- **Bukti per kasus:** KB03:GT-065 (kfCov 0.25, butuh KB04#3+KB01#4), KB03:GT-067 & KB02:GT-067 (butuh KB01#8), KB03:GT-073 (composer memilih KB03#7 "koordinator", bukan KB03#8 "formulir sementara"). Kebutuhan kunci ada di KB01/KB04 yang image-only dan OCR-nya belum hidup.
+- **Alasan matematis:** `keyFactCoverage` menuntut 0.99 (semua key_fact). Baseline `tp/(tp+fp) = 28/42` tepat di 0.6667, sehingga satu kasus fn->fp saja sudah menurunkan presisi ke 0.6512. Relaksasi guardrail-only tidak mungkin memenuhi floor presisi dalam mode off tanpa OCR.
+- **Konsekuensi:** `lib/ai/guardrails.ts` dipulihkan byte-identik (689 baris). Verifikasi ulang: typecheck 0, ground-truth PASS, holdout PASS 10/11 (halusinasi 0.0000), real-docs 24/24. Penutupan tiket dipindah ke fase deploy (OCR KB01/KB04 aktif + eval mode LLM) dan ke perbaikan pemilihan seksi composer untuk GT-073.
+- **Catatan proses:** brief orchestrator mengklaim helper `hasActorDutyEvidence`/`ROLE_DUTY_RE`/`ACTION_VERB_RE`/`ANSWERABILITY_FILLER` "sudah ada" di file - ternyata TIDAK ter-persist dari sesi sebelumnya. Agent melaporkan ketidaksesuaian ini alih-alih mengarang; diagnosis orchestrator dicatat sebagai tidak akurat.
+- **Status:** accepted.
+
+## DECISION-040 - ADAPT-1 (WS-A) taksonomi dokumen selesai: registry tunggal + migrasi terbukti
+
+- **Tanggal:** 2026-11-25
+- **Oleh:** orchestrator `agentic` (eksekusi lane `backend`)
+- **Fase:** P6 / FASE 2 epik ADAPT
+- **Konteks:** Epik Adaptive Document Intelligence butuh fondasi taksonomi. Ditemukan cacat fondasi: TIGA definisi `DocType` yang bertentangan (`lib/core/contracts.ts:19`, `lib/ai/types.ts:14`, `lib/core/doc-analytics.ts:12` dengan nilai `financial-report`/`incident-report` yang tidak dikenal modul lain).
+- **Keputusan:**
+  1. **Registry tunggal** `lib/core/doc-taxonomy.ts`: `DocGroup` = finance|sop|technical|identity|general; `DocTypeId` = id lama + `sop` + 7 jenis identity (ktp, paspor, sim, kartu_keluarga, npwp, tagihan_utilitas, rekening_koran); alias legacy (financial-report->financial, incident-report->technical_report, kk->kartu_keluarga). `DocType` dipertahankan sebagai `string` terbuka karena `lib/ai/classifier.ts` memakai `Record<DocType, ...>` exhaustif 4 id - himpunan tertutup hidup di `DocTypeId`.
+  2. **Divergensi dihapus** lewat re-export di ketiga file, sehingga impor lama tidak pecah dan tidak ada dua daftar nilai berbeda.
+  3. **Persistensi `doc_group`** di `core_datasets` + `core_documents`, dengan migrasi idempoten `ensureDocTaxonomyColumns()` (`lib/db/migrate-v2.ts:235`) yang dipanggil dari `lib/db/client.ts`.
+- **Bukti migrasi (bukan asumsi):** DB legacy nyata berisi 12 dataset TANPA kolom `doc_group`. Setelah aplikasi dijalankan sekali: kolom bertambah, backfill benar - `general`->`general` (9), `financial`->`finance` (2), `legal`->`sop` (1), `null doc_group` = 0, dan `core_documents` ikut ter-backfill. DB asli di-backup ke `data/workspace/tanyadata.db.bak-pre-wsa` sebelum uji.
+- **Verifikasi:** typecheck 0, build 0 (30.9s), eval ground-truth PASS, holdout 10/11, real-docs 24/24, smoke browser 5/5 (`tests/ws-a-migration-smoke.yaml`).
+- **Konsekuensi / serahan:** aiml memperluas `lib/ai/classifier.ts` (id `sop` + identity, menulis type/group ke metadata); frontend mengonsumsi `doc_group`/`doc_type` di UI dan mengganti cek legacy `'financial-report'`/`'incident-report'` dengan `normalizeDocType`. Temuan terbuka: `lib/ui/share-contract.ts` masih punya `ShareDocType` sendiri.
+- **Status:** accepted.

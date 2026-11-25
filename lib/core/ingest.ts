@@ -25,6 +25,7 @@ import type {
   SourceType,
 } from '@/lib/core/contracts';
 import { emptyQualityReport, recordStep } from '@/lib/core/registry';
+import { docGroupOf } from '@/lib/core/doc-taxonomy';
 import { invalidateQueryCache } from '@/lib/core/cache';
 import { normalizeForFts } from '@/lib/core/store';
 import { drainOutbox, enqueueUpserts } from '@/lib/qdrant/sync';
@@ -284,7 +285,18 @@ async function extractPages(format: SourceType, buffer: Buffer, docId: string): 
           ocrLatencyMs: outcome.latencyMs,
           label: signal?.label,
           readingOrder: outcome.text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
-          layout: layouts[i].layout,
+          // Metadata kolom dari service OCR bila tersedia (halaman image-only
+          // tidak punya analisis text-layer); fallback ke analisis halaman.
+          layout: (outcome.columns ?? 1) === 2
+            ? {
+                columns: 2,
+                columnSplitX: outcome.columnSplitX ?? null,
+                readingOrder: 'column',
+                repeatedLines: [],
+                pageNumber: null,
+                tables: 0,
+              }
+            : layouts[i].layout,
         });
       }
     }
@@ -905,15 +917,16 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
         options.originalName,
       );
       db.prepare(
-        `INSERT INTO core_documents(id, dataset_id, doc_type, mime, pages, sections_json, source_path, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO core_documents(id, dataset_id, doc_type, doc_group, mime, pages, sections_json, source_path, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
-           dataset_id = excluded.dataset_id, doc_type = excluded.doc_type, pages = excluded.pages,
-           sections_json = excluded.sections_json, source_path = excluded.source_path`,
+           dataset_id = excluded.dataset_id, doc_type = excluded.doc_type, doc_group = excluded.doc_group,
+           pages = excluded.pages, sections_json = excluded.sections_json, source_path = excluded.source_path`,
       ).run(
         documentId,
         dataset.id,
         classification.doc_type,
+        docGroupOf(classification.doc_type),
         null,
         quality.parsedPages,
         JSON.stringify(sections),
@@ -1048,12 +1061,13 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
     await mark('storage', () => {
       db.prepare(
         `UPDATE core_datasets SET
-           kind = ?, doc_type = ?, status = 'READY', schema_json = ?, row_count = ?,
+           kind = ?, doc_type = ?, doc_group = ?, status = 'READY', schema_json = ?, row_count = ?,
            period_start = ?, period_end = ?, quality_report = ?, updated_at = ?
          WHERE id = ?`,
       ).run(
         classification.kind,
         classification.doc_type,
+        docGroupOf(classification.doc_type),
         JSON.stringify(schema),
         rowCount,
         period.start,
@@ -1071,6 +1085,7 @@ export async function ingestIntoDataset(db: DB, options: IngestOptions): Promise
       ...dataset,
       kind: classification.kind,
       doc_type: classification.doc_type,
+      doc_group: docGroupOf(classification.doc_type),
       status: 'READY',
       schema_json: schema,
       row_count: rowCount,

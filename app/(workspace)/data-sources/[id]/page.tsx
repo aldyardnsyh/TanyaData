@@ -7,6 +7,7 @@ import type { ApiErrorCode, CitationChunkResponse, Investigation, InvestigateRes
 import { parseCiteParam } from '@/lib/ui/citation-target';
 import { apiUrl } from '@/lib/ui/api-base';
 import { formatNumber } from '@/lib/ui/format';
+import { docGroupOf, normalizeDocType } from '@/lib/core/doc-taxonomy';
 import { Icon } from '@/components/ui/icons';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
 import { SectionRule } from '@/components/signal/section-rule';
@@ -406,7 +407,7 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
                   <div className="mb-s4 flex flex-col gap-s3">
                     {/* Klasifikasi tipe + sinyal. */}
                     <div className="flex flex-wrap items-center gap-s2">
-                      <StatusBadge label={analytics.docTypeLabel} tone={analytics.docType === 'general' ? 'neutral' : 'active'} />
+                      <StatusBadge label={analytics.docTypeLabel} tone={docGroupOf(analytics.docType) === 'general' ? 'neutral' : 'active'} />
                       <span className="mono-meta">{Math.round(analytics.confidence * 100)}% KEYAKINAN</span>
                       {analytics.signals.slice(0, 4).map((s) => <span key={s} className="rounded-chip border border-[var(--border-hairline)] px-s2 py-s1 font-mono text-[11px] uppercase tracking-[0.06em] text-ink-72">{s}</span>)}
                     </div>
@@ -425,12 +426,16 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
                       ))}
                     </div>
                     {/* Chart entitas: bar horizontal dengan bagian teratas. */}
-                    {(() => {
-                      const raw = analytics.docType === 'financial-report'
-                        ? { title: 'Nominal & persentase', items: [...analytics.entities.amounts.slice(0, 5), ...analytics.entities.percentages.slice(0, 5)] }
-                        : analytics.docType === 'incident-report'
-                          ? { title: 'Istilah kegagalan & kanal', items: [...analytics.entities.failureCodes.slice(0, 5), ...analytics.entities.channels.slice(0, 4)] }
-                          : { title: 'Istilah dominan', items: analytics.entities.failureCodes.slice(0, 6) };
+                      {(() => {
+                        // ADAPT-4a: nilai docType analytics masih alias legacy
+                        // (financial-report / incident-report); normalisasi ke
+                        // id kanonik registry sebelum dicabangkan.
+                        const canonical = normalizeDocType(analytics.docType);
+                        const raw = canonical === 'financial'
+                          ? { title: 'Nominal & persentase', items: [...analytics.entities.amounts.slice(0, 5), ...analytics.entities.percentages.slice(0, 5)] }
+                          : canonical === 'technical_report'
+                            ? { title: 'Istilah kegagalan & kanal', items: [...analytics.entities.failureCodes.slice(0, 5), ...analytics.entities.channels.slice(0, 4)] }
+                            : { title: 'Istilah dominan', items: analytics.entities.failureCodes.slice(0, 6) };
                       const byLabel = new Map<string, (typeof raw.items)[number]>();
                       for (const item of raw.items) {
                         const prior = byLabel.get(item.label);

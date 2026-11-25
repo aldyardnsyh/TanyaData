@@ -17,6 +17,7 @@ import type {
   ReportCreateResponse,
   SendMessageResponse,
   SettingsResponse,
+  ShareCreateResponse,
   SourceCitation,
   SourcesListResponse,
 } from '@/lib/contracts/http';
@@ -32,6 +33,55 @@ import { SectionRule } from '@/components/signal/section-rule';
 import { AnimatedModal } from '@/components/signal/animated-modal';
 import { Icon } from '@/components/ui/icons';
 import { toast } from '@/components/ui/toaster';
+
+/**
+ * Salin teks ke papan klip dengan dua jalur: Clipboard API lalu fallback
+ * `document.execCommand('copy')` untuk browser lama / konteks non-HTTPS.
+ * Mengembalikan `false` bila KEDUANYA gagal, supaya pemanggil tidak pernah
+ * mengklaim sukses palsu. Teks kosong selalu gagal (tidak pernah menyalin '').
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (!text) return false;
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Clipboard API ada tetapi menolak (izin / non-HTTPS): lanjut ke fallback.
+  }
+  return copyWithExecCommand(text);
+}
+
+/** Fallback sinkron untuk browser tanpa Clipboard API. */
+function copyWithExecCommand(text: string): boolean {
+  if (typeof document === 'undefined' || !text) return false;
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.setAttribute('readonly', '');
+  area.setAttribute('aria-hidden', 'true');
+  area.style.position = 'fixed';
+  area.style.top = '-9999px';
+  area.style.opacity = '0';
+  document.body.appendChild(area);
+  const selection = document.getSelection();
+  const previous = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+  let copied = false;
+  try {
+    area.select();
+    area.setSelectionRange(0, text.length);
+    copied = document.execCommand('copy');
+  } catch {
+    copied = false;
+  } finally {
+    document.body.removeChild(area);
+    if (previous && selection) {
+      selection.removeAllRanges();
+      selection.addRange(previous);
+    }
+  }
+  return copied;
+}
 
 export default function AssistantPage() {
   const { lang } = useI18n();
@@ -53,6 +103,10 @@ export default function AssistantPage() {
   const [shareTarget, setShareTarget] = useState<ChatMessage | null>(null);
   const [shareState, setShareState] = useState<'default' | 'loading' | 'error' | 'success'>('default');
   const [shareError, setShareError] = useState<string | null>(null);
+  // Tautan absolut yang benar-benar diterima server; null = belum ada.
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  // 'idle' = belum dicoba, 'copied' = tersalin, 'manual' = dua jalur gagal.
+  const [shareCopy, setShareCopy] = useState<'idle' | 'copied' | 'manual'>('idle');
   const [includeCitations, setIncludeCitations] = useState(true);
   const [includeIdentity, setIncludeIdentity] = useState(true);
   const [savingReportId, setSavingReportId] = useState<string | null>(null);
@@ -313,11 +367,39 @@ export default function AssistantPage() {
     } finally { setSavingReportId(null); }
   };
 
+  /** Reset dialog share ke kondisi awal. Stabil agar focus-trap modal tidak di-reset tiap render. */
+  const closeShare = useCallback(() => {
+    setShareTarget(null);
+    setShareState('default');
+    setShareError(null);
+    setShareUrl(null);
+    setShareCopy('idle');
+  }, []);
+
+  /**
+   * Coba salin tautan yang SUDAH ada. Bila Clipboard API dan execCommand
+   * sama-sama gagal, tampilkan instruksi salin manual di dialog dan beri tahu
+   * sekali lewat toast error. Tidak pernah mengklaim sukses tanpa bukti.
+   */
+  const attemptCopyShare = async (url: string) => {
+    if (!url) return;
+    const copied = await copyToClipboard(url);
+    if (copied) {
+      setShareCopy('copied');
+      toast({ status: 'success', message: 'Tautan disalin.' });
+      return;
+    }
+    setShareCopy('manual');
+    toast({ status: 'error', message: 'Penyalinan otomatis diblokir. Salin tautan dari kotak di dialog.' });
+  };
+
   /** Konfirmasi dulu (C-09), baru POST /api/share. Tautan tidak dibuat saat Batal. */
   const confirmShare = async () => {
     if (!activeId || !shareTarget) return;
     setShareState('loading');
     setShareError(null);
+    setShareUrl(null);
+    setShareCopy('idle');
     try {
       const res = await fetch(apiUrl('/api/share'), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -331,14 +413,25 @@ export default function AssistantPage() {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
       }
-      const json: { id?: string; url?: string } = await res.json();
-      const url = json.url ?? (json.id && typeof window !== 'undefined' ? `${window.location.origin}/share/${json.id}` : '');
+      const json: ShareCreateResponse = await res.json();
+      const relative = json.share?.url;
+      const shareId = json.share?.id;
+      // Fail-closed: tanpa id/url yang valid, tidak ada tautan untuk disalin.
+      if (typeof relative !== 'string' || relative.length === 0 || typeof shareId !== 'string' || shareId.length === 0) {
+        throw new Error('Tautan tidak diterima dari server.');
+      }
+      const absolute = new URL(relative, window.location.origin).toString();
+      setShareUrl(absolute);
       setShareState('success');
-      toast({
-        status: 'success', message: 'Tautan siap dibagikan.', action: 'Salin tautan',
-        onAction: () => { void navigator.clipboard.writeText(url).then(() => toast({ status: 'success', message: 'Tautan disalin.' })).catch(() => toast({ status: 'error', message: 'Tautan gagal disalin.' })); },
-      });
-      window.setTimeout(() => { setShareTarget(null); setShareState('default'); }, 600);
+      // Salin otomatis sekali; bila gagal, tautan tetap terlihat di dialog.
+      const copied = await copyToClipboard(absolute);
+      if (copied) {
+        setShareCopy('copied');
+        toast({ status: 'success', message: 'Tautan disalin. Tempel di mana saja.' });
+      } else {
+        setShareCopy('manual');
+        toast({ status: 'error', message: 'Tautan dibuat, tetapi penyalinan otomatis diblokir. Salin dari kotak di dialog.' });
+      }
     } catch (err) {
       setShareError(err instanceof Error ? err.message : 'Tautan gagal dibuat.');
       setShareState('error');
@@ -547,28 +640,67 @@ export default function AssistantPage() {
       {/* C-09 Confirm Modal: konfirmasi share (FR-E.3). */}
       <AnimatedModal
         open={Boolean(shareTarget)}
-        onClose={() => { setShareTarget(null); setShareState('default'); }}
-        title="Bagikan sesi ini?"
-        confirmLabel="Buat tautan"
+        onClose={closeShare}
+        title={shareState === 'success' ? 'Tautan siap dibagikan' : 'Bagikan sesi ini?'}
+        confirmLabel={shareState === 'success' ? 'Selesai' : 'Buat tautan'}
+        cancelLabel={shareState === 'success' ? 'Tutup' : 'Batal'}
         state={shareState}
         errorTitle={shareError ?? 'Tautan gagal dibuat.'}
-        onConfirm={() => void confirmShare()}
+        onConfirm={() => { if (shareState === 'success') closeShare(); else void confirmShare(); }}
         onRetry={() => void confirmShare()}
       >
-        <p>Pertanyaan dan jawaban akan dapat diakses siapa pun yang punya link.</p>
-        <ul className="mt-s3 space-y-s1 font-body text-caption text-ink-72">
-          <li>Pesan dalam sesi ini: {detail?.messages.length ?? 0}</li>
-          <li>Konteks: {contextLabel}</li>
-          <li>Angka dan kutipan mengikuti snapshot pesan.</li>
-        </ul>
-        <div className="mt-s3 flex flex-col gap-s2">
-          <label className="flex min-h-11 items-center gap-s2"><input type="checkbox" checked={includeCitations} onChange={(e) => setIncludeCitations(e.target.checked)} className="h-s3 w-s3 accent-forest" /><span className="font-body text-caption text-ink">Sertakan sitasi</span></label>
-          <label className="flex min-h-11 items-center gap-s2"><input type="checkbox" checked={includeIdentity} onChange={(e) => setIncludeIdentity(e.target.checked)} className="h-s3 w-s3 accent-forest" /><span className="font-body text-caption text-ink">Sertakan identitas dokumen</span></label>
-        </div>
-        {sensitive && (
-          <p className="mt-s3 inline-flex items-start gap-s2 rounded-control bg-terracotta-16 p-s2 font-body text-caption text-ink">
-            Sesi ini memuat data yang mungkin sensitif. Periksa kembali sebelum membagikan.
-          </p>
+        {shareState === 'success' && shareUrl ? (
+          <div className="flex flex-col gap-s3">
+            <p>Siapa pun yang punya tautan ini dapat membuka sesi dalam mode baca saja.</p>
+            <div className="flex flex-col gap-s2">
+              <label htmlFor="share-url" className="mono-meta">TAUTAN BAGI</label>
+              <div className="flex flex-col gap-s2 sm:flex-row">
+                <input
+                  id="share-url"
+                  readOnly
+                  value={shareUrl}
+                  onFocus={(event) => event.currentTarget.select()}
+                  className="min-h-11 w-full min-w-0 flex-1 rounded-control border border-[var(--border-hairline)] bg-porcelain px-s3 font-body text-body text-ink focus-ring"
+                />
+                <button
+                  type="button"
+                  onClick={() => void attemptCopyShare(shareUrl)}
+                  className="touch-44 shrink-0 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring"
+                >
+                  Salin
+                </button>
+              </div>
+            </div>
+            <p
+              role="status"
+              aria-live="polite"
+              className={`font-body text-caption ${shareCopy === 'manual' ? 'text-ink' : 'text-ink-72'}`}
+            >
+              {shareCopy === 'copied'
+                ? 'Tersalin ke papan klip.'
+                : shareCopy === 'manual'
+                  ? 'Browser memblokir penyalinan otomatis. Pilih teks di kotak lalu salin manual, atau tekan Salin sekali lagi.'
+                  : 'Pilih teks di kotak bila ingin menyalin manual.'}
+            </p>
+          </div>
+        ) : (
+          <>
+            <p>Pertanyaan dan jawaban akan dapat diakses siapa pun yang punya link.</p>
+            <ul className="mt-s3 space-y-s1 font-body text-caption text-ink-72">
+              <li>Pesan dalam sesi ini: {detail?.messages.length ?? 0}</li>
+              <li>Konteks: {contextLabel}</li>
+              <li>Angka dan kutipan mengikuti snapshot pesan.</li>
+            </ul>
+            <div className="mt-s3 flex flex-col gap-s2">
+              <label className="flex min-h-11 items-center gap-s2"><input type="checkbox" checked={includeCitations} onChange={(e) => setIncludeCitations(e.target.checked)} className="h-s3 w-s3 accent-forest" /><span className="font-body text-caption text-ink">Sertakan sitasi</span></label>
+              <label className="flex min-h-11 items-center gap-s2"><input type="checkbox" checked={includeIdentity} onChange={(e) => setIncludeIdentity(e.target.checked)} className="h-s3 w-s3 accent-forest" /><span className="font-body text-caption text-ink">Sertakan identitas dokumen</span></label>
+            </div>
+            {sensitive && (
+              <p className="mt-s3 inline-flex items-start gap-s2 rounded-control bg-terracotta-16 p-s2 font-body text-caption text-ink">
+                Sesi ini memuat data yang mungkin sensitif. Periksa kembali sebelum membagikan.
+              </p>
+            )}
+          </>
         )}
       </AnimatedModal>
     </div>

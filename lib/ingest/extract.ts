@@ -32,6 +32,43 @@ function cleanLine(line: string): string {
   return trimmed;
 }
 
+const COLUMN_CLUSTER_TOLERANCE = 2;
+
+/**
+ * Rentang x yang tahan-outlier. Satu item tunggal di tepi (nomor halaman,
+ * tanda stray) melebarkan rentang mentah sehingga jurang antar-kolom jatuh di
+ * luar pita tengah: KB03 punya item "1" di x=542 sehingga jurang 48→306 berada
+ * di posisi relatif 0,26 (butuh >0,3) dan halaman dua kolom dibaca linear —
+ * heading kiri "1. Jam Layanan" menempel ke heading kanan "7. Pelaporan
+ * Mingguan". Tepi kolom selalu dipakai banyak baris, jadi cluster x yang sangat
+ * jarang (≤3% item) dan terpisah lebar dari bulk diperlakukan sebagai noise.
+ */
+function robustExtent(xs: number[]): { min: number; max: number } {
+  const first = xs[0];
+  const last = xs[xs.length - 1];
+  const span = last - first;
+  if (!(span > 0)) return { min: first, max: last };
+  const maxSparse = Math.max(1, Math.ceil(xs.length * 0.03));
+  const gapLimit = span * 0.1;
+  const clusters: Array<{ min: number; max: number; n: number }> = [];
+  for (const x of xs) {
+    const tail = clusters[clusters.length - 1];
+    if (tail && x - tail.max <= COLUMN_CLUSTER_TOLERANCE) {
+      tail.max = x;
+      tail.n += 1;
+    } else {
+      clusters.push({ min: x, max: x, n: 1 });
+    }
+  }
+  let lo = 0;
+  let hi = clusters.length - 1;
+  while (lo < hi && clusters[lo].n <= maxSparse
+    && clusters[lo + 1].min - clusters[lo].max > gapLimit) lo += 1;
+  while (hi > lo && clusters[hi].n <= maxSparse
+    && clusters[hi].min - clusters[hi - 1].max > gapLimit) hi -= 1;
+  return { min: clusters[lo].min, max: clusters[hi].max };
+}
+
 /**
  * Temukan batas dua kolom dari distribusi koordinat x (transform[4]).
  * Dipakai bila ada jurang lebar di tengah halaman dan kedua sisi cukup padat.
@@ -40,8 +77,7 @@ function cleanLine(line: string): string {
 function detectColumnSplit(items: Positioned[]): number | null {
   if (items.length < 8) return null;
   const xs = items.map((item) => item.x).sort((a, b) => a - b);
-  const min = xs[0];
-  const max = xs[xs.length - 1];
+  const { min, max } = robustExtent(xs);
   const width = max - min;
   if (width < 150) return null;
 
@@ -301,7 +337,16 @@ export async function extractPages(format: string, buffer: Buffer): Promise<Extr
             text: outcome.text,
             ocr: { used: true, skipped: false, confidence: outcome.confidence },
             readingOrder: outcome.text.split(/\r?\n/).map(cleanLine).filter(Boolean),
-            layout: analysis.layout,
+            // Metadata kolom dari service OCR (deteksi box): dua kolom dibaca
+            // kiri penuh dulu, jadi urutan baris sudah benar sebelum chunking.
+            layout: {
+              columns: outcome.columns ?? 1,
+              columnSplitX: outcome.columnSplitX ?? null,
+              readingOrder: (outcome.columns ?? 1) === 2 ? 'column' : 'linear',
+              repeatedLines: [],
+              pageNumber: null,
+              tables: 0,
+            },
           });
         }
       } else {

@@ -502,9 +502,9 @@ export function LandingSteps() {
             data-active={phase >= 1 && phase <= 2 ? 'true' : 'false'}
           >
             <span className="state-dot state-dot-active" />
-            <span className="mt-1 font-display text-caption font-bold text-porcelain">TanyaData</span>
+            <span className="mt-s1 font-display text-caption font-bold text-porcelain">TanyaData</span>
             {(phase === 1 || phase === 2) && (
-              <span className="mt-1 flex gap-1">
+              <span className="mt-s1 flex gap-s1">
                 <span className="animate-typing-dot state-dot state-dot-active" />
                 <span className="animate-typing-dot state-dot state-dot-active" style={{ animationDelay: '150ms' }} />
                 <span className="animate-typing-dot state-dot state-dot-active" style={{ animationDelay: '300ms' }} />
@@ -557,7 +557,7 @@ export function LandingSteps() {
                   </svg>
                   <span className="absolute font-body text-caption font-semibold tabular text-ink">3,30%</span>
                 </span>
-                <div className="grid gap-1">
+                <div className="grid gap-s1">
                   {pair.rows.map(([label, value]) => (
                     <div key={label} className="flex items-baseline justify-between gap-s3">
                       <span className="font-body text-caption text-ink-72">{label}</span>
@@ -567,7 +567,7 @@ export function LandingSteps() {
                 </div>
               </div>
             ) : (
-              <div className="mt-s2 grid gap-1 font-body text-body text-ink">
+              <div className="mt-s2 grid gap-s1 font-body text-body text-ink">
                 {pair.rows.map(([kanal, sla]) => (
                   <div key={kanal} className="flex items-baseline justify-between gap-s3">
                     <span className="text-ink-72">{kanal}</span>

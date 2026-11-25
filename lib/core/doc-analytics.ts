@@ -9,7 +9,14 @@
  * Dokumen lain → statistik struktur + entitas umum.
  */
 
-export type DocType = 'financial-report' | 'incident-report' | 'general';
+// WS-A / ADAPT-1: `DocType` kini berasal dari registry tunggal. Nilai runtime
+// yang dikembalikan modul ini sengaja dipertahankan sebagai alias legacy
+// (`financial-report`, `incident-report`, `general`) agar halaman analytics
+// yang sudah ada tidak berubah; gunakan `normalizeDocType()` dari
+// `lib/core/doc-taxonomy` bila butuh id kanonik (financial/technical_report/general).
+import type { DocType } from './doc-taxonomy';
+
+export type { DocType };
 
 export interface DocAnalyticsChunk {
   section: string | null;

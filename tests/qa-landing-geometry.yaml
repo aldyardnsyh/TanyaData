@@ -1,0 +1,146 @@
+# Verifikasi GEOMETRI numerik diagram "Cara kerja" (UI-LANDING-01).
+# Tidak mengandalkan mata: mengukur bounding box nyata di browser.
+# assert_js gagal bila ekspresi JS mengembalikan nilai falsy.
+name: landing-geometry-numeric
+settings:
+  fail_fast: false
+  step_timeout: 20000
+  run_timeout: 180
+steps:
+  # ================= DESKTOP 1440 =================
+  - viewport: {width: 1440, height: 900}
+  - goto: {url: "http://127.0.0.1:3210/#cara-kerja"}
+  - wait_for: {selector: ".ck-row"}
+
+  # 1) Diagram tidak meluber keluar viewport (tidak ada overflow horizontal).
+  - assert_js:
+      js: |
+        (() => {
+          const root = document.querySelector('.ck-root');
+          const row = document.querySelector('.ck-row');
+          if (!root || !row) return false;
+          const r = row.getBoundingClientRect();
+          const viewportW = document.documentElement.clientWidth;
+          if (r.width > viewportW + 1) return false;
+          if (r.left < -1 || r.right > viewportW + 1) return false;
+          return document.documentElement.scrollWidth <= viewportW + 1;
+        })()
+
+  # 2) Semua rail horizontal berada DI ANTARA dua node (menyentuh tepi, bukan mengambang).
+  #    Toleransi 2px untuk pembulatan subpiksel.
+  - assert_js:
+      js: |
+        (() => {
+          const rails = [...document.querySelectorAll('.ck-rail')];
+          if (rails.length === 0) return false;
+          const row = document.querySelector('.ck-row');
+          const rowBox = row.getBoundingClientRect();
+          // Node = semua anak .ck-row yang bukan rail dan punya lebar.
+          const nodes = [...row.children]
+            .filter(el => !el.classList.contains('ck-rail'))
+            .map(el => el.getBoundingClientRect())
+            .filter(b => b.width > 0)
+            .sort((a, b) => a.left - b.left);
+          if (nodes.length < 2) return false;
+          const TOL = 2;
+          return rails.every(rail => {
+            const rb = rail.getBoundingClientRect();
+            if (rb.width === 0 && rb.height === 0) return true; // rail tersembunyi: lewati
+            // Harus ada node yang berakhir dekat tepi kiri rail, dan node yang mulai dekat tepi kanan.
+            const touchesLeft = nodes.some(n => Math.abs(n.right - rb.left) <= TOL);
+            const touchesRight = nodes.some(n => Math.abs(n.left - rb.right) <= TOL);
+            // Atau rail vertikal (mobile-style) di dalam baris yang sama.
+            const vertical = rb.width <= 2 && rb.height > 2;
+            if (vertical) return true;
+            return touchesLeft && touchesRight;
+          });
+        })()
+
+  # 3) Empat langkah tersusun 4 kolom sejajar (lg:grid-cols-4), bukan bertumpuk.
+  - assert_js:
+      js: |
+        (() => {
+          const group = document.querySelector('[role=group][aria-label="Empat langkah cara kerja"]');
+          if (!group) return false;
+          const buttons = [...group.querySelectorAll(':scope > button')];
+          if (buttons.length !== 4) return false;
+          const tops = buttons.map(b => Math.round(b.getBoundingClientRect().top));
+          const sameRow = new Set(tops).size === 1;
+          const widths = buttons.map(b => b.getBoundingClientRect().width);
+          return sameRow && widths.every(w => w > 0);
+        })()
+
+  # 4) Semua padding/margin diagram tidak memakai nilai ad-hoc: cek tidak ada
+  #    margin/padding piksel ganjil pada node inti (kecuali -3px centering dot yang tercatat).
+  - assert_js:
+      js: |
+        (() => {
+          const nodes = [...document.querySelectorAll('.ck-row > *')];
+          if (nodes.length === 0) return false;
+          const bad = [];
+          for (const el of nodes) {
+            const cs = getComputedStyle(el);
+            for (const prop of ['marginTop','marginBottom','marginLeft','marginRight','paddingTop','paddingBottom','paddingLeft','paddingRight']) {
+              const v = parseFloat(cs[prop]);
+              if (!Number.isFinite(v) || v === 0) continue;
+              // Token spacing repo = 4/8/12/16/24/32/40/48/64 (s1..s6 kelipatan 4).
+              if (v % 4 !== 0) bad.push(el.className + ':' + prop + '=' + cs[prop]);
+            }
+          }
+          if (bad.length) { console.error('AD-HOC SPACING: ' + bad.join(', ')); return false; }
+          return true;
+        })()
+
+  # ================= MOBILE 390 =================
+  - viewport: {width: 390, height: 844}
+  - goto: {url: "http://127.0.0.1:3210/#cara-kerja"}
+  - wait_for: {selector: ".ck-row"}
+
+  # 5) Mobile: tidak ada overflow horizontal (penyebab utama layout rusak di ponsel).
+  - assert_js:
+      js: |
+        (() => {
+          const viewportW = document.documentElement.clientWidth;
+          if (document.documentElement.scrollWidth > viewportW + 1) {
+            console.error('HORIZONTAL OVERFLOW: scrollWidth=' + document.documentElement.scrollWidth + ' viewport=' + viewportW);
+            return false;
+          }
+          const row = document.querySelector('.ck-row');
+          if (!row) return false;
+          const rb = row.getBoundingClientRect();
+          return rb.left >= -1 && rb.right <= viewportW + 1;
+        })()
+
+  # 6) Mobile: setiap node yang DIRENDER (display bukan none) punya lebar & tinggi nyata.
+  #    `.ck-bubble-lane` sengaja `display:none` di mobile (varian horizontal saja) — dikecualikan.
+  - assert_js:
+      js: |
+        (() => {
+          const row = document.querySelector('.ck-row');
+          if (!row) return false;
+          const nodes = [...row.children]
+            .filter(el => !el.classList.contains('ck-rail'))
+            .filter(el => getComputedStyle(el).display !== 'none');
+          if (nodes.length < 3) return false;
+          return nodes.every(el => {
+            const b = el.getBoundingClientRect();
+            return b.width > 0 && b.height > 0;
+          });
+        })()
+
+  # 7) Mobile: empat langkah jadi 2 kolom (md) / 1 kolom — tidak overflow.
+  - assert_js:
+      js: |
+        (() => {
+          const group = document.querySelector('[role=group][aria-label="Empat langkah cara kerja"]');
+          if (!group) return false;
+          const buttons = [...group.querySelectorAll(':scope > button')];
+          if (buttons.length !== 4) return false;
+          const viewportW = document.documentElement.clientWidth;
+          return buttons.every(b => {
+            const r = b.getBoundingClientRect();
+            return r.width > 0 && r.left >= -1 && r.right <= viewportW + 1;
+          });
+        })()
+
+  - screenshot: {name: geometry-mobile}

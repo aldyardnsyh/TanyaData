@@ -1,0 +1,9 @@
+# Uji migrasi lazy: buka halaman workspace agar API menyentuh DB → migrasi berjalan.
+name: ws-a-migration-smoke
+settings: {fail_fast: false, step_timeout: 20000, run_timeout: 90}
+steps:
+  - viewport: {width: 1280, height: 800}
+  - goto: {url: "http://127.0.0.1:3211/overview"}
+  - wait_for: {selector: "main"}
+  - goto: {url: "http://127.0.0.1:3211/data-sources"}
+  - wait_for: {selector: "main"}

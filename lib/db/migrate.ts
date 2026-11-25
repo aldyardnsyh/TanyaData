@@ -171,13 +171,13 @@ function ensureDocumentsCoreMirror(db: DB): void {
     const docId = id;
     const mirror = db.transaction(() => {
       db.prepare(
-        `INSERT INTO core_datasets(id, name, kind, source_type, doc_type, status, schema_json, row_count, quality_report, storage_path, size_bytes, is_demo, created_at, updated_at)
-         VALUES (?, ?, 'document', ?, 'general', 'READY', '{\"version\":1,\"tables\":[],\"relations\":[],\"enums\":{}}', 0, '{}', ?, ?, ?, ?, ?)
+        `INSERT INTO core_datasets(id, name, kind, source_type, doc_type, doc_group, status, schema_json, row_count, quality_report, storage_path, size_bytes, is_demo, created_at, updated_at)
+         VALUES (?, ?, 'document', ?, 'general', 'general', 'READY', '{\"version\":1,\"tables\":[],\"relations\":[],\"enums\":{}}', 0, '{}', ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO NOTHING`,
       ).run(id, String(row.name), String(row.format ?? 'txt'), row.storage_path ?? null, Number(row.size_bytes ?? 0), 0, now, now);
       db.prepare(
-        `INSERT INTO core_documents(id, dataset_id, doc_type, mime, pages, sections_json, source_path, created_at)
-         VALUES (?, ?, 'general', NULL, ?, '[]', ?, ?)
+        `INSERT INTO core_documents(id, dataset_id, doc_type, doc_group, mime, pages, sections_json, source_path, created_at)
+         VALUES (?, ?, 'general', 'general', NULL, ?, '[]', ?, ?)
          ON CONFLICT(id) DO NOTHING`,
       ).run(docId, id, Math.max(1, ...chunks.map((c) => c.page ?? 1), 1), row.storage_path ?? null, now);
       db.prepare('DELETE FROM core_chunks WHERE dataset_id = ?').run(id);

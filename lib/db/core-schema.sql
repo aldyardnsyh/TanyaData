@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS core_datasets(
   kind TEXT NOT NULL CHECK(kind IN ('tabular','document','mixed')),
   source_type TEXT NOT NULL CHECK(source_type IN ('csv','xlsx','sqlite','pdf','docx','txt','md')),
   doc_type TEXT NOT NULL DEFAULT 'unknown',
+  -- WS-A / ADAPT-1: grup dokumen turunan doc_type (finance/sop/technical/identity/general).
+  -- Nullable agar DB lama bisa di-ALTER tanpa backfill destruktif; nilai diisi
+  -- oleh kode ingest dan dibackfill sekali oleh ensureDocTaxonomyColumns().
+  doc_group TEXT,
   status TEXT NOT NULL CHECK(status IN ('UPLOADED','PROCESSING','READY','FAILED')),
   schema_json TEXT NOT NULL,
   row_count INTEGER NOT NULL DEFAULT 0,
@@ -43,6 +47,8 @@ CREATE TABLE IF NOT EXISTS core_documents(
   id TEXT PRIMARY KEY,
   dataset_id TEXT NOT NULL REFERENCES core_datasets(id) ON DELETE CASCADE,
   doc_type TEXT NOT NULL,
+  -- WS-A / ADAPT-1: grup dokumen (lihat core_datasets.doc_group).
+  doc_group TEXT,
   mime TEXT,
   pages INTEGER NOT NULL DEFAULT 0,
   sections_json TEXT NOT NULL DEFAULT '[]',

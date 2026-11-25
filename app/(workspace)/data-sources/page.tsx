@@ -15,6 +15,8 @@ import type {
 import { useApi } from '@/lib/ui/fetch-hooks';
 import { apiUrl } from '@/lib/ui/api-base';
 import { formatNumber } from '@/lib/ui/format';
+import { docGroupLabel, docGroupOf, listDocGroups, type DocGroup } from '@/lib/core/doc-taxonomy';
+import { Icon } from '@/components/ui/icons';
 import { SectionRule } from '@/components/signal/section-rule';
 import { BentoGrid, type BentoItem } from '@/components/signal/bento-grid';
 import { AnimatedTabs } from '@/components/signal/animated-tabs';
@@ -71,6 +73,24 @@ function statusLabel(status: string): string {
 }
 type JobState = { name: string; step: string | null; progress: number };
 
+/* ADAPT-4a — pengelompokan dokumen per doc_group (registry tunggal).
+   Datasets tampil sebagai grup tersendiri; dokumen dikelompokkan memakai
+   doc_group dari API (aditif) dengan fallback docGroupOf(doc_type). Respons
+   lama tanpa field baru tetap jatuh ke grup 'general', tidak pernah crash. */
+type SourceItem = SourceListItem & { docGroup?: DocGroup; docType?: string };
+const DATASET_BUCKET = '__dataset';
+const GROUP_ICON: Record<DocGroup, string> = {
+  finance: 'account_balance',
+  sop: 'menu_book',
+  technical: 'engineering',
+  identity: 'badge',
+  general: 'description',
+};
+function bucketOf(source: SourceItem): string {
+  if (source.kind === 'dataset') return DATASET_BUCKET;
+  return source.docGroup ?? docGroupOf(source.docType);
+}
+
 export default function DataSourcesPage() {
   const sources = useApi<SourcesListResponse>('/api/sources');
   const meta = useApi<MetaResponse>('/api/meta');
@@ -93,7 +113,7 @@ export default function DataSourcesPage() {
   // filter, halaman, atau sumber berubah.
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
 
-  const items = sources.data?.items ?? [];
+  const items = (sources.data?.items ?? []) as SourceItem[];
   const counts = sources.data?.counts;
   const totalBytes = items.reduce((sum, s) => sum + (s.sizeBytes ?? 0), 0);
   const totalRows = items.reduce((sum, s) => sum + (s.rowCount ?? 0), 0);
@@ -267,7 +287,7 @@ export default function DataSourcesPage() {
     { id: 'processing', label: 'Sumber diproses', value: num(counts?.processing) },
   ];
 
-  const cards: RevealCard[] = pageItems.map((source) => {
+  const cardFor = (source: SourceItem): RevealCard => {
     const previewed = previewId === source.id;
     return {
       id: source.id,
@@ -300,7 +320,21 @@ export default function DataSourcesPage() {
         </div>
       ),
     };
-  });
+  };
+
+  // Kelompok tampil per doc_group, urutan mengikuti registry (dataset dulu).
+  const buckets = new Map<string, SourceItem[]>();
+  for (const source of pageItems) {
+    const key = bucketOf(source);
+    const list = buckets.get(key) ?? [];
+    list.push(source);
+    buckets.set(key, list);
+  }
+  const groupOrder = [DATASET_BUCKET, ...listDocGroups().map((g) => g.id)].filter((key) => buckets.has(key));
+  const groupHeading = (key: string): { label: string; icon: string } =>
+    key === DATASET_BUCKET
+      ? { label: 'Dataset', icon: 'table_chart' }
+      : { label: docGroupLabel(key), icon: GROUP_ICON[key as DocGroup] ?? 'description' };
 
   const previewColumns = preview?.columns ?? [];
   const previewRows = preview?.rows ?? [];
@@ -493,16 +527,40 @@ export default function DataSourcesPage() {
             <span className="mono-meta">{visible.length} SUMBER</span>
           </div>
           <SectionRule className="mb-s4" />
-          <LayoutGrid
-            cards={cards}
-            selectedId={selectedSourceId}
-            onSelect={selectSource}
-            state={sources.loading ? 'loading' : sources.error ? 'error' : visible.length === 0 ? 'empty' : 'default'}
-            emptyTitle={items.length === 0 ? NO_DOCUMENTS_MESSAGE : 'Belum ada sumber pada filter ini. Unggah berkas untuk menambah sumber.'}
-            emptyAction={{ label: 'Unggah dokumen', onClick: scrollToUpload }}
-            errorTitle="Daftar sumber gagal dimuat."
-            onRetry={sources.retry}
-          />
+          {/* Loading / error / empty daftar tetap ditangani satu grid state;
+              saat ada isi, kartu dikelompokkan per doc_group (ADAPT-4a). */}
+          {sources.loading || sources.error || visible.length === 0 ? (
+            <LayoutGrid
+              cards={[]}
+              selectedId={selectedSourceId}
+              onSelect={selectSource}
+              state={sources.loading ? 'loading' : sources.error ? 'error' : 'empty'}
+              emptyTitle={items.length === 0 ? NO_DOCUMENTS_MESSAGE : 'Belum ada sumber pada filter ini. Unggah berkas untuk menambah sumber.'}
+              emptyAction={{ label: 'Unggah dokumen', onClick: scrollToUpload }}
+              errorTitle="Daftar sumber gagal dimuat."
+              onRetry={sources.retry}
+            />
+          ) : (
+            groupOrder.map((key) => {
+              const groupItems = buckets.get(key) ?? [];
+              const heading = groupHeading(key);
+              return (
+                <div key={key} className="mb-s5 last:mb-0">
+                  <div className="mb-s2 flex items-center gap-s2">
+                    <Icon name={heading.icon} className="text-[18px] text-forest" aria-hidden="true" />
+                    <h3 className="font-display text-label font-semibold text-ink">{heading.label}</h3>
+                    <span className="mono-meta">{groupItems.length} SUMBER</span>
+                  </div>
+                  <LayoutGrid
+                    cards={groupItems.map(cardFor)}
+                    selectedId={selectedSourceId}
+                    onSelect={selectSource}
+                    state="default"
+                  />
+                </div>
+              );
+            })
+          )}
           <div className="mt-s3">
             <Pagination page={srcPage} pageSize={SRC_PAGE_SIZE} total={visible.length} onPage={(page) => { setSrcPage(page); resetSelection(); }} label="sumber" />
           </div>

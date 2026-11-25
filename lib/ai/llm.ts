@@ -26,6 +26,11 @@ export type LlmRefineOutcome = {
 export function llmMode(): LlmMode {
   const v = process.env.LLM_MODE;
   if (v === 'assist' || v === 'full') return v;
+  if (v === 'off') return 'off';
+  // Default cerdas: bila kredensial LLM tersedia, aktifkan mode `assist`
+  // (fallback penutup) tanpa perlu set LLM_MODE eksplisit. Arah produk:
+  // LLM memperbaiki respons bila ada; deterministik tetap jadi fondasi bila tidak.
+  if (process.env.LLM_BASE_URL && process.env.LLM_API_KEY && process.env.LLM_MODEL) return 'assist';
   return 'off';
 }
 

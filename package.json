@@ -24,6 +24,7 @@
     "check:seed": "node scripts/check-seed.mjs",
     "bootstrap:production": "node scripts/bootstrap-production.mjs",
     "test:qdrant-bootstrap": "node scripts/test-qdrant-bootstrap.mjs",
+    "test:rate-limit": "node scripts/test-rate-limit.mjs",
     "postbuild": "node scripts/copy-standalone.mjs"
   },
   "dependencies": {

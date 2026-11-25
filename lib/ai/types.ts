@@ -11,7 +11,47 @@
  * or intent ids appear here.
  */
 
-export type DocType = 'legal' | 'technical_report' | 'financial' | 'general';
+// WS-A / ADAPT-1: tipe dokumen berasal dari registry tunggal
+// (`lib/core/doc-taxonomy.ts`). Lane aiml tetap boleh memakai `DocType` seperti
+// biasa; nilai sah & alias lama didefinisikan di registry, bukan di sini.
+import type { DocGroup, DocType } from '@/lib/core/doc-taxonomy';
+
+export type { DocGroup, DocType };
+
+/**
+ * ADAPT-2 / WS-B — bentuk respons per grup dokumen. Aditif: pemanggil lama
+ * yang hanya membaca `answer`/`vizSpec` tidak terpengaruh.
+ */
+export type OutputShape =
+  | 'finance_narrative'
+  | 'sop_prose'
+  | 'technical_digest'
+  | 'identity_fields'
+  | 'general_text';
+
+export interface VisualHintReference {
+  section: string;
+  page: number | null;
+}
+
+/**
+ * Petunjuk presentasi untuk frontend. TIDAK PERNAH memuat angka karangan:
+ * `source: 'execution'` berarti baris berasal dari hasil eksekusi SQL,
+ * `source: 'citations'` berarti teks/rujukan dikutip dari bukti. Bila tidak
+ * ada bukti terstruktur, nilainya `null` dan UI memakai jalur lama.
+ */
+export interface VisualHint {
+  kind: 'table' | 'series' | 'none';
+  source: 'execution' | 'citations' | 'none';
+  title?: string;
+  columns?: string[];
+  rows?: Array<Record<string, string | number | null>>;
+  x_key?: string | null;
+  y_keys?: string[];
+  /** Rujukan bagian/pasal (SOP) — hanya section yang ada di bukti. */
+  references?: VisualHintReference[];
+  note?: string;
+}
 
 export type OutputType =
   | 'kpi'
@@ -80,6 +120,8 @@ export interface Signal {
 
 export interface ClassificationResult {
   doc_type: DocType;
+  /** ADAPT-2: grup dari registry tunggal (`docGroupOf(doc_type)`). */
+  doc_group: DocGroup;
   confidence: number;
   scores: Record<DocType, number>;
   signals: Signal[];

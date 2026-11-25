@@ -8,6 +8,7 @@
 
 import type { DB } from '@/lib/db/client';
 import { nowJakartaIso } from '@/lib/date';
+import { docGroupOf } from '@/lib/core/doc-taxonomy';
 
 const CHUNK_COLUMNS: Array<[string, string]> = [
   ['content_hash', 'TEXT'],
@@ -190,8 +191,63 @@ export function ensureCoreChunkColumns(db: DB): void {
   db.exec('CREATE INDEX IF NOT EXISTS ix_core_chunks_section ON core_chunks(document_id, section_id)');
 }
 
+/* ------------------------------------------------------------ taksonomi WS-A */
+
+const DOC_TAXONOMY_COLUMNS: Array<[string, string]> = [['doc_group', 'TEXT']];
+
+function tableExists(db: DB, table: string): boolean {
+  return Boolean(
+    db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(table) as { name?: string } | undefined,
+  );
+}
+
+/** Backfill sekali untuk baris lama: doc_group NULL diturunkan dari doc_type. */
+function backfillDocGroups(db: DB, table: 'core_datasets' | 'core_documents'): void {
+  const rows = db
+    .prepare(`SELECT id, doc_type FROM ${table} WHERE doc_group IS NULL`)
+    .all() as Array<{ id: string; doc_type: string | null }>;
+  if (rows.length === 0) return;
+  const update = db.prepare(`UPDATE ${table} SET doc_group = ? WHERE id = ?`);
+  db.transaction(() => {
+    for (const row of rows) update.run(docGroupOf(row.doc_type), row.id);
+  })();
+}
+
+/**
+ * WS-A / ADAPT-1 — migrasi inkremental grup dokumen.
+ *
+ * Menambah kolom `doc_group` ke `core_datasets` dan `core_documents` pada DB
+ * yang sudah ada, lalu membackfill baris lama dari `doc_type` memakai registry
+ * tunggal (`lib/core/doc-taxonomy.ts`). Idempoten: PRAGMA table_info mencegah
+ * ALTER ganda; backfill hanya menyentuh baris yang masih NULL sehingga data
+ * yang sudah diisi kode ingest tidak ditimpa.
+ *
+ * Reversible: `ALTER TABLE ... DROP COLUMN doc_group` (index ikut di-drop).
+ * Tidak ada baris yang dihapus dan tidak ada perubahan pada `doc_type`.
+ *
+ * DB segar: kolom sudah ada di core-schema.sql → ALTER dilewati, backfill
+ * no-op. Index dibuat di sini (bukan di core-schema.sql) agar skrip eval yang
+ * mengeksekusi core-schema.sql langsung pada DB lama tidak gagal saat kolom
+ * belum ada.
+ */
+export function ensureDocTaxonomyColumns(db: DB): void {
+  if (tableExists(db, 'core_datasets')) {
+    addColumns(db, 'core_datasets', DOC_TAXONOMY_COLUMNS);
+    backfillDocGroups(db, 'core_datasets');
+    db.exec('CREATE INDEX IF NOT EXISTS ix_core_datasets_group ON core_datasets(doc_group)');
+  }
+  if (tableExists(db, 'core_documents')) {
+    addColumns(db, 'core_documents', DOC_TAXONOMY_COLUMNS);
+    backfillDocGroups(db, 'core_documents');
+    db.exec('CREATE INDEX IF NOT EXISTS ix_core_documents_group ON core_documents(doc_group)');
+  }
+}
+
 export function ensureCoreV2Columns(db: DB): void {
   ensureCoreChunkColumns(db);
+  ensureDocTaxonomyColumns(db);
   addColumns(db, 'core_citations', CITATION_COLUMNS);
   addColumns(db, 'conversations', CONVERSATION_COLUMNS);
   ensureShareSnapshotColumns(db);

@@ -23,7 +23,19 @@ export async function GET(request: Request) {
     if (status && !status.success) throw validationError('status tidak dikenal');
 
     const result = listSources(db, { kind: kind?.data ?? null, status: status?.data ?? null });
-    return jsonResponse({ items: result.items, total: result.items.length, counts: result.counts });
+    // ADAPT-4a: proyeksi read-only doc_group/doc_type dari core_datasets
+    // (id = source id). Aditif; DB lama tanpa tabel ini tetap jalan (gracing).
+    let groupBySource = new Map<string, { docGroup?: string; docType?: string }>();
+    try {
+      const rows = db.prepare('SELECT id, doc_type, doc_group FROM core_datasets').all() as Array<{ id: string; doc_type: string | null; doc_group: string | null }>;
+      for (const row of rows) {
+        groupBySource.set(row.id, { docGroup: row.doc_group ?? undefined, docType: row.doc_type ?? undefined });
+      }
+    } catch {
+      groupBySource = new Map();
+    }
+    const items = result.items.map((item) => ({ ...item, ...groupBySource.get(item.id) }));
+    return jsonResponse({ items, total: result.items.length, counts: result.counts });
   });
 }
 

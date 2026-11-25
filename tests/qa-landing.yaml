@@ -1,0 +1,48 @@
+# QA visual landing TanyaData (UI-LANDING-01 gate).
+# Assertion diturunkan dari kode: app/page.tsx + components/signal/*.
+name: landing-ui-landing-01
+settings:
+  fail_fast: false
+  step_timeout: 20000
+  run_timeout: 180
+steps:
+  # ---------- Desktop ----------
+  - viewport: {width: 1440, height: 900}
+  - clear_console_errors: {}
+  - goto: {url: "http://127.0.0.1:3210/"}
+  - wait_for: {selector: "h1"}
+
+  # Hero (app/page.tsx:78-80)
+  - assert_text: {selector: "h1", text: "Tanyakan isinya"}
+
+  # Section anchors ada (app/page.tsx:116,124,138,148)
+  - assert_visible: {selector: "#fitur"}
+  - assert_visible: {selector: "#cara-kerja"}
+  - assert_visible: {selector: "#workspace"}
+  - assert_visible: {selector: "#faq"}
+
+  # Judul tiap section (dari komponen masing-masing)
+  - assert_text: {selector: "#fitur h2", text: "Apa yang dilakukan TanyaData"}
+  - assert_text: {selector: "#cara-kerja h2", text: "Empat langkah dari berkas menjadi jawaban"}
+  - assert_text: {selector: "#workspace h2", text: "Semua yang dibutuhkan analisis harian"}
+
+  # Diagram "Cara kerja" — grid terukur + empat langkah (landing-steps.tsx:471-472, 613-616, 637-643)
+  - assert_visible: {selector: ".ck-root"}
+  - assert_visible: {selector: ".ck-row"}
+  - assert_visible: {selector: "[role=group][aria-label='Empat langkah cara kerja']"}
+  - assert_text: {selector: "[role=group][aria-label='Empat langkah cara kerja']", text: "Unggah"}
+  - assert_text: {selector: "[role=group][aria-label='Empat langkah cara kerja']", text: "Tanyakan"}
+  - assert_text: {selector: "[role=group][aria-label='Empat langkah cara kerja']", text: "Periksa"}
+  - assert_text: {selector: "[role=group][aria-label='Empat langkah cara kerja']", text: "Bagikan"}
+
+  - screenshot: {name: landing-desktop}
+
+  # ---------- Mobile (stack vertikal, diagram tidak overflow) ----------
+  - viewport: {width: 390, height: 844}
+  - goto: {url: "http://127.0.0.1:3210/#cara-kerja"}
+  - wait_for: {selector: ".ck-root"}
+  - assert_visible: {selector: ".ck-row"}
+  - assert_text: {selector: "#cara-kerja h2", text: "Empat langkah dari berkas menjadi jawaban"}
+  - screenshot: {name: landing-mobile-cara-kerja}
+
+  - assert_no_console_errors: {}

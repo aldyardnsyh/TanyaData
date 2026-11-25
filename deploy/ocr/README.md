@@ -48,9 +48,10 @@ OCR_API_KEY=<sama dengan secret di atas>
 OCR_TIMEOUT_MS=5000
 ```
 
-`OCR_TIMEOUT_MS` klien (5000 ms) **harus lebih besar** dari `OCR_TIMEOUT_S`
-service (default 4000 ms) agar service sempat mengembalikan `504` sebelum
-klien membatalkan request.
+`OCR_TIMEOUT_MS` klien **harus lebih besar** dari `OCR_TIMEOUT_S` service agar service
+sempat mengembalikan `504` sebelum klien membatalkan request. Default saat ini:
+service 20 s (preprocessing + inference di 2 vCPU bisa lambat), klien baca
+`OCR_TIMEOUT_MS` env (fallback 5 s).
 
 ## 2. Kontrak endpoint
 

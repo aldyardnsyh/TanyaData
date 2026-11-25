@@ -16,6 +16,7 @@ import type {
   Dataset,
   DatasetKind,
   DatasetStatus,
+  DocGroup,
   DocType,
   IngestionStep,
   IngestionStepStatus,
@@ -23,6 +24,7 @@ import type {
   SchemaJson,
   SourceType,
 } from '@/lib/core/contracts';
+import { docGroupOf, normalizeDocGroup } from '@/lib/core/doc-taxonomy';
 
 export function hashJson(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -59,6 +61,7 @@ type DatasetRow = {
   kind: DatasetKind;
   source_type: SourceType;
   doc_type: DocType;
+  doc_group: string | null;
   status: DatasetStatus;
   schema_json: string;
   row_count: number;
@@ -105,6 +108,8 @@ export function rowToDataset(row: DatasetRow): Dataset {
     kind: row.kind,
     source_type: row.source_type,
     doc_type: row.doc_type,
+    // WS-A: baca grup tersimpan; fallback ke doc_type untuk baris lama/eval.
+    doc_group: normalizeDocGroup(row.doc_group) ?? docGroupOf(row.doc_type),
     status: row.status,
     schema_json: parseSchema(row.schema_json),
     row_count: row.row_count,
@@ -144,16 +149,17 @@ export function createDataset(db: DB, input: CreateDatasetInput): Dataset {
   const schema = input.schema_json ?? emptySchema();
   db.prepare(
     `INSERT INTO core_datasets
-       (id, name, kind, source_type, doc_type, status, schema_json, row_count,
+       (id, name, kind, source_type, doc_type, doc_group, status, schema_json, row_count,
         period_start, period_end, quality_report, storage_path, sha256, size_bytes,
         is_demo, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     input.name,
     input.kind,
     input.source_type,
     input.doc_type ?? 'unknown',
+    docGroupOf(input.doc_type ?? 'unknown'),
     input.status ?? 'UPLOADED',
     JSON.stringify(schema),
     input.row_count ?? 0,
@@ -201,6 +207,7 @@ export type UpdateDatasetInput = Partial<{
   kind: DatasetKind;
   source_type: SourceType;
   doc_type: DocType;
+  doc_group: DocGroup;
   status: DatasetStatus;
   schema_json: SchemaJson;
   row_count: number;
@@ -217,6 +224,7 @@ const COLUMN_BY_KEY: Record<keyof UpdateDatasetInput, string> = {
   kind: 'kind',
   source_type: 'source_type',
   doc_type: 'doc_type',
+  doc_group: 'doc_group',
   status: 'status',
   schema_json: 'schema_json',
   row_count: 'row_count',
@@ -230,7 +238,13 @@ const COLUMN_BY_KEY: Record<keyof UpdateDatasetInput, string> = {
 
 export function updateDataset(db: DB, id: string, patch: UpdateDatasetInput): Dataset {
   getDataset(db, id);
-  const entries = Object.entries(patch).filter(([, value]) => value !== undefined) as Array<
+  // WS-A: doc_group selalu diturunkan ulang saat doc_type berubah agar kolom
+  // tersimpan tidak pernah menyimpang dari registry.
+  const effective: UpdateDatasetInput =
+    patch.doc_type !== undefined && patch.doc_group === undefined
+      ? { ...patch, doc_group: docGroupOf(patch.doc_type) }
+      : patch;
+  const entries = Object.entries(effective).filter(([, value]) => value !== undefined) as Array<
     [keyof UpdateDatasetInput, unknown]
   >;
   if (entries.length === 0) return getDataset(db, id);

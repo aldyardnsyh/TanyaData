@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
-import type { ChatMessage, SourceCitation, Visualization } from '@/lib/contracts/http';
+import type { ChatMessage, ChatVisualHint, SourceCitation, Visualization } from '@/lib/contracts/http';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
 import { Icon } from '@/components/ui/icons';
 import { IconTooltip } from '@/components/ui/icon-tooltip';
@@ -20,6 +20,162 @@ function fmtCell(value: string | number | null, format?: string): string {
 }
 
 const BAR_COLORS = ['bg-primary', 'bg-primary-dim', 'bg-border-control', 'bg-signal-lime', 'bg-signal-terracotta'];
+
+type HintRow = Record<string, string | number | null>;
+
+/** Kunci kolom mentah (snake_case dari SQL/adapter) jadi label yang terbaca. */
+function humanizeKey(key: string): string {
+  return key.replace(/[_-]+/g, ' ').trim().replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function fmtHintCell(value: string | number | null): string {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'number') return formatNumber(value);
+  return value;
+}
+
+/**
+ * ADAPT-4a — penyajian adaptif per `meta.outputShape`.
+ * Purpose-Gate: setiap blok menyajikan angka/kutipan yang SUDAH ada di payload
+ * (`visualHint.rows` source=execution, atau bukti sitasi source=citations);
+ * tidak ada nilai yang dihitung atau dikarang di UI. Respons lama tanpa field
+ * baru tidak pernah masuk ke blok ini (gracing, jalur lama tak berubah).
+ */
+
+/** finance_narrative + visualHint: tabel/bar dari eksekusi, kutipan dari bukti. */
+function AdaptiveFinanceVisual({ hint, documents }: { hint: ChatVisualHint; documents: SourceCitation[] }) {
+  const rows = hint.rows ?? [];
+  if (hint.source === 'citations') {
+    if (documents.length === 0) return null;
+    return (
+      <div className="space-y-s2">
+        <MonoMeta className="block">KUTIPAN BUKTI</MonoMeta>
+        {documents.slice(0, 4).map((src, i) => (
+          <blockquote key={`${src.sourceId}-${i}`} className="rounded-card border border-border-hairline bg-surface p-3">
+            <p className="font-body text-body leading-relaxed text-ink">{src.quote ?? src.section ?? '—'}</p>
+            <MonoMeta className="mt-s1 block">{src.docTitle ?? src.sourceId}{src.page != null ? ` · hlm ${src.page}` : ''}{src.section ? ` · ${src.section}` : ''}</MonoMeta>
+          </blockquote>
+        ))}
+      </div>
+    );
+  }
+  if (hint.source !== 'execution' || rows.length === 0 || !hint.columns || hint.columns.length === 0) return null;
+  if (hint.kind === 'series' && hint.x_key && hint.y_keys && hint.y_keys.length > 0) {
+    const xKey = hint.x_key;
+    const yKey = hint.y_keys[0]!;
+    const values = rows.map((r) => (typeof r[yKey] === 'number' ? (r[yKey] as number) : 0));
+    const max = Math.max(1, ...values.map((v) => Math.abs(v)));
+    return (
+      <div className="rounded-card border border-border-hairline bg-surface p-4">
+        <h4 className="mb-s3 font-body text-headline-sm text-ink">{hint.title ?? humanizeKey(yKey)}</h4>
+        <div className="space-y-s2">
+          {rows.map((row, i) => {
+            const label = String(row[xKey] ?? '');
+            const value = values[i]!;
+            return (
+              <div key={`${label}-${i}`} className="space-y-s1">
+                <div className="flex items-center justify-between gap-s2 font-body text-body-sm">
+                  <span className="min-w-0 truncate text-ink">{label}</span>
+                  <span className="shrink-0 tabular text-ink">{formatNumber(value)}</span>
+                </div>
+                <div className="h-s2 w-full overflow-hidden rounded-control bg-row-hover">
+                  <div className="h-full bg-primary" style={{ width: `${Math.max(2, (Math.abs(value) / max) * 100)}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {hint.note && <p className="mt-s2 font-body text-body-sm text-ink-muted-strong">{hint.note}</p>}
+      </div>
+    );
+  }
+  const columns: DataTableColumn<HintRow>[] = hint.columns.map((key) => {
+    const allNumeric = rows.every((r) => r[key] == null || typeof r[key] === 'number');
+    return { key, label: humanizeKey(key), align: allNumeric ? 'right' : 'left', format: (v) => fmtHintCell(v as string | number | null) };
+  });
+  return (
+    <div className="rounded-card border border-border-hairline bg-surface p-4">
+      {hint.title && <MonoMeta className="mb-s2 block">{hint.title.toUpperCase()}</MonoMeta>}
+      <DataTable columns={columns} rows={rows} emptyTitle="Tidak ada baris pada hasil eksekusi." />
+      {hint.note && <p className="mt-s2 font-body text-body-sm text-ink-muted-strong">{hint.note}</p>}
+    </div>
+  );
+}
+
+/** sop_prose: rujukan bagian/pasal, hanya yang ada di bukti sitasi. */
+function AdaptiveSopReferences({ hint, documents }: { hint: ChatVisualHint; documents: SourceCitation[] }) {
+  const refs = hint.references ?? [];
+  if (refs.length === 0 || documents.length === 0) return null;
+  const evidence = documents.map((s) => `${s.section ?? ''} ${s.quote ?? ''}`.toLowerCase().trim());
+  const shown = refs.filter((r) => {
+    if (!r.section) return false;
+    const needle = r.section.toLowerCase();
+    return evidence.some((e) => e.includes(needle) || (e.length > 0 && needle.includes(e)));
+  });
+  if (shown.length === 0) return null;
+  return (
+    <div className="rounded-card border border-border-hairline bg-surface p-4">
+      <MonoMeta className="mb-s2 block">RUJUKAN PASAL / BAGIAN</MonoMeta>
+      <ul className="space-y-s1">
+        {shown.map((r, i) => (
+          <li key={`${r.section}-${i}`} className="flex items-baseline justify-between gap-s2 font-body text-body-sm">
+            <span className="min-w-0 text-ink">{r.section}</span>
+            {r.page != null && <span className="shrink-0 font-mono text-[11px] uppercase text-ink-muted-strong">hlm {r.page}</span>}
+          </li>
+        ))}
+      </ul>
+      {hint.note && <p className="mt-s2 font-body text-body-sm text-ink-muted-strong">{hint.note}</p>}
+    </div>
+  );
+}
+
+/** technical_digest: nilai/kolom/istilah ringkas, monospace untuk nilai. */
+function AdaptiveTechnicalDigest({ hint }: { hint: ChatVisualHint }) {
+  const rows = hint.rows ?? [];
+  if (rows.length === 0) return null;
+  return (
+    <div className="rounded-card border border-border-hairline bg-surface p-4">
+      {hint.title && <MonoMeta className="mb-s2 block">{hint.title.toUpperCase()}</MonoMeta>}
+      <div className="space-y-s2">
+        {rows.slice(0, 12).map((row, i) => (
+          <div key={i} className="rounded-control border border-border-hairline bg-canvas p-s2">
+            <dl className="space-y-s1">
+              {Object.entries(row).map(([k, v]) => (
+                <div key={k} className="flex items-baseline justify-between gap-s3">
+                  <dt className="shrink-0 font-body text-body-sm text-ink-muted-strong">{humanizeKey(k)}</dt>
+                  <dd className="min-w-0 break-words text-right font-mono text-body-sm text-ink">{v == null ? '—' : String(v)}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ))}
+      </div>
+      {hint.note && <p className="mt-s2 font-body text-body-sm text-ink-muted-strong">{hint.note}</p>}
+    </div>
+  );
+}
+
+/** identity_fields: pasangan field-value dari visualHint.rows. */
+function AdaptiveIdentityFields({ hint }: { hint: ChatVisualHint }) {
+  const rows = hint.rows ?? [];
+  if (rows.length === 0) return null;
+  const fields = Object.entries(rows[0]!);
+  if (fields.length === 0) return null;
+  return (
+    <div className="rounded-card border border-border-hairline bg-surface p-4">
+      {hint.title && <MonoMeta className="mb-s2 block">{hint.title.toUpperCase()}</MonoMeta>}
+      <dl className="grid grid-cols-1 gap-x-s4 sm:grid-cols-2">
+        {fields.map(([k, v]) => (
+          <div key={k} className="flex items-baseline justify-between gap-s2 border-b border-border-hairline py-s2 last:border-b-0">
+            <dt className="shrink-0 font-body text-body-sm text-ink-muted-strong">{humanizeKey(k)}</dt>
+            <dd className="min-w-0 break-words text-right font-body text-body-md tabular text-ink">{v == null ? '—' : String(v)}</dd>
+          </div>
+        ))}
+      </dl>
+      {hint.note && <p className="mt-s2 font-body text-body-sm text-ink-muted-strong">{hint.note}</p>}
+    </div>
+  );
+}
 
 /** Audit P0: follow-up guardrail mengarah ke klarifikasi, bukan topik kanal baru. */
 const GUARDRAIL_FOLLOW_UPS: Record<'id' | 'en', { label: string; question: string }[]> = {
@@ -197,6 +353,25 @@ export function AnswerCard({
             <MonoMeta>RINGKASAN · {meta?.mode ?? 'SQL'}{meta?.partial ? ' · SEBAGIAN' : ''}</MonoMeta>
           </div>
           <p className="font-body text-body-lg leading-relaxed text-ink">{message.answer ?? message.content}</p>
+        </div>
+      )}
+
+      {/* ADAPT-4a: blok penyajian adaptif. Hanya aktif bila meta punya
+          outputShape baru; respons lama (gracing) melewatinya tanpa perubahan. */}
+      {!guardrail && meta?.outputShape && meta.outputShape !== 'general_text' && (
+        <div className="animate-message-in space-y-s3" style={{ animationDelay: '45ms' }}>
+          {meta.outputShape === 'finance_narrative' && meta.visualHint && (
+            <AdaptiveFinanceVisual hint={meta.visualHint} documents={documents} />
+          )}
+          {meta.outputShape === 'sop_prose' && meta.visualHint && (
+            <AdaptiveSopReferences hint={meta.visualHint} documents={documents} />
+          )}
+          {meta.outputShape === 'technical_digest' && meta.visualHint && (
+            <AdaptiveTechnicalDigest hint={meta.visualHint} />
+          )}
+          {meta.outputShape === 'identity_fields' && meta.visualHint && (
+            <AdaptiveIdentityFields hint={meta.visualHint} />
+          )}
         </div>
       )}
 

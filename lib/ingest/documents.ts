@@ -21,6 +21,7 @@ import {
   sectionsFromPages as coreSectionsFromPages,
 } from '@/lib/core/ingest';
 import type { DocType, SourceType } from '@/lib/core/contracts';
+import { docGroupOf } from '@/lib/core/doc-taxonomy';
 
 export type MirrorChunk = {
   /** Kunci stabil chunk (legal id atau `<doc>:c:<index>`). */
@@ -185,24 +186,37 @@ export function mirrorDocumentChunksToCore(
 ): ReplaceResult {
   const now = nowJakartaIso();
   const docType: DocType = source.docType ?? 'general';
+  // WS-A: grup diturunkan dari registry tunggal, tidak pernah diketik manual.
+  const docGroup = docGroupOf(docType);
   const pageCount = Math.max(1, source.pages ?? 0, ...chunks.map((c) => c.page ?? 1), 1);
   const sectionsJson = source.sectionsJson ?? '[]';
 
   db.transaction(() => {
     db.prepare(
-      `INSERT INTO core_datasets(id, name, kind, source_type, doc_type, status, schema_json, row_count, quality_report, storage_path, size_bytes, is_demo, created_at, updated_at)
-       VALUES (?, ?, 'document', ?, ?, 'READY', '{"version":1,"tables":[],"relations":[],"enums":{}}', 0, '{}', ?, ?, ?, ?, ?)
+      `INSERT INTO core_datasets(id, name, kind, source_type, doc_type, doc_group, status, schema_json, row_count, quality_report, storage_path, size_bytes, is_demo, created_at, updated_at)
+       VALUES (?, ?, 'document', ?, ?, ?, 'READY', '{"version":1,"tables":[],"relations":[],"enums":{}}', 0, '{}', ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
-         status = 'READY', name = excluded.name, doc_type = excluded.doc_type,
+         status = 'READY', name = excluded.name, doc_type = excluded.doc_type, doc_group = excluded.doc_group,
          storage_path = excluded.storage_path, size_bytes = excluded.size_bytes, updated_at = excluded.updated_at`,
-    ).run(source.id, source.name, source.format, docType, source.storagePath ?? null, source.sizeBytes ?? 0, 0, now, now);
+    ).run(
+      source.id,
+      source.name,
+      source.format,
+      docType,
+      docGroup,
+      source.storagePath ?? null,
+      source.sizeBytes ?? 0,
+      0,
+      now,
+      now,
+    );
     db.prepare(
-      `INSERT INTO core_documents(id, dataset_id, doc_type, mime, pages, sections_json, source_path, created_at)
-       VALUES (?, ?, ?, NULL, ?, ?, ?, ?)
+      `INSERT INTO core_documents(id, dataset_id, doc_type, doc_group, mime, pages, sections_json, source_path, created_at)
+       VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
-         dataset_id = excluded.dataset_id, doc_type = excluded.doc_type, pages = excluded.pages,
-         sections_json = excluded.sections_json, source_path = excluded.source_path`,
-    ).run(source.id, source.id, docType, pageCount, sectionsJson, source.storagePath ?? null, now);
+         dataset_id = excluded.dataset_id, doc_type = excluded.doc_type, doc_group = excluded.doc_group,
+         pages = excluded.pages, sections_json = excluded.sections_json, source_path = excluded.source_path`,
+    ).run(source.id, source.id, docType, docGroup, pageCount, sectionsJson, source.storagePath ?? null, now);
   })();
 
   return replaceIndexedChunks(db, source.id, source.id, chunks);

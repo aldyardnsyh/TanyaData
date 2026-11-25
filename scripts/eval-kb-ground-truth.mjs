@@ -4,6 +4,18 @@
  *
  *   node scripts/eval-kb-ground-truth.mjs --split dev      # tuning only
  *   node scripts/eval-kb-ground-truth.mjs --split all      # final, sekali
+ *   node scripts/eval-kb-ground-truth.mjs --split all --retrieval hybrid
+ *
+ * --retrieval fts5 (default): jalur lama — FTS5 saja, Qdrant off, embedding
+ * off. Perilaku TIDAK BERUBAH dari versi sebelumnya.
+ *
+ * --retrieval hybrid: jalur produksi — QDRANT_MODE/RETRIEVAL_MODE=hybrid/
+ * EMBEDDING_PROVIDER=local dibaca dari .env (tidak dipaksa). Indeks Qdrant
+ * dibangun untuk WORKSPACE TEMP eval (enqueueUpserts → drainOutbox). Bila
+ * Qdrant/embedding tidak tersedia → fallback jujur ke fts5 dengan label
+ * `retrieval_fallback=hybrid_unavailable`. Hasil hybrid SELALU ditulis ke
+ * file terpisah (KB_GT_RESULT_HYBRID.json / KB_GT_REPORT_HYBRID.md) dan
+ * tidak pernah menimpa hasil fts5.
  *
  * Menjalankan 139 pertanyaan ground truth (98 dev + 41 holdout) lewat JALUR
  * PRODUKSI yang sama dengan app:
@@ -39,9 +51,12 @@ function arg(name, fallback) {
 
 const KB_DIR = path.resolve(repoRoot, arg('--kb-dir', 'ai_chatbot_testdata/ai_chatbot_testdata/Knowledge Base'));
 const GT_DIR = path.join(KB_DIR, 'GroundTruth Knowledge Based');
-const outFile = path.resolve(repoRoot, arg('--out', 'docs/KB_GT_RESULT.json'));
-const mdFile = path.resolve(repoRoot, arg('--md', 'docs/KB_GT_REPORT.md'));
 const splitArg = String(arg('--split', 'all')).toLowerCase();
+const retrievalArg = String(arg('--retrieval', 'fts5')).toLowerCase();
+if (!['fts5', 'hybrid'].includes(retrievalArg)) {
+  console.error('RETRIEVAL_INVALID — gunakan fts5 | hybrid');
+  process.exit(2);
+}
 const mode = String(arg('--mode', 'off')).toLowerCase() === 'llm' ? 'llm' : 'off';
 const limit = Number(arg('--limit', '0'));
 const timeoutMs = Number(process.env.EVAL_TIMEOUT_MS || arg('--timeout', '540000'));
@@ -50,6 +65,13 @@ if (!['dev', 'holdout', 'all'].includes(splitArg)) {
   console.error('SPLIT_INVALID — gunakan dev | holdout | all');
   process.exit(2);
 }
+
+// Hasil hybrid TIDAK BOLEH menimpa/mencampur hasil fts5 (KB-GT-06 poin 3).
+// File --out/--md eksplisit dari CLI tetap dihormati.
+const outDefault = retrievalArg === 'hybrid' ? 'docs/KB_GT_RESULT_HYBRID.json' : 'docs/KB_GT_RESULT.json';
+const mdDefault = retrievalArg === 'hybrid' ? 'docs/KB_GT_REPORT_HYBRID.md' : 'docs/KB_GT_REPORT.md';
+const outFile = path.resolve(repoRoot, arg('--out', outDefault));
+const mdFile = path.resolve(repoRoot, arg('--md', mdDefault));
 
 /* ---------------------------------------------------------- temp workspace */
 // Semua env MUST ditetapkan SEBELUM modul core meng-import lib/db/paths.ts.
@@ -85,9 +107,27 @@ process.env.WORKSPACE_DIR = WORKSPACE_DIR;
 // PERBAIKAN: `llmMode()` hanya menerima 'assist' | 'full'. Nilai 'on' lama
 // diam-diam jatuh ke 'off', sehingga mode llm tidak pernah memanggil Groq.
 process.env.LLM_MODE = mode === 'llm' ? 'full' : 'off';
-process.env.RETRIEVAL_MODE = 'fts5';   // deterministik; tidak ada Qdrant
-process.env.QDRANT_MODE = 'off';
-process.env.EMBEDDING_PROVIDER = 'off';
+if (retrievalArg === 'fts5') {
+  // Jalur lama: deterministik, tidak ada Qdrant, tidak ada embedding. TIDAK BERUBAH.
+  process.env.RETRIEVAL_MODE = 'fts5';
+  process.env.QDRANT_MODE = 'off';
+  process.env.EMBEDDING_PROVIDER = 'off';
+} else {
+  // Jalur produksi (KB-GT-06): JANGAN paksa. QDRANT_MODE/URL/API_KEY/
+  // COLLECTION/COLLECTION_VERSION dibaca dari .env (loader di atas);
+  // RETRIEVAL_MODE=hybrid + EMBEDDING_PROVIDER=local sesuai default produksi.
+  process.env.RETRIEVAL_MODE = 'hybrid';
+  process.env.EMBEDDING_PROVIDER = 'local';
+  // ISOLASI WAJIB: point id Qdrant = core_chunks.id, dan DB temp eval
+  // meng-generate id dari 1 lagi. Tanpa collection terpisah, upsert eval
+  // akan MENIMPA point produksi di td_chunks_v1 (id 1..N sama). Suffix
+  // `_evalgt` aman karena sync (getQdrantConfig di lib/qdrant/client.ts)
+  // dan query (getQdrantConfig di lib/ai/hybrid.ts) sama-sama membaca
+  // QDRANT_COLLECTION per-panggilan. Collection eval dibersihkan di awal
+  // run (lihat gate di bawah) agar id lama tidak tertinggal.
+  const baseCollection = String(process.env.QDRANT_COLLECTION ?? 'td_chunks').trim() || 'td_chunks';
+  process.env.QDRANT_COLLECTION = `${baseCollection}_evalgt`;
+}
 if (mode === 'off') {
   delete process.env.LLM_API_KEY;
   delete process.env.LLM_BASE_URL;
@@ -331,6 +371,9 @@ const { answerQuestion } = await import(pathToFileURL(path.join(root, 'lib/core/
 const { createCorePorts, buildAiPortContext } = await import(pathToFileURL(path.join(root, 'lib/ai/adapter.ts')).href);
 const { sanitizeAnswer } = await import(pathToFileURL(path.join(root, 'lib/ai/answer-gate.ts')).href);
 const { verifyStructuredAnswer, renderStructuredAnswer, repairStructuredAnswer } = await import(pathToFileURL(path.join(root, 'lib/ai/citation-format.ts')).href);
+const { verifyQdrantCounts, drainOutbox } = await import(pathToFileURL(path.join(root, 'lib/qdrant/sync.ts')).href);
+const { getQdrantClient, getQdrantConfig } = await import(pathToFileURL(path.join(root, 'lib/qdrant/client.ts')).href);
+const { embedDocuments } = await import(pathToFileURL(path.join(root, 'lib/ai/embedding.ts')).href);
 
 const timer = setTimeout(() => {
   console.error(`KB_GT_TIMEOUT after ${timeoutMs}ms`);
@@ -338,6 +381,22 @@ const timer = setTimeout(() => {
 }, timeoutMs);
 
 try {
+  /* --------------------------------- reset collection eval (hybrid saja) */
+  // Idempoten: hapus alias + collection fisik eval dari run sebelumnya
+  // supaya point id lama (id core_chunks dimulai dari 1 tiap run) tidak
+  // terbawa. Gagal di sini TIDAK fatal — gate di bawah yang memutuskan
+  // fallback bila Qdrant benar-benar tidak bisa dipakai.
+  if (retrievalArg === 'hybrid') {
+    try {
+      const cfg = getQdrantConfig();
+      const client = await getQdrantClient();
+      await client
+        .updateCollectionAliases({ actions: [{ delete_alias: { alias_name: cfg.collection } }] })
+        .catch(() => {});
+      await client.deleteCollection(cfg.physicalCollection).catch(() => {});
+    } catch { /* Qdrant belum hidup → gate nanti yang fallback jujur */ }
+  }
+
   /* ------------------------------------------------------------- load GT */
   const gtFiles = fs.readdirSync(GT_DIR)
     .filter((f) => /^ground_truth_KB0\d_.*\.json$/i.test(f))
@@ -433,6 +492,62 @@ try {
       sha256: validated.sha256,
       sectionPaths: uniq(chunkRows.map((r) => r.section_path)),
     });
+  }
+
+  /* ------------------------------------------- Qdrant hybrid gate (KB-GT-06) */
+  // Mode hybrid: setelah SEMUA ingest selesai, kuras outbox sampai habis
+  // (drainOutbox dibatasi QDRANT_BATCH_SIZE=64; satu sumber bisa >64 chunk),
+  // lalu verifikasi indeks + embedding SEBELUM menjawab soal. Bila Qdrant
+  // atau embedding gagal → fallback jujur ke fts5 (env dibalikkan; semua
+  // pembaca env di lib/ bersifat per-panggilan, jadi aman di tengah proses)
+  // dengan label `retrieval_fallback=hybrid_unavailable` di hasil.
+  const hybrid = {
+    requested: retrievalArg,
+    effective: retrievalArg,
+    fallback: null,
+    fallbackDetail: null,
+    qdrantPoints: null,
+    collection: null,
+    physicalCollection: null,
+    drain: null,
+  };
+  if (retrievalArg === 'hybrid') {
+    const total = { attempted: 0, succeeded: 0, failed: 0, error: null };
+    for (let pass = 0; pass < 32; pass += 1) {
+      const s = await drainOutbox(db);
+      if (!s.enabled) break;
+      total.attempted += s.attempted;
+      total.succeeded += s.succeeded;
+      total.failed += s.failed;
+      if (s.error) total.error = s.error;
+      if (s.attempted === 0) break;
+    }
+    hybrid.drain = total;
+
+    const count = await verifyQdrantCounts(db);
+    let probeOk = false;
+    try {
+      const probe = await embedDocuments(['probe ketersediaan embedding eval']);
+      probeOk = Array.isArray(probe) && probe.length > 0 && Array.isArray(probe[0]) && probe[0].length > 0;
+    } catch { probeOk = false; }
+    const qdrantOk = count.enabled && !count.error && Number(count.qdrant) > 0;
+
+    if (qdrantOk && probeOk) {
+      hybrid.qdrantPoints = count.qdrant;
+      const cfg = getQdrantConfig();
+      hybrid.collection = cfg.collection;
+      hybrid.physicalCollection = cfg.physicalCollection;
+    } else {
+      process.env.QDRANT_MODE = 'off';
+      process.env.RETRIEVAL_MODE = 'fts5';
+      process.env.EMBEDDING_PROVIDER = 'off';
+      hybrid.effective = 'fts5';
+      hybrid.fallback = 'hybrid_unavailable';
+      hybrid.fallbackDetail = [
+        qdrantOk ? null : `qdrant: ${count.enabled ? (count.error ?? `points=${count.qdrant}`) : 'QDRANT_MODE=off / tidak terkonfigurasi'}`,
+        probeOk ? null : 'embedding: embedDocuments mengembalikan null (model lokal e5-small tidak dapat dimuat)',
+      ].filter(Boolean).join('; ');
+    }
   }
 
   /* ------------------------------------- SKIP dokumen tanpa teks PDF/OCR */
@@ -808,8 +923,11 @@ try {
 
   const report = {
     generatedAt: new Date().toISOString(),
-    role: 'aiml', phase: 'P3-MIGRATION',
+    role: 'aiml',
+    phase: retrievalArg === 'hybrid' ? 'P6-KB-GT-06' : 'P3-MIGRATION',
     split: splitArg, mode,
+    retrievalMode: hybrid.effective,
+    retrieval: hybrid,
     deterministic: mode === 'off',
     workspace: { baseDir, dataDir: DATA_DIR, workspaceDir: WORKSPACE_DIR, db: WORKSPACE_DB },
     corpus: {
@@ -847,6 +965,14 @@ try {
       'PERBAIKAN ADIL (P6): metode utama `citationPrecision/citationRecall` kini mengukur GROUNDING — sebuah sitasi benar bila chunk yang disitasi benar-benar mengandung evidence_spans/evidence_text GT. Recall = fraksi bukti GT yang tercakup chunk tersitasi. Ambang tidak diturunkan; bukti tetap wajib hadir.',
       'PERBAIKAN ADIL (P6): `keyFactCoverage` kini mengukur grounding, bukan kecocokan literal parafrasa. 249/373 key_facts GT adalah parafrasa yang tidak muncul literal di evidence manapun — menguji string literal adalah proxy cacat. Sebuah fakta dianggap terbukti bila teks bukti pendukungnya (overlap token konten ≥ 0.5) hadir di jawaban/sitasi. Tanpa bukti pendukung → jatuh ke literal. Metode lama disimpan sebagai `keyFactLiteralCoverage`.',
       'Exit 0 berarti evaluasi selesai terukur; TARGET_MET dicetak terpisah agar angka di bawah 99% tidak disembunyikan.',
+      ...(retrievalArg === 'hybrid' ? [
+        'KB-GT-06: --retrieval hybrid memakai jalur produksi (QDRANT_MODE/RETRIEVAL_MODE=hybrid/EMBEDDING_PROVIDER=local dari .env, tidak dipaksa). Indeks Qdrant dibangun untuk WORKSPACE TEMP eval via enqueueUpserts → drainOutbox setelah semua ingest.',
+        `KB-GT-06: collection Qdrant eval diisolasi dengan suffix "_evalgt" (${hybrid.physicalCollection ?? 'n/a'}) karena point id = core_chunks.id yang dimulai dari 1 lagi di DB temp — tanpa isolasi, upsert eval akan menimpa point produksi di td_chunks_v1. Collection eval di-reset di awal run.`,
+        hybrid.fallback
+          ? `KB-GT-06: hybrid TIDAK tersedia → fallback jujur ke fts5 (retrieval_fallback=${hybrid.fallback}; ${hybrid.fallbackDetail}). Angka di laporan ini efektif FTS5, BUKAN hybrid.`
+          : `KB-GT-06: indeks Qdrant terverifikasi sebelum menjawab soal (qdrant_points=${hybrid.qdrantPoints}, drain attempted=${hybrid.drain?.attempted}, succeeded=${hybrid.drain?.succeeded}, failed=${hybrid.drain?.failed}).`,
+        'KB-GT-06: hasil hybrid ditulis ke file terpisah (KB_GT_RESULT_HYBRID.json / KB_GT_REPORT_HYBRID.md) dan tidak pernah menimpa hasil fts5.',
+      ] : []),
     ],
   };
 
@@ -857,6 +983,9 @@ try {
   /* ------------------------------------------------------------- stdout */
   console.log('KB GROUND-TRUTH EVAL — jalur produksi, LLM_MODE=' + mode.toUpperCase());
   console.log('─'.repeat(92));
+  console.log(`Retrieval: requested=${hybrid.requested} effective=${hybrid.effective}` +
+    (hybrid.fallback ? `  FALLBACK=${hybrid.fallback} (${hybrid.fallbackDetail})` : '') +
+    (hybrid.qdrantPoints != null ? `  qdrant_points=${hybrid.qdrantPoints} (collection ${hybrid.collection} → ${hybrid.physicalCollection})` : ''));
   console.log(`Soal: ${cases.length} dijalankan / ${skippedCases.length} SKIPPED / ${allQuestions.length} total  split=${splitArg}  mode=${mode}`);
   console.log(`OCR available: ${ocrAvailable}`);
   console.log('Ingest: ' + ingestRecords.map((r) => `${r.kb}=${r.ingestMode}(${r.chunks} chunk${r.needsReview ? ', needs_review' : ''})`).join(' · '));
@@ -914,6 +1043,9 @@ function markdown(r) {
   L.push('');
   L.push(`- Dijalankan: ${r.generatedAt} · role \`${r.role}\` · fase \`${r.phase}\``);
   L.push(`- Split: **${r.split}** · mode: **${r.mode}** · deterministik: **${r.deterministic ? 'ya' : 'tidak'}**`);
+  L.push(`- Retrieval: requested **${r.retrieval?.requested ?? 'fts5'}** · effective **${r.retrieval?.effective ?? 'fts5'}**` +
+    (r.retrieval?.fallback ? ` · FALLBACK \`${r.retrieval.fallback}\` (${r.retrieval.fallbackDetail})` : '') +
+    (r.retrieval?.qdrantPoints != null ? ` · qdrant_points **${r.retrieval.qdrantPoints}** (collection \`${r.retrieval.collection}\` → \`${r.retrieval.physicalCollection}\`)` : ''));
   L.push(`- Soal: **${r.metrics.overall.cases}/${r.corpus.totalQuestions}** (GT: ${r.corpus.gtFiles.join(', ')})`);
   L.push(`- Workspace temporer: \`${r.workspace.baseDir}\` (dibersihkan setelah run; \`data/seed/documents/\` asli TIDAK disentuh)`);
   L.push(`- TARGET_MET (precision ≥ ${r.thresholds.precisionTarget} & abstention ≥ ${r.thresholds.abstentionTarget}): **${r.targetMet ? 'YES' : 'NO'}**`);
@@ -983,10 +1115,11 @@ function markdown(r) {
   L.push('```yaml');
   L.push('from: aiml');
   L.push('to: agentic');
-  L.push('phase: P3');
+  L.push(`phase: ${r.phase}`);
   L.push('type: deliverable');
-  L.push('refs: [docs/KB_GT_REPORT.md, docs/KB_GT_RESULT.json, docs/QDRANT_AIML_IMPL.md, tanyadata/lib/ai/retrieval.ts, tanyadata/lib/ai/answer-gate.ts, tanyadata/lib/ai/adapter.ts, tanyadata/scripts/eval-kb-ground-truth.mjs]');
-  L.push(`summary: "Eval ground-truth 4 KB (${r.metrics.overall.cases} soal, mode=${r.mode}): precision=${fmt(r.metrics.overall.precision)}, abstention=${fmt(r.metrics.overall.abstentionAccuracy)}, Cit-P=${fmt(r.metrics.overall.citationPrecision)}; gate anti-slop/mojibake ${(r.gateSelfTest ?? []).filter((g) => g.pass).length}/${(r.gateSelfTest ?? []).length} PASS; fallback FTS5 + LLM gagal → deterministik + flag jujur."`);
+  L.push('refs: [docs/KB_GT_REPORT.md, docs/KB_GT_RESULT.json, docs/QDRANT_AIML_IMPL.md, tanyadata/lib/ai/retrieval.ts, tanyadata/lib/ai/answer-gate.ts, tanyadata/lib/ai/adapter.ts, tanyadata/scripts/eval-kb-ground-truth.mjs' +
+    (retrievalArg === 'hybrid' ? ', docs/KB_GT_REPORT_HYBRID.md, docs/KB_GT_RESULT_HYBRID.json' : '') + ']');
+  L.push(`summary: "Eval ground-truth 4 KB (${r.metrics.overall.cases} soal, mode=${r.mode}, retrieval=${r.retrieval?.effective ?? 'fts5'}${r.retrieval?.qdrantPoints != null ? `, qdrant_points=${r.retrieval.qdrantPoints}` : ''}): precision=${fmt(r.metrics.overall.precision)}, abstention=${fmt(r.metrics.overall.abstentionAccuracy)}, Cit-P=${fmt(r.metrics.overall.citationPrecision)}; gate anti-slop/mojibake ${(r.gateSelfTest ?? []).filter((g) => g.pass).length}/${(r.gateSelfTest ?? []).length} PASS; fallback FTS5 + LLM gagal → deterministik + flag jujur."`);
   L.push('evidence: docs/KB_GT_RESULT.json cases[] + docs/QDRANT_AIML_IMPL.md + log safe_exec (typecheck + 4 eval existing)');
   L.push(`blocking: ${r.targetMet ? 'false' : 'false'}`);
   L.push('needs: QA menguji input normal/aneh/kosong/panjang dan verifikasi fallback (Qdrant mati, LLM 429) di UI; target 0.99 belum terukur tercapai — jangan klaim >99%.');

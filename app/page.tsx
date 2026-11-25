@@ -38,6 +38,18 @@ const FAQ_ITEMS: FaqItem[] = [
       'Sistem menyatakan tidak ditemukan dan menawarkan topik yang tersedia, bukan mengarang jawaban.',
   },
   {
+    id: 'dokumen-scan',
+    question: 'Apakah PDF hasil scan bisa dibaca?',
+    answer:
+      'Bisa. PDF tanpa lapisan teks dibaca lewat OCR yang peka terhadap tata letak berkolom, lalu isinya diindeks seperti dokumen biasa.',
+  },
+  {
+    id: 'multi-dokumen',
+    question: 'Bisakah bertanya ke beberapa dokumen sekaligus?',
+    answer:
+      'Bisa. Jawaban bisa menyintesis beberapa sumber, dan setiap sumber tetap tercantum dalam sitasinya.',
+  },
+  {
     id: 'tautan-login',
     question: 'Apakah tautan hasil perlu login?',
     answer: 'Tidak. Tautan bersifat read-only dan bisa dibuka tanpa akun.',
@@ -79,8 +91,10 @@ export default function LandingPage() {
                   Unggah dokumen dan datanya. Tanyakan isinya.
                 </HeroHighlight>
                 <p className="mt-s4 max-w-[52ch] font-body text-body text-dark-muted">
-                  TanyaData membaca dokumen PDF, DOCX, TXT, dan MD, menganalisis data CSV dan XLSX, lalu
-                  menjawab pertanyaan Anda dalam bahasa sehari-hari dengan sumber yang bisa dibuka.
+                  TanyaData membaca dokumen PDF, DOCX, TXT, dan MD (termasuk hasil pindai, lewat
+                  OCR), menganalisis data CSV dan XLSX, lalu menjawab pertanyaan Anda dalam bahasa
+                  sehari-hari dengan sumber yang bisa dibuka. Bentuk jawabannya menyesuaikan jenis
+                  dokumennya.
                 </p>
                 <div className="mt-s5 flex flex-wrap items-center gap-s3">
                   <LandingCTA tone="dark" />

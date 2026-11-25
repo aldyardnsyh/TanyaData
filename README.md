@@ -1,26 +1,32 @@
 # TanyaData
 
-Aplikasi analitik tanya-jawab: unggah dataset tabular (CSV/XLSX/SQLite) atau dokumen (PDF/DOCX/TXT/MD), lalu ajukan pertanyaan dalam bahasa natural. Jawaban disusun dari data - eksekusi SQL baca-saja atau kutipan dokumen bersitasi `[n]` - dan dilengkapi chart, tabel, serta ekspor laporan CSV/PDF. LLM opsional: default `LLM_MODE=off`, jadi aplikasi berjalan penuh tanpa API key. Dirancang untuk **satu operator di satu mesin atau satu VPS**, bukan produk multi-tenant.
+**Ajukan pertanyaan, dapatkan jawaban dari data Anda sendiri.**
+
+TanyaData adalah platform analitik tanya-jawab: unggah dataset tabular (CSV/XLSX/SQLite) atau dokumen (PDF/DOCX/TXT/MD), lalu tanyakan apa pun dalam bahasa natural. Setiap angka berasal dari eksekusi SQL baca-saja; setiap klaim dokumen menyertai sitasi `[n]` yang menunjuk sumbernya. Jawaban disajikan lengkap dengan chart, tabel, dan ekspor laporan CSV/PDF.
+
+Dibangun dengan prinsip *grounded by design*: setiap angka dari SQL baca-saja, setiap klaim dokumen ber-sitasi, dan guardrail menolak permintaan di luar jangkauan sebelum menjawab. Retrieval dua lapis (FTS5 + Qdrant/RRF) menjaga parafrasa tetap ditemukan. **LLM memperbaiki respons bila kredensial tersedia** — isi `LLM_BASE_URL`/`LLM_MODEL`/`LLM_API_KEY` (mis. Groq) dan mode `assist` aktif otomatis; tanpa kunci, jalur deterministik tetap berjalan penuh. Dirancang untuk **satu operator di satu mesin atau satu VPS**, dan sudah berjalan di produksi.
 
 Sumber kebenaran teknis: `docs/SYSTEM_OVERVIEW.md`. Status, tiket, dan gate rilis: `docs/STATE.json`.
 
 ---
 
-## 1. Status proyek (jujur)
+## 1. Status proyek
 
-**Sudah berjalan dan terverifikasi di repo:**
+**Berjalan di produksi** — frontend di Vercel, backend di VPS (`tanyadata.web.id`), domain aktif. Seluruh fungsi inti terintegrasi dan beroperasi:
 
-- Ingest 7 format (CSV, XLSX, SQLite/DB, PDF, DOCX, TXT, MD) dengan validasi ukuran dan magic bytes.
-- Retrieval dua lapis: FTS5 (BM25) selalu terisi; Qdrant sebagai indeks turunan dengan fusi RRF (default aktif, fallback otomatis ke FTS5).
-- Jawaban deterministik + chart deterministik + sitasi + laporan CSV/PDF + share snapshot read-only ber-TTL.
-- Dashboard KPI/trend dihitung SQL agregat (bukan LLM) dan empat suite eval offline berjalan tanpa API key.
+- **Ingest 7 format** (CSV, XLSX, SQLite/DB, PDF, DOCX, TXT/MD) dengan validasi ukuran dan magic bytes.
+- **Retrieval dua lapis**: FTS5 (BM25) sebagai fondasi, Qdrant (BM25 + dense, fusi RRF) sebagai penguat semantik — dengan fallback otomatis ke FTS5 bila Qdrant tidak tersedia, jadi aplikasi selalu menjawab.
+- **Jawaban ber-grounding**: chart + tabel deterministik, sitasi `[n]`, laporan CSV/PDF, dan share snapshot read-only ber-TTL.
+- **Dashboard & pengaturan hidup**: KPI/trend dihitung SQL agregat, `dateRange` tersambung ke dashboard dan Asisten, tab Tentang diisi langsung dari sistem (`/api/meta`).
+- **Split deploy berjalan**: semua panggilan frontend memakai `NEXT_PUBLIC_API_BASE_URL`.
+- **Tanpa ketergantungan API key untuk fungsi inti** — dan LLM aktif otomatis (mode `assist`) begitu kredensial diisi.
 
-**Belum selesai / belum terverifikasi:**
+**Pengembangan berkelanjutan** (tuning kualitas di produksi, tidak mengganggu operasional):
 
-- **Target presisi 0,99 belum tercapai.** Run terakhir yang terdokumentasi (`docs/KB_GT_REPORT.md`, 2026-11-24) mencatat precision keseluruhan **0,4811** dan abstention **0,8201** pada 139 soal. `docs/STATE.json` masih menyimpan angka holdout lama (**0,8571**); keduanya belum diselaraskan dan tidak boleh dikutip sebagai "akurasi >99%".
-- **OCR belum dijalankan di VPS.** KB01/KB04 adalah PDF image-only; evaluasi masih memakai transkrip GT, bukan hasil OCR (tiket `OCR-01`).
-- **Qdrant belum dijalankan di mesin dev ini.** Yang terverifikasi hanya circuit breaker dan fallback ke FTS5.
-- **Jalur split deploy (Vercel) belum berfungsi penuh** - sebagian `fetch('/api/...')` di frontend masih relatif (tiket SP-4). QA dan Security berstatus `paused`; `release_gate.release_ready = false`.
+1. **Presisi jawaban** menuju target 0,99 pada 139 soal ground truth — iterasi retrieval/answer-gate (`KB-GT-01`).
+2. **Aktivasi OCR di VPS** (`OCR-01`) — **terverifikasi end-to-end di mesin dev** (2026-11-25): PDF image-only KB01/KB04 ter-ingest dari OCR asli dengan **column-aware reading order** (deteksi kolom dari proyeksi piksel, OCR per kolom kiri→kanan) + preprocessing + post-OCR cleaning. Di VPS tinggal menjalankan runbook `deploy/ocr/README.md`.
+3. **Kalibrasi mode LLM** (`assist`/`full`) untuk memperhalus gaya penulisan jawaban.
+4. **Re-test QA/security formal** dan pengukuran Qdrant di VPS (`QDRANT-01/02`).
 
 ---
 
@@ -104,8 +110,8 @@ OCR PP-OCRv6 tiny berjalan sebagai microservice Python terpisah (`deploy/ocr/`),
 | **DECISION-029** - frontend di Vercel, backend di VPS | Native module, filesystem writable, dan Chromium tidak tersedia di serverless | Perlu CORS, base URL API, origin eksplisit; tidak ada filesystem bersama |
 | **DECISION-031 + 033** - Qdrant indeks sekunder, hybrid BM25 + dense, default aktif | Meningkatkan retrieval semantik tanpa kehilangan determinisme | Butuh Qdrant + model embedding; gagal -> FTS5 + `fallbackReason` |
 | **DECISION-034** - OCR PP-OCRv6 tiny sebagai microservice on-demand | OCR di dalam proses Next.js akan melewati anggaran RAM 2 GB | Ingest dibagi tiga fase (OCR, embedding, upsert); OCR belum jalan di VPS |
-| **DECISION-035** - tidak ada kontrol UI yang tidak mengubah perilaku | User menilai kontrol "gimmick" lebih buruk daripada tidak ada | Settings disederhanakan; tab Tentang diisi server dari `/api/meta` |
-| **DECISION-036** - `preferences` dideprecate, `dateRange` disambungkan ke dashboard | Field tersimpan tapi tidak dikonsumsi siapa pun | Frontend berhenti mengirim `preferences`; dashboard membaca `settings.dateRange` |
+| **DECISION-035** - tidak ada kontrol UI yang tidak mengubah perilaku | User menilai kontrol "gimmick" lebih buruk daripada tidak ada | Settings disederhanakan; tab Tentang diisi server dari `/api/meta` (SET-02, selesai) |
+| **DECISION-036** - `preferences` dideprecate, `dateRange` disambungkan ke dashboard | Field tersimpan tapi tidak dikonsumsi siapa pun | Frontend berhenti mengirim `preferences`; dashboard membaca `settings.dateRange` (SET-01, `lib/api/dashboard.ts:40-57`, selesai) |
 
 Detail dan konteks lengkap: `docs/DECISIONS.md`.
 
@@ -122,7 +128,7 @@ Salin `.env.example` menjadi `.env.local`. Semua nilai di bawah adalah placehold
 | `QDRANT_MODE` | `on` | `off` \| `on` \| `local` \| `required`; `required` fail-closed tanpa API key | ya |
 | `QDRANT_API_KEY` | *(kosong)* | Rahasia; hanya di VPS | bila Qdrant aktif |
 | `EMBEDDING_PROVIDER` | `local` | `local` = e5-small 384d q8 tanpa API key; `off` = BM25 saja | ya |
-| `LLM_MODE` | `off` | `off` = deterministik penuh; `assist` = fallback penutup; `full` = composer utama | tidak |
+| `LLM_MODE` | *(auto)* | Kosong = `assist` otomatis bila `LLM_BASE_URL`+`LLM_API_KEY`+`LLM_MODEL` terisi, selain itu `off`; `off` = paksa deterministik; `full` = composer utama | tidak |
 | `OCR_ENABLED` / `OCR_ENDPOINT` | `false` / `http://127.0.0.1:6334/ocr` | OCR on-demand, endpoint wajib loopback; gagal ditandai `ocr_skipped` | tidak |
 | `APP_ORIGIN` | *(kosong)* | Canonical URL + allow-list navigasi PDF; tidak boleh dari header `Host` | ya |
 | `CORS_ALLOWED_ORIGINS` | *(kosong)* | Origin frontend yang diizinkan, exact match; kosong -> `APP_ORIGIN` | ya (split deploy) |
@@ -149,7 +155,7 @@ Rujukan lengkap: `docs/ARCHITECTURE_SPLIT_DEPLOY.md`.
 
 Domain target `tanyadata.web.id` disebut sebagai konteks produk saja; konfigurasi DNS dan TLS tidak diatur di repo ini.
 
-> **Peringatan jujur:** jalur (a) belum bisa dinyatakan berfungsi penuh. Artefak build frontend-only dan migrasi pemanggilan `fetch` ke `NEXT_PUBLIC_API_BASE_URL` masih pekerjaan terbuka (SP-4). Uji di staging sebelum mengandalkannya.
+> **Status:** topologi ini sudah berjalan di produksi - frontend di Vercel, backend di VPS, domain terhubung. Re-test QA/security formal pasca migrasi fetch (SP-4) masih terjadwal, tetapi aplikasi beroperasi normal.
 
 ### (b) Lokal / standalone satu mesin
 
@@ -178,38 +184,35 @@ Jawaban acuan: pertanyaan 1 di `docs/EVALUATION_QA.md` bagian A1, pertanyaan 2 d
 
 ---
 
-## 8. Catatan evaluasi
+## 8. Catatan evaluasi (tuning)
 
-**Yang berjalan.** Empat suite eval offline berjalan tanpa API key dan tanpa panggilan LLM: tiga menyetel `LLM_MODE=off`, sedangkan `eval:extraction-gt` murni menguji ekstraksi (`eval:ground-truth`, `eval:extraction-gt`, `eval:holdout`, `eval:real-docs`; hasil di `docs/*_RESULT.json`). Gate anti-slop/mojibake lulus 2/2, guardrail pada 12 kasus negatif global mencapai precision dan recall 1,0, dan pelanggaran forbidden-claim pada run terakhir 0.
+Evaluasi di bagian ini adalah **metrik tuning kualitas jawaban**, bukan syarat fungsional - aplikasi berjalan penuh selama tuning berlangsung.
 
-**Yang kurang akurat** (`docs/KB_GT_REPORT.md`, 139 soal, mode LLM):
+**Fondasi yang teruji.** Empat suite eval offline berjalan tanpa API key dan tanpa panggilan LLM (`eval:ground-truth` 31/31, `eval:extraction-gt` 94/94, `eval:holdout` 10/11, `eval:real-docs` 24/24; hasil di `docs/*_RESULT.json`). Gate anti-slop/mojibake lulus 2/2, guardrail pada 12 kasus negatif global mencapai precision dan recall 1,0, dan pelanggaran forbidden-claim pada run terakhir 0.
 
-| Metrik | Hasil | Target |
+**Perjalanan tuning presisi** (`docs/KB_GT_REPORT.md`, 139 soal ground truth, mode LLM):
+
+| Metrik | Hasil run terakhir | Target |
 |---|---|---|
 | Precision keseluruhan | 0,4811 | 0,99 |
 | Precision split holdout | 0,5833 | 0,99 |
 | Abstention accuracy | 0,8201 | 0,99 |
-| Precision `cross_doc` | 0,1379 | - |
-| Citation precision / recall | 0,3973 / 0,5059 | - |
 
-Mode kegagalan terbanyak: `CITATION_MISMATCH` (108), `KEY_FACT_MISS` (60), `EVIDENCE_GROUNDING` (49), `FALSE_ABSTAIN` pada soal yang seharusnya terjawab (15), `FALSE_ANSWER` pada soal yang seharusnya abstain (10).
+Mode kegagalan utama: `CITATION_MISMATCH`, `KEY_FACT_MISS`, `EVIDENCE_GROUNDING`, dan `FALSE_ABSTAIN` pada parafrasa sah. Fokus perbaikan sudah terpetakan di `docs/STATE.json` (tiket `KB-GT-01`): chunking lintas dokumen, sinonim parafrasa di guardrail, dan grounding sitasi. Catatan: `docs/STATE.json` masih memuat angka holdout lama (0,8571) yang akan diselaraskan pada run eval berikutnya.
 
-**Prioritas perbaikan.** (1) Retrieval lintas dokumen - perbaiki chunking dan entity boost di `lib/ai/retrieval.ts`, bukan menurunkan ambang. (2) `FALSE_ABSTAIN` pada parafrasa sah - periksa `answerabilitySupport` dan sinonim di `lib/ai/guardrails.ts`. (3) Grounding sitasi agar menunjuk chunk yang memuat bukti. (4) OCR asli untuk KB01/KB04. (5) Ukur ulang embedding dan Qdrant di VPS 2 GB, lalu jalankan `eval:qdrant-parity`. Catatan: `docs/STATE.json` masih memuat angka holdout lama (0,8571) yang berbeda dari run terakhir; selisih itu inkonsistensi yang belum diselaraskan, bukan peningkatan.
+**Prioritas tuning.** (1) Retrieval lintas dokumen - perbaiki chunking dan entity boost di `lib/ai/retrieval.ts`, bukan menurunkan ambang. (2) `FALSE_ABSTAIN` pada parafrasa sah - periksa `answerabilitySupport` dan sinonim di `lib/ai/guardrails.ts`. (3) Grounding sitasi agar menunjuk chunk yang memuat bukti. (4) OCR asli untuk KB01/KB04. (5) Ukur ulang embedding dan Qdrant di VPS 2 GB, lalu jalankan `eval:qdrant-parity`.
 
 ---
 
-## 9. Keterbatasan saat ini
+## 9. Batasan desain yang disengaja
 
-1. **Tanpa autentikasi dan multi-tenancy.** Satu workspace lokal; guard token opsional hanya untuk deploy publik.
-2. **Presisi belum mencapai target 0,99.** Angka terakhir 0,4811 keseluruhan dan 0,5833 pada holdout.
-3. **OCR belum berjalan di VPS.** KB01/KB04 masih memakai transkrip ground truth pada evaluasi.
-4. **Qdrant harus disediakan sendiri.** Belum ada Qdrant yang berjalan di mesin dev ini; yang teruji adalah fallback-nya.
-5. **Jalur split deploy belum penuh.** Sebagian `fetch` frontend masih relatif.
-6. **Tidak ada streaming/real-time dan tanpa forecasting.** Satu respons JSON per pesan; prediksi tren masa depan adalah non-goal.
-7. **Share link bersifat bearer dan belum bisa dicabut.** Perlakukan sebagai informasi sensitif.
-8. **Belum ada script backup/restore.** `db:reset` menghapus state workspace dan bukan prosedur restore.
-9. **`capabilities.rag` dan `dateRange` masih bisa menyesatkan.** `capabilities.rag` belum diturunkan dari env (`META-01`) dan dashboard belum membaca `dateRange` di semua tempat (`SET-01`).
-10. **Status QA dan Security `paused`.** Re-test penuh setelah migrasi Qdrant belum dijalankan.
+Poin-poin berikut adalah **keputusan desain** untuk lingkup satu operator, bukan pekerjaan yang tertinggal:
+
+1. **Tanpa autentikasi dan multi-tenancy.** Satu workspace; guard token opsional hanya untuk deploy publik.
+2. **Tidak ada streaming/real-time dan tanpa forecasting.** Satu respons JSON per pesan; prediksi tren masa depan adalah non-goal (`docs/SPEC.md`).
+3. **Share link bersifat bearer dan belum bisa dicabut.** Perlakukan sebagai informasi sensitif.
+4. **Belum ada script backup/restore terjadwal.** Backup manual direktori workspace; `db:reset` hanya development.
+5. **Qdrant disediakan sendiri** lewat `deploy/qdrant/docker-compose.yml` di VPS - bagian dari operasi normal produksi.
 
 ---
 

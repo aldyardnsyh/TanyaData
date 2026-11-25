@@ -51,46 +51,46 @@
       "noDocuments": false,
       "qdrant": {
         "status": "ok",
-        "points": 183,
+        "points": 188,
         "noDocuments": false,
         "note": "Qdrant tersinkron (point count > 0)."
       },
       "fts5": {
-        "chunks": 165,
-        "ftsRows": 183
+        "chunks": 170,
+        "ftsRows": 188
       },
       "steps": [
         {
           "name": "db:init",
           "ok": true,
           "exitCode": 0,
-          "durationMs": 831
+          "durationMs": 3155
         },
         {
           "name": "db:seed:kb-sop",
           "ok": true,
           "exitCode": 0,
-          "durationMs": 13919
+          "durationMs": 13425
         },
         {
           "name": "reindex:docs",
           "ok": true,
           "exitCode": 0,
-          "durationMs": 21753
+          "durationMs": 12552
         },
         {
           "name": "check:seed",
           "ok": true,
           "exitCode": 0,
-          "durationMs": 725
+          "durationMs": 856
         }
       ],
       "notes": [
         "Qdrant tersinkron (point count > 0).",
         "FTS5: FTS5 adalah sumber jawaban aktif."
       ],
-      "finishedAt": "2026-11-24T06:22:35.146Z"
+      "finishedAt": "2026-11-25T06:39:03.091Z"
     }
   },
-  "updatedAt": "2026-11-24T06:23:50.167Z"
+  "updatedAt": "2026-11-25T06:39:03.091Z"
 }

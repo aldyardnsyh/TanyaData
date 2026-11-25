@@ -4,6 +4,8 @@
  * Numbers are JSON numbers, dates are `YYYY-MM-DD`, timestamps are ISO-8601 with +07:00.
  */
 
+import type { DocGroup, DocType } from '@/lib/core/doc-taxonomy';
+
 export type Lang = 'id' | 'en';
 
 export type PeriodCompareStrategy = 'like_for_like' | 'previous' | 'none';
@@ -233,6 +235,31 @@ export type GuardrailType =
   | 'ambiguous'
   | 'unsupported';
 
+/* ADAPT-2 — payload respons per grup dokumen (aditif & opsional). */
+export type ChatOutputShape =
+  | 'finance_narrative'
+  | 'sop_prose'
+  | 'technical_digest'
+  | 'identity_fields'
+  | 'general_text';
+
+/**
+ * Petunjuk presentasi yang dihasilkan adapter AI. `source: 'execution'` =
+ * baris hasil eksekusi SQL; `source: 'citations'` = kutipan bukti apa adanya.
+ * `null` berarti UI memakai jalur lama (tidak ada payload tambahan).
+ */
+export type ChatVisualHint = {
+  kind: 'table' | 'series' | 'none';
+  source: 'execution' | 'citations' | 'none';
+  title?: string;
+  columns?: string[];
+  rows?: Record<string, string | number | null>[];
+  x_key?: string | null;
+  y_keys?: string[];
+  references?: { section: string; page: number | null }[];
+  note?: string;
+};
+
 export type ChatMeta = {
   period: Period | null;
   dataset: DatasetRef;
@@ -247,6 +274,12 @@ export type ChatMeta = {
   aiActive?: boolean;
   confidenceLevel?: 'strong' | 'limited' | 'refused';
   alternativeKeywords?: string[];
+  /** ADAPT-2 — grup dokumen aktif (registry tunggal). */
+  docGroup?: DocGroup;
+  /** ADAPT-2 — bentuk respons yang dipilih untuk grup ini. */
+  outputShape?: ChatOutputShape;
+  /** ADAPT-2 — payload visual/tabel; hanya dari eksekusi atau kutipan bukti. */
+  visualHint?: ChatVisualHint | null;
 };
 
 export type ChatMessage = {
@@ -301,6 +334,34 @@ export type ConversationDetailResponse = {
 export type SendMessageResponse = {
   message: ChatMessage;
   conversation: { id: string; title: string; updatedAt: string; messageCount: number };
+};
+
+/* -------------------------------------------------------------------- share */
+
+/**
+ * POST /api/share (201). Bentuk wire dibungkus `share`; `url` RELATIF
+ * (`/share/<id>`). Klien wajib membaca `share.url`/`share.id` lalu membangun
+ * URL absolut dengan origin frontend. Field di level atas tidak ada.
+ */
+export type ShareCreateResponse = {
+  share: {
+    id: string;
+    /** Relatif terhadap origin frontend, mis. `/share/abc123`. */
+    url: string;
+    byteSize: number;
+    messageCount: number;
+    createdAt: string;
+    expiresAt: string | null;
+  };
+};
+
+/** GET /api/share/[id]: flat, publik, read-only. `payload` dinormalkan di UI. */
+export type ShareSnapshotResponse = {
+  id: string;
+  createdAt: string;
+  expiresAt: string | null;
+  options: { includeCitations: boolean; includeIdentity: boolean };
+  payload: unknown;
 };
 
 /* ----------------------------------------------------------- investigations */
@@ -534,7 +595,8 @@ export type SourceSummaryResponse = {
 export type SourceAnalyticsEntity = { label: string; count: number; topSection: string | null; topPage: number | null };
 export type SourceAnalyticsResponse = {
   source: { id: string; name: string; format: string };
-  docType: 'financial-report' | 'incident-report' | 'general';
+  /** WS-A: tipe dari registry tunggal; nilai legacy tetap terbaca. */
+  docType: DocType;
   docTypeLabel: string;
   confidence: number;
   signals: string[];

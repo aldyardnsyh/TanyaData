@@ -1,0 +1,14 @@
+# Re-verify 409 di /assistant setelah db:init + bukti grouping data-sources.
+name: adapt4a-409-reverify
+settings: {fail_fast: false, step_timeout: 20000, run_timeout: 120}
+steps:
+  - viewport: {width: 1440, height: 900}
+  - clear_console_errors: {}
+  - goto: {url: "http://127.0.0.1:3212/assistant"}
+  - wait_for: {selector: "main"}
+  - goto: {url: "http://127.0.0.1:3212/data-sources"}
+  - wait_for: {selector: "main"}
+  - screenshot: {name: data-sources-grouping}
+  - goto: {url: "http://127.0.0.1:3212/"}
+  - wait_for: {selector: "h1"}
+  - assert_no_console_errors: {}

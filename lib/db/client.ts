@@ -10,6 +10,7 @@ import {
 } from '@/lib/db/paths';
 import {
   ensureCoreChunkColumns,
+  ensureDocTaxonomyColumns,
   ensureQdrantOutboxSchema,
   ensureShareSnapshotColumns,
 } from '@/lib/db/migrate-v2';
@@ -41,6 +42,10 @@ function applySchema(db: DB): void {
   // jika tidak CREATE INDEX akan gagal dengan "no such column: section_id".
   ensureCoreChunkColumns(db);
   db.exec(fs.readFileSync(CORE_SCHEMA_SQL, 'utf8'));
+  // WS-A / ADAPT-1: kolom doc_group bersifat nullable dan index-nya dibuat di
+  // sini (bukan di core-schema.sql), jadi aman dijalankan setelah schema:
+  // DB lama mendapat kolom + backfill, DB segar hanya mendapat index.
+  ensureDocTaxonomyColumns(db);
   globalThis.__tanyadataSchemaApplied = true;
 }
 

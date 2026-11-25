@@ -279,7 +279,49 @@ const GUARDRAIL_SYNONYMS: Record<string, string[]> = {
   retensi: ['penyimpanan', 'simpan', 'retention'],
   salinan: ['salin', 'copy', 'backup'],
   berkas: ['dokumen', 'file'],
+  // KB-GT-01 (P6, analisis eval dev: FALSE_ABSTAIN GT-067 & GT-078) —
+  // padanan makna umum, bukan daftar topik dokumen:
+  peran: ['tugas', 'bertugas', 'tanggung jawab'],
+  harus: ['wajib', 'perlu'],
 };
+
+/**
+ * Stem sederhana bahasa Indonesia untuk infleksi awalan/akhiran yang terukur
+ * membuat parafrasa sah salah ditolak (eval dev KB-GT-01: GT-032 "dicatat" vs
+ * bukti "mencatat"; GT-078 "direspons" vs bukti "respons"). Hanya padanan
+ * bentuk kata — bukan relaksasi ambang: bukti tetap WAJIB benar-benar
+ * memuat akar kata tersebut, jadi soal tanpa bukti tetap ditolak.
+ */
+function indonesianStems(term: string): string[] {
+  const out = new Set<string>([term]);
+  let t = term;
+  for (const suf of ['nya', 'kan', 'an', 'i']) {
+    if (t.length > suf.length + 3 && t.endsWith(suf)) {
+      t = t.slice(0, -suf.length);
+      out.add(t);
+      break;
+    }
+  }
+  for (const pre of ['menge', 'meng', 'meny', 'men', 'mem', 'ber', 'ter', 'di', 'ke', 'pe']) {
+    if (t.length > pre.length + 3 && t.startsWith(pre)) {
+      out.add(t.slice(pre.length));
+      break;
+    }
+  }
+  return [...out].filter((s) => s.length >= 4);
+}
+
+/** True bila term (atau sinonim/stemnya) benar-benar hadir di teks bukti. */
+function termInEvidence(term: string, evidenceLower: string): boolean {
+  const variants = [term, ...(GUARDRAIL_SYNONYMS[term] ?? [])];
+  for (const v of variants) {
+    if (evidenceLower.includes(v)) return true;
+    for (const stem of indonesianStems(v)) {
+      if (stem !== v && evidenceLower.includes(stem)) return true;
+    }
+  }
+  return false;
+}
 
 /**
  * Skor dukungan maksimum: fraksi query-term yang hadir di SATU kalimat bukti.
@@ -298,8 +340,7 @@ export function answerabilitySupport(question: string, evidenceText: string): nu
   for (const sentence of sentences) {
     let hits = 0;
     for (const term of terms) {
-      const variants = [term, ...(GUARDRAIL_SYNONYMS[term] ?? [])];
-      if (variants.some((v) => sentence.includes(v))) hits += 1;
+      if (termInEvidence(term, sentence)) hits += 1;
     }
     best = Math.max(best, hits / terms.length);
   }

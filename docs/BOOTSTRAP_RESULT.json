@@ -1,28 +1,35 @@
 {
-  "generatedAt": "2026-11-24T06:23:46.346Z",
-  "finishedAt": "2026-11-24T06:23:50.167Z",
+  "generatedAt": "2026-11-25T06:38:33.003Z",
+  "finishedAt": "2026-11-25T06:39:03.091Z",
   "status": "PASS",
-  "seedProfile": "none",
-  "noDocuments": true,
+  "seedProfile": "demo",
+  "noDocuments": false,
   "steps": [
     {
       "name": "db:init",
       "command": "npm run db:init",
-      "durationMs": 825,
+      "durationMs": 3155,
+      "ok": true,
+      "exitCode": 0
+    },
+    {
+      "name": "db:seed:kb-sop",
+      "command": "npm run db:seed:kb-sop",
+      "durationMs": 13425,
       "ok": true,
       "exitCode": 0
     },
     {
       "name": "reindex:docs",
       "command": "npm run reindex:docs",
-      "durationMs": 2252,
+      "durationMs": 12552,
       "ok": true,
       "exitCode": 0
     },
     {
       "name": "check:seed",
       "command": "npm run check:seed",
-      "durationMs": 617,
+      "durationMs": 856,
       "ok": true,
       "exitCode": 0
     }
@@ -31,27 +38,25 @@
     "mode": "on",
     "collection": "td_chunks",
     "configured": true,
-    "points": 0,
+    "points": 188,
     "status": "ok",
-    "noDocuments": true,
-    "note": "Tidak ada dokumen yang di-seed (SEED_PROFILE=none). Qdrant 0 point adalah keadaan awal yang benar, bukan kegagalan drain outbox."
+    "noDocuments": false,
+    "note": "Qdrant tersinkron (point count > 0)."
   },
   "fts5": {
     "available": true,
-    "chunks": 0,
-    "ftsRows": 0,
+    "chunks": 170,
+    "ftsRows": 188,
     "note": "FTS5 adalah sumber jawaban aktif."
   },
   "env": {
-    "seedProfile": "none",
+    "seedProfile": "demo",
     "qdrantMode": "on",
     "retrievalMode": "hybrid",
     "embeddingProvider": "local"
   },
   "notes": [
-    "Point Qdrant lama dihapus — tidak ada dokumen pada SEED_PROFILE=none.",
-    "Tidak ada dokumen yang di-seed (SEED_PROFILE=none). Qdrant 0 point adalah keadaan awal yang benar, bukan kegagalan drain outbox.",
-    "FTS5: FTS5 adalah sumber jawaban aktif.",
-    "SEED_PROFILE=none - produksi dimulai tanpa PDF KB-SOP, Perpres, dan transaksi dummy."
+    "Qdrant tersinkron (point count > 0).",
+    "FTS5: FTS5 adalah sumber jawaban aktif."
   ]
 }

@@ -47,16 +47,21 @@ export function rateLimit(request: Request, policy: RateLimitPolicy): Response |
     buckets.set(key, bucket);
   }
 
-  const elapsed = now - bucket.last;
-  if (elapsed >= config.windowMs) {
-    bucket.tokens = config.limit;
-    bucket.last = now;
-  } else if (elapsed > 0) {
+  // SEC-011: refill dihitung dari selang sejak update terakhir, lalu `last`
+  // SELALU dimajukan ke `now`. Kalau `last` dibiarkan di waktu bucket dibuat,
+  // setiap request menghitung ulang refill dari titik yang sama sehingga kuota
+  // kembali penuh setelah paruh window pertama dan limiter praktis mati.
+  // Jalur reset penuh tidak perlu cabang terpisah: elapsed >= windowMs membuat
+  // refill >= limit, dan Math.min menahannya di config.limit.
+  const elapsed = Math.max(0, now - bucket.last);
+  if (elapsed > 0) {
     bucket.tokens = Math.min(config.limit, bucket.tokens + (elapsed / config.windowMs) * config.limit);
+    bucket.last = now;
   }
 
   if (bucket.tokens < 1) {
-    const retryAfter = Math.max(1, Math.ceil((config.windowMs - (now - bucket.last)) / 1000));
+    // Waktu tunggu = sisa token yang kurang, bukan sisa window.
+    const retryAfter = Math.max(1, Math.ceil(((1 - bucket.tokens) / config.limit) * (config.windowMs / 1000)));
     return new Response(JSON.stringify(errorBody('RATE_LIMITED', 'Terlalu banyak permintaan. Coba lagi nanti.')), {
       status: 429,
       headers: {

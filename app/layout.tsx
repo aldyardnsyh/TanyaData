@@ -11,7 +11,7 @@ import { TooltipProvider } from '@/components/ui/icon-tooltip';
  * wajib screenshot nyata produk, bukan ilustrasi.
  */
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, '') || 'http://localhost:3000';
 const TITLE = 'TanyaData: Analisis Dokumen dan Data dengan AI';
 const DESCRIPTION =
   'Unggah dokumen dan data, ajukan pertanyaan dalam bahasa sehari-hari, dan dapatkan jawaban dengan sumber yang bisa dibuka.';
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    url: '/',
+    url: SITE_URL,
     siteName: 'TanyaData',
     locale: 'id_ID',
     title: TITLE,

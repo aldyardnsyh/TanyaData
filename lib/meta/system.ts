@@ -151,61 +151,48 @@ const PIPELINE: SystemPipelineStage[] = [
 ];
 
 /**
- * Batasan yang terbukti. Setiap entri merujuk STATE.json / dokumen yang ada.
- * Entri `dashboard_range` dari contoh kontrak DIHAPUS karena SET-01
- * menyambungkan dashboard ke `settings.dateRange` (batasan itu tidak berlaku lagi).
+ * Batasan yang krusial bagi pengguna (DESIGN_SYSTEM §J, DECISION-035).
+ * Hanya yang mengubah cara kerja atau ekspektasi pengguna yang dicantumkan;
+ * pekerjaan tuning internal (presisi KB-GT, OCR, pengukuran Qdrant dev)
+ * dilaporkan di docs/STATE.json, bukan di UI.
  */
 const LIMITS: SystemLimit[] = [
   {
     id: 'no_auth',
-    label: 'Tanpa auth/multi-tenant',
-    detail: 'Single workspace lokal; guard token opsional PUBLIC_DEPLOY/API_ACCESS_TOKEN (.env.example:35-39).',
-    source: 'docs/STATE.json',
-  },
-  {
-    id: 'precision_target',
-    label: 'Target presisi KB-GT belum tercapai',
-    detail: 'Holdout 0,8571 dan dev 0,5915 (target 0,99; target_met=false). Lihat docs/STATE.json kb_ground_truth.',
-    source: 'docs/STATE.json',
-  },
-  {
-    id: 'kb_ocr_gap',
-    label: 'KB01/KB04 masih pakai transkrip GT',
+    label: 'Satu workspace, tanpa multi-tenant',
     detail:
-      'OCR PP-OCRv6 tiny sudah diimplementasikan tetapi belum dijalankan di VPS; korpus eval memakai gt_transcript, bukan OCR asli.',
-    source: 'docs/STATE.json',
-  },
-  {
-    id: 'cross_doc_precision',
-    label: 'Presisi lintas-dokumen rendah',
-    detail: 'FALSE_ABSTAIN pada parafrasa masih 11 di holdout; sintesis lintas dokumen belum stabil.',
-    source: 'docs/STATE.json',
-  },
-  {
-    id: 'qdrant_dev',
-    label: 'Qdrant belum dijalankan di mesin dev',
-    detail: 'Circuit breaker terverifikasi; fallback FTS5 deterministik.',
-    source: 'docs/STATE.json',
+      'Dirancang untuk satu operator: satu workspace bersama, dengan guard token opsional (PUBLIC_DEPLOY + API_ACCESS_TOKEN) untuk deploy publik.',
+    source: 'docs/DECISIONS.md',
   },
   {
     id: 'no_streaming',
-    label: 'Tanpa streaming/real-time',
-    detail: 'Satu respons JSON per pesan (ARCHITECTURE C-10).',
+    label: 'Jawaban satu kali jadi, bukan streaming',
+    detail:
+      'Setiap pertanyaan menghasilkan satu respons JSON lengkap (jawaban + chart + sitasi); tidak ada streaming token per token (ARCHITECTURE C-10).',
     source: 'docs/ARCHITECTURE.md',
   },
   {
     id: 'vercel_ephemeral',
-    label: 'State workspace lokal bisa hilang di Vercel',
-    detail: 'Cold start menghapus workspace writable (DECISION-002 konsekuensi 3).',
+    label: 'Backend penyimpanan data, frontend tampilan',
+    detail:
+      'Workspace (dokumen, dataset, riwayat) hidup di backend VPS; frontend di serverless hanya tampilan sehingga tidak menyimpan state (DECISION-002/029).',
     source: 'docs/DECISIONS.md',
+  },
+  {
+    id: 'share_link',
+    label: 'Share link berumur terbatas',
+    detail:
+      'Snapshot share bersifat read-only dan kedaluwarsa sesuai SHARE_TTL_DAYS; perlakukan tautan sebagai informasi sensitif.',
+    source: 'lib/core/share.ts',
   },
 ];
 
 /** Ringkasan satu paragraf; dipadatkan dari SYSTEM_OVERVIEW §1 tanpa klaim baru. */
 const SUMMARY =
-  'TanyaData adalah aplikasi analitik tanya-jawab Next.js satu proses dengan SQLite sebagai sumber kebenaran. ' +
-  'Retrieval deterministik lebih dulu: FTS5 (BM25) selalu terisi, Qdrant hanya indeks turunan opsional (BM25 + dense) yang difusikan dengan RRF dan selalu jatuh ke FTS5 bila gagal. ' +
-  'Jawaban disusun dari data (SQL baca-saja atau kutipan dokumen ber-sitasi); LLM opsional dan wajib ter-grounding.';
+  'TanyaData mengubah pertanyaan bahasa natural menjadi jawaban yang bisa dipercaya: setiap angka berasal dari eksekusi SQL baca-saja ' +
+  'dan setiap klaim dokumen menyertai sitasi [n] yang menunjuk potongan sumbernya. Retrieval berlapis — FTS5 (BM25) sebagai fondasi, ' +
+  'Qdrant (BM25 + dense, fusi RRF) sebagai penguat semantik — memastikan parafrasa tetap ditemukan, sementara guardrail menolak permintaan ' +
+  'di luar jangkauan sebelum menjawab. LLM bersifat opsional dan hanya menutup bila sinyal kualitas rendah; jawaban deterministik selalu tersedia.';
 
 /** Bangun payload `system` lengkap dengan runtime yang sudah diturunkan. */
 export function buildSystemPayload(runtime: SystemRuntime): MetaSystemPayload {

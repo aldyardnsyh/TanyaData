@@ -1,0 +1,54 @@
+# Geometri diagram "Cara kerja" (DECISION-035, keputusan 1).
+# Sumber kebenaran nilai: DIAGRAM_CSS di components/signal/landing-steps.tsx.
+# Kontrak: node berlebar KONSTAN per breakpoint, rail adalah sel grid (gap 0),
+# garis rail inset 0 sehingga menyentuh tepi border node. Tidak ada lebar node
+# yang berasal dari konten. Spacing token: --spacing-s1..s6 (app/globals.css).
+
+- breakpoint: < 768px (mobile, tumpuk vertikal)
+  plate: 120
+  core: 64
+  answer: 208
+  answer_min_height: 176
+  share: 144
+  share_min_height: 112
+  rail: 24        # tinggi rail vertikal; garis vertikal inset 0
+  tile: 48
+
+- breakpoint: >= 768px (md)
+  rail: 32
+
+- breakpoint: >= 1024px (lg, deret horizontal)
+  plate: 120
+  core: 64
+  answer: 224
+  share: 144
+  rail: 24        # lebar kolom rail horizontal; garis scaleX inset 0
+  tile: 48
+  row_width: 624
+  core_center_pct: 28.2051   # lane chip pertanyaan di atas inti
+
+- breakpoint: >= 1280px (xl)
+  plate: 136
+  core: 64
+  answer: 240
+  share: 160
+  rail: 40
+  tile: 56
+  row_width: 720
+  core_center_pct: 28.8889
+
+- breakpoint: >= 1600px (2xl)
+  plate: 136
+  core: 72
+  answer: 272
+  share: 176
+  rail: 64
+  tile: 56
+  row_width: 848
+  core_center_pct: 27.8302
+
+- kontrak_spasi:
+  - gap antar node: 0 (rail = sel grid, bukan margin)
+  - padding/margin dalam diagram: hanya token s1..s6
+  - chip pertanyaan (bubble): lebar konten dibatasi max-width viewport,
+    slot vertikal tinggi tetap 2 x s3

@@ -8,15 +8,18 @@
  */
 
 import type { AnswerQuestionResult, Lang } from '@/lib/contracts/http';
+import type { DocGroup, DocType } from '@/lib/core/doc-taxonomy';
 
 export type { Lang };
+// WS-A / ADAPT-1: satu sumber kebenaran taksonomi dokumen. Re-export menjaga
+// impor lama (`DocType` dari contracts) tetap bekerja.
+export type { DocGroup, DocType };
 
 /* ------------------------------------------------------------------ dataset */
 
 export type DatasetKind = 'tabular' | 'document' | 'mixed';
 export type SourceType = 'csv' | 'xlsx' | 'sqlite' | 'pdf' | 'docx' | 'txt' | 'md';
 export type DatasetStatus = 'UPLOADED' | 'PROCESSING' | 'READY' | 'FAILED';
-export type DocType = 'legal' | 'technical_report' | 'financial' | 'general' | 'unknown';
 
 export type OcrPageStatus = {
   page: number;
@@ -52,6 +55,8 @@ export type Dataset = {
   kind: DatasetKind;
   source_type: SourceType;
   doc_type: DocType;
+  /** WS-A: grup turunan dari doc_type (finance/sop/technical/identity/general). */
+  doc_group: DocGroup;
   status: DatasetStatus;
   schema_json: SchemaJson;
   row_count: number;
@@ -125,6 +130,8 @@ export type Document = {
   id: string;
   dataset_id: string;
   doc_type: DocType;
+  /** WS-A: grup dokumen; opsional agar konstruktor lama tidak pecah. */
+  doc_group?: DocGroup;
   mime: string | null;
   pages: number;
   sections: DocumentSection[];
@@ -274,6 +281,31 @@ export type QueryMeta = {
   structuredAnswer?: StructuredAnswerView | null;
   /** FASE 2H — verifier outcome for the generated claims. */
   citationVerification?: { ok: boolean; failures: string[]; degraded: boolean } | null;
+  /** ADAPT-2 — grup dokumen dari registry tunggal (`docGroupOf(doc_type)`),
+   * dilaporkan agar UI bisa menyesuaikan penyajian per kelompok dokumen. */
+  docGroup?: 'finance' | 'sop' | 'technical' | 'identity' | 'general';
+  /** ADAPT-2 — bentuk respons yang dipakai composer per grup dokumen. */
+  outputShape?:
+    | 'finance_narrative'
+    | 'sop_prose'
+    | 'technical_digest'
+    | 'identity_fields'
+    | 'general_text';
+  /** ADAPT-2 — saran penyajian visual (hanya bila data mendukung; null = tidak
+   * ada visualisasi yang bisa dipertanggungjawabkan dari bukti). Mirror dari
+   * `VisualHint` (lib/ai/types.ts) tanpa import lib/ai: `source: 'execution'`
+   * berarti baris dari hasil eksekusi SQL, `'citations'` dari kutipan bukti. */
+  visualHint?: {
+    kind: 'table' | 'series' | 'none';
+    source: 'execution' | 'citations' | 'none';
+    title?: string;
+    columns?: string[];
+    rows?: Array<Record<string, string | number | null>>;
+    x_key?: string | null;
+    y_keys?: string[];
+    references?: Array<{ section: string; page: number | null }>;
+    note?: string;
+  } | null;
 };
 
 /** Structural mirrors of the FASE 2H AI-lane contract (no lib/ai import). */
