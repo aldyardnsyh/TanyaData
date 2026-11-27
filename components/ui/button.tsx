@@ -1,6 +1,7 @@
 'use client';
 
 import { clsx, type ClassValue } from 'clsx';
+import * as React from 'react';
 import { twMerge } from 'tailwind-merge';
 import { IconLoader } from './icons';
 import { useRipple } from '@/lib/ui/ripple';
@@ -16,6 +17,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: ButtonVariant;
   size?: ButtonSize;
   loading?: boolean;
+  /** Render anak tunggal (mis. `<Link>`) dengan kelas tombol, bukan `<button>`. */
+  asChild?: boolean;
 }
 
 /* S-05: semua tombol punya area sentuh ≥44px. Visual dibedakan oleh padding. */
@@ -42,9 +45,32 @@ export function Button({
   children,
   onPointerDown,
   ref,
+  asChild = false,
   ...props
 }: ButtonProps & { ref?: React.Ref<HTMLButtonElement> }) {
   const ripple = useRipple<HTMLButtonElement>();
+
+  const classes = cn(
+    'motion-ripple-host inline-flex min-h-11 items-center justify-center gap-2 rounded-control px-4 font-body font-semibold transition-[background-color,border-color,color] duration-[var(--motion-fast)] active:translate-y-px motion-reduce:transform-none',
+    variantClasses[variant],
+    sizeClasses[size],
+    variant === 'icon' && 'h-11 w-11 min-h-11 min-w-11 px-0',
+    disabled && 'cursor-not-allowed opacity-45',
+    className,
+  );
+
+  if (asChild) {
+    const child = React.Children.only(children) as React.ReactElement<{
+      className?: string;
+      'aria-busy'?: boolean;
+      'aria-disabled'?: boolean;
+    }>;
+    return React.cloneElement(child, {
+      className: cn(classes, child.props.className),
+      'aria-busy': loading || undefined,
+      'aria-disabled': disabled || undefined,
+    });
+  }
 
   return (
     <button
@@ -56,14 +82,7 @@ export function Button({
         if (variant === 'primary') ripple(event);
         onPointerDown?.(event);
       }}
-      className={cn(
-        'motion-ripple-host inline-flex min-h-11 items-center justify-center gap-2 rounded-control font-body font-semibold transition-[background-color,border-color,color] duration-[var(--motion-fast)] active:translate-y-px motion-reduce:transform-none',
-        variantClasses[variant],
-        sizeClasses[size],
-        variant === 'icon' && 'h-11 w-11 min-h-11 min-w-11 px-0',
-        disabled && 'cursor-not-allowed opacity-45',
-        className,
-      )}
+      className={classes}
       {...props}
     >
       {loading ? <IconLoader className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}

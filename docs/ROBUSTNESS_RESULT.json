@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-25T06:41:12.840Z",
-  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-realdocs-31644-1795588867916\\tanyadata.db",
+  "generatedAt": "2026-11-27T10:28:08.976Z",
+  "workspaceDb": "C:\\Users\\aldya\\AppData\\Local\\Temp\\tanyadata-realdocs-17564-1795775284222\\tanyadata.db",
   "fixturesDir": "D:\\Riset Pribadi\\AI-Powered Data Analytics Chatbot\\tanyadata\\data\\fixtures\\real-docs",
   "pipeline": [
     "validateUpload → ingestIntoDataset (lib/core/ingest.ts)",
@@ -29,12 +29,12 @@
       "cleaningActions": 2,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 70,
-      "peakRssBytes": 110374912,
+      "latencyMs": 71,
+      "peakRssBytes": 109936640,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_5baa57827795",
+      "datasetId": "ds_69a15028b75b",
       "tableName": null
     },
     {
@@ -54,12 +54,12 @@
       "cleaningActions": 2,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 62,
-      "peakRssBytes": 110792704,
+      "latencyMs": 46,
+      "peakRssBytes": 110252032,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_f24fd19581b0",
+      "datasetId": "ds_debd45e4703c",
       "tableName": null
     },
     {
@@ -79,12 +79,12 @@
       "cleaningActions": 4,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 158,
-      "peakRssBytes": 123006976,
+      "latencyMs": 143,
+      "peakRssBytes": 122937344,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_7db5f7dc2f49",
+      "datasetId": "ds_a93a8b08092e",
       "tableName": null
     },
     {
@@ -104,12 +104,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 347,
-      "peakRssBytes": 132911104,
+      "latencyMs": 286,
+      "peakRssBytes": 132300800,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_6d597628ba87",
+      "datasetId": "ds_ea07ad265b56",
       "tableName": null
     },
     {
@@ -129,12 +129,12 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 160,
-      "peakRssBytes": 135651328,
+      "latencyMs": 149,
+      "peakRssBytes": 135602176,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_3150e65c5694",
+      "datasetId": "ds_86bd7f88fa8b",
       "tableName": null
     },
     {
@@ -154,12 +154,12 @@
       "cleaningActions": 5,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 146,
-      "peakRssBytes": 136241152,
+      "latencyMs": 156,
+      "peakRssBytes": 136060928,
       "rowsParsed": 0,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_620a73785ec1",
+      "datasetId": "ds_57c8f9bb3420",
       "tableName": null
     },
     {
@@ -179,13 +179,13 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 1262,
-      "peakRssBytes": 179712000,
+      "latencyMs": 1181,
+      "peakRssBytes": 179195904,
       "rowsParsed": 46952,
       "periodStart": "2026-08-01",
       "periodEnd": "2026-11-18",
-      "datasetId": "ds_bfa00271f218",
-      "tableName": "core_data_dsbfa00271f218"
+      "datasetId": "ds_39922e729699",
+      "tableName": "core_data_ds39922e729699"
     },
     {
       "id": "RD-CSV-CH",
@@ -204,13 +204,13 @@
       "cleaningActions": 0,
       "ocrUsed": false,
       "ocrPages": [],
-      "latencyMs": 38,
-      "peakRssBytes": 179822592,
+      "latencyMs": 46,
+      "peakRssBytes": 179294208,
       "rowsParsed": 10,
       "periodStart": null,
       "periodEnd": null,
-      "datasetId": "ds_fc9759da690a",
-      "tableName": "core_data_dsfc9759da690a"
+      "datasetId": "ds_cc0e51cf17ad",
+      "tableName": "core_data_dscc0e51cf17ad"
     }
   ],
   "cases": [
@@ -289,7 +289,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 30
+        "latencyMs": 29
       }
     },
     {
@@ -326,7 +326,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 16
+        "latencyMs": 14
       }
     },
     {
@@ -363,7 +363,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 18
+        "latencyMs": 15
       }
     },
     {
@@ -401,7 +401,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 23
+        "latencyMs": 24
       }
     },
     {
@@ -439,7 +439,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 26
+        "latencyMs": 28
       }
     },
     {
@@ -474,7 +474,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 19
+        "latencyMs": 17
       }
     },
     {
@@ -619,7 +619,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 16
+        "latencyMs": 17
       }
     },
     {
@@ -660,7 +660,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 27
+        "latencyMs": 23
       }
     },
     {
@@ -699,7 +699,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 21
+        "latencyMs": 16
       }
     },
     {
@@ -751,7 +751,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 8
+        "latencyMs": 6
       }
     },
     {
@@ -855,7 +855,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 6
+        "latencyMs": 5
       }
     },
     {
@@ -881,7 +881,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 3
+        "latencyMs": 2
       }
     },
     {
@@ -917,7 +917,7 @@
         "sqlRows": [],
         "expectedRows": [],
         "numericGrounding": 1,
-        "latencyMs": 19
+        "latencyMs": 17
       }
     },
     {
@@ -930,13 +930,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[46952] got=[46952] sql=SELECT COUNT(*) AS value FROM core_data_dsbfa00271f218 LIMIT 500",
+      "detail": "expected=[46952] got=[46952] sql=SELECT COUNT(*) AS value FROM core_data_ds39922e729699 LIMIT 500",
       "actual": {
         "answer": "hasil: 46.952 (value). angka ini berasal dari eksekusi sql pada sumber data.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT COUNT(*) AS value FROM core_data_dsbfa00271f218 LIMIT 500",
+        "sql": "SELECT COUNT(*) AS value FROM core_data_ds39922e729699 LIMIT 500",
         "sqlRows": [
           {
             "value": 46952
@@ -948,7 +948,7 @@
           }
         ],
         "numericGrounding": 1,
-        "latencyMs": 49
+        "latencyMs": 44
       }
     },
     {
@@ -961,13 +961,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[173,346,595,1519,44319] got=[173,346,595,1519,44319] sql=SELECT status AS bucket, COUNT(*) AS value FROM core_data_dsbfa00271f218 GROUP BY bucket LIMIT 500",
+      "detail": "expected=[173,346,595,1519,44319] got=[173,346,595,1519,44319] sql=SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds39922e729699 GROUP BY bucket LIMIT 500",
       "actual": {
         "answer": "ditemukan 5 baris. saya menghitung jumlah baris dari tabel csv dikelompokkan per status.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT status AS bucket, COUNT(*) AS value FROM core_data_dsbfa00271f218 GROUP BY bucket LIMIT 500",
+        "sql": "SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds39922e729699 GROUP BY bucket LIMIT 500",
         "sqlRows": [
           {
             "bucket": "EXPIRED",
@@ -1013,7 +1013,7 @@
           }
         ],
         "numericGrounding": 1,
-        "latencyMs": 32
+        "latencyMs": 27
       }
     },
     {
@@ -1026,13 +1026,13 @@
       "mustContain": [],
       "pass": true,
       "score": 1,
-      "detail": "expected=[94.39] got=[94.39] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_dsbfa00271f218 LIMIT 500",
+      "detail": "expected=[94.39] got=[94.39] sql=SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_ds39922e729699 LIMIT 500",
       "actual": {
         "answer": "hasil: 94,39 (value). angka ini berasal dari eksekusi sql pada sumber data.",
         "citations": [],
         "guardrail": null,
         "aiGuardrail": "refused",
-        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_dsbfa00271f218 LIMIT 500",
+        "sql": "SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_data_ds39922e729699 LIMIT 500",
         "sqlRows": [
           {
             "value": 94.39
@@ -1044,7 +1044,7 @@
           }
         ],
         "numericGrounding": 0,
-        "latencyMs": 25
+        "latencyMs": 24
       }
     }
   ],

@@ -1,8 +1,8 @@
 # EVAL_RESULTS — Ground Truth AI Core
 
-- Dijalankan: 2026-11-25T06:40:30.942Z
+- Dijalankan: 2026-11-27T10:28:01.586Z
 - Kasus: 12 legacy (3 per fixture) + 2 realSeed + 11 capability CORE V2 + 6 Perpres 76
-- Workspace: `C:\Users\aldya\AppData\Local\Temp\tanyadata-eval-36252-1795588829697\tanyadata.db` (sementara, dibuat ulang tiap run)
+- Workspace: `C:\Users\aldya\AppData\Local\Temp\tanyadata-eval-15432-1795775280176\tanyadata.db` (sementara, dibuat ulang tiap run)
 - Hasil keseluruhan: **PASS**
 
 ## Hasil per tahap

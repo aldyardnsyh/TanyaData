@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { use, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -15,6 +15,7 @@ import { BentoGrid, type BentoItem } from '@/components/signal/bento-grid';
 import { StatusBadge } from '@/components/signal/status-badge';
 import type { DotTone } from '@/components/signal/status-dot';
 import { toast } from '@/components/ui/toaster';
+import { Button } from '@/components/ui/button';
 
 const ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   VALIDATION_ERROR: 'Data yang dikirim tidak valid.',
@@ -327,9 +328,28 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
           </div>
 
           <div className="mt-s5 flex flex-wrap items-center gap-s2">
-            <Link href="/data-sources" className="touch-44 inline-flex items-center gap-s2 rounded-control border border-hairline-dark px-s3 font-display text-label font-semibold text-porcelain transition-colors hover:border-porcelain focus-ring"><Icon name="arrow_back" className="text-[16px]" /> Kembali</Link>
-            <button type="button" onClick={() => void reindex()} disabled={!detail || loading} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-hairline-dark px-s3 font-display text-label font-semibold text-porcelain transition-colors hover:border-porcelain focus-ring disabled:opacity-50"><Icon name="refresh" className="text-[16px]" /> Indeks ulang</button>
-            {detail && id !== 'seed' && <button type="button" onClick={() => setDeleteOpen(true)} className="touch-44 inline-flex items-center gap-s2 rounded-control border border-terracotta px-s3 font-display text-label font-semibold text-porcelain focus-ring"><Icon name="delete" className="text-[16px]" /> Hapus</button>}
+            <Button asChild variant="ghost" className="border border-hairline-dark text-porcelain hover:border-porcelain hover:bg-transparent">
+              <Link href="/data-sources">
+                <Icon name="arrow_back" className="text-[16px]" /> Kembali
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => void reindex()}
+              disabled={!detail || loading}
+              className="border border-hairline-dark text-porcelain hover:border-porcelain hover:bg-transparent"
+            >
+              <Icon name="refresh" className="text-[16px]" /> Indeks ulang
+            </Button>
+            {detail && id !== 'seed' && (
+              <Button
+                variant="ghost"
+                onClick={() => setDeleteOpen(true)}
+                className="border border-signal-terracotta text-porcelain hover:border-porcelain hover:bg-transparent"
+              >
+                <Icon name="delete" className="text-[16px]" /> Hapus
+              </Button>
+            )}
           </div>
         </div>
       </section>
@@ -669,8 +689,12 @@ export default function DataSourceDetailPage({ params }: { params: Promise<{ id:
             <h2 className="font-display text-title text-ink">Hapus sumber?</h2>
             <p className="mt-s2 font-body text-body text-ink-72">Tindakan ini tidak dapat dibatalkan. Riwayat percakapan dan laporan tetap tersimpan.</p>
             <div className="mt-s4 flex justify-end gap-s2">
-              <button type="button" onClick={() => setDeleteOpen(false)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring">Batal</button>
-              <button type="button" onClick={() => void confirmDelete()} disabled={deleting} className="touch-44 rounded-control border border-terracotta px-s3 font-display text-label font-semibold text-ink focus-ring disabled:opacity-50">{deleting ? 'Menghapus' : 'Hapus'}</button>
+              <Button variant="ghost" onClick={() => setDeleteOpen(false)}>
+                Batal
+              </Button>
+              <Button variant="danger" onClick={() => void confirmDelete()} loading={deleting}>
+                {deleting ? 'Menghapus' : 'Hapus'}
+              </Button>
             </div>
           </div>
         </div>

@@ -234,10 +234,12 @@ export async function removeSource(db: DB, id: string): Promise<void> {
 
 function docFilePath(row: SourceRow): string {
   const stored = row.storage_path ?? '';
-  if (stored && path.isAbsolute(stored) && fs.existsSync(stored)) return stored;
-  if (stored && fs.existsSync(stored)) return stored;
+  // Path runtime (dari DB, bukan statis) — turbopackIgnore mencegah Turbopack
+  // men-trace seluruh project sebagai output server.
+  if (stored && path.isAbsolute(stored) && fs.existsSync(/*turbopackIgnore: true*/ stored)) return stored;
+  if (stored && fs.existsSync(/*turbopackIgnore: true*/ stored)) return stored;
   const seedPath = seedDocPath(stored || `${row.name}.${row.format}`);
-  if (fs.existsSync(seedPath)) return seedPath;
+  if (fs.existsSync(/*turbopackIgnore: true*/ seedPath)) return seedPath;
   throw unprocessable('File sumber tidak ditemukan di storage', { reason: 'FILE_MISSING' });
 }
 

@@ -1,0 +1,105 @@
+# BUGFIX verifikasi: state tombol (kartu terpilih vs tidak) + sidebar collapse.
+name: bugfix-buttons-sidebar
+settings: {fail_fast: false, step_timeout: 30000, run_timeout: 180}
+steps:
+  - viewport: {width: 1440, height: 900}
+  - clear_console_errors: {}
+  - goto: {url: "http://127.0.0.1:3216/data-sources"}
+  - wait_for: {selector: "main"}
+
+  # --- Sidebar: konten bergeser saat rail diciutkan ---
+  - assert_js:
+      js: |
+        (() => {
+          const main = document.querySelector('main');
+          const pl = parseFloat(getComputedStyle(main).paddingLeft);
+          if (Math.abs(pl - 232) > 2) { console.error('expanded paddingLeft=' + pl); return false; }
+          return true;
+        })()
+  - click: {selector: "button[aria-label='Ciutkan sidebar']"}
+  - assert_js:
+      js: |
+        (async () => {
+          const main = document.querySelector('main');
+          for (let i = 0; i < 40; i += 1) {
+            if (Math.abs(parseFloat(getComputedStyle(main).paddingLeft) - 72) <= 2) return true;
+            await new Promise(r => setTimeout(r, 100));
+          }
+          console.error('collapsed paddingLeft=' + getComputedStyle(main).paddingLeft);
+          return false;
+        })()
+  - screenshot: {name: sidebar-collapsed}
+  - click: {selector: "button[aria-label='Buka sidebar']"}
+
+  # --- Kartu belum dipilih: tombol aksi BELUM tampil ---
+  - assert_js:
+      js: |
+        (async () => {
+          for (let i = 0; i < 60; i += 1) {
+            if (document.querySelectorAll('main button').length > 6) break;
+            await new Promise(r => setTimeout(r, 150));
+          }
+          const t = [...document.querySelectorAll('main button, main a')].map(e => (e.textContent || '').trim());
+          if (t.some(x => x === 'Buka detail')) { console.error('detail buttons visible before selection'); return false; }
+          return true;
+        })()
+  - screenshot: {name: card-unselected}
+
+  # --- Pilih kartu: tombol aksi muncul dengan varian konsisten ---
+  - assert_js:
+      js: |
+        (() => {
+          const card = [...document.querySelectorAll('main button')].find(b => (b.textContent || '').startsWith('Pilih sumber KB-01'));
+          if (!card) { console.error('card KB-01 not found'); return false; }
+          card.click();
+          return true;
+        })()
+  - assert_js:
+      js: |
+        (async () => {
+          for (let i = 0; i < 60; i += 1) {
+            const t = [...document.querySelectorAll('main button, main a')].map(e => (e.textContent || '').trim());
+            if (t.includes('Buka detail')) break;
+            await new Promise(r => setTimeout(r, 120));
+          }
+          const nodes = [...document.querySelectorAll('main button, main a')];
+          const texts = nodes.map(e => (e.textContent || '').trim());
+          const need = ['Buka detail', 'Pratinjau', 'Indeks ulang', 'Hapus'];
+          const missing = need.filter(t => !texts.includes(t));
+          if (missing.length) { console.error('missing: ' + missing.join(',')); return false; }
+          // Hapus harus <button> (danger), bukan <a>
+          const hapus = [...document.querySelectorAll('main button')].find(b => (b.textContent || '').trim() === 'Hapus');
+          if (!hapus) { console.error('Hapus not a button'); return false; }
+          // hierarki: Pratinjau secondary, Hapus danger (border beda warna)
+          const pratinjau = [...document.querySelectorAll('main button')].find(b => (b.textContent || '').trim() === 'Pratinjau');
+          const bp = getComputedStyle(pratinjau).borderTopColor;
+          const bh = getComputedStyle(hapus).borderTopColor;
+          if (bp === bh) { console.error('hierarchy missing: pratinjau=' + bp + ' hapus=' + bh); return false; }
+          const small = [...document.querySelectorAll('main button')].filter(b => {
+            const r = b.getBoundingClientRect();
+            return r.height > 0 && r.height < 43;
+          });
+          if (small.length) { console.error('small targets: ' + small.length); return false; }
+          return true;
+        })()
+  - screenshot: {name: card-selected-buttons}
+
+  # --- Pratinjau: state pressed berubah setelah diklik ---
+  - assert_js:
+      js: |
+        (async () => {
+          const btn = [...document.querySelectorAll('main button')].find(b => (b.textContent || '').trim() === 'Pratinjau');
+          if (!btn) { console.error('Pratinjau not found'); return false; }
+          const before = btn.getAttribute('aria-pressed');
+          btn.click();
+          for (let i = 0; i < 40; i += 1) {
+            const cur = [...document.querySelectorAll('main button')].find(b => (b.textContent || '').trim() === 'Pratinjau');
+            if (cur && cur.getAttribute('aria-pressed') !== before) return true;
+            await new Promise(r => setTimeout(r, 150));
+          }
+          console.error('aria-pressed unchanged: ' + before);
+          return false;
+        })()
+  - screenshot: {name: preview-pressed}
+
+  - assert_no_console_errors: {}

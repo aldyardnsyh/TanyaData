@@ -1,6 +1,6 @@
 # ROBUSTNESS_REAL_DOCS — Uji Robust Dokumen Nyata
 
-> Uji **robust**, bukan tuning. Dijalankan 2026-11-25T06:41:12.840Z · `node scripts/eval-real-docs.mjs --non-interactive` · workspace sementara `C:\Users\aldya\AppData\Local\Temp\tanyadata-realdocs-31644-1795588867916\tanyadata.db`.
+> Uji **robust**, bukan tuning. Dijalankan 2026-11-27T10:28:08.976Z · `node scripts/eval-real-docs.mjs --non-interactive` · workspace sementara `C:\Users\aldya\AppData\Local\Temp\tanyadata-realdocs-17564-1795775284222\tanyadata.db`.
 
 **Hasil keseluruhan: PASS** — 24/24 kasus lulus; 6/6 dokumen berhasil di-ingest; 0 temuan/bug tercatat.
 
@@ -18,14 +18,14 @@
 
 | Dokumen | Format | Ingest OK? | Section | Chunk | Halaman | Mojibake (sisa) | OCR? | Waktu | RAM puncak | Baris |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Catatan Insiden Okt-Nov 2026 | txt | YA | 1 | 8 | 1 | 0 | TIDAK | 70 ms | 105.3 MB | 0 |
-| FAQ Customer Support | md | YA | 13 | 13 | 1 | 0 | TIDAK | 62 ms | 105.7 MB | 0 |
-| Katalog Kode Kegagalan Transaksi | docx | YA | 6 | 13 | 1 | 0 | TIDAK | 158 ms | 117.3 MB | 0 |
-| Laporan Operasional September 2026 | pdf | YA | 7 | 7 | 2 | 0 | TIDAK | 347 ms | 126.8 MB | 0 |
-| Laporan Operasional Oktober 2026 | pdf | YA | 7 | 8 | 2 | 0 | TIDAK | 160 ms | 129.4 MB | 0 |
-| SOP-TRX-003 Penanganan Transaksi Gagal | pdf | YA | 10 | 14 | 3 | 0 | TIDAK | 146 ms | 129.9 MB | 0 |
-| transactions.csv | csv | YA | 0 | 0 | 0 | 0 | TIDAK | 1262 ms | 171.4 MB | 46952 |
-| channels.csv | csv | YA | 0 | 0 | 0 | 0 | TIDAK | 38 ms | 171.5 MB | 10 |
+| Catatan Insiden Okt-Nov 2026 | txt | YA | 1 | 8 | 1 | 0 | TIDAK | 71 ms | 104.8 MB | 0 |
+| FAQ Customer Support | md | YA | 13 | 13 | 1 | 0 | TIDAK | 46 ms | 105.1 MB | 0 |
+| Katalog Kode Kegagalan Transaksi | docx | YA | 6 | 13 | 1 | 0 | TIDAK | 143 ms | 117.2 MB | 0 |
+| Laporan Operasional September 2026 | pdf | YA | 7 | 7 | 2 | 0 | TIDAK | 286 ms | 126.2 MB | 0 |
+| Laporan Operasional Oktober 2026 | pdf | YA | 7 | 8 | 2 | 0 | TIDAK | 149 ms | 129.3 MB | 0 |
+| SOP-TRX-003 Penanganan Transaksi Gagal | pdf | YA | 10 | 14 | 3 | 0 | TIDAK | 156 ms | 129.8 MB | 0 |
+| transactions.csv | csv | YA | 0 | 0 | 0 | 0 | TIDAK | 1181 ms | 170.9 MB | 46952 |
+| channels.csv | csv | YA | 0 | 0 | 0 | 0 | TIDAK | 46 ms | 171.0 MB | 10 |
 
 > `Mojibake (sisa)` = jumlah karakter asing yang masih ada pada teks chunk **setelah** cleaning (`badness()` dari `lib/ingest/mojibake.ts`). Kolom `cleaningActions` di JSON menunjukkan berapa kali pipeline melakukan perbaikan. OCR diharapkan **TIDAK** terpanggil karena keenam dokumen memiliki text layer.
 
@@ -64,8 +64,8 @@
 
 | ID | Pertanyaan | SQL yang dijalankan engine | Angka expected (eksekusi langsung) | Angka aktual | Benar? |
 |---|---|---|---|---|---|
-| SQL-01 | Berapa total transaksi? | SELECT COUNT(*) AS value FROM core_data_dsbfa00271f218 LIMIT 500 | [46952] | [46952] | PASS |
-| SQL-02 | Distribusi transaksi berdasarkan status | SELECT status AS bucket, COUNT(*) AS value FROM core_data_dsbfa00271f218 GROUP BY bucket LIMIT 500 | [44319,1519,595,346,173] | [595,1519,173,346,44319] | PASS |
+| SQL-01 | Berapa total transaksi? | SELECT COUNT(*) AS value FROM core_data_ds39922e729699 LIMIT 500 | [46952] | [46952] | PASS |
+| SQL-02 | Distribusi transaksi berdasarkan status | SELECT status AS bucket, COUNT(*) AS value FROM core_data_ds39922e729699 GROUP BY bucket LIMIT 500 | [44319,1519,595,346,173] | [595,1519,173,346,44319] | PASS |
 | SQL-03 | Berapa success rate? | SELECT ROUND(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS value FROM core_… | [94.39] | [94.39] | PASS |
 
 ## 5. Ringkasan PASS/FAIL

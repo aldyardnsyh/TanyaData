@@ -351,6 +351,13 @@
 @utility w-rail { width: 72px; }
 @utility w-rail-expanded { width: 232px; }
 @utility h-dock { height: 64px; }
+/* BUGFIX-2: utility offset yang dipakai AppShell (`md:pl-rail`, `md:left-rail`,
+ * `xl:pl-rail-expanded`, `xl:left-rail-expanded`). Tanpa ini konten & header
+ * tidak pernah bergeser saat rail diciutkan/dilebarkan. */
+@utility pl-rail { padding-left: 72px; }
+@utility pl-rail-expanded { padding-left: 232px; }
+@utility left-rail { left: 72px; }
+@utility left-rail-expanded { left: 232px; }
 
 /* ---- Kompatibilitas sementara: alias token lama → token baru. ----
  * Dipertahankan HANYA yang masih dipakai landing (app/page.tsx) dan primitive

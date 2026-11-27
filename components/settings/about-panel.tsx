@@ -255,10 +255,14 @@ export function AboutPanel({
 
       <SectionRule />
 
-      {/* 2. Pipeline 4 tahap */}
+      {/* 2. Pipeline */}
       <section aria-labelledby="about-pipeline" className="flex flex-col gap-s3">
-        <SectionHeading id="about-pipeline" title="Pipeline 4 tahap" />
-        <PipelineDiagram stages={system.pipeline} />
+        <SectionHeading id="about-pipeline" title="Alur sistem" />
+        <PipelineDiagram />
+        <p className="font-body text-caption text-ink-72">
+          Rincian empat tahap inti (ingest, retrieval, penyusunan jawaban, keluaran) dari data
+          server:
+        </p>
         <div className="grid gap-s3 sm:grid-cols-2">
           {system.pipeline.map((stage, index) => (
             <StageCard key={stage.id} index={index} stage={stage} />

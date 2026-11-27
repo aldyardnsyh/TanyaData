@@ -128,7 +128,10 @@ services:
 
     environment:
       OCR_API_KEY: ${OCR_API_KEY:?OCR_API_KEY wajib di .env VPS}
-      OCR_TIMEOUT_S: "4.0"
+      # 4.0 s terlalu ketat untuk 2 vCPU: PP-OCRv6 butuh >4 s pada halaman padat
+      # → respons 504 dan halaman jatuh ke ocr_skipped. Default 60 s; bisa
+      # diturunkan lewat var shell bila VPS lebih kuat.
+      OCR_TIMEOUT_S: "${OCR_TIMEOUT_S:-60}"
       OCR_MAX_IMAGE_BYTES: "2097152"
       XDG_CACHE_HOME: /opt/ocr/.cache
 

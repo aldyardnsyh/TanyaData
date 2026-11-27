@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -25,6 +25,7 @@ import { Dropzone } from '@/components/signal/dropzone';
 import { StatusBadge } from '@/components/signal/status-badge';
 import type { DotTone } from '@/components/signal/status-dot';
 import { toast } from '@/components/ui/toaster';
+import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { NO_DOCUMENTS_MESSAGE } from '@/components/ui/no-documents-empty';
 
@@ -304,18 +305,26 @@ export default function DataSourcesPage() {
         <div className="flex flex-col gap-s2">
           <p className="font-body text-caption text-ink-72">Dibuat {source.createdAt.slice(0, 10)}</p>
           <div className="flex flex-wrap gap-s2">
-            <Link href={`/data-sources/${source.id}`} className="touch-44 inline-flex items-center rounded-control border border-forest px-s2 font-display text-label font-semibold text-forest focus-ring">Buka detail</Link>
-            <button
-              type="button"
+            <Button asChild variant="secondary" size="sm">
+              <Link href={`/data-sources/${source.id}`}>Buka detail</Link>
+            </Button>
+            <Button
+              variant={previewed ? 'primary' : 'secondary'}
+              size="sm"
               onClick={() => previewSource(source.id)}
               aria-pressed={previewed}
-              className={`touch-44 inline-flex items-center gap-s1 rounded-control px-s2 font-display text-label font-semibold focus-ring ${previewed ? 'border border-forest bg-forest text-porcelain' : 'border border-forest text-forest'}`}
             >
               {previewed && <span className="state-dot state-dot-active" aria-hidden="true" />}
               Pratinjau
-            </button>
-            <button type="button" onClick={() => void reindex(source)} className="touch-44 inline-flex items-center rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink focus-ring">Indeks ulang</button>
-            {source.id !== 'seed' && <button type="button" onClick={() => setDeleteTarget(source)} className="touch-44 inline-flex items-center rounded-control border border-[var(--border-hairline)] px-s2 font-display text-label font-semibold text-ink focus-ring">Hapus</button>}
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => void reindex(source)}>
+              Indeks ulang
+            </Button>
+            {source.id !== 'seed' && (
+              <Button variant="danger" size="sm" onClick={() => setDeleteTarget(source)}>
+                Hapus
+              </Button>
+            )}
           </div>
         </div>
       ),
@@ -372,9 +381,9 @@ export default function DataSourcesPage() {
                     <span className="state-dot state-dot-error" aria-hidden="true" />
                     <span className="font-body text-body text-porcelain">Ringkasan sumber gagal dimuat.</span>
                   </span>
-                  <button type="button" onClick={sources.retry} className="touch-44 rounded-control border border-hairline-dark px-s3 font-display text-label font-semibold text-porcelain hover:border-porcelain focus-ring">
+                  <Button variant="ghost" onClick={sources.retry} className="border border-hairline-dark text-porcelain hover:border-porcelain hover:bg-transparent">
                     Coba lagi
-                  </button>
+                  </Button>
                 </div>
               )}
               {!sources.loading && !sources.error && (
@@ -384,9 +393,9 @@ export default function DataSourcesPage() {
                       Sumber terdaftar
                     </p>
                     <p className="max-w-[46ch] font-body text-body text-porcelain">{NO_DOCUMENTS_MESSAGE}</p>
-                    <button type="button" onClick={scrollToUpload} className="touch-44 rounded-control bg-lime px-s3 font-display text-label font-semibold text-ink focus-ring-forest">
+                    <Button onClick={scrollToUpload} className="border border-lime bg-lime text-ink hover:bg-lime focus-ring-forest">
                       Unggah dokumen
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <>
@@ -583,7 +592,7 @@ export default function DataSourcesPage() {
           ) : previewError ? (
             <div className="flex flex-col items-start gap-s2 surface rounded-card-lg p-s4" role="alert">
               <span className="inline-flex items-center gap-s2"><StatusBadge label="Gagal" tone="error" /><span className="font-body text-body text-ink">{previewError}</span></span>
-              {previewId && <button type="button" onClick={() => void loadPreview(previewId, previewLimit)} className="touch-44 rounded-control border border-forest px-s3 font-display text-label font-semibold text-forest focus-ring">Coba lagi</button>}
+              {previewId && <Button variant="secondary" onClick={() => void loadPreview(previewId, previewLimit)}>Coba lagi</Button>}
             </div>
           ) : !previewDetail ? (
             <div className="surface flex items-center gap-s2 rounded-card-lg p-s4"><StatusBadge label="Belum ada pratinjau" tone="neutral" /><span className="font-body text-body text-ink-72">{noDocuments ? NO_DOCUMENTS_MESSAGE : 'Pilih sumber, lalu klik Pratinjau pada kartunya untuk melihat baris data.'}</span></div>
@@ -612,8 +621,8 @@ export default function DataSourcesPage() {
               <div className="flex flex-wrap items-center justify-between gap-s2 border-t border-[var(--border-hairline)] px-s3 py-s2">
                 <span className="mono-meta">MENAMPILKAN {previewRows.length} DARI {num(preview?.rowCount)} BARIS</span>
                 <div className="flex flex-wrap gap-s2">
-                  <button type="button" disabled={!preview?.truncated || previewLoading} onClick={() => previewId && void loadPreview(previewId, 50)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring disabled:opacity-50">Muat 50 baris</button>
-                  <Link href="/assistant" className="touch-44 inline-flex items-center rounded-control bg-forest px-s3 font-display text-label font-semibold text-porcelain focus-ring">Tanya data ini</Link>
+                  <Button variant="secondary" disabled={!preview?.truncated || previewLoading} onClick={() => previewId && void loadPreview(previewId, 50)}>Muat 50 baris</Button>
+                  <Button asChild variant="primary"><Link href="/assistant">Tanya data ini</Link></Button>
                 </div>
               </div>
             </div>
@@ -628,8 +637,12 @@ export default function DataSourcesPage() {
             <h2 className="font-display text-title text-ink">Hapus “{deleteTarget.name}”?</h2>
             <p className="mt-s2 font-body text-body text-ink-72">Tindakan ini tidak dapat dibatalkan. Riwayat percakapan dan laporan tetap tersimpan.</p>
             <div className="mt-s4 flex justify-end gap-s2">
-              <button type="button" onClick={() => setDeleteTarget(null)} className="touch-44 rounded-control border border-[var(--border-hairline)] px-s3 font-display text-label font-semibold text-ink focus-ring">Batal</button>
-              <button type="button" onClick={() => void confirmDelete()} disabled={deleting} className="touch-44 rounded-control border border-terracotta px-s3 font-display text-label font-semibold text-ink focus-ring disabled:opacity-50">{deleting ? 'Menghapus' : 'Hapus'}</button>
+              <Button variant="ghost" onClick={() => setDeleteTarget(null)}>
+                Batal
+              </Button>
+              <Button variant="danger" onClick={() => void confirmDelete()} loading={deleting}>
+                {deleting ? 'Menghapus' : 'Hapus'}
+              </Button>
             </div>
           </div>
         </div>
